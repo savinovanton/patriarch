@@ -5,13 +5,16 @@ add_library(patriarch_core STATIC
     include/pat/core/detail/sigmoid_table.hpp
     include/pat/core/detail/wide_math.hpp
     include/pat/core/arena.hpp
+    include/pat/core/bytes.hpp
     include/pat/core/fixed.hpp
+    include/pat/core/hash_stream.hpp
     include/pat/core/ids.hpp
     include/pat/core/profile.hpp
     include/pat/core/result.hpp
     include/pat/core/rng.hpp
     include/pat/core/slot_map.hpp
     include/pat/core/sparse_set.hpp
+    include/pat/core/spsc_queue.hpp
     include/pat/core/static_vec.hpp
     include/pat/core/string_interner.hpp
     arena.cpp

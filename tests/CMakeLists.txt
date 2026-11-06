@@ -5,6 +5,8 @@ add_executable(patriarch_tests
     arena_test.cpp
     assert_test.cpp
     calendar_test.cpp
+    command_log_test.cpp
+    command_test.cpp
     core_smoke.cpp
     date_test.cpp
     fixed_test.cpp
@@ -14,10 +16,13 @@ add_executable(patriarch_tests
     result_test.cpp
     rng_test.cpp
     sim_smoke.cpp
+    simulation_test.cpp
     slot_map_test.cpp
     sparse_set_test.cpp
+    spsc_queue_test.cpp
     static_vec_test.cpp
-    string_interner_test.cpp)
+    string_interner_test.cpp
+    world_test.cpp)
 
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core
