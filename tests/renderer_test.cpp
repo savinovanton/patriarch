@@ -166,6 +166,22 @@ TEST_CASE("Renderer: resize rebuilds the target, zero size skips frames") {
     CHECK(draw_fill(*r, {0, 1, 0, 1}).g == 255);
 }
 
+TEST_CASE("Renderer: GPU timing and memory queries are sane") {
+    auto r = make_renderer();
+    CHECK(r->last_gpu_ms() < 0.0f);  // nothing measured yet
+    for (int i = 0; i < 20; ++i) {
+        REQUIRE(r->begin_frame({0, 0, 0, 1}));
+        r->draw_quads(std::array{Quad{0, 0, 64, 64, {1, 0, 0, 1}}});
+        r->end_frame();
+    }
+    // Timestamp queries may be unsupported on a software device; when available the value is finite and
+    // small.
+    const float gpu = r->last_gpu_ms();
+    CHECK(gpu == gpu);  // not NaN
+    CHECK(gpu < 1000.0f);
+    CHECK(r->gpu_memory_mb() >= 0.0f);
+}
+
 TEST_CASE("Renderer: markers and vsync toggles are safe no-ops offscreen") {
     auto r = make_renderer();
     r->set_vsync(false);

@@ -76,6 +76,20 @@ public:
         if (auto r = build_shaders(); !r) {
             return r;
         }
+        {
+            D3D11_QUERY_DESC qd{};
+            for (int i = 0; i < kGpuQueries; ++i) {
+                qd.Query = D3D11_QUERY_TIMESTAMP_DISJOINT;
+                const HRESULT h1 = device_->CreateQuery(&qd, &disjoint_[i]);
+                qd.Query = D3D11_QUERY_TIMESTAMP;
+                const HRESULT h2 = device_->CreateQuery(&qd, &ts_begin_[i]);
+                const HRESULT h3 = device_->CreateQuery(&qd, &ts_end_[i]);
+                if (FAILED(h1) || FAILED(h2) || FAILED(h3)) {
+                    disjoint_[0].Reset();  // timing unavailable: begin_frame checks this
+                    break;
+                }
+            }
+        }
         if (context_.As(&annotation_) != S_OK) {
             annotation_.Reset();  // Annotations are optional (only used by capture tools).
         }
@@ -138,6 +152,13 @@ public:
         if (SUCCEEDED(context_->Map(constants_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             std::memcpy(mapped.pData, &fc, sizeof(fc));
             context_->Unmap(constants_.Get(), 0);
+        }
+
+        // GPU timing: a disjoint + two timestamp queries per frame, read back a few frames later.
+        timing_active_ = gpu_queries_pending_ < kGpuQueries && disjoint_[0] != nullptr;
+        if (timing_active_) {
+            context_->Begin(disjoint_[query_write_].Get());
+            context_->End(ts_begin_[query_write_].Get());
         }
 
         const float color[4] = {clear.r, clear.g, clear.b, clear.a};
@@ -243,6 +264,13 @@ public:
             return;
         }
         frame_active_ = false;
+        if (timing_active_) {
+            context_->End(ts_end_[query_write_].Get());
+            context_->End(disjoint_[query_write_].Get());
+            query_write_ = (query_write_ + 1) % kGpuQueries;
+            ++gpu_queries_pending_;
+        }
+        poll_gpu_timing();
         if (!windowed_) {
             context_->Flush();
             return;
@@ -326,8 +354,43 @@ public:
     [[nodiscard]] std::string_view backend_name() const override { return "Direct3D 11"; }
     [[nodiscard]] std::string_view adapter_name() const override { return adapter_name_; }
     [[nodiscard]] const FrameStats& last_frame_stats() const override { return stats_; }
+    [[nodiscard]] float last_gpu_ms() const override { return last_gpu_ms_; }
+    [[nodiscard]] float gpu_memory_mb() const override {
+        ComPtr<IDXGIAdapter3> adapter3;
+        if (adapter_ == nullptr || FAILED(adapter_.As(&adapter3))) {
+            return 0.0f;
+        }
+        DXGI_QUERY_VIDEO_MEMORY_INFO info{};
+        if (FAILED(adapter3->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &info))) {
+            return 0.0f;
+        }
+        return static_cast<float>(static_cast<double>(info.CurrentUsage) / (1024.0 * 1024.0));
+    }
 
 private:
+    /// Reads finished timestamp queries (oldest first) without stalling.
+    void poll_gpu_timing() {
+        while (gpu_queries_pending_ > 0) {
+            D3D11_QUERY_DATA_TIMESTAMP_DISJOINT disjoint{};
+            if (context_->GetData(disjoint_[query_read_].Get(),
+                                  &disjoint,
+                                  sizeof(disjoint),
+                                  D3D11_ASYNC_GETDATA_DONOTFLUSH) != S_OK) {
+                return;  // not ready yet
+            }
+            UINT64 begin = 0;
+            UINT64 end = 0;
+            context_->GetData(ts_begin_[query_read_].Get(), &begin, sizeof(begin), 0);
+            context_->GetData(ts_end_[query_read_].Get(), &end, sizeof(end), 0);
+            if (disjoint.Disjoint == FALSE && disjoint.Frequency > 0 && end >= begin) {
+                last_gpu_ms_ = static_cast<float>(static_cast<double>(end - begin) * 1000.0 /
+                                                  static_cast<double>(disjoint.Frequency));
+            }
+            query_read_ = (query_read_ + 1) % kGpuQueries;
+            --gpu_queries_pending_;
+        }
+    }
+
     // ---------------------------------------------------------------- creation
 
     [[nodiscard]] core::Result<void> create_device(const RendererDesc& desc) {
@@ -375,6 +438,7 @@ private:
                     adapter_name_ = wide_to_utf8(ad.Description);
                 }
                 adapter->GetParent(IID_PPV_ARGS(&factory_));
+                adapter_ = adapter;
             }
         }
         return core::Result<void>::ok();
@@ -576,6 +640,16 @@ private:
     ComPtr<ID3D11DeviceContext> context_;
     ComPtr<ID3DUserDefinedAnnotation> annotation_;
     ComPtr<IDXGIFactory2> factory_;
+    ComPtr<IDXGIAdapter> adapter_;
+    static constexpr int kGpuQueries = 4;
+    std::array<ComPtr<ID3D11Query>, kGpuQueries> disjoint_;
+    std::array<ComPtr<ID3D11Query>, kGpuQueries> ts_begin_;
+    std::array<ComPtr<ID3D11Query>, kGpuQueries> ts_end_;
+    int query_write_ = 0;
+    int query_read_ = 0;
+    int gpu_queries_pending_ = 0;
+    bool timing_active_ = false;
+    float last_gpu_ms_ = -1.0f;
     ComPtr<IDXGISwapChain1> swapchain_;
     ComPtr<ID3D11Texture2D> target_;
     ComPtr<ID3D11Texture2D> staging_;
