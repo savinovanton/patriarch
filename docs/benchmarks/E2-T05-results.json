@@ -1,0 +1,5107 @@
+{
+  "schema": 1,
+  "started_utc": "2026-11-06T17:12:32.186107+00:00",
+  "source_sha256": {
+    "snapshots.cpp": "71b5b9a1f8a64986b4c3485027d03aea29058a1293d42279383f45640483f391",
+    "snapshots.hpp": "6514c19b46d4a0b78249915f6c8a4b194385b41cd2c88b2710287e9664a5057e",
+    "main.cpp": "32440376afcffbba20b900702722e324bad3badeaf5eb7ef3a1d4429b2e3a094"
+  },
+  "runs": [
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 1000,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 282.213068182,
+        "p50": 184.9,
+        "p95": 790.6,
+        "p99": 1246.3,
+        "max": 1651
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.58828125,
+              "p50": 0.5,
+              "p95": 0.8,
+              "p99": 1.6,
+              "max": 27.8
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0305013020833,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.4
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 17.4833426768,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.59501953125,
+              0.68759765625,
+              0.4822265625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2396,
+              "mean": 4.23113522538,
+              "p50": 2.2,
+              "p95": 6.2,
+              "p99": 23.6,
+              "max": 742.8
+            },
+            "acquire_us": {
+              "samples": 359,
+              "mean": 0.389415041783,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.1,
+              "max": 1.2
+            },
+            "read_us": {
+              "samples": 359,
+              "mean": 29.0011142061,
+              "p50": 15.5,
+              "p95": 75.6,
+              "p99": 92.2,
+              "max": 140.6
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 1475.48123249,
+              "p50": 1468.4,
+              "p95": 2844.4,
+              "p99": 6814.5,
+              "max": 9720.2
+            },
+            "publish_rsd_percent": 1.71448192276,
+            "stable": true,
+            "publications_per_second": 399.333333333,
+            "frames_per_second": 59.8333333333,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 2399,
+            "producer_payload_bytes": 38336000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 355,
+            "repeated_frames": 4,
+            "producer_overruns": 3,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              4.20212765957,
+              4.17775,
+              4.31380175659
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.4099609375,
+              "p50": 0.4,
+              "p95": 0.6,
+              "p99": 1.1,
+              "max": 22.2
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.856673177083,
+              "p50": 0.7,
+              "p95": 1,
+              "p99": 1.3,
+              "max": 177.4
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 20.1023138558,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 22136,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 19584000,
+            "consumer_payload_bytes": 6528000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.39580078125,
+              0.49853515625,
+              0.335546875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2392,
+              "mean": 3.99410535117,
+              "p50": 2.3,
+              "p95": 5.9,
+              "p99": 14.6,
+              "max": 845.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 15.6563888889,
+              "p50": 9.1,
+              "p95": 29.3,
+              "p99": 102.5,
+              "max": 261.8
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 26.5908333333,
+              "p50": 15.6,
+              "p95": 56.5,
+              "p99": 76.4,
+              "max": 291
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1451.73575419,
+              "p50": 1476.4,
+              "p95": 2583.3,
+              "p99": 4216.2,
+              "max": 6893
+            },
+            "publish_rsd_percent": 40.9257758925,
+            "stable": false,
+            "publications_per_second": 398.666666667,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 76856,
+            "object_allocations": 2395,
+            "producer_payload_bytes": 14352000,
+            "consumer_payload_bytes": 4746000,
+            "checkpoints": 0,
+            "queue_peak": 10,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 5,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.87772215269,
+              2.99924528302,
+              3.0992481203
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.74619140625,
+              "p50": 0.6,
+              "p95": 0.8,
+              "p99": 1.5,
+              "max": 161
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0315104166667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 32.1290305717,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 13056,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.59560546875,
+              1.02265625,
+              0.6203125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2391,
+              "mean": 4.13659556671,
+              "p50": 2.5,
+              "p95": 6.4,
+              "p99": 23,
+              "max": 548.7
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.427222222222,
+              "p50": 0.3,
+              "p95": 1.1,
+              "p99": 1.2,
+              "max": 1.3
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 30.1077777778,
+              "p50": 16.1,
+              "p95": 76.5,
+              "p99": 107.9,
+              "max": 293.4
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 1463.7254902,
+              "p50": 1475.6,
+              "p95": 2688,
+              "p99": 5778.8,
+              "max": 6783.9
+            },
+            "publish_rsd_percent": 26.5639264122,
+            "stable": false,
+            "publications_per_second": 398.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 2418,
+            "producer_payload_bytes": 38256000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 9564,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 356,
+            "repeated_frames": 4,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              3.18490566038,
+              3.88320802005,
+              5.3380952381
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 100,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 295.054545455,
+        "p50": 209.3,
+        "p95": 705.4,
+        "p99": 989,
+        "max": 1853.5
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.830696614583,
+              "p50": 0.5,
+              "p95": 1.2,
+              "p99": 2.7,
+              "max": 305.7
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0333333333333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 30.1138394103,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.63486328125,
+              0.7447265625,
+              1.1125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2399,
+              "mean": 5.79616506878,
+              "p50": 3,
+              "p95": 7.1,
+              "p99": 18,
+              "max": 2517
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.467777777778,
+              "p50": 0.3,
+              "p95": 1.1,
+              "p99": 1.2,
+              "max": 1.3
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 44.8130555556,
+              "p50": 16,
+              "p95": 76.7,
+              "p99": 99.6,
+              "max": 2676.3
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 1493.15994398,
+              "p50": 1493.1,
+              "p95": 2761.5,
+              "p99": 4151.2,
+              "max": 7207.1
+            },
+            "publish_rsd_percent": 9.96159238533,
+            "stable": false,
+            "publications_per_second": 399.833333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 2402,
+            "producer_payload_bytes": 38384000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 356,
+            "repeated_frames": 4,
+            "producer_overruns": 1,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.2505,
+              5.73717146433,
+              6.40075
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.331998697917,
+              "p50": 0.2,
+              "p95": 0.6,
+              "p99": 1.3,
+              "max": 50.2
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.261002604167,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 0.7,
+              "max": 46.3
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 27.2127046909,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 16736,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 1958400,
+            "consumer_payload_bytes": 652800,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.26923828125,
+              0.2912109375,
+              0.435546875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2391,
+              "mean": 2.82534504391,
+              "p50": 1.8,
+              "p95": 5,
+              "p99": 12,
+              "max": 479.5
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 5.89527777778,
+              "p50": 4,
+              "p95": 14.2,
+              "p99": 16.4,
+              "max": 18.4
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 25.3080555556,
+              "p50": 15.4,
+              "p95": 65.7,
+              "p99": 87,
+              "max": 414.7
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1345.07688022,
+              "p50": 1180.5,
+              "p95": 2684.1,
+              "p99": 5267.6,
+              "max": 9134.8
+            },
+            "publish_rsd_percent": 8.69541155162,
+            "stable": false,
+            "publications_per_second": 398.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 22856,
+            "object_allocations": 2394,
+            "producer_payload_bytes": 1434600,
+            "consumer_payload_bytes": 474200,
+            "checkpoints": 0,
+            "queue_peak": 10,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 359,
+            "repeated_frames": 1,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.776,
+              2.60744010088,
+              3.09135338346
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.632975260417,
+              "p50": 0.5,
+              "p95": 1,
+              "p99": 1.8,
+              "max": 46.9
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.03271484375,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 13.3505876275,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 13056,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.5572265625,
+              0.617578125,
+              0.72412109375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2391,
+              "mean": 8.30150564617,
+              "p50": 2.4,
+              "p95": 7.2,
+              "p99": 34.5,
+              "max": 4346.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 1.17388888889,
+              "p50": 0.2,
+              "p95": 1.1,
+              "p99": 1.3,
+              "max": 281.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 27.8588888889,
+              "p50": 15.7,
+              "p95": 77,
+              "p99": 96.4,
+              "max": 120.8
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1350.69692737,
+              "p50": 1425.6,
+              "p95": 2591,
+              "p99": 4680.8,
+              "max": 6999.8
+            },
+            "publish_rsd_percent": 56.1175481539,
+            "stable": false,
+            "publications_per_second": 398.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 2418,
+            "producer_payload_bytes": 38256000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 9564,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              8.65181476846,
+              12.7576441103,
+              3.47040302267
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 10,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 2,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 243.171590909,
+        "p50": 174.4,
+        "p95": 493.2,
+        "p99": 799.9,
+        "max": 1949.1
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.707942708333,
+              "p50": 0.5,
+              "p95": 1,
+              "p99": 3,
+              "max": 80.7
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0355143229167,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 18.6290902778,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.7853515625,
+              0.7828125,
+              0.5556640625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2389,
+              "mean": 6.89254918376,
+              "p50": 2.5,
+              "p95": 7.5,
+              "p99": 35.3,
+              "max": 2419.7
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.301944444444,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.1,
+              "max": 1.1
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 24.9883333333,
+              "p50": 15.1,
+              "p95": 69.6,
+              "p99": 81.9,
+              "max": 893.4
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1341.16173184,
+              "p50": 1199.8,
+              "p95": 2706.9,
+              "p99": 4222.7,
+              "max": 8344.2
+            },
+            "publish_rsd_percent": 53.4668026344,
+            "stable": false,
+            "publications_per_second": 398.166666667,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 64224,
+            "object_allocations": 2392,
+            "producer_payload_bytes": 38224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 5,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              8.55565326633,
+              9.46440251572,
+              2.67142857143
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.261946614583,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 0.9,
+              "max": 27.2
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.131608072917,
+              "p50": 0.1,
+              "p95": 0.2,
+              "p99": 0.3,
+              "max": 30.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 13.1608879795,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 16196,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 195840,
+            "consumer_payload_bytes": 65280,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.28798828125,
+              0.275,
+              0.2228515625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2390,
+              "mean": 2.07983263598,
+              "p50": 1.5,
+              "p95": 4.7,
+              "p99": 7.4,
+              "max": 335.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 6.32138888889,
+              "p50": 4.4,
+              "p95": 18,
+              "p99": 20.7,
+              "max": 65
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 31.7486111111,
+              "p50": 14.7,
+              "p95": 58.9,
+              "p99": 90.1,
+              "max": 3715.8
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1253.00501393,
+              "p50": 1152,
+              "p95": 2581.1,
+              "p99": 3672.9,
+              "max": 8098.7
+            },
+            "publish_rsd_percent": 5.99698541271,
+            "stable": false,
+            "publications_per_second": 398.333333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 49428,
+            "object_allocations": 2750,
+            "producer_payload_bytes": 143400,
+            "consumer_payload_bytes": 5759400,
+            "checkpoints": 0,
+            "queue_peak": 9,
+            "reused_pages": 0,
+            "retained_cache_copies": 357,
+            "distinct_versions_read": 359,
+            "repeated_frames": 1,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.02227784731,
+              1.99486215539,
+              2.22332912989
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.7,
+              "p50": 0.5,
+              "p95": 0.9,
+              "p99": 1.8,
+              "max": 190.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0363932291667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 21.5449081639,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 49166976,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 12297,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.7201171875,
+              0.83974609375,
+              0.54013671875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2384,
+              "mean": 5.55746644295,
+              "p50": 2.9,
+              "p95": 8.9,
+              "p99": 42.4,
+              "max": 955.3
+            },
+            "acquire_us": {
+              "samples": 359,
+              "mean": 0.34930362117,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.2,
+              "max": 13.8
+            },
+            "read_us": {
+              "samples": 359,
+              "mean": 25.8406685237,
+              "p50": 15.4,
+              "p95": 73.4,
+              "p99": 204.3,
+              "max": 638.3
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1474.86368715,
+              "p50": 1306.4,
+              "p95": 2766.9,
+              "p99": 5476.9,
+              "max": 28012.2
+            },
+            "publish_rsd_percent": 25.8270386944,
+            "stable": false,
+            "publications_per_second": 397.333333333,
+            "frames_per_second": 59.8333333333,
+            "owned_bytes_peak": 66144,
+            "object_allocations": 3835,
+            "producer_payload_bytes": 35912832,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 7558,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 356,
+            "repeated_frames": 3,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.68811630847,
+              6.92245922208,
+              4.06092964824
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 100,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 1830.36022727,
+        "p50": 1237.4,
+        "p95": 3777,
+        "p99": 10816.2,
+        "max": 16467.6
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.20205078125,
+              "p50": 1.1,
+              "p95": 1.6,
+              "p99": 2.9,
+              "max": 133.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0356770833333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 8.85098140404,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.09833984375,
+              1.3109375,
+              1.196875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 14.3445833333,
+              "p50": 9.3,
+              "p95": 20.3,
+              "p99": 239.6,
+              "max": 344.7
+            },
+            "acquire_us": {
+              "samples": 359,
+              "mean": 0.354596100279,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.3,
+              "max": 13.9
+            },
+            "read_us": {
+              "samples": 359,
+              "mean": 21.6484679666,
+              "p50": 15.6,
+              "p95": 69,
+              "p99": 90.9,
+              "max": 156.7
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11348.5277311,
+              "p50": 9503,
+              "p95": 24892.9,
+              "p99": 25248.8,
+              "max": 25468.9
+            },
+            "publish_rsd_percent": 45.5049718209,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 59.8333333333,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 11520000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 237,
+            "repeated_frames": 122,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              9.0925,
+              12.28875,
+              21.6525
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.353841145833,
+              "p50": 0.3,
+              "p95": 0.4,
+              "p99": 0.9,
+              "max": 113.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.400813802083,
+              "p50": 0.4,
+              "p95": 0.6,
+              "p99": 0.9,
+              "max": 20.8
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 12.4185934452,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 49936,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 5875200,
+            "consumer_payload_bytes": 1958400,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.40302734375,
+              0.31845703125,
+              0.3400390625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 4.10166666667,
+              "p50": 2.5,
+              "p95": 5.2,
+              "p99": 48,
+              "max": 109.8
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 3.49611111111,
+              "p50": 2.5,
+              "p95": 10.5,
+              "p99": 14.5,
+              "max": 155.3
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 20.1219444444,
+              "p50": 15.1,
+              "p95": 59,
+              "p99": 82.7,
+              "max": 120.2
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 11880.8740947,
+              "p50": 8703.1,
+              "p95": 25050.1,
+              "p99": 25391.8,
+              "max": 25523.7
+            },
+            "publish_rsd_percent": 45.0565746315,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 49936,
+            "object_allocations": 243,
+            "producer_payload_bytes": 432000,
+            "consumer_payload_bytes": 144000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.4975,
+              3.685,
+              6.1225
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.253125,
+              "p50": 1.1,
+              "p95": 1.7,
+              "p99": 2.3,
+              "max": 109.7
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.03310546875,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.4
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 7.20727730378,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 39168,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.274609375,
+              1.33076171875,
+              1.15400390625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 7.61666666667,
+              "p50": 4.7,
+              "p95": 16.8,
+              "p99": 103.8,
+              "max": 129.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.284444444444,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.2,
+              "max": 1.3
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 19.0841666667,
+              "p50": 15.2,
+              "p95": 60.1,
+              "p99": 75.9,
+              "max": 84.5
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11295.9084034,
+              "p50": 8592.9,
+              "p95": 25015.7,
+              "p99": 25233.6,
+              "max": 33007.1
+            },
+            "publish_rsd_percent": 49.4847024766,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 315,
+            "producer_payload_bytes": 11520000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 2880,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              6.1225,
+              4.82375,
+              11.90375
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 1000,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 2,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 1858.61647727,
+        "p50": 1279.7,
+        "p95": 4455.5,
+        "p99": 6018.3,
+        "max": 6607.6
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.15042317708,
+              "p50": 1.1,
+              "p95": 1.5,
+              "p99": 2.5,
+              "max": 20.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0361002604167,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 4.03349598095,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.1236328125,
+              1.1236328125,
+              1.20400390625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2392,
+              "mean": 5.48164715719,
+              "p50": 3.7,
+              "p95": 7.5,
+              "p99": 40.9,
+              "max": 543.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.270833333333,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.3,
+              "max": 1.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 24.0894444444,
+              "p50": 15,
+              "p95": 64.7,
+              "p99": 79.1,
+              "max": 1069.8
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 1325.01120448,
+              "p50": 1229.5,
+              "p95": 2646.4,
+              "p99": 5110.2,
+              "max": 15605.8
+            },
+            "publish_rsd_percent": 11.2817320859,
+            "stable": false,
+            "publications_per_second": 398.666666667,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 192224,
+            "object_allocations": 2395,
+            "producer_payload_bytes": 114816000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 354,
+            "repeated_frames": 6,
+            "producer_overruns": 3,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              6.162875,
+              5.32332912989,
+              4.95669586984
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.5638671875,
+              "p50": 0.5,
+              "p95": 0.7,
+              "p99": 1.2,
+              "max": 32.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 2.42314453125,
+              "p50": 2.3,
+              "p95": 2.7,
+              "p99": 3.7,
+              "max": 70.6
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 3.96888979824,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 66136,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 58752000,
+            "consumer_payload_bytes": 19584000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.5388671875,
+              0.570703125,
+              0.58203125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2397,
+              "mean": 4.54484772632,
+              "p50": 2.6,
+              "p95": 7.3,
+              "p99": 26.7,
+              "max": 714.5
+            },
+            "acquire_us": {
+              "samples": 359,
+              "mean": 38.8384401114,
+              "p50": 28.6,
+              "p95": 83.6,
+              "p99": 100.9,
+              "max": 1053.6
+            },
+            "read_us": {
+              "samples": 359,
+              "mean": 15.795264624,
+              "p50": 14.7,
+              "p95": 18.5,
+              "p99": 33.3,
+              "max": 79.3
+            },
+            "age_at_acquire_us": {
+              "samples": 356,
+              "mean": 1274.81797753,
+              "p50": 1184.3,
+              "p95": 2635.7,
+              "p99": 3535,
+              "max": 6964.2
+            },
+            "publish_rsd_percent": 36.1274792805,
+            "stable": false,
+            "publications_per_second": 399.5,
+            "frames_per_second": 59.8333333333,
+            "owned_bytes_peak": 541928,
+            "object_allocations": 2755,
+            "producer_payload_bytes": 43146000,
+            "consumer_payload_bytes": 31320000,
+            "checkpoints": 0,
+            "queue_peak": 22,
+            "reused_pages": 0,
+            "retained_cache_copies": 355,
+            "distinct_versions_read": 355,
+            "repeated_frames": 4,
+            "producer_overruns": 2,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              4.749625,
+              6.07854454203,
+              2.812125
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.22447916667,
+              "p50": 1.2,
+              "p95": 1.5,
+              "p99": 2.4,
+              "max": 6
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0345703125,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 0.62030088513,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 39168,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.217578125,
+              1.2326171875,
+              1.2232421875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2396,
+              "mean": 5.18109348915,
+              "p50": 3.4,
+              "p95": 9.1,
+              "p99": 41,
+              "max": 444.5
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.355277777778,
+              "p50": 0.2,
+              "p95": 1.1,
+              "p99": 1.3,
+              "max": 1.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 29.8219444444,
+              "p50": 15.4,
+              "p95": 73,
+              "p99": 102.3,
+              "max": 1175.6
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1243.89916435,
+              "p50": 1244.8,
+              "p95": 2577,
+              "p99": 4062,
+              "max": 5054.9
+            },
+            "publish_rsd_percent": 19.0878352279,
+            "stable": false,
+            "publications_per_second": 399.333333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 197984,
+            "object_allocations": 6791,
+            "producer_payload_bytes": 115008000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 24432,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 359,
+            "repeated_frames": 1,
+            "producer_overruns": 3,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              4.129625,
+              6.092625,
+              5.32173366834
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 1000,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 2199.61761364,
+        "p50": 1529.1,
+        "p95": 4869.5,
+        "p99": 7893.2,
+        "max": 10185.2
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.24514973958,
+              "p50": 1.1,
+              "p95": 1.7,
+              "p99": 3.3,
+              "max": 125.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0372721354167,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 19.1872080331,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.084765625,
+              1.13095703125,
+              1.5197265625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2385,
+              "mean": 6.69157232704,
+              "p50": 3.6,
+              "p95": 9,
+              "p99": 39.1,
+              "max": 2498.5
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.316388888889,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.3,
+              "max": 1.6
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 22.4341666667,
+              "p50": 15.1,
+              "p95": 73.1,
+              "p99": 79.7,
+              "max": 82.8
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1330.46173184,
+              "p50": 1267,
+              "p95": 3031.6,
+              "p99": 5084.6,
+              "max": 12283.2
+            },
+            "publish_rsd_percent": 64.5740640634,
+            "stable": false,
+            "publications_per_second": 397.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 2388,
+            "producer_payload_bytes": 114480000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 357,
+            "repeated_frames": 3,
+            "producer_overruns": 9,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              11.6820933165,
+              3.95315656566,
+              4.45575
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.640657552083,
+              "p50": 0.5,
+              "p95": 0.8,
+              "p99": 1.4,
+              "max": 157.3
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 2.63391927083,
+              "p50": 2.3,
+              "p95": 3.3,
+              "p99": 4.3,
+              "max": 180.7
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 19.9148437261,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 66136,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 58752000,
+            "consumer_payload_bytes": 19584000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.55693359375,
+              0.5775390625,
+              0.7875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2390,
+              "mean": 4.65334728033,
+              "p50": 2.7,
+              "p95": 7.5,
+              "p99": 34.9,
+              "max": 585
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 36.7722222222,
+              "p50": 27.8,
+              "p95": 78.5,
+              "p99": 90.3,
+              "max": 556.7
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 18.8333333333,
+              "p50": 14.8,
+              "p95": 17.1,
+              "p99": 30.9,
+              "max": 971.1
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1343.7877095,
+              "p50": 1173.3,
+              "p95": 2775.1,
+              "p99": 4425.8,
+              "max": 7775.8
+            },
+            "publish_rsd_percent": 7.94359628325,
+            "stable": false,
+            "publications_per_second": 398.333333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 337336,
+            "object_allocations": 2393,
+            "producer_payload_bytes": 43020000,
+            "consumer_payload_bytes": 14214000,
+            "checkpoints": 0,
+            "queue_peak": 16,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 357,
+            "repeated_frames": 3,
+            "producer_overruns": 6,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              4.96829573935,
+              4.24609571788,
+              4.74360902256
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.35152994792,
+              "p50": 1.2,
+              "p95": 1.8,
+              "p99": 2.7,
+              "max": 241.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0361979166667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 19.4924023636,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 39168,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.20498046875,
+              1.1939453125,
+              1.6556640625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2374,
+              "mean": 5.76208930076,
+              "p50": 3.1,
+              "p95": 8.2,
+              "p99": 40.9,
+              "max": 2471.2
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.365555555556,
+              "p50": 0.2,
+              "p95": 1.1,
+              "p99": 1.2,
+              "max": 1.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 49.2491666667,
+              "p50": 15.3,
+              "p95": 76.5,
+              "p99": 128.8,
+              "max": 5868.4
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1481.12513966,
+              "p50": 1262.8,
+              "p95": 2988.1,
+              "p99": 8408,
+              "max": 10517.9
+            },
+            "publish_rsd_percent": 46.7813379615,
+            "stable": false,
+            "publications_per_second": 395.666666667,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 148488,
+            "object_allocations": 2472,
+            "producer_payload_bytes": 113952000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 28465,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 12,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              8.6786163522,
+              3.36228070175,
+              5.24532650448
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 10,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 328.135227273,
+        "p50": 277.6,
+        "p95": 782.2,
+        "p99": 1574.4,
+        "max": 1853.6
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.6396484375,
+              "p50": 0.5,
+              "p95": 0.9,
+              "p99": 2.4,
+              "max": 61.2
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0323567708333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 3
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 25.9401443763,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.59853515625,
+              0.822265625,
+              0.49814453125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2367,
+              "mean": 6.69885931559,
+              "p50": 2.7,
+              "p95": 6.7,
+              "p99": 22.1,
+              "max": 2276.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.425277777778,
+              "p50": 0.3,
+              "p95": 1,
+              "p99": 1.3,
+              "max": 13.9
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 25.1525,
+              "p50": 15.8,
+              "p95": 72.7,
+              "p99": 92.8,
+              "max": 104.5
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1493.63147632,
+              "p50": 1480.1,
+              "p95": 2751.2,
+              "p99": 6654,
+              "max": 11451.3
+            },
+            "publish_rsd_percent": 39.8070704146,
+            "stable": false,
+            "publications_per_second": 394.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 2370,
+            "producer_payload_bytes": 37872000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 16,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              3.60400516796,
+              8.1895859473,
+              8.21557788945
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.250065104167,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 0.9,
+              "max": 46.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.117610677083,
+              "p50": 0.1,
+              "p95": 0.2,
+              "p99": 0.4,
+              "max": 5.8
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 8.8306924078,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 16196,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 195840,
+            "consumer_payload_bytes": 65280,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.22841796875,
+              0.27255859375,
+              0.24921875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2357,
+              "mean": 2.87933814171,
+              "p50": 1.7,
+              "p95": 5.1,
+              "p99": 14.6,
+              "max": 604.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 5.04333333333,
+              "p50": 2.9,
+              "p95": 10.9,
+              "p99": 12.6,
+              "max": 294.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 33.4875,
+              "p50": 15.4,
+              "p95": 68.5,
+              "p99": 117.3,
+              "max": 2840.1
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1547.00362117,
+              "p50": 1455.4,
+              "p95": 3272.1,
+              "p99": 6634.3,
+              "max": 24061.8
+            },
+            "publish_rsd_percent": 28.7932272851,
+            "stable": false,
+            "publications_per_second": 392.833333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 18856,
+            "object_allocations": 2360,
+            "producer_payload_bytes": 141420,
+            "consumer_payload_bytes": 46760,
+            "checkpoints": 0,
+            "queue_peak": 20,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 354,
+            "repeated_frames": 6,
+            "producer_overruns": 13,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.1594488189,
+              2.67051442911,
+              3.77531328321
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.607552083333,
+              "p50": 0.5,
+              "p95": 0.8,
+              "p99": 1.4,
+              "max": 286.3
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0333333333333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 28.1504036644,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 49166976,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 12297,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.5046875,
+              0.51298828125,
+              0.80498046875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2376,
+              "mean": 8.27474747475,
+              "p50": 2.3,
+              "p95": 7.1,
+              "p99": 22.3,
+              "max": 4500.2
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.369166666667,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.2,
+              "max": 1.4
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 29.6955555556,
+              "p50": 15.6,
+              "p95": 74.1,
+              "p99": 99.8,
+              "max": 626.1
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1416.20278552,
+              "p50": 1450.9,
+              "p95": 3183.4,
+              "p99": 6514.6,
+              "max": 7758
+            },
+            "publish_rsd_percent": 42.6256313568,
+            "stable": false,
+            "publications_per_second": 396,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 2403,
+            "producer_payload_bytes": 35788928,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 8951,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 359,
+            "repeated_frames": 1,
+            "producer_overruns": 13,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              10.1539440204,
+              4.2114321608,
+              10.4880352645
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 1000,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 243.747159091,
+        "p50": 189.7,
+        "p95": 491,
+        "p99": 587.3,
+        "max": 589.5
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.823795572917,
+              "p50": 0.5,
+              "p95": 1.1,
+              "p99": 2.2,
+              "max": 196
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.162369791667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 390.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 10.7117616471,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.73818359375,
+              0.914453125,
+              0.81875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 5.90416666667,
+              "p50": 5.5,
+              "p95": 7.4,
+              "p99": 13.2,
+              "max": 44.6
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.580555555556,
+              "p50": 0.4,
+              "p95": 1.1,
+              "p99": 1.7,
+              "max": 12.9
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 33.5958333333,
+              "p50": 16.3,
+              "p95": 72.5,
+              "p99": 179.8,
+              "max": 2194.3
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 13991.8458101,
+              "p50": 16282.5,
+              "p95": 25103.4,
+              "p99": 25435.7,
+              "max": 33035.9
+            },
+            "publish_rsd_percent": 6.85950800226,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 3840000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 238,
+            "repeated_frames": 122,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              6.32625,
+              5.51875,
+              5.8675
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.521516927083,
+              "p50": 0.4,
+              "p95": 0.7,
+              "p99": 1.7,
+              "max": 131.3
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.865266927083,
+              "p50": 0.8,
+              "p95": 1.2,
+              "p99": 1.6,
+              "max": 45.8
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 9.52489822651,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 22136,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 19584000,
+            "consumer_payload_bytes": 6528000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.533984375,
+              0.466796875,
+              0.56376953125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 7.23583333333,
+              "p50": 4.6,
+              "p95": 6.7,
+              "p99": 186.9,
+              "max": 255.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 6.56694444444,
+              "p50": 3.8,
+              "p95": 13.9,
+              "p99": 24.4,
+              "max": 564.1
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 26.2866666667,
+              "p50": 15.5,
+              "p95": 62.9,
+              "p99": 81.3,
+              "max": 477.4
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 13613.5899441,
+              "p50": 16233.5,
+              "p95": 25178.3,
+              "p99": 25362.7,
+              "max": 25541.6
+            },
+            "publish_rsd_percent": 8.26936627004,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 22136,
+            "object_allocations": 243,
+            "producer_payload_bytes": 1440000,
+            "consumer_payload_bytes": 480000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              7.87,
+              6.68125,
+              7.15625
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.774479166667,
+              "p50": 0.6,
+              "p95": 1,
+              "p99": 1.7,
+              "max": 109.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.08173828125,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 143.7
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 17.6876536103,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 13056,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.92607421875,
+              0.6595703125,
+              0.73779296875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 5.77791666667,
+              "p50": 5.6,
+              "p95": 8.2,
+              "p99": 12.3,
+              "max": 28
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.594166666667,
+              "p50": 0.4,
+              "p95": 1.1,
+              "p99": 1.5,
+              "max": 12.1
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 31.1772222222,
+              "p50": 16.6,
+              "p95": 76.7,
+              "p99": 97.3,
+              "max": 330.6
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 14164.1793296,
+              "p50": 16367,
+              "p95": 25188.6,
+              "p99": 25345.7,
+              "max": 33216.6
+            },
+            "publish_rsd_percent": 10.0541611689,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 267,
+            "producer_payload_bytes": 3840000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 960,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.25375,
+              5.6775,
+              6.4025
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 100,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 250.530113636,
+        "p50": 196.3,
+        "p95": 498.1,
+        "p99": 637.4,
+        "max": 1952.7
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.77578125,
+              "p50": 0.5,
+              "p95": 1.2,
+              "p99": 2.3,
+              "max": 118.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0360677083333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 6.4
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 8.33218282934,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.84306640625,
+              0.7701171875,
+              0.71416015625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 3.83208333333,
+              "p50": 3.4,
+              "p95": 5.7,
+              "p99": 11,
+              "max": 44.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.296111111111,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.1,
+              "max": 11
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 19.8308333333,
+              "p50": 15,
+              "p95": 63,
+              "p99": 78.1,
+              "max": 104
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11263.3582633,
+              "p50": 8659.5,
+              "p95": 25098.7,
+              "p99": 25316.4,
+              "max": 25574.5
+            },
+            "publish_rsd_percent": 2.00053419717,
+            "stable": true,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 3840000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 239,
+            "repeated_frames": 121,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              3.81375,
+              3.91625,
+              3.76625
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.331412760417,
+              "p50": 0.2,
+              "p95": 0.7,
+              "p99": 1.3,
+              "max": 37.5
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.35693359375,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 0.7,
+              "max": 158.9
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 22.5937251586,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 16736,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 1958400,
+            "consumer_payload_bytes": 652800,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.4171875,
+              0.2791015625,
+              0.29794921875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 3.05166666667,
+              "p50": 2.2,
+              "p95": 4.4,
+              "p99": 19.8,
+              "max": 54.2
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 2.96833333333,
+              "p50": 1.5,
+              "p95": 4.6,
+              "p99": 9.1,
+              "max": 445.6
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 19.3147222222,
+              "p50": 14.8,
+              "p95": 62.2,
+              "p99": 85.7,
+              "max": 97.5
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 10941.9607242,
+              "p50": 8527.3,
+              "p95": 24840.4,
+              "p99": 25268.8,
+              "max": 25570.1
+            },
+            "publish_rsd_percent": 13.5698748728,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 16736,
+            "object_allocations": 243,
+            "producer_payload_bytes": 144000,
+            "consumer_payload_bytes": 48000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.975,
+              2.68125,
+              3.49875
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.66298828125,
+              "p50": 0.5,
+              "p95": 1.1,
+              "p99": 2,
+              "max": 71.3
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0350911458333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 8.44561024133,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 13056,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.68408203125,
+              0.59951171875,
+              0.70537109375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 3.43625,
+              "p50": 2.5,
+              "p95": 4.9,
+              "p99": 10.7,
+              "max": 104.8
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.196666666667,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 0.8,
+              "max": 1
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 16.9972222222,
+              "p50": 14.9,
+              "p95": 18,
+              "p99": 74.3,
+              "max": 92
+            },
+            "age_at_acquire_us": {
+              "samples": 360,
+              "mean": 10477.0094444,
+              "p50": 8469,
+              "p95": 24880.6,
+              "p99": 25164.3,
+              "max": 25447.1
+            },
+            "publish_rsd_percent": 21.8185084344,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 267,
+            "producer_payload_bytes": 3840000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 960,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.6025,
+              3.65125,
+              4.055
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60",
+      "changed_permille": 10,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 500,
+      "ui_payload_bytes": 16000,
+      "serialized_world_bytes": 158940,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 437.110795455,
+        "p50": 361.6,
+        "p95": 1034,
+        "p99": 2705.8,
+        "max": 8262.7
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.503385416667,
+              "p50": 0.5,
+              "p95": 0.6,
+              "p99": 1.4,
+              "max": 25.6
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0316731770833,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 13.7476204792,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 52224000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.5376953125,
+              0.54873046875,
+              0.42373046875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 6.74083333333,
+              "p50": 3.9,
+              "p95": 6.5,
+              "p99": 157.1,
+              "max": 247.5
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.316944444444,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.2,
+              "max": 1.4
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 22.7766666667,
+              "p50": 15,
+              "p95": 67.2,
+              "p99": 86.3,
+              "max": 415.5
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 11313.4891365,
+              "p50": 8740.3,
+              "p95": 24946.5,
+              "p99": 25181.4,
+              "max": 25565.8
+            },
+            "publish_rsd_percent": 37.3159280899,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 32112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 3840000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              8.04375,
+              8.3375,
+              3.84125
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.202994791667,
+              "p50": 0.2,
+              "p95": 0.3,
+              "p99": 0.6,
+              "max": 17
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.105696614583,
+              "p50": 0.1,
+              "p95": 0.2,
+              "p99": 0.3,
+              "max": 4.8
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 5.75935167843,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 16196,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 195840,
+            "consumer_payload_bytes": 65280,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.1896484375,
+              0.21142578125,
+              0.20791015625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 2.88208333333,
+              "p50": 2.3,
+              "p95": 5.2,
+              "p99": 12.8,
+              "max": 15.9
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 2.0275,
+              "p50": 1.5,
+              "p95": 5.8,
+              "p99": 8.9,
+              "max": 9.7
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 20.5041666667,
+              "p50": 14.9,
+              "p95": 64.5,
+              "p99": 77.9,
+              "max": 102.1
+            },
+            "age_at_acquire_us": {
+              "samples": 360,
+              "mean": 11329.7216667,
+              "p50": 8703.8,
+              "p95": 24997.9,
+              "p99": 25426.6,
+              "max": 28430
+            },
+            "publish_rsd_percent": 20.6860379059,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 16196,
+            "object_allocations": 243,
+            "producer_payload_bytes": 14400,
+            "consumer_payload_bytes": 4800,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.48375,
+              2.595,
+              3.5675
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.50810546875,
+              "p50": 0.5,
+              "p95": 0.6,
+              "p99": 1.1,
+              "max": 37.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.03203125,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 3.58476676749,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 3291,
+            "producer_payload_bytes": 49166976,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 12297,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.49072265625,
+              0.52705078125,
+              0.50654296875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 19.3104166667,
+              "p50": 3.8,
+              "p95": 6.8,
+              "p99": 180.7,
+              "max": 3084.4
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.341388888889,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.2,
+              "max": 1.3
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 26.0361111111,
+              "p50": 15.4,
+              "p95": 68,
+              "p99": 91,
+              "max": 841.9
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 11888.691922,
+              "p50": 8718.4,
+              "p95": 25032.3,
+              "p99": 25332,
+              "max": 25411.4
+            },
+            "publish_rsd_percent": 106.313239041,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 33072,
+            "object_allocations": 267,
+            "producer_payload_bytes": 3575424,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 894,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 239,
+            "repeated_frames": 121,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.5725,
+              9.44875,
+              42.91
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 10,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 1750.59375,
+        "p50": 1301,
+        "p95": 4175.2,
+        "p99": 5329.4,
+        "max": 5700.2
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.62548828125,
+              "p50": 1.1,
+              "p95": 2.3,
+              "p99": 5.9,
+              "max": 144.8
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.03623046875,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.3
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 8.12812974983,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.55146484375,
+              1.54697265625,
+              1.77802734375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2375,
+              "mean": 11.9612210526,
+              "p50": 4.2,
+              "p95": 11.7,
+              "p99": 97.9,
+              "max": 7137.3
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.399444444444,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.1,
+              "max": 29.6
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 31.8538888889,
+              "p50": 15.2,
+              "p95": 69.5,
+              "p99": 90.7,
+              "max": 3587.3
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1413.94944134,
+              "p50": 1265.9,
+              "p95": 3103.7,
+              "p99": 6056,
+              "max": 12435.2
+            },
+            "publish_rsd_percent": 57.9122215848,
+            "stable": false,
+            "publications_per_second": 395.833333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 2378,
+            "producer_payload_bytes": 114000000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 12,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              6.17103274559,
+              19.7021766965,
+              10.150875
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.379557291667,
+              "p50": 0.2,
+              "p95": 0.7,
+              "p99": 1.4,
+              "max": 128.8
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.357161458333,
+              "p50": 0.1,
+              "p95": 0.3,
+              "p99": 0.5,
+              "max": 611.5
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 12.1026198608,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 48316,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 587520,
+            "consumer_payload_bytes": 195840,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.3669921875,
+              0.43046875,
+              0.3412109375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2391,
+              "mean": 2.15089920535,
+              "p50": 1.6,
+              "p95": 4.7,
+              "p99": 8.5,
+              "max": 147.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 3.65333333333,
+              "p50": 2.7,
+              "p95": 10.6,
+              "p99": 13.4,
+              "max": 13.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 19.7083333333,
+              "p50": 15.2,
+              "p95": 59.9,
+              "p99": 66.3,
+              "max": 118.7
+            },
+            "age_at_acquire_us": {
+              "samples": 360,
+              "mean": 1250.69027778,
+              "p50": 1119.3,
+              "p95": 2507.6,
+              "p99": 5970.4,
+              "max": 8112.9
+            },
+            "publish_rsd_percent": 6.50596589783,
+            "stable": false,
+            "publications_per_second": 398.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 51176,
+            "object_allocations": 2394,
+            "producer_payload_bytes": 430380,
+            "consumer_payload_bytes": 142320,
+            "checkpoints": 0,
+            "queue_peak": 12,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 360,
+            "repeated_frames": 0,
+            "producer_overruns": 5,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.13329161452,
+              2.02027707809,
+              2.2984962406
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.79908854167,
+              "p50": 1.1,
+              "p95": 2.1,
+              "p99": 4,
+              "max": 443.8
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0395833333333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 26.9823006914,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 144710400,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 36084,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.29697265625,
+              2.26591796875,
+              1.834375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2399,
+              "mean": 9.41788245102,
+              "p50": 3.4,
+              "p95": 9.4,
+              "p99": 34.6,
+              "max": 2958.6
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.500833333333,
+              "p50": 0.3,
+              "p95": 1.3,
+              "p99": 1.5,
+              "max": 1.6
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 29.7958333333,
+              "p50": 15.9,
+              "p95": 75,
+              "p99": 91,
+              "max": 274.9
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1380.31392758,
+              "p50": 1447.9,
+              "p95": 2695.4,
+              "p99": 4283.8,
+              "max": 6595.8
+            },
+            "publish_rsd_percent": 13.4884336862,
+            "stable": false,
+            "publications_per_second": 399.833333333,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 2474,
+            "producer_payload_bytes": 106359936,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 26520,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 358,
+            "repeated_frames": 2,
+            "producer_overruns": 1,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              10.091625,
+              10.208125,
+              7.95206508135
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 10,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 1870.95227273,
+        "p50": 1297,
+        "p95": 4322.3,
+        "p99": 5037,
+        "max": 6041.2
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.3443359375,
+              "p50": 1,
+              "p95": 1.7,
+              "p99": 3.5,
+              "max": 263.3
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0356119791667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 15.5325524353,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.244921875,
+              1.20380859375,
+              1.58427734375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 10.9641666667,
+              "p50": 6.5,
+              "p95": 17.4,
+              "p99": 100,
+              "max": 596.2
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.308055555556,
+              "p50": 0.2,
+              "p95": 0.9,
+              "p99": 1.2,
+              "max": 1.4
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 21.6605555556,
+              "p50": 15.5,
+              "p95": 66.1,
+              "p99": 74.6,
+              "max": 212.7
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11705.8697479,
+              "p50": 8740.5,
+              "p95": 25204.6,
+              "p99": 25443.6,
+              "max": 27181.7
+            },
+            "publish_rsd_percent": 53.2973797581,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 11520000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              17.69875,
+              7.96,
+              7.23375
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.29130859375,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 1.1,
+              "max": 117.7
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.141080729167,
+              "p50": 0.1,
+              "p95": 0.2,
+              "p99": 0.4,
+              "max": 1.8
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 20.8000925171,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 48316,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 587520,
+            "consumer_payload_bytes": 195840,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.23369140625,
+              0.3544921875,
+              0.2857421875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 3.78541666667,
+              "p50": 2.8,
+              "p95": 5.7,
+              "p99": 15.4,
+              "max": 68.4
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 2.22194444444,
+              "p50": 1.7,
+              "p95": 6.9,
+              "p99": 9.7,
+              "max": 10.7
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 20.6538888889,
+              "p50": 15.5,
+              "p95": 61.4,
+              "p99": 70.4,
+              "max": 329.4
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 11132.3740223,
+              "p50": 8707.3,
+              "p95": 24885.2,
+              "p99": 25196.9,
+              "max": 25537.8
+            },
+            "publish_rsd_percent": 21.1346226424,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 48316,
+            "object_allocations": 243,
+            "producer_payload_bytes": 43200,
+            "consumer_payload_bytes": 14400,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              2.895,
+              4.44375,
+              4.0175
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.2240234375,
+              "p50": 1.1,
+              "p95": 1.6,
+              "p99": 2.9,
+              "max": 170.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0358723958333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 17.7001454375,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 144710400,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 36084,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.10419921875,
+              1.09375,
+              1.47412109375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 8.76,
+              "p50": 6.8,
+              "p95": 11.3,
+              "p99": 82.4,
+              "max": 153.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.3975,
+              "p50": 0.3,
+              "p95": 1,
+              "p99": 1.3,
+              "max": 1.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 25.0161111111,
+              "p50": 16.2,
+              "p95": 64.4,
+              "p99": 89.6,
+              "max": 867.3
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 11924.3456825,
+              "p50": 8911.2,
+              "p95": 25064.2,
+              "p99": 25389.2,
+              "max": 25571.6
+            },
+            "publish_rsd_percent": 23.6400657524,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 315,
+            "producer_payload_bytes": 10548480,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 2631,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 239,
+            "repeated_frames": 121,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              7.01,
+              8.22375,
+              11.04625
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 1000,
+      "target_rate": 40,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 1765.27727273,
+        "p50": 1325.9,
+        "p95": 4242.4,
+        "p99": 5837,
+        "max": 8643.9
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.40149739583,
+              "p50": 1.1,
+              "p95": 1.7,
+              "p99": 3.4,
+              "max": 99.4
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0359049479167,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.4
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 3.67491704952,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.3876953125,
+              1.45849609375,
+              1.35830078125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 9.17375,
+              "p50": 7.5,
+              "p95": 11.9,
+              "p99": 67.9,
+              "max": 135.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.409722222222,
+              "p50": 0.3,
+              "p95": 1,
+              "p99": 1.3,
+              "max": 5.2
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 25.6075,
+              "p50": 15.8,
+              "p95": 66.5,
+              "p99": 84.5,
+              "max": 490.2
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 13302.8835196,
+              "p50": 16119.1,
+              "p95": 25112.7,
+              "p99": 25493.8,
+              "max": 25838
+            },
+            "publish_rsd_percent": 17.7230628579,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 243,
+            "producer_payload_bytes": 11520000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              7.3075,
+              9.93,
+              10.28375
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.672428385417,
+              "p50": 0.5,
+              "p95": 0.8,
+              "p99": 2,
+              "max": 84.2
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 2.55777994792,
+              "p50": 2.3,
+              "p95": 3.1,
+              "p99": 4.3,
+              "max": 156.5
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 10.826410586,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 66136,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 58752000,
+            "consumer_payload_bytes": 19584000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.70810546875,
+              0.588671875,
+              0.7205078125
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 14.7816666667,
+              "p50": 4.2,
+              "p95": 9,
+              "p99": 93,
+              "max": 2123.4
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 8.58305555556,
+              "p50": 7.9,
+              "p95": 23.9,
+              "p99": 28.8,
+              "max": 332.6
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 19.9477777778,
+              "p50": 15,
+              "p95": 50.8,
+              "p99": 71.1,
+              "max": 101.6
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11664.2193277,
+              "p50": 8860.7,
+              "p95": 24964.7,
+              "p99": 25457.4,
+              "max": 25580.5
+            },
+            "publish_rsd_percent": 93.8455142516,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 66136,
+            "object_allocations": 243,
+            "producer_payload_bytes": 4320000,
+            "consumer_payload_bytes": 1440000,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 240,
+            "repeated_frames": 120,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              30.68125,
+              5.14875,
+              8.515
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.51904296875,
+              "p50": 1.2,
+              "p95": 1.8,
+              "p99": 3.2,
+              "max": 209.1
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0359375,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.2
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 20.4070965285,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 39168,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.87275390625,
+              1.29462890625,
+              1.38974609375
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 240,
+              "mean": 8.73291666667,
+              "p50": 5.8,
+              "p95": 12.5,
+              "p99": 96.8,
+              "max": 208.4
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.362777777778,
+              "p50": 0.3,
+              "p95": 1,
+              "p99": 1.4,
+              "max": 1.7
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 20.9355555556,
+              "p50": 15.6,
+              "p95": 63.4,
+              "p99": 96.4,
+              "max": 227.9
+            },
+            "age_at_acquire_us": {
+              "samples": 357,
+              "mean": 11781.3336134,
+              "p50": 8771.2,
+              "p95": 25090.3,
+              "p99": 25264.1,
+              "max": 25360.3
+            },
+            "publish_rsd_percent": 31.6902956269,
+            "stable": false,
+            "publications_per_second": 40,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 315,
+            "producer_payload_bytes": 11520000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 2880,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 239,
+            "repeated_frames": 121,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              11.35,
+              9.0125,
+              5.83625
+            ]
+          }
+        }
+      },
+      "correct": true
+    },
+    {
+      "schema": 1,
+      "build": "Release",
+      "profile": "year60x3",
+      "changed_permille": 100,
+      "target_rate": 400,
+      "seconds": 2,
+      "repetitions": 3,
+      "micro_iterations": 1024,
+      "micro_warmup": 64,
+      "hold_frames": 0,
+      "producer_cpu": 0,
+      "consumer_cpu": 2,
+      "rows": 1500,
+      "ui_payload_bytes": 48000,
+      "serialized_world_bytes": 476540,
+      "world_copy_reference_us": {
+        "samples": 176,
+        "mean": 2310.58068182,
+        "p50": 1597.3,
+        "p95": 4960.5,
+        "p99": 7518.1,
+        "max": 20267.9
+      },
+      "methods": {
+        "full": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.3265625,
+              "p50": 1,
+              "p95": 1.7,
+              "p99": 3.5,
+              "max": 195.6
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0352213541667,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 9.38467679851,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.39765625,
+              1.1828125,
+              1.39921875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2392,
+              "mean": 9.03076923077,
+              "p50": 4,
+              "p95": 10,
+              "p99": 38.9,
+              "max": 5588.1
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.3075,
+              "p50": 0.2,
+              "p95": 1,
+              "p99": 1.1,
+              "max": 1.2
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 23.2883333333,
+              "p50": 15,
+              "p95": 71,
+              "p99": 81.3,
+              "max": 381.3
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1326.56256983,
+              "p50": 1182.3,
+              "p95": 2797.9,
+              "p99": 4849.1,
+              "max": 9106.3
+            },
+            "publish_rsd_percent": 60.899828849,
+            "stable": false,
+            "publications_per_second": 398.666666667,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 96112,
+            "object_allocations": 2395,
+            "producer_payload_bytes": 114816000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 357,
+            "repeated_frames": 3,
+            "producer_overruns": 7,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              5.84360902256,
+              5.87431077694,
+              15.3903266332
+            ]
+          }
+        },
+        "diff": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 0.269921875,
+              "p50": 0.2,
+              "p95": 0.4,
+              "p99": 1,
+              "max": 16.9
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.405598958333,
+              "p50": 0.4,
+              "p95": 0.5,
+              "p99": 0.9,
+              "max": 66.3
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 7.41431606143,
+            "stable": false,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 49936,
+            "object_allocations": 3267,
+            "producer_payload_bytes": 5875200,
+            "consumer_payload_bytes": 1958400,
+            "checkpoints": 0,
+            "queue_peak": 1,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              0.25693359375,
+              0.25986328125,
+              0.29296875
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2350,
+              "mean": 3.3429787234,
+              "p50": 2,
+              "p95": 6,
+              "p99": 20.8,
+              "max": 356.8
+            },
+            "acquire_us": {
+              "samples": 359,
+              "mean": 9.37604456825,
+              "p50": 7.2,
+              "p95": 21.4,
+              "p99": 27.9,
+              "max": 81.8
+            },
+            "read_us": {
+              "samples": 359,
+              "mean": 23.221448468,
+              "p50": 15.5,
+              "p95": 52.8,
+              "p99": 65,
+              "max": 1234.4
+            },
+            "age_at_acquire_us": {
+              "samples": 358,
+              "mean": 1605.97067039,
+              "p50": 1343.8,
+              "p95": 3549.4,
+              "p99": 9217.8,
+              "max": 22514.5
+            },
+            "publish_rsd_percent": 24.7500330193,
+            "stable": false,
+            "publications_per_second": 391.666666667,
+            "frames_per_second": 59.8333333333,
+            "owned_bytes_peak": 85656,
+            "object_allocations": 2353,
+            "producer_payload_bytes": 4230000,
+            "consumer_payload_bytes": 1399800,
+            "checkpoints": 0,
+            "queue_peak": 20,
+            "reused_pages": 0,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 352,
+            "repeated_frames": 7,
+            "producer_overruns": 19,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              4.20192307692,
+              3.2911311054,
+              2.54797979798
+            ]
+          }
+        },
+        "pages": {
+          "micro": {
+            "publish_us": {
+              "samples": 3072,
+              "mean": 1.2244140625,
+              "p50": 1.1,
+              "p95": 1.6,
+              "p99": 3,
+              "max": 49.5
+            },
+            "acquire_us": {
+              "samples": 3072,
+              "mean": 0.0343098958333,
+              "p50": 0,
+              "p95": 0.1,
+              "p99": 0.1,
+              "max": 0.1
+            },
+            "read_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "age_at_acquire_us": {
+              "samples": 0,
+              "mean": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "max": 0
+            },
+            "publish_rsd_percent": 1.41602763147,
+            "stable": true,
+            "publications_per_second": 0,
+            "frames_per_second": 0,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 3339,
+            "producer_payload_bytes": 156672000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 39168,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 0,
+            "repeated_frames": 0,
+            "producer_overruns": 0,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              1.2400390625,
+              1.20576171875,
+              1.22744140625
+            ]
+          },
+          "paced": {
+            "publish_us": {
+              "samples": 2379,
+              "mean": 6.06027742749,
+              "p50": 3.9,
+              "p95": 9.7,
+              "p99": 49.2,
+              "max": 403.5
+            },
+            "acquire_us": {
+              "samples": 360,
+              "mean": 0.416944444444,
+              "p50": 0.3,
+              "p95": 1.1,
+              "p99": 1.3,
+              "max": 1.5
+            },
+            "read_us": {
+              "samples": 360,
+              "mean": 25.4183333333,
+              "p50": 15.9,
+              "p95": 71,
+              "p99": 75.6,
+              "max": 77
+            },
+            "age_at_acquire_us": {
+              "samples": 359,
+              "mean": 1461.16239554,
+              "p50": 1323.4,
+              "p95": 2961,
+              "p99": 5652.7,
+              "max": 14923.7
+            },
+            "publish_rsd_percent": 20.1987476818,
+            "stable": false,
+            "publications_per_second": 396.5,
+            "frames_per_second": 60,
+            "owned_bytes_peak": 98992,
+            "object_allocations": 2454,
+            "producer_payload_bytes": 114192000,
+            "consumer_payload_bytes": 0,
+            "checkpoints": 0,
+            "queue_peak": 0,
+            "reused_pages": 28548,
+            "retained_cache_copies": 0,
+            "distinct_versions_read": 357,
+            "repeated_frames": 3,
+            "producer_overruns": 9,
+            "high_resolution_timers": true,
+            "repeat_publish_mean_us": [
+              7.47471554994,
+              5.31053299492,
+              5.40025
+            ]
+          }
+        }
+      },
+      "correct": true
+    }
+  ]
+}
