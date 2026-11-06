@@ -29,3 +29,4 @@ endif()
 
 add_subdirectory(stressgen)
 add_subdirectory(tick_spike)
+add_subdirectory(trigger_spike)

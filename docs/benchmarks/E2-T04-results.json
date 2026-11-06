@@ -1,0 +1,929 @@
+{
+  "schema": 1,
+  "started_utc": "2026-11-06T16:24:37.128092+00:00",
+  "source_sha256": {
+    "triggers.cpp": "9a14d01c0d9ce9426c913fd3a39dc9b48a693c63f35569bee0e146fefc4d228b",
+    "triggers.hpp": "0b2c29978da8677d43f837e8f800265f56f235afa7a15f21662064e49f126990",
+    "main.cpp": "8001c3fb93861d5b730db3738e01ba66efa78c5d8f422e61e4e88f5f2c74160f"
+  },
+  "runs": [
+    {
+      "schema": 1,
+      "characters": 5000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 100,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 2558.56913242,
+            "p50": 2451.5,
+            "p95": 3650.4,
+            "p99": 4518.4,
+            "max": 9712.4
+          },
+          "us_per_1000_characters": 511.713826484,
+          "repeat_rsd_percent": 3.49828645202,
+          "stable": true,
+          "hash": "1be19cf3f994cb0c",
+          "visited_per_run": 732768000,
+          "predicates_per_run": 10556932,
+          "duplicate_candidates": 0,
+          "action_hits": 656318,
+          "pulse_hits": 580567,
+          "repeat_mean_us": [
+            2556.10082192,
+            2649.28383562,
+            2470.32273973
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 490.659086758,
+            "p50": 469.7,
+            "p95": 711.8,
+            "p99": 1208,
+            "max": 3122.5
+          },
+          "us_per_1000_characters": 98.1318173516,
+          "repeat_rsd_percent": 2.62239268208,
+          "stable": true,
+          "hash": "1be19cf3f994cb0c",
+          "visited_per_run": 10580784,
+          "predicates_per_run": 10556932,
+          "duplicate_candidates": 23852,
+          "action_hits": 656318,
+          "pulse_hits": 580567,
+          "repeat_mean_us": [
+            486.76,
+            505.024657534,
+            480.19260274
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 287.640456621,
+            "p50": 264.1,
+            "p95": 464.5,
+            "p99": 704.9,
+            "max": 1649.4
+          },
+          "us_per_1000_characters": 57.5280913242,
+          "repeat_rsd_percent": 2.83084798303,
+          "stable": true,
+          "hash": "59f292b59e5d8b4d",
+          "visited_per_run": 6167624,
+          "predicates_per_run": 6143772,
+          "duplicate_candidates": 23852,
+          "action_hits": 656318,
+          "pulse_hits": 56764,
+          "repeat_mean_us": [
+            286.269315068,
+            296.381643836,
+            280.270410959
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 212055,
+        "sampled_distinct_pairs": 49410,
+        "undetected_pairs": 162645,
+        "recall_percent": 23.3005588173,
+        "first_detection_delay_days": {
+          "samples": 49410,
+          "mean": 58.2796599879,
+          "p50": 30,
+          "p95": 243,
+          "p99": 304,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 5000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 10,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 2211.47360731,
+            "p50": 2100,
+            "p95": 2920,
+            "p99": 4381.7,
+            "max": 8179.6
+          },
+          "us_per_1000_characters": 442.294721461,
+          "repeat_rsd_percent": 3.77477820748,
+          "stable": true,
+          "hash": "48e563d72a9d0588",
+          "visited_per_run": 732768000,
+          "predicates_per_run": 5470835,
+          "duplicate_candidates": 0,
+          "action_hits": 65152,
+          "pulse_hits": 499933,
+          "repeat_mean_us": [
+            2187.05232877,
+            2304.43890411,
+            2142.92958904
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 227.212054795,
+            "p50": 222.8,
+            "p95": 346.6,
+            "p99": 617.5,
+            "max": 1719.8
+          },
+          "us_per_1000_characters": 45.4424109589,
+          "repeat_rsd_percent": 5.2021862608,
+          "stable": false,
+          "hash": "48e563d72a9d0588",
+          "visited_per_run": 5473592,
+          "predicates_per_run": 5470835,
+          "duplicate_candidates": 2757,
+          "action_hits": 65152,
+          "pulse_hits": 499933,
+          "repeat_mean_us": [
+            221.490410959,
+            240.804109589,
+            219.341643836
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 42.7291324201,
+            "p50": 39.7,
+            "p95": 51.4,
+            "p99": 162.6,
+            "max": 1050.3
+          },
+          "us_per_1000_characters": 8.54582648402,
+          "repeat_rsd_percent": 5.77133937808,
+          "stable": false,
+          "hash": "6943749638b2908c",
+          "visited_per_run": 1060432,
+          "predicates_per_run": 1057675,
+          "duplicate_candidates": 2757,
+          "action_hits": 65152,
+          "pulse_hits": 49086,
+          "repeat_mean_us": [
+            40.7583561644,
+            45.4945205479,
+            41.9345205479
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 69801,
+        "sampled_distinct_pairs": 33945,
+        "undetected_pairs": 35856,
+        "recall_percent": 48.6311084368,
+        "first_detection_delay_days": {
+          "samples": 33945,
+          "mean": 96.2357048166,
+          "p50": 61,
+          "p95": 273,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 5000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 1000,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 5483.83260274,
+            "p50": 5352.8,
+            "p95": 6476.2,
+            "p99": 9127.7,
+            "max": 13154.1
+          },
+          "us_per_1000_characters": 1096.76652055,
+          "repeat_rsd_percent": 4.93013032298,
+          "stable": true,
+          "hash": "89fc7cd6951ef06d",
+          "visited_per_run": 732768000,
+          "predicates_per_run": 61439250,
+          "duplicate_candidates": 0,
+          "action_hits": 6640666,
+          "pulse_hits": 608275,
+          "repeat_mean_us": [
+            5321.86986301,
+            5333.68493151,
+            5795.9430137
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 3255.94200913,
+            "p50": 3221.6,
+            "p95": 3906.1,
+            "p99": 5198.3,
+            "max": 8251.5
+          },
+          "us_per_1000_characters": 651.188401826,
+          "repeat_rsd_percent": 4.9406653698,
+          "stable": true,
+          "hash": "89fc7cd6951ef06d",
+          "visited_per_run": 61676138,
+          "predicates_per_run": 61439250,
+          "duplicate_candidates": 236888,
+          "action_hits": 6640666,
+          "pulse_hits": 608275,
+          "repeat_mean_us": [
+            3171.9909589,
+            3154.41917808,
+            3441.41589041
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 3034.99707763,
+            "p50": 3008.9,
+            "p95": 3665.7,
+            "p99": 4868.1,
+            "max": 9133.8
+          },
+          "us_per_1000_characters": 606.999415525,
+          "repeat_rsd_percent": 4.09077095429,
+          "stable": true,
+          "hash": "66e407df362a5950",
+          "visited_per_run": 57262978,
+          "predicates_per_run": 57026090,
+          "duplicate_candidates": 236888,
+          "action_hits": 6640666,
+          "pulse_hits": 60110,
+          "repeat_mean_us": [
+            2962.76684932,
+            2963.86712329,
+            3178.35726027
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 306645,
+        "sampled_distinct_pairs": 55668,
+        "undetected_pairs": 250977,
+        "recall_percent": 18.1538913075,
+        "first_detection_delay_days": {
+          "samples": 55668,
+          "mean": 64.3629553783,
+          "p50": 0,
+          "p95": 273,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 1000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 1000,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 1267.0973516,
+            "p50": 1120.8,
+            "p95": 1950.1,
+            "p99": 2953.1,
+            "max": 7297.4
+          },
+          "us_per_1000_characters": 1267.0973516,
+          "repeat_rsd_percent": 6.29562693495,
+          "stable": false,
+          "hash": "c62bd6c6c9b0b827",
+          "visited_per_run": 158048000,
+          "predicates_per_run": 13248555,
+          "duplicate_candidates": 0,
+          "action_hits": 1449573,
+          "pulse_hits": 131794,
+          "repeat_mean_us": [
+            1306.98465753,
+            1319.05835616,
+            1175.2490411
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 699.048675799,
+            "p50": 619.5,
+            "p95": 1107,
+            "p99": 1694.2,
+            "max": 2486.6
+          },
+          "us_per_1000_characters": 699.048675799,
+          "repeat_rsd_percent": 6.59847580328,
+          "stable": false,
+          "hash": "c62bd6c6c9b0b827",
+          "visited_per_run": 13299777,
+          "predicates_per_run": 13248555,
+          "duplicate_candidates": 51222,
+          "action_hits": 1449573,
+          "pulse_hits": 131794,
+          "repeat_mean_us": [
+            723.62630137,
+            727.681917808,
+            645.837808219
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 659.188584475,
+            "p50": 575.4,
+            "p95": 1011.3,
+            "p99": 1626.1,
+            "max": 11976.9
+          },
+          "us_per_1000_characters": 659.188584475,
+          "repeat_rsd_percent": 5.9033292128,
+          "stable": false,
+          "hash": "d1b2820a7eb4b346",
+          "visited_per_run": 12347577,
+          "predicates_per_run": 12296355,
+          "duplicate_candidates": 51222,
+          "action_hits": 1449573,
+          "pulse_hits": 12963,
+          "repeat_mean_us": [
+            693.030136986,
+            667.867945205,
+            616.667671233
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 65833,
+        "sampled_distinct_pairs": 11910,
+        "undetected_pairs": 53923,
+        "recall_percent": 18.0912308417,
+        "first_detection_delay_days": {
+          "samples": 11910,
+          "mean": 65.4635600336,
+          "p50": 0,
+          "p95": 273,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 15000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 1000,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 17838.8057534,
+            "p50": 17224.9,
+            "p95": 23054.7,
+            "p99": 29030.8,
+            "max": 52984.6
+          },
+          "us_per_1000_characters": 1189.25371689,
+          "repeat_rsd_percent": 1.36791766909,
+          "stable": true,
+          "hash": "4cf795003fb85eed",
+          "visited_per_run": 2169568000,
+          "predicates_per_run": 181896059,
+          "duplicate_candidates": 0,
+          "action_hits": 19500538,
+          "pulse_hits": 1644086,
+          "repeat_mean_us": [
+            17758.2487671,
+            18112.9191781,
+            17645.2493151
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 11049.6412785,
+            "p50": 10631.9,
+            "p95": 14153.8,
+            "p99": 19120.6,
+            "max": 26174.5
+          },
+          "us_per_1000_characters": 736.642751903,
+          "repeat_rsd_percent": 1.44166445132,
+          "stable": true,
+          "hash": "4cf795003fb85eed",
+          "visited_per_run": 182597749,
+          "predicates_per_run": 181896059,
+          "duplicate_candidates": 701690,
+          "action_hits": 19500538,
+          "pulse_hits": 1644086,
+          "repeat_mean_us": [
+            11022.0290411,
+            11220.9410959,
+            10905.9536986
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 10360.8747945,
+            "p50": 9920,
+            "p95": 13448.4,
+            "p99": 17067,
+            "max": 22691.8
+          },
+          "us_per_1000_characters": 690.724986301,
+          "repeat_rsd_percent": 2.47731718172,
+          "stable": true,
+          "hash": "4d3439850fe50fd5",
+          "visited_per_run": 169560349,
+          "predicates_per_run": 168858659,
+          "duplicate_candidates": 701690,
+          "action_hits": 19500538,
+          "pulse_hits": 166422,
+          "repeat_mean_us": [
+            10407.1709589,
+            10591.2476712,
+            10084.2057534
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 869355,
+        "sampled_distinct_pairs": 154769,
+        "undetected_pairs": 714586,
+        "recall_percent": 17.8027388121,
+        "first_detection_delay_days": {
+          "samples": 154769,
+          "mean": 61.1841389426,
+          "p50": 0,
+          "p95": 273,
+          "p99": 304,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 15000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 10,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 6438.67077626,
+            "p50": 6332.6,
+            "p95": 8429.1,
+            "p99": 10456.5,
+            "max": 16409.3
+          },
+          "us_per_1000_characters": 429.244718417,
+          "repeat_rsd_percent": 1.73537450016,
+          "stable": true,
+          "hash": "98f93ca4872ffdef",
+          "visited_per_run": 2169568000,
+          "predicates_per_run": 16177888,
+          "duplicate_candidates": 0,
+          "action_hits": 187432,
+          "pulse_hits": 1530459,
+          "repeat_mean_us": [
+            6309.91342466,
+            6510.18246575,
+            6495.91643836
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 701.761369863,
+            "p50": 700.5,
+            "p95": 984.2,
+            "p99": 1307.2,
+            "max": 3105.9
+          },
+          "us_per_1000_characters": 46.7840913242,
+          "repeat_rsd_percent": 1.50962658541,
+          "stable": true,
+          "hash": "98f93ca4872ffdef",
+          "visited_per_run": 16185125,
+          "predicates_per_run": 16177888,
+          "duplicate_candidates": 7237,
+          "action_hits": 187432,
+          "pulse_hits": 1530459,
+          "repeat_mean_us": [
+            689.995616438,
+            710.543835616,
+            704.744657534
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 133.027488584,
+            "p50": 129,
+            "p95": 164,
+            "p99": 396,
+            "max": 780.7
+          },
+          "us_per_1000_characters": 8.86849923896,
+          "repeat_rsd_percent": 1.3499570896,
+          "stable": true,
+          "hash": "dc40e6cdb14ab002",
+          "visited_per_run": 3147725,
+          "predicates_per_run": 3140488,
+          "duplicate_candidates": 7237,
+          "action_hits": 187432,
+          "pulse_hits": 153461,
+          "repeat_mean_us": [
+            131.32630137,
+            134.904931507,
+            132.851232877
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 211886,
+        "sampled_distinct_pairs": 104983,
+        "undetected_pairs": 106903,
+        "recall_percent": 49.5469261773,
+        "first_detection_delay_days": {
+          "samples": 104983,
+          "mean": 96.4400045722,
+          "p50": 61,
+          "p95": 273,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 15000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 100,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 7907.56767123,
+            "p50": 7243.9,
+            "p95": 11847.4,
+            "p99": 17445.7,
+            "max": 30178.1
+          },
+          "us_per_1000_characters": 527.171178082,
+          "repeat_rsd_percent": 7.42743797249,
+          "stable": false,
+          "hash": "d5b40c317a65b1a9",
+          "visited_per_run": 2169568000,
+          "predicates_per_run": 31245065,
+          "duplicate_candidates": 0,
+          "action_hits": 1926651,
+          "pulse_hits": 1616524,
+          "repeat_mean_us": [
+            7624.96438356,
+            7514.96136986,
+            8582.77726027
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 1581.53223744,
+            "p50": 1471,
+            "p95": 2250.6,
+            "p99": 4039,
+            "max": 11085.9
+          },
+          "us_per_1000_characters": 105.435482496,
+          "repeat_rsd_percent": 6.02454603331,
+          "stable": false,
+          "hash": "d5b40c317a65b1a9",
+          "visited_per_run": 31315221,
+          "predicates_per_run": 31245065,
+          "duplicate_candidates": 70156,
+          "action_hits": 1926651,
+          "pulse_hits": 1616524,
+          "repeat_mean_us": [
+            1536.17972603,
+            1517.40027397,
+            1691.01671233
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 964.125936073,
+            "p50": 860.4,
+            "p95": 1381.8,
+            "p99": 2342.8,
+            "max": 9949.4
+          },
+          "us_per_1000_characters": 64.2750624049,
+          "repeat_rsd_percent": 6.00710265362,
+          "stable": false,
+          "hash": "5aef3007eae69822",
+          "visited_per_run": 18277821,
+          "predicates_per_run": 18207665,
+          "duplicate_candidates": 70156,
+          "action_hits": 1926651,
+          "pulse_hits": 162794,
+          "repeat_mean_us": [
+            920.019452055,
+            942.644931507,
+            1029.71342466
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 608146,
+        "sampled_distinct_pairs": 141655,
+        "undetected_pairs": 466491,
+        "recall_percent": 23.2929263697,
+        "first_detection_delay_days": {
+          "samples": 141655,
+          "mean": 56.168896262,
+          "p50": 30,
+          "p95": 243,
+          "p99": 304,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 1000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 100,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 640.095799087,
+            "p50": 541.7,
+            "p95": 1087.7,
+            "p99": 2193.3,
+            "max": 6684.9
+          },
+          "us_per_1000_characters": 640.095799087,
+          "repeat_rsd_percent": 6.58544475844,
+          "stable": false,
+          "hash": "b8a4963f112f9077",
+          "visited_per_run": 158048000,
+          "predicates_per_run": 2283778,
+          "duplicate_candidates": 0,
+          "action_hits": 145769,
+          "pulse_hits": 126551,
+          "repeat_mean_us": [
+            615.087123288,
+            688.763835616,
+            616.436438356
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 112.979543379,
+            "p50": 94.5,
+            "p95": 185.4,
+            "p99": 471,
+            "max": 3911.4
+          },
+          "us_per_1000_characters": 112.979543379,
+          "repeat_rsd_percent": 6.82120766361,
+          "stable": false,
+          "hash": "b8a4963f112f9077",
+          "visited_per_run": 2289022,
+          "predicates_per_run": 2283778,
+          "duplicate_candidates": 5244,
+          "action_hits": 145769,
+          "pulse_hits": 126551,
+          "repeat_mean_us": [
+            109.236438356,
+            121.842739726,
+            107.859452055
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 63.2631050228,
+            "p50": 53.3,
+            "p95": 87.3,
+            "p99": 332.2,
+            "max": 846.6
+          },
+          "us_per_1000_characters": 63.2631050228,
+          "repeat_rsd_percent": 3.80403601628,
+          "stable": true,
+          "hash": "4328cd4ecc66abd9",
+          "visited_per_run": 1336822,
+          "predicates_per_run": 1331578,
+          "duplicate_candidates": 5244,
+          "action_hits": 145769,
+          "pulse_hits": 12476,
+          "repeat_mean_us": [
+            61.1145205479,
+            65.8635616438,
+            62.8112328767
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 45942,
+        "sampled_distinct_pairs": 10767,
+        "undetected_pairs": 35175,
+        "recall_percent": 23.4360715685,
+        "first_detection_delay_days": {
+          "samples": 10767,
+          "mean": 59.7017739389,
+          "p50": 31,
+          "p95": 243,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "characters": 1000,
+      "provinces": 400,
+      "events": 500,
+      "changed_permille": 10,
+      "sample_permille": 100,
+      "seed": 7,
+      "days": 365,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "cpu": 0,
+      "build": "Release",
+      "methods": {
+        "naive": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 594.450045662,
+            "p50": 489.2,
+            "p95": 1083.6,
+            "p99": 2544.1,
+            "max": 7435.6
+          },
+          "us_per_1000_characters": 594.450045662,
+          "repeat_rsd_percent": 10.2171719066,
+          "stable": false,
+          "hash": "43898d1fa50ab09f",
+          "visited_per_run": 158048000,
+          "predicates_per_run": 1184407,
+          "duplicate_candidates": 0,
+          "action_hits": 14918,
+          "pulse_hits": 110776,
+          "repeat_mean_us": [
+            605.579726027,
+            528.91890411,
+            648.851506849
+          ]
+        },
+        "indexed": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 49.0259360731,
+            "p50": 46,
+            "p95": 72.1,
+            "p99": 166.4,
+            "max": 876.7
+          },
+          "us_per_1000_characters": 49.0259360731,
+          "repeat_rsd_percent": 1.33484736928,
+          "stable": true,
+          "hash": "43898d1fa50ab09f",
+          "visited_per_run": 1185104,
+          "predicates_per_run": 1184407,
+          "duplicate_candidates": 697,
+          "action_hits": 14918,
+          "pulse_hits": 110776,
+          "repeat_mean_us": [
+            49.0178082192,
+            48.3756164384,
+            49.6843835616
+          ]
+        },
+        "sampled": {
+          "tick_us": {
+            "samples": 1095,
+            "mean": 9.30447488584,
+            "p50": 8.3,
+            "p95": 13.2,
+            "p99": 33.5,
+            "max": 193.6
+          },
+          "us_per_1000_characters": 9.30447488584,
+          "repeat_rsd_percent": 9.59577074724,
+          "stable": false,
+          "hash": "b0e1bc07d99e2908",
+          "visited_per_run": 232904,
+          "predicates_per_run": 232207,
+          "duplicate_candidates": 697,
+          "action_hits": 14918,
+          "pulse_hits": 11006,
+          "repeat_mean_us": [
+            10.2463013699,
+            8.4704109589,
+            9.19671232877
+          ]
+        }
+      },
+      "pulse_audit": {
+        "qualified_distinct_pairs": 15458,
+        "sampled_distinct_pairs": 7466,
+        "undetected_pairs": 7992,
+        "recall_percent": 48.2986156036,
+        "first_detection_delay_days": {
+          "samples": 7466,
+          "mean": 97.8995446022,
+          "p50": 61,
+          "p95": 273,
+          "p99": 334,
+          "max": 334
+        }
+      }
+    }
+  ]
+}
