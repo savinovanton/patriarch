@@ -32,4 +32,6 @@ ctest --preset win-msvc-debug
 | [docs/gdd/08-events-content.md](docs/gdd/08-events-content.md) | GDD: События, правила и контент (E4, E11, E22, E25, E30) |
 | [docs/02-epics-roadmap.md](docs/02-epics-roadmap.md) | Эпики и дорожная карта |
 | [docs/epics/README.md](docs/epics/README.md) | Задачи M0 (E0–E3): индекс, порядок, оценки |
+| [docs/dev/setup.md](docs/dev/setup.md), [docs/dev/code-style.md](docs/dev/code-style.md) | Настройка среды, соглашения по коду |
+| [assets/README.md](assets/README.md) | Реестр лицензий ассетов |
 | [docs/03-open-questions.md](docs/03-open-questions.md) | Открытые вопросы |

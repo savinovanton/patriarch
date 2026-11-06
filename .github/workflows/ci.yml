@@ -26,6 +26,16 @@ jobs:
         shell: pwsh
         run: ./tools/format.ps1 -Check
 
+  assets:
+    name: asset license registry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the registry against assets/
+        run: python3 tools/check_assets.py
+      - name: Test the checker
+        run: python3 -m unittest discover -s tests/tools -v
+
   windows-msvc:
     name: MSVC ${{ matrix.preset }}
     # windows-2022 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).

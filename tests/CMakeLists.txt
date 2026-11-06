@@ -2,7 +2,11 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(patriarch_tests
     main.cpp
+    assert_test.cpp
     core_smoke.cpp
+    log_test.cpp
+    profile_test.cpp
+    result_test.cpp
     sim_smoke.cpp)
 
 target_link_libraries(patriarch_tests PRIVATE
