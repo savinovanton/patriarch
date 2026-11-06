@@ -28,3 +28,4 @@ if(PATRIARCH_BUILD_TESTS)
 endif()
 
 add_subdirectory(stressgen)
+add_subdirectory(tick_spike)
