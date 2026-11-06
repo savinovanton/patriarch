@@ -13,6 +13,7 @@ add_executable(patriarch_tests
     golden_test.cpp
     ids_test.cpp
     log_test.cpp
+    mapdata_test.cpp
     profile_test.cpp
     replay_test.cpp
     result_test.cpp
@@ -31,6 +32,7 @@ add_executable(patriarch_tests
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core
     patriarch::sim
+    patriarch::mapdata
     doctest::doctest)
 
 if(PATRIARCH_BUILD_ENGINE)
