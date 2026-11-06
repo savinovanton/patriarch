@@ -30,6 +30,13 @@
 #include <RmlUi/Core.h>
 #include <SDL3/SDL_timer.h>
 
+#ifdef _WIN32
+#include <windows.h>
+
+#include <psapi.h>
+#pragma comment(lib, "psapi.lib")
+#endif
+
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
@@ -74,6 +81,8 @@ struct Options {
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
     bool no_labels = false;        // no map labels
+    int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
+    int offscreen_h = 0;
     bool no_sim = false;           // do not run the simulation thread
     bool sim_speed_set = false;
     int sim_speed = 2;             // initial game speed: 0 = paused, 1-5, 6 = as fast as possible
@@ -100,6 +109,12 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--demo-tooltip") {
             out.demo_tooltip = true;
+        } else if (arg == "--offscreen" && i + 1 < argc) {
+            if (std::sscanf(argv[++i], "%dx%d", &out.offscreen_w, &out.offscreen_h) != 2 || out.offscreen_w < 64 ||
+                out.offscreen_h < 64) {
+                std::fprintf(stderr, "--offscreen expects WIDTHxHEIGHT, e.g. 3840x2160\n");
+                return false;
+            }
         } else if (arg == "--no-sim") {
             out.no_sim = true;
         } else if (arg == "--sim-speed" && i + 1 < argc) {
@@ -138,7 +153,7 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--map FILE | --gen WxH] [--provinces N] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--no-labels] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
+                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
     }
@@ -203,7 +218,8 @@ int main(int argc, char** argv) {
     // ---- window, renderer, map view
     WindowDesc desc;
     desc.title = "Patriarch - spike";
-    desc.hidden = opt.hidden;
+    const bool offscreen = opt.offscreen_w > 0;
+    desc.hidden = opt.hidden || offscreen;
     auto created = Window::create(desc);
     if (!created) {
         PAT_LOG_ERROR("spike", "{}", created.error().message);
@@ -212,8 +228,8 @@ int main(int argc, char** argv) {
     Window window = std::move(created).value();
 
     RendererDesc rdesc;
-    rdesc.native_window = opt.hidden ? nullptr : window.native_handle();
-    rdesc.size = window.pixel_size();
+    rdesc.native_window = (opt.hidden || offscreen) ? nullptr : window.native_handle();
+    rdesc.size = offscreen ? PixelSize{opt.offscreen_w, opt.offscreen_h} : window.pixel_size();
     rdesc.vsync = !opt.no_vsync;
     rdesc.software = opt.hidden;
     rdesc.shader_dir = PATRIARCH_SPIKE_SHADER_DIR;
@@ -227,6 +243,7 @@ int main(int argc, char** argv) {
     }
     std::unique_ptr<IRenderer> renderer = std::move(renderer_result).value();
 
+    const float gpu_mb_before = renderer->gpu_memory_mb();
     const auto t_view = std::chrono::steady_clock::now();
     auto view_result = renderer->create_map_view(map, {});
     if (!view_result) {
@@ -334,7 +351,7 @@ int main(int argc, char** argv) {
     };
     if (!opt.no_ui) {
         UiDesc ud;
-        ud.size = window.pixel_size();
+        ud.size = renderer->size();
         ud.ui_scale = ui_scale;
         for (const char* font :
              {"arial.ttf", "arialbd.ttf", "ariali.ttf", "arialbi.ttf", "times.ttf", "timesbd.ttf"}) {
@@ -405,6 +422,7 @@ int main(int argc, char** argv) {
 
     // Benchmark bookkeeping.
     std::vector<double> frame_ms;
+    std::vector<double> gpu_ms;
     std::size_t min_nodes = ~static_cast<std::size_t>(0);
     std::size_t max_nodes = 0;
     double max_mode_switch_ms = 0.0;
@@ -414,7 +432,7 @@ int main(int argc, char** argv) {
         const std::int64_t frame_start = now_ns();
         events.clear();
         window.poll_events(events);
-        const PixelSize px = window.pixel_size();
+        const PixelSize px = offscreen ? renderer->size() : window.pixel_size();
         const float width_px = static_cast<float>(std::max(px.w, 1));
         const float height_px = static_cast<float>(std::max(px.h, 1));
         const float aspect = width_px / height_px;
@@ -480,7 +498,9 @@ int main(int argc, char** argv) {
                     }
                 }
             } else if (const auto* resized = std::get_if<event::Resized>(&e)) {
-                renderer->resize({resized->pixel_w, resized->pixel_h});
+                if (!offscreen) {
+                    renderer->resize({resized->pixel_w, resized->pixel_h});
+                }
                 PAT_LOG_INFO("spike", "resized to {}x{} px", resized->pixel_w, resized->pixel_h);
             } else if (const auto* scale = std::get_if<event::ScaleChanged>(&e)) {
                 ui_scale = effective_ui_scale(scale->scale, opt.user_ui_scale);
@@ -750,6 +770,9 @@ int main(int argc, char** argv) {
 
         if (opt.bench) {
             frame_ms.push_back(static_cast<double>(now_ns() - frame_start) * 1e-6);
+            if (renderer->last_gpu_ms() >= 0.0f) {
+                gpu_ms.push_back(static_cast<double>(renderer->last_gpu_ms()));
+            }
             if (++bench_frame >= opt.bench_frames) {
                 running = false;
             }
@@ -789,10 +812,29 @@ int main(int argc, char** argv) {
         std::vector<double> steady(frame_ms.begin() + static_cast<std::ptrdiff_t>(std::min<std::size_t>(30, frame_ms.size() / 4)),
                                    frame_ms.end());
         std::printf("bench: %zu frames on '%s' (%ux%u px), map %ux%u, %zu provinces\n", frame_ms.size(),
-                    std::string(renderer->adapter_name()).c_str(), static_cast<unsigned>(window.pixel_size().w),
-                    static_cast<unsigned>(window.pixel_size().h), map.width, map.height, map.province_list.size());
+                    std::string(renderer->adapter_name()).c_str(), static_cast<unsigned>(renderer->size().w),
+                    static_cast<unsigned>(renderer->size().h), map.width, map.height, map.province_list.size());
         std::printf("bench: frame ms  p50 %.2f  p95 %.2f  p99 %.2f  max %.2f\n", percentile(steady, 0.50),
                     percentile(steady, 0.95), percentile(steady, 0.99), percentile(steady, 1.0));
+        if (!gpu_ms.empty()) {
+            const std::vector<double> gpu_steady(gpu_ms.begin() + static_cast<std::ptrdiff_t>(gpu_ms.size() / 4), gpu_ms.end());
+            std::printf("bench: GPU ms    p50 %.2f  p95 %.2f  p99 %.2f  max %.2f  (%zu samples)\n",
+                        percentile(gpu_steady, 0.50), percentile(gpu_steady, 0.95), percentile(gpu_steady, 0.99),
+                        percentile(gpu_steady, 1.0), gpu_steady.size());
+        }
+        std::printf("bench: video memory %.0f MiB (map view added %.0f MiB)\n",
+                    static_cast<double>(renderer->gpu_memory_mb()),
+                    static_cast<double>(renderer->gpu_memory_mb() - gpu_mb_before));
+#ifdef _WIN32
+        {
+            PROCESS_MEMORY_COUNTERS counters{};
+            if (GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters)) != 0) {
+                std::printf("bench: process memory %.0f MiB working set, %.0f MiB peak\n",
+                            static_cast<double>(counters.WorkingSetSize) / (1024.0 * 1024.0),
+                            static_cast<double>(counters.PeakWorkingSetSize) / (1024.0 * 1024.0));
+            }
+        }
+#endif
         std::printf("bench: terrain nodes per frame  min %zu  max %zu\n", min_nodes, max_nodes);
         std::printf("bench: map mode switch (CPU) max %.3f ms\n", max_mode_switch_ms);
         if (runner) {

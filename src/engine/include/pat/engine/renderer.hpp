@@ -158,6 +158,12 @@ public:
     [[nodiscard]] virtual std::string_view adapter_name() const = 0;
     [[nodiscard]] virtual const FrameStats& last_frame_stats() const = 0;
 
+    /// GPU time of a recent frame (begin_frame to end_frame) in milliseconds, measured with timestamp
+    /// queries a few frames late; negative while unavailable.
+    [[nodiscard]] virtual float last_gpu_ms() const = 0;
+    /// Video memory currently used by this process on the adapter, in MiB (0 when unknown).
+    [[nodiscard]] virtual float gpu_memory_mb() const = 0;
+
     /// Creates the RmlUi render interface that draws into this renderer's current target (E3-T06). Draw UI
     /// between begin_frame() and end_frame(); the interface must not outlive the renderer.
     [[nodiscard]] virtual core::Result<std::unique_ptr<Rml::RenderInterface>>
