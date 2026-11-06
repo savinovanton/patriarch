@@ -1,0 +1,39 @@
+<rml>
+<head>
+    <title>HUD</title>
+    <link type="text/rcss" href="olive.rcss"/>
+    <link type="text/rcss" href="hud.rcss"/>
+</head>
+<body data-model="hud">
+<img id="frame" data-attr-src="frame_src"/>
+
+<div id="realm" class="panel">
+    <svg data-attr-src="realm_icon"/>
+    <div id="realm-name" class="heading">{{ realm_name }}</div>
+    <div id="realm-sub" class="muted">{{ realm_subtitle }}</div>
+</div>
+
+<div id="strip">
+    <div class="res panel" data-for="r : resources" data-attr-data-key="r.key">
+        <svg data-attr-src="r.icon"/>
+        <div class="res-label muted">{{ r.label }}</div>
+        <div class="res-value">{{ r.value }}</div>
+        <div class="res-delta" data-class-neg="r.tone == 'neg'">{{ r.delta }}</div>
+    </div>
+</div>
+
+<div id="alerts">
+    <div class="alert" id="alert-bell"><svg data-attr-src="bell_icon"/><div class="badge" data-if="bell > 0">{{ bell }}</div></div>
+    <div class="alert" id="alert-charter"><svg data-attr-src="charter_icon"/><div class="badge" data-if="charter > 0">{{ charter }}</div></div>
+    <div class="alert" id="alert-embassy"><svg data-attr-src="embassy_icon"/><div class="badge" data-if="embassy > 0">{{ embassy }}</div></div>
+</div>
+
+<div id="menu">
+    <div class="menu-btn" data-for="m : menu" data-attr-id="'menu-' + m.key" data-class-active="active == m.key"
+         data-event-click="menu(m.key)">
+        <svg data-attr-src="m.icon"/>
+        <div class="ov"></div>
+    </div>
+</div>
+</body>
+</rml>

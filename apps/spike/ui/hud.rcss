@@ -1,0 +1,177 @@
+/* Heads-up display layout (positions measured on the Figma frame 1920x1080; marked [check] in docs). */
+
+#frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* ---- realm plaque (top left) */
+#realm {
+    position: absolute;
+    left: 25dp;
+    top: 20dp;
+    width: 234dp;
+    height: 65dp;
+}
+
+#realm svg {
+    position: absolute;
+    left: 12dp;
+    top: 13dp;
+    width: 40dp;
+    height: 38dp;
+}
+
+#realm-name {
+    position: absolute;
+    left: 64dp;
+    top: 12dp;
+    font-size: 15dp;
+    text-transform: uppercase;
+}
+
+#realm-sub {
+    position: absolute;
+    left: 64dp;
+    top: 34dp;
+    font-size: 12dp;
+}
+
+/* ---- resource strip */
+#strip {
+    position: absolute;
+    left: 277dp;
+    top: 28dp;
+    height: 56dp;
+    white-space: nowrap;
+}
+
+.res {
+    display: inline-block;
+    position: relative;
+    width: 142dp;
+    height: 54dp;
+    margin-right: 8dp;
+    vertical-align: top;
+}
+
+.res svg {
+    position: absolute;
+    left: 10dp;
+    top: 17dp;
+    width: 20dp;
+    height: 20dp;
+}
+
+.res-label {
+    position: absolute;
+    left: 40dp;
+    top: 9dp;
+    font-size: 11dp;
+}
+
+.res-value {
+    position: absolute;
+    left: 40dp;
+    top: 24dp;
+    font-size: 17dp;
+    font-weight: bold;
+}
+
+.res-delta {
+    position: absolute;
+    right: 10dp;
+    top: 29dp;
+    font-size: 11dp;
+    color: #a0ad8b;
+}
+
+.res-delta.neg {
+    color: #c9776a;
+}
+
+/* ---- alert badges */
+#alerts {
+    position: absolute;
+    left: 1057dp;
+    top: 34dp;
+    white-space: nowrap;
+}
+
+.alert {
+    display: inline-block;
+    position: relative;
+    width: 38dp;
+    height: 38dp;
+    margin-right: 6dp;
+}
+
+.alert svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 38dp;
+    height: 38dp;
+}
+
+.badge {
+    position: absolute;
+    right: -4dp;
+    top: -5dp;
+    min-width: 14dp;
+    height: 14dp;
+    padding: 0 3dp;
+    border-radius: 7dp;
+    background-color: #c8af77;
+    color: #282f26;
+    font-size: 10dp;
+    font-weight: bold;
+    line-height: 14dp;
+    text-align: center;
+}
+
+/* ---- left menu */
+#menu {
+    position: absolute;
+    left: 33dp;
+    top: 235dp;
+    width: 40dp;
+}
+
+.menu-btn {
+    display: block;
+    position: relative;
+    width: 40dp;
+    height: 38dp;
+    margin-bottom: 8dp;
+}
+
+.menu-btn svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40dp;
+    height: 38dp;
+}
+
+.menu-btn .ov {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40dp;
+    height: 38dp;
+    border-radius: 2dp;
+}
+
+.menu-btn:hover .ov {
+    background-color: #ffffff1c;
+}
+
+.menu-btn.active .ov {
+    background-color: #c8af7738;
+    border: 1dp #eee8d8;
+}
