@@ -6,6 +6,8 @@
 #include "pat/engine/terrain.hpp"
 #include "pat/mapdata/map_data.hpp"
 
+#include <RmlUi/Core/RenderInterface.h>
+
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -133,6 +135,11 @@ public:
     [[nodiscard]] virtual std::string_view backend_name() const = 0;
     [[nodiscard]] virtual std::string_view adapter_name() const = 0;
     [[nodiscard]] virtual const FrameStats& last_frame_stats() const = 0;
+
+    /// Creates the RmlUi render interface that draws into this renderer's current target (E3-T06). Draw UI
+    /// between begin_frame() and end_frame(); the interface must not outlive the renderer.
+    [[nodiscard]] virtual core::Result<std::unique_ptr<Rml::RenderInterface>>
+    create_ui_render_interface() = 0;
 
     /// Uploads the map layers to the GPU and returns a view that draws them.
     [[nodiscard]] virtual core::Result<std::unique_ptr<IMapView>>

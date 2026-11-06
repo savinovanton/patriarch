@@ -1,0 +1,122 @@
+/* RmlUi has no built-in user-agent stylesheet: block-level elements must be declared. */
+h1, h2, p, div {
+    display: block;
+}
+
+body {
+    font-family: Arial;
+    font-size: 15dp;
+    color: #e8e0cc;
+}
+
+#panel {
+    position: absolute;
+    left: 16dp;
+    top: 16dp;
+    width: 380dp;
+    padding: 12dp 14dp;
+    background-color: #1c1710e6;
+    border: 1dp #8a7a52;
+    border-radius: 4dp;
+}
+
+h1 {
+    font-family: "Times New Roman";
+    font-size: 22dp;
+    font-weight: bold;
+    color: #f2d98a;
+    margin-bottom: 8dp;
+}
+
+p {
+    margin-bottom: 8dp;
+}
+
+em {
+    font-style: italic;
+    color: #cfe3ff;
+}
+
+strong {
+    font-weight: bold;
+    color: #ffd2a8;
+}
+
+#buttons {
+    margin-bottom: 8dp;
+}
+
+.btn {
+    display: inline-block;
+    padding: 5dp 14dp;
+    margin-right: 6dp;
+    background-color: #3a3322;
+    border: 1dp #8a7a52;
+    border-radius: 3dp;
+    color: #f0e6c8;
+}
+
+.btn:hover {
+    background-color: #5a4d30;
+    color: #ffffff;
+}
+
+.btn:active {
+    background-color: #2a241a;
+}
+
+.btn.danger:hover {
+    background-color: #7a2f2a;
+}
+
+#status {
+    color: #b8b090;
+    font-size: 13dp;
+}
+
+#list {
+    height: 220dp;
+    overflow-y: scroll;
+    background-color: #120f0a;
+    border: 1dp #4a4030;
+    padding: 4dp;
+}
+
+.row {
+    padding: 2dp 4dp;
+    height: 20dp;
+}
+
+.row:hover {
+    background-color: #3a3322;
+}
+
+.row.odd {
+    background-color: #1a1610;
+}
+
+/* Scrollbars are unstyled by default in RmlUi. */
+scrollbarvertical {
+    width: 14dp;
+}
+
+scrollbarvertical slidertrack {
+    background-color: #1a1610;
+}
+
+scrollbarvertical sliderbar {
+    width: 14dp;
+    min-height: 24dp;
+    background-color: #5a4d30;
+    border-radius: 6dp;
+}
+
+scrollbarvertical sliderbar:hover {
+    background-color: #7a6a42;
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc {
+    width: 0;
+    height: 0;
+}

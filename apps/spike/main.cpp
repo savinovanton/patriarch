@@ -15,14 +15,17 @@
 #include "pat/engine/frame_clock.hpp"
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/terrain.hpp"
+#include "pat/engine/ui.hpp"
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 
+#include <RmlUi/Core.h>
 #include <SDL3/SDL_timer.h>
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -30,6 +33,10 @@
 #include <string>
 #include <variant>
 #include <vector>
+
+#ifndef PATRIARCH_SPIKE_UI_DIR
+#define PATRIARCH_SPIKE_UI_DIR ""
+#endif
 
 #ifndef PATRIARCH_SPIKE_SHADER_DIR
 #define PATRIARCH_SPIKE_SHADER_DIR ""
@@ -55,6 +62,8 @@ struct Options {
     std::int64_t max_frames = -1;  // -1: run until closed
     bool hidden = false;           // hidden window + offscreen software renderer (headless smoke run)
     bool no_vsync = false;
+    float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
+    bool no_ui = false;            // do not create the RmlUi demo overlay
     bool bench = false;            // scripted camera path, prints frame statistics, then exits
     std::int64_t bench_frames = 900;
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
@@ -74,6 +83,10 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.hidden = true;
         } else if (arg == "--no-vsync") {
             out.no_vsync = true;
+        } else if (arg == "--ui-scale" && i + 1 < argc) {
+            out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--no-ui") {
+            out.no_ui = true;
         } else if (arg == "--bench") {
             out.bench = true;
             out.no_vsync = true;
@@ -103,7 +116,7 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--map FILE | --gen WxH] [--provinces N] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--bench [FRAMES]]\n");
+                         "                       [--no-vsync] [--no-ui] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
     }
@@ -222,9 +235,49 @@ int main(int argc, char** argv) {
     std::vector<Event> events;
     bool running = true;
     std::uint64_t logic_steps = 0;
-    float ui_scale = effective_ui_scale(window.display_scale());
+    float ui_scale = effective_ui_scale(window.display_scale(), opt.user_ui_scale);
     std::int64_t last_title_frame_count = 0;
     std::int64_t last_frame_ns = now_ns();
+
+    // ---- UI overlay (RmlUi). System fonts are used only by this development spike; the game's own fonts
+    // are a separate decision (issue #27) and will live in assets/ with licence records.
+    std::unique_ptr<UiContext> ui;
+    const auto populate_demo = [&](Rml::ElementDocument* doc) {
+        if (doc == nullptr) {
+            return;
+        }
+        if (Rml::Element* list = doc->GetElementById("list")) {
+            std::string rml;
+            for (int i = 1; i <= 1000; ++i) {
+                rml += "<div class=\"row" + std::string(i % 2 != 0 ? " odd" : "") + "\">" + std::to_string(i) +
+                       ". Иван Петрович Боярский, стольник</div>";
+            }
+            list->SetInnerRML(rml);
+        }
+    };
+    if (!opt.no_ui) {
+        UiDesc ud;
+        ud.size = window.pixel_size();
+        ud.ui_scale = ui_scale;
+        for (const char* font :
+             {"arial.ttf", "arialbd.ttf", "ariali.ttf", "arialbi.ttf", "times.ttf", "timesbd.ttf"}) {
+            const std::filesystem::path path = std::filesystem::path("C:/Windows/Fonts") / font;
+            if (std::filesystem::exists(path)) {
+                ud.font_files.push_back(path);
+            }
+        }
+        auto ui_result = UiContext::create(*renderer, opt.hidden ? nullptr : &window, ud);
+        if (!ui_result) {
+            PAT_LOG_ERROR("spike", "UI: {}", ui_result.error().message);
+            return 1;
+        }
+        ui = std::move(ui_result).value();
+        Rml::ElementDocument* doc = ui->load_document(std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "demo.rml");
+        if (doc == nullptr) {
+            PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
+        }
+        populate_demo(doc);
+    }
 
     float cursor_x = -1.0f;
     float cursor_y = -1.0f;
@@ -268,9 +321,14 @@ int main(int argc, char** argv) {
         };
 
         for (const Event& e : events) {
+            // The UI sees every event first; what it consumes (hover over UI, text focus) the game ignores.
+            const bool ui_consumed = ui != nullptr && ui->handle_event(e);
             if (std::holds_alternative<event::Quit>(e)) {
                 running = false;
             } else if (const auto* key = std::get_if<event::Key>(&e)) {
+                if (ui_consumed) {
+                    continue;
+                }
                 const bool down = key->down;
                 if (key->scancode == kScancodeW || key->scancode == kScancodeUp) key_w = down;
                 if (key->scancode == kScancodeS || key->scancode == kScancodeDown) key_s = down;
@@ -289,6 +347,13 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == kScancodeF5) {
                         renderer->reload_shaders_if_changed();
                         view->reload_shaders_if_changed();
+                    } else if (key->scancode == scancode::f2 && ui != nullptr && ui->context()->GetNumDocuments() > 0) {
+                        Rml::ElementDocument* doc = ui->context()->GetDocument(0);
+                        if (doc->IsVisible()) {
+                            doc->Hide();
+                        } else {
+                            doc->Show();
+                        }
                     } else if (key->scancode >= kScancode1 && key->scancode < kScancode1 + 4) {
                         view->set_mode(static_cast<MapMode>(key->scancode - kScancode1));
                     }
@@ -297,7 +362,10 @@ int main(int argc, char** argv) {
                 renderer->resize({resized->pixel_w, resized->pixel_h});
                 PAT_LOG_INFO("spike", "resized to {}x{} px", resized->pixel_w, resized->pixel_h);
             } else if (const auto* scale = std::get_if<event::ScaleChanged>(&e)) {
-                ui_scale = effective_ui_scale(scale->scale);
+                ui_scale = effective_ui_scale(scale->scale, opt.user_ui_scale);
+                if (ui) {
+                    ui->resize(renderer->size(), ui_scale);
+                }
                 PAT_LOG_INFO("spike", "display scale changed to {:.3f}", ui_scale);
             } else if (const auto* move = std::get_if<event::MouseMove>(&e)) {
                 cursor_x = move->x;
@@ -312,6 +380,9 @@ int main(int argc, char** argv) {
                     camera.rotate(move->dx * 0.005f, move->dy * 0.004f);
                 }
             } else if (const auto* button = std::get_if<event::MouseButton>(&e)) {
+                if (ui_consumed && button->down) {
+                    continue;  // pressed on a UI element
+                }
                 if (button->button == 1) {
                     if (button->down) {
                         left_down = true;
@@ -332,6 +403,9 @@ int main(int argc, char** argv) {
                     right_down = button->down;
                 }
             } else if (const auto* wheel = std::get_if<event::MouseWheel>(&e)) {
+                if (ui_consumed) {
+                    continue;  // scrolling a UI list, not zooming the map
+                }
                 Vec3 p = camera.focus();
                 if (cursor_x < 0.0f || !ground_at(cursor_x, cursor_y, p)) {
                     p = camera.focus();
@@ -383,6 +457,9 @@ int main(int argc, char** argv) {
         if (clock.frame_count() % 15 == 0) {
             renderer->reload_shaders_if_changed();
             view->reload_shaders_if_changed();
+            if (ui && ui->reload_if_changed() && ui->context()->GetNumDocuments() > 0) {
+                populate_demo(ui->context()->GetDocument(0));
+            }
         }
 
         if (renderer->begin_frame({0.04f, 0.05f, 0.08f, 1.0f})) {
@@ -396,6 +473,12 @@ int main(int argc, char** argv) {
             renderer->push_marker("map");
             view->draw(frame);
             renderer->pop_marker();
+            if (ui) {
+                renderer->push_marker("ui");
+                ui->update();
+                ui->render();
+                renderer->pop_marker();
+            }
             if (!opt.shot_file.empty() && clock.frame_count() >= 4) {
                 const std::vector<std::uint8_t> rgba = renderer->capture();
                 const PixelSize size = renderer->size();
@@ -440,6 +523,14 @@ int main(int argc, char** argv) {
                           view->last_node_count(), mode_name(view->mode()), renderer->vsync() ? "on" : "off",
                           std::string(renderer->adapter_name()).c_str(), info);
             window.set_title(title);
+            if (ui && ui->context()->GetNumDocuments() > 0) {
+                if (Rml::Element* el = ui->context()->GetDocument(0)->GetElementById("fps")) {
+                    char text[128];
+                    std::snprintf(text, sizeof(text), "%.0f fps, %zu узлов, режим %s", static_cast<double>(clock.fps()),
+                                  view->last_node_count(), mode_name(view->mode()));
+                    el->SetInnerRML(text);
+                }
+            }
         }
 
         if (opt.max_frames >= 0 && static_cast<std::int64_t>(clock.frame_count()) >= opt.max_frames) {

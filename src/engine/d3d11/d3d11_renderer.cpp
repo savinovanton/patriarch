@@ -9,6 +9,7 @@
 
 #include "d3d11_common.hpp"
 #include "d3d11_map_view.hpp"
+#include "d3d11_ui_renderer.hpp"
 
 // Defined in the generated embedded_shaders.cpp (the contents of shaders/quad.hlsl).
 namespace pat::engine::embedded {
@@ -299,6 +300,16 @@ public:
         shared.shader_dir = shader_dir_;
         shared.invalidate_pipeline = &pipeline_dirty_;
         return create_d3d11_map_view(shared, map, desc);
+    }
+
+    core::Result<std::unique_ptr<Rml::RenderInterface>> create_ui_render_interface() override {
+        D3D11Shared shared;
+        shared.device = device_;
+        shared.context = context_;
+        shared.shader_dir = shader_dir_;
+        shared.invalidate_pipeline = &pipeline_dirty_;
+        shared.target_size = &size_;
+        return create_d3d11_ui_renderer(shared);
     }
 
     [[nodiscard]] std::string_view backend_name() const override { return "Direct3D 11"; }

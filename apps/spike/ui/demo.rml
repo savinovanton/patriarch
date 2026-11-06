@@ -1,0 +1,22 @@
+<rml>
+<head>
+    <title>Patriarch spike UI</title>
+    <link type="text/rcss" href="demo.rcss"/>
+</head>
+<body>
+    <div id="panel">
+        <h1>Патриарх — спайк интерфейса</h1>
+        <p id="info">Карта: <span id="fps">…</span></p>
+        <p>Кириллица, ё, ъ, «кавычки», тире — и длинные слова:
+           <em>достопримечательность</em>, <strong>благотворительность</strong>,
+           противоконституционность. Регуляр, <em>курсив</em>, <strong>полужирный</strong>.</p>
+        <div id="buttons">
+            <button id="btn-a" class="btn">Выбрать</button>
+            <button id="btn-b" class="btn">Отменить</button>
+            <button id="btn-c" class="btn danger">Закрыть</button>
+        </div>
+        <p id="status">Наведите курсор на кнопки; колесо над списком прокручивает список, а не карту.</p>
+        <div id="list"></div>
+    </div>
+</body>
+</rml>
