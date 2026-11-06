@@ -19,6 +19,7 @@
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
+#include "pat/ui/character_window.hpp"
 
 #include <RmlUi/Core.h>
 #include <SDL3/SDL_timer.h>
@@ -242,6 +243,8 @@ int main(int argc, char** argv) {
     // ---- UI overlay (RmlUi). System fonts are used only by this development spike; the game's own fonts
     // are a separate decision (issue #27) and will live in assets/ with licence records.
     std::unique_ptr<UiContext> ui;
+    bool character_visible = true;
+    std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
             return;
@@ -277,6 +280,18 @@ int main(int argc, char** argv) {
             PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
         }
         populate_demo(doc);
+        if (doc != nullptr) {
+            doc->Hide();  // the plain demo panel is toggled with F2; the character window is the main UI
+        }
+
+        auto window_result = pat::ui::CharacterWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "character.rml");
+        if (window_result) {
+            character = std::move(window_result).value();
+            character->set_snapshot(pat::ui::make_test_character(7));
+            character->set_command_handler([](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
+        } else {
+            PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+        }
     }
 
     float cursor_x = -1.0f;
@@ -347,6 +362,9 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == kScancodeF5) {
                         renderer->reload_shaders_if_changed();
                         view->reload_shaders_if_changed();
+                    } else if (key->scancode == scancode::f3 && character != nullptr) {
+                        character_visible = !character_visible;
+                        character->show(character_visible);
                     } else if (key->scancode == scancode::f2 && ui != nullptr && ui->context()->GetNumDocuments() > 0) {
                         Rml::ElementDocument* doc = ui->context()->GetDocument(0);
                         if (doc->IsVisible()) {
@@ -475,6 +493,28 @@ int main(int argc, char** argv) {
             renderer->pop_marker();
             if (ui) {
                 renderer->push_marker("ui");
+                if (character && opt.bench) {
+                    // Benchmark: show the 1000-row relations list and scroll it up and down.
+                    character->set_tab("relations");
+                    if (Rml::ElementDocument* d = character->document()) {
+                        if (Rml::Element* list = d->GetElementById("rel_list")) {
+                            const float u2 = static_cast<float>(bench_frame % 300) / 300.0f;
+                            const float tri = u2 < 0.5f ? u2 * 2.0f : 2.0f - u2 * 2.0f;
+                            list->SetScrollTop(tri * (list->GetScrollHeight() - list->GetClientHeight()));
+                        }
+                    }
+                }
+                if (character) {
+                    character->update();
+                    // Live data: the bound snapshot changes every two seconds and the window follows.
+                    if (clock.frame_count() % 120 == 0) {
+                        pat::ui::CharacterSnapshot next = character->snapshot();
+                        ++next.age;
+                        int& skill = next.skills[(clock.frame_count() / 120) % pat::ui::kSkillCount];
+                        skill = (skill + 1) % (pat::ui::kSkillMax + 1);
+                        character->set_snapshot(next);
+                    }
+                }
                 ui->update();
                 ui->render();
                 renderer->pop_marker();

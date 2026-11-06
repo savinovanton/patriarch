@@ -38,13 +38,15 @@ target_link_libraries(patriarch_tests PRIVATE
 if(PATRIARCH_BUILD_ENGINE)
     target_sources(patriarch_tests PRIVATE
         camera_terrain_test.cpp
+        character_window_test.cpp
         frame_clock_test.cpp
         renderer_test.cpp
         ui_test.cpp
         window_test.cpp)
-    target_link_libraries(patriarch_tests PRIVATE patriarch::engine)
+    target_link_libraries(patriarch_tests PRIVATE patriarch::engine patriarch::ui)
     target_compile_definitions(patriarch_tests PRIVATE
-        PATRIARCH_ENGINE_SHADER_DIR="${PATRIARCH_ENGINE_SHADER_DIR}")
+        PATRIARCH_ENGINE_SHADER_DIR="${PATRIARCH_ENGINE_SHADER_DIR}"
+        PATRIARCH_SPIKE_UI_DIR="${CMAKE_SOURCE_DIR}/apps/spike/ui")
 endif()
 
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.

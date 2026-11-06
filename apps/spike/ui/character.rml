@@ -1,0 +1,60 @@
+<rml>
+<head>
+    <title>Character</title>
+    <link type="text/rcss" href="character.rcss"/>
+</head>
+<body data-model="character">
+<div id="window">
+    <div id="header">
+        <div id="portrait"><div class="initials">{{ initials }}</div></div>
+        <div id="title">
+            <h1 id="name">{{ full_name }}</h1>
+            <p class="sub">{{ role }} · <span id="age">{{ age }}</span> лет · здоровье: {{ health }}</p>
+        </div>
+    </div>
+
+    <div id="tabs">
+        <button class="tab" id="tab-overview" data-class-active="tab == 'overview'" data-event-click="set_tab('overview')">Обзор</button>
+        <button class="tab" id="tab-family" data-class-active="tab == 'family'" data-event-click="set_tab('family')">Семья</button>
+        <button class="tab" id="tab-relations" data-class-active="tab == 'relations'" data-event-click="set_tab('relations')">Отношения</button>
+    </div>
+
+    <div id="content">
+        <div data-if="tab == 'overview'">
+            <h2>Навыки</h2>
+            <div class="skill" data-for="skill : skills">
+                <span class="skill-name">{{ skill.name }}</span>
+                <div class="bar"><div class="fill" data-style-width="skill.width"></div></div>
+                <span class="skill-value">{{ skill.value }}</span>
+            </div>
+            <h2>Черты</h2>
+            <div id="traits">
+                <span class="trait" data-for="t : traits">{{ t }}</span>
+            </div>
+            <h2>Действия</h2>
+            <div id="commands">
+                <button class="btn" id="cmd-marry" data-event-click="command('marry')">Предложить брак</button>
+                <button class="btn" id="cmd-appoint" data-event-click="command('appoint')">Назначить на должность</button>
+                <button class="btn" id="cmd-educate" data-event-click="command('educate')">Отправить в науку</button>
+            </div>
+        </div>
+
+        <div data-if="tab == 'family'">
+            <h2>Семья</h2>
+            <div class="line" data-for="f : family">{{ f }}</div>
+        </div>
+
+        <div data-if="tab == 'relations'">
+            <h2>Знакомые и мнения (всего: <span id="rel-total">{{ relation_total }}</span>)</h2>
+            <div id="rel_list">
+                <div class="pad" data-style-height="pad_top"></div>
+                <div class="row" data-for="r : relation_rows">{{ r.text }}</div>
+                <div class="pad" data-style-height="pad_bottom"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="statusbar">{{ last_command }}</div>
+</div>
+</body>
+</rml>

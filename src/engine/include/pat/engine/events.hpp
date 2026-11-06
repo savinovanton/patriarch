@@ -83,6 +83,7 @@ inline constexpr int escape = 41;
 inline constexpr int space = 44;
 inline constexpr int f1 = 58;
 inline constexpr int f2 = 59;
+inline constexpr int f3 = 60;
 inline constexpr int f11 = 68;
 }  // namespace scancode
 
