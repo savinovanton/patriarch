@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstdio>
@@ -9,7 +10,7 @@
 // Minimal PNG writer (RGB8, "stored" deflate blocks, no compression): enough to eyeball generated maps
 // without adding an image library dependency.
 
-namespace {
+namespace pat::core {
 
 inline std::uint32_t png_crc(const std::uint8_t* data, std::size_t n, std::uint32_t crc = 0xFFFFFFFFU) {
     static const std::array<std::uint32_t, 256> table = [] {
@@ -101,4 +102,4 @@ inline bool write_png_rgb(const std::string& path,
     return std::fclose(f) == 0 && ok;
 }
 
-}  // namespace
+}  // namespace pat::core

@@ -1,7 +1,9 @@
 // Renderer tests run on an offscreen target with the WARP software rasterizer, so they work on
 // machines (and CI runners) without a GPU or a display.
 
+#include "pat/engine/camera.hpp"
 #include "pat/engine/renderer.hpp"
+#include "pat/mapdata/map_gen.hpp"
 
 #include <doctest/doctest.h>
 
@@ -219,6 +221,186 @@ TEST_CASE("Renderer: shaders hot-reload from disk and bad shaders keep the old o
 
     r.reset();
     std::filesystem::remove_all(dir);
+}
+
+// ---------------------------------------------------------------- map view (terrain)
+
+namespace {
+
+struct MapFixture {
+    pat::mapdata::MapData map;
+    std::unique_ptr<IRenderer> renderer;
+    std::unique_ptr<pat::engine::IMapView> view;
+    pat::engine::OrbitCamera camera;
+
+    MapFixture() : camera(limits_for_small_map()) {
+        pat::mapdata::GenParams gp;
+        gp.width = 256;
+        gp.height = 128;
+        gp.province_count = 24;
+        gp.seed = 3;
+        gp.threads = 2;
+        map = pat::mapdata::generate_map(gp);
+        renderer = make_renderer({}, {640, 360});
+        auto created = renderer->create_map_view(map, {});
+        REQUIRE(created.has_value());
+        view = std::move(created).value();
+        camera.set_focus(128.0f, 64.0f);
+        camera.set_distance(260.0f);
+    }
+
+    static pat::engine::CameraLimits limits_for_small_map() {
+        pat::engine::CameraLimits l;
+        l.map_width = 256;
+        l.map_height = 128;
+        l.min_distance = 10;
+        l.max_distance = 500;
+        return l;
+    }
+
+    pat::engine::MapFrame frame(std::uint16_t hovered = 0, std::uint16_t selected = 0) const {
+        pat::engine::MapFrame f;
+        f.view_proj = camera.view_projection(640.0f / 360.0f);
+        f.eye = camera.eye();
+        f.zoom_fraction = camera.zoom_fraction();
+        f.hovered = hovered;
+        f.selected = selected;
+        return f;
+    }
+
+    std::vector<std::uint8_t> render(const pat::engine::MapFrame& f) {
+        REQUIRE(renderer->begin_frame({0.02f, 0.02f, 0.02f, 1.0f}));
+        view->draw(f);
+        auto px = renderer->capture();
+        renderer->end_frame();
+        REQUIRE(px.size() == 640u * 360u * 4u);
+        return px;
+    }
+};
+
+std::size_t differing_pixels(const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b) {
+    std::size_t n = 0;
+    for (std::size_t i = 0; i + 3 < a.size(); i += 4) {
+        n += (a[i] != b[i] || a[i + 1] != b[i + 1] || a[i + 2] != b[i + 2]) ? 1U : 0U;
+    }
+    return n;
+}
+
+}  // namespace
+
+TEST_CASE("Map view: draws terrain with water and land, uses a bounded number of nodes") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Owners);
+    const auto px = fx.render(fx.frame());
+    CHECK(fx.view->last_node_count() > 0);
+    CHECK(fx.view->last_node_count() <= 500);
+
+    // The map (continent plus surrounding sea) fills a good part of the frame; the rest is the clear colour.
+    std::size_t clear_pixels = 0;
+    std::size_t bluish = 0;
+    std::size_t other = 0;
+    for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+        if (px[i] <= 8 && px[i + 1] <= 8 && px[i + 2] <= 8) {
+            ++clear_pixels;
+        } else if (px[i + 2] > px[i] && px[i + 2] > px[i + 1]) {
+            ++bluish;
+        } else {
+            ++other;
+        }
+    }
+    CHECK(clear_pixels < 640u * 360u * 3u / 4u);
+    CHECK(bluish > 1000);  // sea
+    CHECK(other > 1000);   // land
+}
+
+TEST_CASE("Map view: switching the map mode recolours without rebuilding geometry") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    const auto terrain = fx.render(fx.frame());
+    const std::size_t nodes_terrain = fx.view->last_node_count();
+
+    fx.view->set_mode(pat::engine::MapMode::Owners);
+    CHECK(fx.view->mode() == pat::engine::MapMode::Owners);
+    const auto owners = fx.render(fx.frame());
+    fx.view->set_mode(pat::engine::MapMode::Mood);
+    const auto mood = fx.render(fx.frame());
+    fx.view->set_mode(pat::engine::MapMode::Random);
+    const auto random = fx.render(fx.frame());
+
+    CHECK(fx.view->last_node_count() == nodes_terrain);  // same geometry in every mode
+    CHECK(differing_pixels(terrain, owners) > 5000);
+    CHECK(differing_pixels(owners, mood) > 5000);
+    CHECK(differing_pixels(mood, random) > 5000);
+}
+
+TEST_CASE("Map view: selection highlight lands on the province the CPU says is under the pixel") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Owners);
+    const auto plain = fx.render(fx.frame());
+
+    const pat::engine::TerrainGeometry geometry = fx.view->geometry();
+    const pat::engine::HeightfieldPicker picker(fx.map, geometry);
+    const pat::engine::Mat4 view_proj = fx.camera.view_projection(640.0f / 360.0f);
+    int verified = 0;
+    for (const pat::mapdata::Province& p : fx.map.province_list) {
+        // Screen pixel of this province's centroid.
+        const float wx = static_cast<float>(p.centroid_x) + 0.5f;
+        const float wy = static_cast<float>(p.centroid_y) + 0.5f;
+        const pat::engine::Vec3 world{wx, wy, picker.height_at(wx, wy)};
+        const auto clip = pat::engine::transform_point(view_proj, world);
+        if (clip.x < -0.9f || clip.x > 0.9f || clip.y < -0.9f || clip.y > 0.9f || clip.z < 0.0f ||
+            clip.z > 1.0f) {
+            continue;  // off screen from this camera
+        }
+        const int sx = static_cast<int>((clip.x * 0.5f + 0.5f) * 640.0f);
+        const int sy = static_cast<int>((0.5f - clip.y * 0.5f) * 360.0f);
+
+        // The CPU picker must agree about what is under that pixel...
+        pat::engine::Vec3 origin;
+        pat::engine::Vec3 dir;
+        REQUIRE(pat::engine::make_pick_ray(view_proj,
+                                           static_cast<float>(sx) + 0.5f,
+                                           static_cast<float>(sy) + 0.5f,
+                                           640.0f,
+                                           360.0f,
+                                           origin,
+                                           dir));
+        const auto hit = picker.raycast(origin, dir, 5000.0f);
+        if (!hit.hit || picker.province_at(hit.point.x, hit.point.y) != p.id) {
+            continue;  // a neighbouring province or an occluding ridge: only check unambiguous provinces
+        }
+        // ...and the GPU highlights exactly that province there.
+        const auto selected = fx.render(fx.frame(0, p.id));
+        const std::size_t i = (static_cast<std::size_t>(sy) * 640 + static_cast<std::size_t>(sx)) * 4;
+        const int dr = selected[i] - plain[i];
+        const int db = selected[i + 2] - plain[i + 2];
+        CHECK(dr > 0);   // warm highlight tint
+        CHECK(dr > db);  // yellowish: red rises more than blue
+        // Selecting a different province leaves this pixel untouched.
+        const std::uint16_t other = p.id == 1 ? 2 : 1;
+        const auto elsewhere = fx.render(fx.frame(0, other));
+        CHECK(elsewhere[i] == plain[i]);
+        CHECK(elsewhere[i + 1] == plain[i + 1]);
+        CHECK(elsewhere[i + 2] == plain[i + 2]);
+        if (++verified >= 4) {
+            break;
+        }
+    }
+    CHECK(verified >= 3);
+}
+
+TEST_CASE("Map view: rendering coexists with quads in one frame") {
+    MapFixture fx;
+    REQUIRE(fx.renderer->begin_frame({0, 0, 0, 1}));
+    fx.view->draw(fx.frame());
+    const Quad q{10, 10, 50, 50, {1.0f, 0.0f, 1.0f, 1.0f}};
+    fx.renderer->draw_quads(std::array{q});  // drawn after the map: pipeline state must have been restored
+    const auto px = fx.renderer->capture();
+    fx.renderer->end_frame();
+    const Rgba p = pixel(px, 640, 30, 30);
+    CHECK(p.r == 255);
+    CHECK(p.g == 0);
+    CHECK(p.b == 255);
 }
 
 #endif  // _WIN32

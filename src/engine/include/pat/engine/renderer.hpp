@@ -2,6 +2,9 @@
 
 #include "pat/core/result.hpp"
 #include "pat/engine/dpi.hpp"
+#include "pat/engine/math.hpp"
+#include "pat/engine/terrain.hpp"
+#include "pat/mapdata/map_data.hpp"
 
 #include <cstdint>
 #include <filesystem>
@@ -42,6 +45,50 @@ struct RendererDesc {
     /// Directory with `quad.hlsl`; when set, the shader is loaded from there and can be hot-reloaded.
     /// When empty, the copy embedded into the executable is used.
     std::filesystem::path shader_dir;
+};
+
+/// How the province layer colours the map.
+enum class MapMode : std::uint8_t {
+    Terrain = 0,  ///< No political colouring: just the landscape.
+    Owners,       ///< One colour per province (stand-in for owners/realms).
+    Mood,         ///< Red-to-green ramp (stand-in for a simulation value such as unrest).
+    Random,       ///< Pseudo-random colours (debug).
+    Count
+};
+
+struct MapViewDesc {
+    /// World height of a full-scale height value as a fraction of the map width (vertical exaggeration).
+    float relief_fraction = 0.03f;
+    LodSettings lod;
+};
+
+/// Per-frame inputs of the map renderer.
+struct MapFrame {
+    Mat4 view_proj = Mat4::identity();
+    Vec3 eye;
+    float zoom_fraction = 1.0f;  ///< 0 = fully zoomed in, 1 = fully zoomed out; scales the political tint.
+    std::uint16_t hovered = 0;   ///< Province under the cursor (0 = none).
+    std::uint16_t selected = 0;  ///< Selected province (0 = none).
+    float time_s = 0.0f;
+};
+
+/// The volumetric landscape with the province layer draped over it (ADR-0003, phase P1).
+/// A view must not outlive the renderer that created it; draw it between begin_frame() and end_frame().
+class IMapView {
+public:
+    virtual ~IMapView() = default;
+
+    /// Switches the palette used for the province layer; no geometry is rebuilt.
+    virtual void set_mode(MapMode mode) = 0;
+    [[nodiscard]] virtual MapMode mode() const = 0;
+
+    virtual void draw(const MapFrame& frame) = 0;
+
+    [[nodiscard]] virtual const TerrainGeometry& geometry() const = 0;
+    /// Number of terrain nodes drawn by the last draw() call.
+    [[nodiscard]] virtual std::size_t last_node_count() const = 0;
+    /// Rebuilds the terrain shader if its source changed on disk (development hot reload).
+    virtual bool reload_shaders_if_changed() = 0;
 };
 
 struct FrameStats {
@@ -86,6 +133,10 @@ public:
     [[nodiscard]] virtual std::string_view backend_name() const = 0;
     [[nodiscard]] virtual std::string_view adapter_name() const = 0;
     [[nodiscard]] virtual const FrameStats& last_frame_stats() const = 0;
+
+    /// Uploads the map layers to the GPU and returns a view that draws them.
+    [[nodiscard]] virtual core::Result<std::unique_ptr<IMapView>>
+    create_map_view(const mapdata::MapData& map, const MapViewDesc& desc) = 0;
 };
 
 /// Creates the renderer for the current platform (Direct3D 11 on Windows).

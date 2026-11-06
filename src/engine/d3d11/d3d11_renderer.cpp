@@ -2,18 +2,13 @@
 #include "pat/core/log.hpp"
 #include "pat/engine/renderer.hpp"
 
-#include <d3d11_1.h>
-#include <d3dcompiler.h>
-#include <dxgi1_5.h>
-#include <wrl/client.h>
-
 #include <algorithm>
 #include <array>
 #include <cstring>
-#include <fstream>
-#include <sstream>
 #include <string>
-#include <system_error>
+
+#include "d3d11_common.hpp"
+#include "d3d11_map_view.hpp"
 
 // Defined in the generated embedded_shaders.cpp (the contents of shaders/quad.hlsl).
 namespace pat::engine::embedded {
@@ -24,12 +19,12 @@ namespace pat::engine {
 
 namespace {
 
-using Microsoft::WRL::ComPtr;
+using namespace d3d11;
 
-constexpr const char* kLogCat = "d3d11";
 constexpr const char* kQuadShaderFile = "quad.hlsl";
 constexpr UINT kMaxQuadsPerBatch = 8192;
 constexpr DXGI_FORMAT kTargetFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+constexpr DXGI_FORMAT kDepthFormat = DXGI_FORMAT_D32_FLOAT;
 
 struct Vertex {
     float x;
@@ -47,36 +42,6 @@ struct FrameConstants {
 };
 static_assert(sizeof(FrameConstants) == 16, "constant buffers are 16-byte aligned");
 
-std::string hr_string(HRESULT hr) {
-    char buf[32];
-    std::snprintf(buf, sizeof(buf), "0x%08X", static_cast<unsigned>(hr));
-    return buf;
-}
-
-core::Error make_error(int code, const char* what, HRESULT hr) {
-    return core::Error{code, std::string(what) + " (HRESULT " + hr_string(hr) + ")"};
-}
-
-std::string wide_to_utf8(const wchar_t* s) {
-    const int n = WideCharToMultiByte(CP_UTF8, 0, s, -1, nullptr, 0, nullptr, nullptr);
-    if (n <= 1) {
-        return {};
-    }
-    std::string out(static_cast<std::size_t>(n - 1), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, s, -1, out.data(), n, nullptr, nullptr);
-    return out;
-}
-
-std::wstring utf8_to_wide(std::string_view s) {
-    if (s.empty()) {
-        return {};
-    }
-    const int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
-    std::wstring out(static_cast<std::size_t>(std::max(n, 0)), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), out.data(), n);
-    return out;
-}
-
 struct ShaderPair {
     ComPtr<ID3D11VertexShader> vs;
     ComPtr<ID3D11PixelShader> ps;
@@ -88,6 +53,7 @@ public:
     [[nodiscard]] core::Result<void> init(const RendererDesc& desc) {
         vsync_ = desc.vsync;
         shader_dir_ = desc.shader_dir;
+        quad_source_ = std::make_unique<ShaderSource>(desc.shader_dir, kQuadShaderFile, embedded::kQuadHlsl);
         size_ = desc.size;
         windowed_ = desc.native_window != nullptr;
 
@@ -129,6 +95,8 @@ public:
         }
         size_ = size;
         rtv_.Reset();
+        dsv_.Reset();
+        depth_.Reset();
         target_.Reset();
         staging_.Reset();
         if (size_.w == 0 || size_.h == 0) {
@@ -172,8 +140,9 @@ public:
 
         const float color[4] = {clear.r, clear.g, clear.b, clear.a};
         ID3D11RenderTargetView* rtvs[] = {rtv_.Get()};
-        context_->OMSetRenderTargets(1, rtvs, nullptr);
+        context_->OMSetRenderTargets(1, rtvs, dsv_.Get());
         context_->ClearRenderTargetView(rtv_.Get(), color);
+        context_->ClearDepthStencilView(dsv_.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
         D3D11_VIEWPORT vp{};
         vp.Width = fc.viewport_w;
@@ -182,6 +151,7 @@ public:
         context_->RSSetViewports(1, &vp);
 
         bind_pipeline();
+        pipeline_dirty_ = false;
         frame_active_ = true;
         return true;
     }
@@ -190,6 +160,10 @@ public:
         PAT_ASSERT(frame_active_, "draw_quads outside begin_frame/end_frame");
         if (!frame_active_ || quads.empty()) {
             return;
+        }
+        if (pipeline_dirty_) {
+            bind_pipeline();
+            pipeline_dirty_ = false;
         }
         std::size_t index = 0;
         while (index < quads.size()) {
@@ -289,24 +263,19 @@ public:
     [[nodiscard]] bool vsync() const override { return vsync_; }
 
     bool reload_shaders_if_changed() override {
-        if (shader_dir_.empty()) {
-            return false;
+        bool reloaded = false;
+        if (quad_source_->changed()) {
+            PAT_LOG_INFO(kLogCat, "shader source changed, recompiling '{}'", kQuadShaderFile);
+            const std::uint32_t before = shader_generation_;
+            auto r = build_shaders();
+            if (!r) {
+                PAT_LOG_ERROR(
+                    kLogCat, "shader reload failed, keeping the previous shader:\n{}", r.error().message);
+            } else {
+                reloaded = shader_generation_ != before;
+            }
         }
-        std::error_code ec;
-        const auto stamp = std::filesystem::last_write_time(shader_dir_ / kQuadShaderFile, ec);
-        if (ec || stamp == shader_stamp_) {
-            return false;
-        }
-        shader_stamp_ = stamp;  // Remember even on failure so a broken file is not recompiled every frame.
-        PAT_LOG_INFO(kLogCat, "shader source changed, recompiling '{}'", kQuadShaderFile);
-        const std::uint32_t before = shader_generation_;
-        auto r = build_shaders();
-        if (!r) {
-            PAT_LOG_ERROR(
-                kLogCat, "shader reload failed, keeping the previous shader:\n{}", r.error().message);
-            return false;
-        }
-        return shader_generation_ != before;
+        return reloaded;
     }
 
     [[nodiscard]] std::uint32_t shader_generation() const override { return shader_generation_; }
@@ -320,6 +289,16 @@ public:
         if (annotation_) {
             annotation_->EndEvent();
         }
+    }
+
+    core::Result<std::unique_ptr<IMapView>> create_map_view(const mapdata::MapData& map,
+                                                            const MapViewDesc& desc) override {
+        D3D11Shared shared;
+        shared.device = device_;
+        shared.context = context_;
+        shared.shader_dir = shader_dir_;
+        shared.invalidate_pipeline = &pipeline_dirty_;
+        return create_d3d11_map_view(shared, map, desc);
     }
 
     [[nodiscard]] std::string_view backend_name() const override { return "Direct3D 11"; }
@@ -438,6 +417,24 @@ private:
         if (FAILED(hr)) {
             return core::Result<void>::err(make_error(14, "CreateRenderTargetView failed", hr));
         }
+
+        D3D11_TEXTURE2D_DESC dd{};
+        dd.Width = static_cast<UINT>(size_.w);
+        dd.Height = static_cast<UINT>(size_.h);
+        dd.MipLevels = 1;
+        dd.ArraySize = 1;
+        dd.Format = kDepthFormat;
+        dd.SampleDesc.Count = 1;
+        dd.Usage = D3D11_USAGE_DEFAULT;
+        dd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+        hr = device_->CreateTexture2D(&dd, nullptr, &depth_);
+        if (FAILED(hr)) {
+            return core::Result<void>::err(make_error(25, "depth buffer creation failed", hr));
+        }
+        hr = device_->CreateDepthStencilView(depth_.Get(), nullptr, &dsv_);
+        if (FAILED(hr)) {
+            return core::Result<void>::err(make_error(26, "CreateDepthStencilView failed", hr));
+        }
         return core::Result<void>::ok();
     }
 
@@ -493,64 +490,17 @@ private:
 
     // ---------------------------------------------------------------- shaders
 
-    [[nodiscard]] core::Result<std::string> load_shader_source() {
-        if (shader_dir_.empty()) {
-            return core::Result<std::string>::ok(embedded::kQuadHlsl);
-        }
-        const auto path = shader_dir_ / kQuadShaderFile;
-        std::ifstream in(path, std::ios::binary);
-        if (!in) {
-            return core::Result<std::string>::err(
-                core::Error{20, "cannot open shader file " + path.string()});
-        }
-        std::ostringstream ss;
-        ss << in.rdbuf();
-        std::error_code ec;
-        shader_stamp_ = std::filesystem::last_write_time(path, ec);
-        return core::Result<std::string>::ok(ss.str());
-    }
-
-    [[nodiscard]] static core::Result<ComPtr<ID3DBlob>>
-    compile(const std::string& source, const char* entry, const char* target) {
-        UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-#ifndef NDEBUG
-        flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-        flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-        ComPtr<ID3DBlob> code;
-        ComPtr<ID3DBlob> errors;
-        const HRESULT hr = D3DCompile(source.data(),
-                                      source.size(),
-                                      "quad.hlsl",
-                                      nullptr,
-                                      nullptr,
-                                      entry,
-                                      target,
-                                      flags,
-                                      0,
-                                      &code,
-                                      &errors);
-        if (FAILED(hr)) {
-            std::string msg = errors ? std::string(static_cast<const char*>(errors->GetBufferPointer()),
-                                                   errors->GetBufferSize())
-                                     : std::string("shader compilation failed");
-            return core::Result<ComPtr<ID3DBlob>>::err(core::Error{21, std::move(msg)});
-        }
-        return core::Result<ComPtr<ID3DBlob>>::ok(std::move(code));
-    }
-
     /// Builds all shader objects first and swaps them in only if everything succeeded.
     [[nodiscard]] core::Result<void> build_shaders() {
-        auto source = load_shader_source();
+        auto source = quad_source_->load();
         if (!source) {
             return core::Result<void>::err(source.error());
         }
-        auto vs_blob = compile(source.value(), "vs_main", "vs_5_0");
+        auto vs_blob = compile_hlsl(source.value(), kQuadShaderFile, "vs_main", "vs_5_0");
         if (!vs_blob) {
             return core::Result<void>::err(vs_blob.error());
         }
-        auto ps_blob = compile(source.value(), "ps_main", "ps_5_0");
+        auto ps_blob = compile_hlsl(source.value(), kQuadShaderFile, "ps_main", "ps_5_0");
         if (!ps_blob) {
             return core::Result<void>::err(ps_blob.error());
         }
@@ -608,6 +558,8 @@ private:
     ComPtr<ID3D11Texture2D> target_;
     ComPtr<ID3D11Texture2D> staging_;
     ComPtr<ID3D11RenderTargetView> rtv_;
+    ComPtr<ID3D11Texture2D> depth_;
+    ComPtr<ID3D11DepthStencilView> dsv_;
     ComPtr<ID3D11Buffer> vertex_buffer_;
     ComPtr<ID3D11Buffer> constants_;
     ComPtr<ID3D11BlendState> blend_;
@@ -618,7 +570,8 @@ private:
     D3D_FEATURE_LEVEL feature_level_ = D3D_FEATURE_LEVEL_11_0;
     std::string adapter_name_;
     std::filesystem::path shader_dir_;
-    std::filesystem::file_time_type shader_stamp_{};
+    std::unique_ptr<ShaderSource> quad_source_;
+    bool pipeline_dirty_ = false;
     std::uint32_t shader_generation_ = 0;
 
     PixelSize size_{};

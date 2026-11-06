@@ -7,6 +7,7 @@
 // Exit codes: 0 ok, 1 generation/IO failure, 2 usage error, 3 validation failure.
 
 #include "pat/core/log.hpp"
+#include "pat/core/png_writer.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/mapdata/map_validate.hpp"
@@ -19,8 +20,6 @@
 #include <filesystem>
 #include <string>
 #include <vector>
-
-#include "png_writer.hpp"
 
 namespace {
 
@@ -203,7 +202,7 @@ bool write_preview(const MapData& map, const std::string& path) {
             rgb[o + 2] = out(c.b);
         }
     }
-    return write_png_rgb(path, pw, ph, rgb);
+    return pat::core::write_png_rgb(path, pw, ph, rgb);
 }
 
 double seconds_since(std::chrono::steady_clock::time_point t) {
