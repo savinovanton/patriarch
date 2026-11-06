@@ -1,0 +1,20 @@
+Copyright (c) 2026 savinovanton. All rights reserved.
+
+This repository and everything in it (source code, documentation, game
+design materials, data, text, and any other files) is made publicly
+viewable for reference only.
+
+No license is granted to copy, modify, distribute, sublicense, or use any
+part of this repository, in whole or in part, for any purpose, without the
+prior written permission of the copyright holder.
+
+Viewing and forking this repository on GitHub is permitted to the extent
+provided by the GitHub Terms of Service.
+
+THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY ARISING FROM THEIR USE.
+
+Third-party components used by this project (libraries, fonts, images,
+audio) remain under their own licenses; see assets/LICENSES.csv and
+vcpkg.json once they are added.

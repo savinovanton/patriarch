@@ -1,0 +1,30 @@
+# Local tooling and personal config (never publish)
+.claude/
+.vscode/
+.idea/
+*.user
+*.suo
+.env
+.env.*
+*.pem
+*.key
+secrets*
+
+# Build outputs
+build/
+out/
+.vs/
+cmake-build-*/
+vcpkg_installed/
+CMakeUserPresets.json
+
+# Logs, dumps, profiles
+*.log
+*.dmp
+*.etl
+*.tracy
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
