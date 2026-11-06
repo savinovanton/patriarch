@@ -1,6 +1,7 @@
 add_subdirectory(core)
 add_subdirectory(sim)
 add_subdirectory(mapdata)
+add_subdirectory(data)
 
 if(PATRIARCH_BUILD_ENGINE)
     add_subdirectory(engine)

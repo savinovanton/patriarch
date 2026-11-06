@@ -14,6 +14,7 @@ add_executable(patriarch_tests
     ids_test.cpp
     log_test.cpp
     mapdata_test.cpp
+    pd_parser_test.cpp
     profile_test.cpp
     replay_test.cpp
     result_test.cpp
@@ -33,6 +34,7 @@ target_link_libraries(patriarch_tests PRIVATE
     patriarch::core
     patriarch::sim
     patriarch::mapdata
+    patriarch::data
     doctest::doctest)
 
 if(PATRIARCH_BUILD_ENGINE)
@@ -55,7 +57,8 @@ if(PATRIARCH_BUILD_ENGINE)
 endif()
 
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.
-target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS)
+target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS
+    PATRIARCH_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
 
 patriarch_set_target_options(patriarch_tests)
 set_target_properties(patriarch_tests PROPERTIES FOLDER "tests")
