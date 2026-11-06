@@ -1,1 +1,19 @@
 path,title,source_url,license,author,attribution_required,checked_on,notes
+ui/olive/frame.png,HUD frame (gilded frame with parchment inset),,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone. Provenance of the texture is being confirmed by the owner (issue 113); re-check before release.
+ui/olive/icons/alert_bell.svg,HUD icon alert_bell,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/alert_charter.svg,HUD icon alert_charter,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/alert_embassy.svg,HUD icon alert_embassy,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_army.svg,HUD icon menu_army,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_chronicle.svg,HUD icon menu_chronicle,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_church.svg,HUD icon menu_church,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_diplomacy.svg,HUD icon menu_diplomacy,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_economy.svg,HUD icon menu_economy,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_holdings.svg,HUD icon menu_holdings,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_realm.svg,HUD icon menu_realm,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_system.svg,HUD icon menu_system,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/menu_world.svg,HUD icon menu_world,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/res_army.svg,HUD icon res_army,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/res_faith.svg,HUD icon res_faith,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/res_grain.svg,HUD icon res_grain,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/res_influence.svg,HUD icon res_influence,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
+ui/olive/icons/res_treasury.svg,HUD icon res_treasury,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).

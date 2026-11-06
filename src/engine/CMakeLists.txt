@@ -65,7 +65,7 @@ const char* const k${_first}${_rest}Hlsl = R\"HLSLSRC(${PATRIARCH_HLSL_TEXT})HLS
         d3d11/d3d11_text_renderer.cpp
         d3d11/d3d11_ui_renderer.cpp
         "${CMAKE_CURRENT_BINARY_DIR}/embedded_shaders.cpp")
-    target_link_libraries(patriarch_engine PRIVATE d3d11 dxgi d3dcompiler)
+    target_link_libraries(patriarch_engine PRIVATE d3d11 dxgi d3dcompiler windowscodecs ole32)
 else()
     target_sources(patriarch_engine PRIVATE null_renderer.cpp)
 endif()
