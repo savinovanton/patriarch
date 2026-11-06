@@ -1,6 +1,6 @@
 # E0 — Репозиторий и инфраструктура
 
-> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **готов к старту**.
+> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **в работе — T01–T05 выполнены, остаются T06–T09**.
 > Опирается на: ADR-0001 (стек, структура каталогов), ADR-0002 (бенчмарки, CI-гейт), TZ NFR-TEST-1, NFR-PERF-7, NFR-COMPAT-1.
 > Оценки задач: **S** ≤ 1 дн., **M** 2–3 дн., **L** ~1 нед., **XL** > 1 нед. (разбивать).
 
@@ -13,10 +13,11 @@
 | Что | Состояние |
 |---|---|
 | ОС | Windows 11 |
-| Компилятор | Visual Studio Community 2026 (v18) установлена; `cl` не в PATH (нужен Developer Prompt или `vcvars`) |
-| CMake | Установлен (`C:\Program Files\CMake`) |
-| Ninja | Не найден в PATH (есть в составе VS CMake tools — проверить) |
-| vcpkg | Не найден (подключим как submodule/manifest) |
+| Компилятор | Visual Studio Community 2026 (v18) установлена **без C++-нагрузки**; рабочий компилятор — **Build Tools 2022 (MSVC 19.44)** + Windows SDK 10.0.26100; генератор CMake `Visual Studio 17 2022` (vcvars и Developer Prompt не нужны) |
+| CMake | 4.4.4 (`C:\Program Files\CMake`) |
+| Ninja | Не в PATH (есть в Build Tools); в текущих пресетах не используется — генератор Visual Studio |
+| vcpkg | Клонирован в `C:\Users\Anton\vcpkg` (shallow), `VCPKG_ROOT` пока задаётся в сессии |
+| clang-format / clang-tidy | 19.1.5, из LLVM внутри Build Tools (скрипт `tools/format.ps1` находит сам); `clang-cl` — не проверялся |
 | Git | Установлен. **Внимание:** папка проекта лежит внутри git-репозитория, корень которого — домашняя папка `C:\Users\Anton` (ветка `master`, коммитов нет). Для проекта нужен **собственный** `git init` в `patriarch/`; из домашнего репозитория ничего не коммитить и не пушить (там конфиги, токены и реестры пользователя) |
 | GitHub | Репозиторий `savinovanton/patriarch` создан, **публичный**, пустой; `gh` авторизован (scopes: repo, workflow) |
 | GitHub CLI | Установлен |
@@ -32,7 +33,7 @@
 ## 4. Пользовательские истории и критерии приёмки
 
 **US-0.1.** *Как разработчик, я хочу собрать проект одной командой.*
-- *Дано:* чистый клон репозитория на Windows с VS 2026. *Когда:* `cmake --preset win-msvc-debug` и `cmake --build --preset win-msvc-debug`. *Тогда:* собираются `core`, `sim`, `tests` без ошибок и предупреждений уровня /W4.
+- *Дано:* чистый клон репозитория на Windows с MSVC (VS/Build Tools 2022) и vcpkg. *Когда:* `cmake --preset win-msvc` и `cmake --build --preset win-msvc-debug`. *Тогда:* собираются `core`, `sim`, `tests` без ошибок и предупреждений уровня /W4.
 
 **US-0.2.** *Как разработчик, я хочу, чтобы тесты запускались локально и в CI одинаково.*
 - *Дано:* тест `core_smoke`. *Когда:* `ctest --preset win-msvc-debug`. *Тогда:* тесты проходят; CI-job воспроизводит результат на чистой машине.
@@ -77,6 +78,17 @@ patriarch/
 | **E0-T09** | Скелет `assets/LICENSES.csv` (колонки: id, файл, источник URL, лицензия, автор, требует атрибуции, дата проверки), скрипт `tools/check_assets.py` (проверка, что каждый файл в `assets/` есть в реестре) | S | T01 | Скрипт падает, если ассет не зарегистрирован; интегрирован в CI |
 
 **Суммарно:** ~13 дней (S: 1 + 1 + 1 + 1 + 0.5; M: 2.5 × 3 = 7.5 → ≈ 13).
+
+### Статус выполнения
+
+| Задача | Статус | Заметки |
+|---|---|---|
+| T01 | ✅ | Отдельный git, `main`, публичный `origin`, `LICENSE`, первый push |
+| T02 | ✅ | `CMakeLists.txt`, `CMakePresets.json` (`win-msvc`, `win-msvc-asan`; build/test пресеты Debug/Release/RelWithDebInfo), `core`/`sim`/`tests`. Пресет `win-clangcl` отложен — `clang-cl` на машине не проверялся |
+| T03 | ✅ | `vcpkg.json` (doctest, fmt, zstd, xxhash, benchmark) с `builtin-baseline`; триплет `x64-windows-static-md` |
+| T04 | ✅ | `/W4 /permissive- /utf-8 /WX`; `.clang-format`, `.clang-tidy`, `.editorconfig`, `tools/format.ps1` (проверено: apply и `-Check`). `clang-tidy` не запускался — для генератора Visual Studio нет `compile_commands.json`; вернёмся к нему в CI |
+| T05 | ✅ | doctest + CTest (`doctest_discover_tests`), 3 smoke-теста; Debug/Release/RelWithDebInfo и ASan проходят. ASan намеренно проверен на `heap-buffer-overflow` (ловит) |
+| T06–T09 | ⏳ | CI, логирование/assert, документация (частично: `docs/dev/setup.md`), реестр ассетов |
 
 **Порядок:** T01 → T02 → (T03 ∥ T04) → T05 → (T06 ∥ T07) → T08, T09.
 

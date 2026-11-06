@@ -1,0 +1,28 @@
+---
+# Baseline set; tighten after the first real code lands (E1).
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-exception-escape,
+  performance-*,
+  -performance-no-int-to-ptr,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-using,
+  modernize-use-nodiscard,
+  modernize-use-emplace,
+  modernize-loop-convert,
+  modernize-make-unique,
+  modernize-make-shared,
+  readability-container-size-empty,
+  readability-redundant-smartptr-get,
+  readability-misleading-indentation,
+  cppcoreguidelines-slicing,
+  cppcoreguidelines-narrowing-conversions,
+  misc-redundant-expression,
+  misc-unused-using-decls
+WarningsAsErrors: ''
+HeaderFilterRegex: '(src|tests|tools|bench)[/\\].*'
+FormatStyle: file
+...

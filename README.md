@@ -2,6 +2,16 @@
 
 Околополитический симулятор-стратегия о династии в России начала XVIII века (старт 1703). Одиночная игра, PC (Windows), 2D-карта, собственный движок на C++20 (Direct3D 11, RmlUi).
 
+## Сборка
+
+Подробная инструкция — [docs/dev/setup.md](docs/dev/setup.md). Коротко (нужны MSVC, CMake и vcpkg с `VCPKG_ROOT`):
+
+```powershell
+cmake --preset win-msvc
+cmake --build --preset win-msvc-debug
+ctest --preset win-msvc-debug
+```
+
 ## Документация
 
 | Файл | Содержание |

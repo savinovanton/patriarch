@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "patriarch",
+  "version-string": "0.0.1",
+  "builtin-baseline": "054bd01bec7f31492ec9ac063740cc984a0fe59e",
+  "dependencies": [
+    "doctest",
+    "fmt",
+    "zstd",
+    "xxhash",
+    "benchmark"
+  ]
+}

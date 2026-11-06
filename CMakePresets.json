@@ -1,0 +1,62 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "VCPKG_HOST_TRIPLET": "x64-windows-static-md",
+        "PATRIARCH_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "win-msvc",
+      "displayName": "Windows / MSVC (multi-config)",
+      "inherits": "base"
+    },
+    {
+      "name": "win-msvc-asan",
+      "displayName": "Windows / MSVC + AddressSanitizer",
+      "inherits": "base",
+      "cacheVariables": { "PATRIARCH_SANITIZE_ADDRESS": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "win-msvc-debug", "configurePreset": "win-msvc", "configuration": "Debug" },
+    { "name": "win-msvc-release", "configurePreset": "win-msvc", "configuration": "Release" },
+    { "name": "win-msvc-relwithdebinfo", "configurePreset": "win-msvc", "configuration": "RelWithDebInfo" },
+    { "name": "win-msvc-asan-debug", "configurePreset": "win-msvc-asan", "configuration": "Debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "win-msvc-debug",
+      "configurePreset": "win-msvc",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-msvc-release",
+      "configurePreset": "win-msvc",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-msvc-relwithdebinfo",
+      "configurePreset": "win-msvc",
+      "configuration": "RelWithDebInfo",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-msvc-asan-debug",
+      "configurePreset": "win-msvc-asan",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 110
+AccessModifierOffset: -4
+PointerAlignment: Left
+ReferenceAlignment: Left
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
+IndentCaseLabels: true
+NamespaceIndentation: None
+FixNamespaceComments: true
+SpacesBeforeTrailingComments: 2
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^"pat/'
+    Priority: 1
+  - Regex: '^<(doctest|fmt|zstd|xxhash|benchmark)'
+    Priority: 2
+  - Regex: '^<[a-z_]+>$'
+    Priority: 4
+  - Regex: '^<.*>$'
+    Priority: 3
+...
