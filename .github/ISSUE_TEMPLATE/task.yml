@@ -1,0 +1,36 @@
+name: Задача
+description: Задача из эпика (реализация, спайк, инфраструктура)
+title: "E?-T??: краткое название"
+labels: ["type:feature"]
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Эпик и ID
+      description: Например E3-T04 (см. docs/epics)
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Описание
+      description: Что нужно сделать и зачем. Ссылки на ТЗ (FR-/NFR-), ADR и GDD.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+      description: Проверяемые условия готовности (тесты, бенчмарки, поведение).
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Зависимости
+      description: "Blocked by #N, решения владельца, внешние данные."
+  - type: dropdown
+    id: size
+    attributes:
+      label: Размер
+      options: ["S (≤1 дня)", "M (2–3 дня)", "L (~неделя)", "XL (разбить)"]

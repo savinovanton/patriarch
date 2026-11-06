@@ -28,6 +28,7 @@ ctest --preset win-msvc-debug
 | [docs/adr/0002-performance.md](docs/adr/0002-performance.md) | Архитектура производительности |
 | [docs/adr/0003-3d-terrain-map.md](docs/adr/0003-3d-terrain-map.md) | Объёмная 3D-карта-ландшафт (стиль Victoria 3) |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
+| [docs/dev/agents-workflow.md](docs/dev/agents-workflow.md) | Работа двух агентов (Claude, Codex) через Issues, метки, вехи, PR |
 | [docs/gdd/01-dynasty.md](docs/gdd/01-dynasty.md) | GDD: Династия и персонажи (E7, E8, E30) |
 | [docs/gdd/02-throne-crisis.md](docs/gdd/02-throne-crisis.md) | GDD: Престол, стабильность и кризис (E12, E18) |
 | [docs/gdd/03-holdings-economy.md](docs/gdd/03-holdings-economy.md) | GDD: Владения и экономика (E9, E19, E21) |

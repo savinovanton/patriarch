@@ -1,0 +1,26 @@
+name: Ошибка
+description: Сообщение об ошибке
+title: "Ошибка: краткое описание"
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что происходит
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как воспроизвести
+      description: Команды, seed, версия коммита. Для расхождения детерминизма — вывод `simcli --verify-determinism`.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемое поведение
+  - type: input
+    id: commit
+    attributes:
+      label: Коммит

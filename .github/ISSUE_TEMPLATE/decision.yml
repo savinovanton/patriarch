@@ -1,0 +1,28 @@
+name: Решение владельца
+description: Вопрос, ответ на который блокирует или меняет работу
+title: "Решение: вопрос"
+labels: ["type:decision", "needs:owner"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Вопрос
+      description: Одна чёткая формулировка.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Варианты и последствия
+      description: Варианты с плюсами, минусами и ценой по времени.
+    validations:
+      required: true
+  - type: input
+    id: recommendation
+    attributes:
+      label: Рекомендация агента
+  - type: textarea
+    id: blocks
+    attributes:
+      label: Что блокируется
+      description: Задачи и эпики, которые ждут ответа.
