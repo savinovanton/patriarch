@@ -16,6 +16,7 @@ option(PATRIARCH_SANITIZE_ADDRESS "Build with AddressSanitizer (MSVC)" OFF)
 option(PATRIARCH_BUILD_TESTS "Build unit tests" ON)
 option(PATRIARCH_BUILD_TOOLS "Build command line tools (simcli)" ON)
 option(PATRIARCH_BUILD_ENGINE "Build the engine layer and the spike application (needs SDL3)" ON)
+option(PATRIARCH_BUILD_BENCHMARKS "Build Google Benchmark workloads" ON)
 
 include(cmake/PatriarchCompileOptions.cmake)
 
@@ -35,4 +36,8 @@ endif()
 
 if(PATRIARCH_BUILD_TOOLS)
     add_subdirectory(tools)
+endif()
+
+if(PATRIARCH_BUILD_BENCHMARKS)
+    add_subdirectory(bench)
 endif()
