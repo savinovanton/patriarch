@@ -85,6 +85,12 @@ public:
     virtual void set_mode(MapMode mode) = 0;
     [[nodiscard]] virtual MapMode mode() const = 0;
 
+    /// Replaces the colours of a map mode with values derived from the simulation (ADR-0003: palettes are
+    /// updated from snapshots, only when something changed). `colors[id]` is the RGBA8 colour of province
+    /// `id` (red in the lowest byte, alpha 255); index 0 is unused. Shorter spans keep the remaining
+    /// entries unchanged. The new colours show immediately if `mode` is the current one.
+    virtual void set_palette(MapMode mode, std::span<const std::uint32_t> colors) = 0;
+
     virtual void draw(const MapFrame& frame) = 0;
 
     [[nodiscard]] virtual const TerrainGeometry& geometry() const = 0;

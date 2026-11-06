@@ -29,6 +29,7 @@ src/sim/       ядро симуляции (детерминированное, 
 src/mapdata/   данные карты (формат PMD1, загрузчик, генератор тестовой карты, проверка инвариантов); зависит только от core
 src/engine/    движок: окно SDL3, рендерер D3D11 за IRenderer, FrameClock (зависит только от core)
 src/ui/        игровые окна на RmlUi (data model над снапшотами; зависит от engine и core, не от sim)
+src/game/      мост «снапшот мира → UI» (палитры карты, данные окон, форматирование дат); читает World, не меняет его
 apps/spike/    приложение-спайк E3 (окно + рендер; дальше карта и UI)
 tools/         simcli (headless-раннер), mapgen (генератор/инспектор карт), скрипты: format.ps1, check_assets.py, gen_tables.py
 tests/         doctest (C++) + tests/tools (Python unittest)
@@ -36,7 +37,7 @@ assets/        ассеты + LICENSES.csv (реестр лицензий — о
 docs/          вся документация
 .github/       CI (GitHub Actions)
 ```
-Будущие модули (пока не созданы): `data`, `rules`, `ai`, `game` — см. ADR-0001.
+Будущие модули (пока не созданы): `data`, `rules`, `ai` — см. ADR-0001.
 
 ## 4. Сборка и проверки (Windows)
 

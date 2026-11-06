@@ -19,8 +19,12 @@
 #include "pat/engine/ui.hpp"
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
+#include "pat/game/world_view.hpp"
 #include "pat/mapdata/map_gen.hpp"
+#include "pat/sim/demo_scenario.hpp"
+#include "pat/sim/runner.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
 
 #include <RmlUi/Core.h>
@@ -70,6 +74,9 @@ struct Options {
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
     bool no_labels = false;        // no map labels
+    bool no_sim = false;           // do not run the simulation thread
+    bool sim_speed_set = false;
+    int sim_speed = 2;             // initial game speed: 0 = paused, 1-5, 6 = as fast as possible
     bool bench = false;            // scripted camera path, prints frame statistics, then exits
     std::int64_t bench_frames = 900;
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
@@ -93,6 +100,11 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--demo-tooltip") {
             out.demo_tooltip = true;
+        } else if (arg == "--no-sim") {
+            out.no_sim = true;
+        } else if (arg == "--sim-speed" && i + 1 < argc) {
+            out.sim_speed = std::clamp(std::atoi(argv[++i]), 0, 6);
+            out.sim_speed_set = true;
         } else if (arg == "--no-labels") {
             out.no_labels = true;
         } else if (arg == "--no-ui") {
@@ -126,7 +138,7 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--map FILE | --gen WxH] [--provinces N] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--no-labels] [--ui-scale X] [--bench [FRAMES]]\n");
+                         "                       [--no-vsync] [--no-ui] [--no-labels] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
     }
@@ -182,6 +194,10 @@ int main(int argc, char** argv) {
         gp.height = opt.hidden ? std::min<std::uint32_t>(opt.gen_height, 512) : opt.gen_height;
         gp.province_count = opt.hidden ? std::min<std::uint32_t>(opt.provinces, 120) : opt.provinces;
         map = mapdata::generate_map(gp);
+    }
+
+    if (opt.bench && !opt.sim_speed_set) {
+        opt.sim_speed = 5;  // benchmark the UI while the simulation runs at speed 5 (US-3.5)
     }
 
     // ---- window, renderer, map view
@@ -279,10 +295,30 @@ int main(int argc, char** argv) {
         }
     }
 
+    // ---- simulation on its own thread (E1): the UI only ever reads published snapshots
+    std::unique_ptr<pat::sim::SimulationRunner> runner;
+    if (!opt.no_sim) {
+        pat::sim::demo::Config sim_config;
+        sim_config.seed = 1;
+        sim_config.dynasties = 14;
+        sim_config.provinces = static_cast<std::uint32_t>(map.province_list.size());
+        sim_config.characters_per_dynasty = 8;
+        runner = std::make_unique<pat::sim::SimulationRunner>(pat::sim::demo::make_simulation(sim_config));
+        runner->start();
+        runner->set_speed(static_cast<pat::sim::Speed>(opt.sim_speed));
+    }
+    std::shared_ptr<const pat::sim::World> world_snapshot;
+    std::uint64_t seen_version = ~static_cast<std::uint64_t>(0);
+    std::vector<std::uint32_t> last_owner_palette;
+    std::vector<std::uint32_t> last_development_palette;
+    pat::sim::CharacterId shown_character;
+    float character_refresh = 1.0e9f;  // refresh the window on the first frame
+
     std::unique_ptr<UiContext> ui;
     bool character_visible = true;
     std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
     std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
+    std::unique_ptr<pat::ui::TimeBar> time_bar;           // likewise
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
             return;
@@ -325,10 +361,24 @@ int main(int argc, char** argv) {
         auto window_result = pat::ui::CharacterWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "character.rml");
         if (window_result) {
             character = std::move(window_result).value();
-            character->set_snapshot(pat::ui::make_test_character(7));
+            character->set_snapshot(pat::ui::make_test_character(7));  // replaced by a real character below
             character->set_command_handler([](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
         } else {
             PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+        }
+        if (runner) {
+            auto bar = pat::ui::TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml");
+            if (bar) {
+                time_bar = std::move(bar).value();
+                pat::sim::SimulationRunner* r = runner.get();
+                pat::ui::TimeBar* tb = time_bar.get();
+                time_bar->set_speed_handler([r, tb](int speed) {
+                    r->set_speed(static_cast<pat::sim::Speed>(speed));
+                    tb->set_speed(speed);
+                });
+            } else {
+                PAT_LOG_WARN("spike", "time bar: {}", bar.error().message);
+            }
         }
         if (character) {
             auto tooltip_result = pat::ui::TooltipManager::create(*ui, PATRIARCH_SPIKE_UI_DIR);
@@ -468,6 +518,14 @@ int main(int argc, char** argv) {
                             // A click: select the province under the cursor (clicking water deselects).
                             Vec3 p;
                             selected = ground_at(button->x, button->y, p) ? picker.province_at(p.x, p.y) : 0;
+                            if (world_snapshot && selected != 0) {
+                                // Show the head of the dynasty that owns the province.
+                                const auto head = pat::game::head_for_province(*world_snapshot, selected);
+                                if (head.valid()) {
+                                    shown_character = head;
+                                    character_refresh = 1.0e9f;  // refresh the window now
+                                }
+                            }
                         }
                     }
                 } else if (button->button == 3) {
@@ -486,6 +544,46 @@ int main(int argc, char** argv) {
         }
 
         const FrameStep step = clock.advance(frame_start);
+
+        // One snapshot per frame feeds the map and every window, so they always agree (US-3.5).
+        if (runner) {
+            world_snapshot = runner->latest_snapshot();
+            const std::uint64_t version = runner->snapshot_version();
+            if (version != seen_version) {
+                seen_version = version;
+                const std::size_t provinces = map.province_list.size();
+                std::vector<std::uint32_t> owners = pat::game::owner_palette(*world_snapshot, provinces);
+                if (owners != last_owner_palette) {
+                    view->set_palette(MapMode::Owners, owners);
+                    last_owner_palette = std::move(owners);
+                }
+                std::vector<std::uint32_t> development = pat::game::development_palette(*world_snapshot, provinces);
+                if (development != last_development_palette) {
+                    view->set_palette(MapMode::Mood, development);
+                    last_development_palette = std::move(development);
+                }
+                if (time_bar) {
+                    time_bar->set_date(pat::game::format_date_ru(world_snapshot->today()));
+                }
+            }
+            if (time_bar) {
+                const pat::sim::Speed sp = runner->speed();
+                time_bar->set_speed(sp == pat::sim::Speed::Unlimited ? 5 : static_cast<int>(sp));
+            }
+            character_refresh += frame_dt;
+            if (character && character_refresh >= 0.25f) {
+                character_refresh = 0.0f;
+                if (!shown_character.valid() || !world_snapshot->is_alive(shown_character)) {
+                    shown_character = pat::game::pick_character(*world_snapshot, 7);
+                }
+                if (shown_character.valid()) {
+                    pat::ui::CharacterSnapshot next = pat::game::character_snapshot(*world_snapshot, shown_character);
+                    if (!(next == character->snapshot())) {
+                        character->set_snapshot(next);
+                    }
+                }
+            }
+        }
         logic_steps += static_cast<std::uint64_t>(step.fixed_steps);
 
         // Camera: keyboard movement and a scripted path for --bench.
@@ -619,14 +717,6 @@ int main(int argc, char** argv) {
                 }
                 if (character) {
                     character->update();
-                    // Live data: the bound snapshot changes every two seconds and the window follows.
-                    if (clock.frame_count() % 120 == 0) {
-                        pat::ui::CharacterSnapshot next = character->snapshot();
-                        ++next.age;
-                        int& skill = next.skills[(clock.frame_count() / 120) % pat::ui::kSkillCount];
-                        skill = (skill + 1) % (pat::ui::kSkillMax + 1);
-                        character->set_snapshot(next);
-                    }
                 }
                 if (tooltips) {
                     tooltips->update(frame_dt);
@@ -705,6 +795,10 @@ int main(int argc, char** argv) {
                     percentile(steady, 0.95), percentile(steady, 0.99), percentile(steady, 1.0));
         std::printf("bench: terrain nodes per frame  min %zu  max %zu\n", min_nodes, max_nodes);
         std::printf("bench: map mode switch (CPU) max %.3f ms\n", max_mode_switch_ms);
+        if (runner) {
+            std::printf("bench: simulation at speed %d: %lld ticks (days) done, %llu snapshots published\n", opt.sim_speed,
+                        static_cast<long long>(runner->ticks_done()), static_cast<unsigned long long>(runner->snapshot_version()));
+        }
         if (labels) {
             std::printf("bench: labels placed per frame  min %zu  max %zu (of %zu)\n", label_min, label_max,
                         labels->labels().labels.size());

@@ -137,11 +137,21 @@ public:
             return;
         }
         mode_ = mode;
-        const auto idx = static_cast<std::size_t>(mode);
-        const std::vector<std::uint32_t>& pal = palettes_[idx];
-        D3D11_BOX box{0, 0, 0, kPaletteWidth, palette_rows_, 1};
-        shared_.context->UpdateSubresource(palette_tex_.Get(), 0, &box, pal.data(), kPaletteWidth * 4U, 0);
+        upload_palette(palettes_[static_cast<std::size_t>(mode)]);
         palette_valid_ = true;
+    }
+
+    void set_palette(MapMode mode, std::span<const std::uint32_t> colors) override {
+        const auto idx = static_cast<std::size_t>(mode);
+        if (idx >= palettes_.size()) {
+            return;
+        }
+        std::vector<std::uint32_t>& pal = palettes_[idx];
+        const std::size_t n = std::min(colors.size(), pal.size());
+        std::copy_n(colors.begin(), n, pal.begin());
+        if (mode == mode_ && palette_valid_) {
+            upload_palette(pal);
+        }
     }
     [[nodiscard]] MapMode mode() const override { return mode_; }
 
@@ -288,6 +298,11 @@ private:
             return core::Result<void>::err(make_error(41, what, hr));
         }
         return core::Result<void>::ok();
+    }
+
+    void upload_palette(const std::vector<std::uint32_t>& pal) {
+        D3D11_BOX box{0, 0, 0, kPaletteWidth, palette_rows_, 1};
+        shared_.context->UpdateSubresource(palette_tex_.Get(), 0, &box, pal.data(), kPaletteWidth * 4U, 0);
     }
 
     [[nodiscard]] core::Result<void> create_textures() {
