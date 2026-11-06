@@ -13,6 +13,7 @@
 #include "pat/engine/camera.hpp"
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/frame_clock.hpp"
+#include "pat/engine/map_labels.hpp"
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/terrain.hpp"
 #include "pat/engine/ui.hpp"
@@ -48,6 +49,7 @@ namespace {
 
 constexpr int kScancode1 = 30;
 constexpr int kScancodeV = 25;
+constexpr int kScancodeL = 15;
 constexpr int kScancodeF5 = 62;
 constexpr int kScancodeW = 26;
 constexpr int kScancodeA = 4;
@@ -67,6 +69,7 @@ struct Options {
     float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
+    bool no_labels = false;        // no map labels
     bool bench = false;            // scripted camera path, prints frame statistics, then exits
     std::int64_t bench_frames = 900;
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
@@ -90,6 +93,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--demo-tooltip") {
             out.demo_tooltip = true;
+        } else if (arg == "--no-labels") {
+            out.no_labels = true;
         } else if (arg == "--no-ui") {
             out.no_ui = true;
         } else if (arg == "--bench") {
@@ -121,7 +126,7 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--map FILE | --gen WxH] [--provinces N] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--ui-scale X] [--bench [FRAMES]]\n");
+                         "                       [--no-vsync] [--no-ui] [--no-labels] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
     }
@@ -246,6 +251,34 @@ int main(int argc, char** argv) {
 
     // ---- UI overlay (RmlUi). System fonts are used only by this development spike; the game's own fonts
     // are a separate decision (issue #27) and will live in assets/ with licence records.
+    // ---- map labels: SDF text from a system font (development only; the game font is issue #27)
+    std::unique_ptr<MapLabelRenderer> labels;
+    bool labels_on = true;
+    LabelLayoutStats label_stats;
+    std::size_t label_min = ~static_cast<std::size_t>(0);
+    std::size_t label_max = 0;
+    if (!opt.no_labels) {
+        for (const char* font : {"C:/Windows/Fonts/timesbd.ttf", "C:/Windows/Fonts/times.ttf", "C:/Windows/Fonts/arialbd.ttf"}) {
+            if (!std::filesystem::exists(font)) {
+                continue;
+            }
+            auto atlas = build_sdf_atlas(font);
+            if (!atlas) {
+                PAT_LOG_WARN("spike", "labels: {}", atlas.error().message);
+                break;
+            }
+            MapLabelSet set = make_test_map_labels(map, geometry, picker, atlas.value());
+            PAT_LOG_INFO("spike", "labels: {} provinces + {} regions", set.province_labels, set.region_labels);
+            auto created_labels = MapLabelRenderer::create(*renderer, std::move(atlas).value(), std::move(set));
+            if (created_labels) {
+                labels = std::move(created_labels).value();
+            } else {
+                PAT_LOG_WARN("spike", "labels: {}", created_labels.error().message);
+            }
+            break;
+        }
+    }
+
     std::unique_ptr<UiContext> ui;
     bool character_visible = true;
     std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
@@ -380,6 +413,8 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == kScancodeF5) {
                         renderer->reload_shaders_if_changed();
                         view->reload_shaders_if_changed();
+                    } else if (key->scancode == kScancodeL) {
+                        labels_on = !labels_on;
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
                         character->show(character_visible);
@@ -555,6 +590,19 @@ int main(int argc, char** argv) {
             frame.time_s = (static_cast<float>(logic_steps) + step.alpha) / 60.0f;
             renderer->push_marker("map");
             view->draw(frame);
+            if (labels && labels_on) {
+                LabelLayoutInput li;
+                li.view_proj = frame.view_proj;
+                li.eye = frame.eye;
+                li.viewport_w = width_px;
+                li.viewport_h = height_px;
+                li.pixels_per_unit_at_one = height_px / (2.0f * std::tan(camera.fov_y() * 0.5f));
+                renderer->push_marker("labels");
+                label_stats = labels->draw(li);
+                renderer->pop_marker();
+                label_min = std::min(label_min, label_stats.placed);
+                label_max = std::max(label_max, label_stats.placed);
+            }
             renderer->pop_marker();
             if (ui) {
                 renderer->push_marker("ui");
@@ -626,9 +674,9 @@ int main(int argc, char** argv) {
             }
             char title[320];
             std::snprintf(title, sizeof(title),
-                          "Patriarch - spike | %.0f fps (%.2f ms) | %zu nodes | mode %s | vsync %s | %s | %s",
+                          "Patriarch - spike | %.0f fps (%.2f ms) | %zu nodes | %zu labels | mode %s | vsync %s | %s | %s",
                           static_cast<double>(clock.fps()), static_cast<double>(clock.frame_ms()),
-                          view->last_node_count(), mode_name(view->mode()), renderer->vsync() ? "on" : "off",
+                          view->last_node_count(), label_stats.placed, mode_name(view->mode()), renderer->vsync() ? "on" : "off",
                           std::string(renderer->adapter_name()).c_str(), info);
             window.set_title(title);
             if (ui && ui->context()->GetNumDocuments() > 0) {
@@ -657,6 +705,10 @@ int main(int argc, char** argv) {
                     percentile(steady, 0.95), percentile(steady, 0.99), percentile(steady, 1.0));
         std::printf("bench: terrain nodes per frame  min %zu  max %zu\n", min_nodes, max_nodes);
         std::printf("bench: map mode switch (CPU) max %.3f ms\n", max_mode_switch_ms);
+        if (labels) {
+            std::printf("bench: labels placed per frame  min %zu  max %zu (of %zu)\n", label_min, label_max,
+                        labels->labels().labels.size());
+        }
     }
 
     PAT_LOG_INFO("spike", "exit after {} frames, {} logic steps", clock.frame_count(), logic_steps);

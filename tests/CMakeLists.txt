@@ -40,6 +40,7 @@ if(PATRIARCH_BUILD_ENGINE)
         camera_terrain_test.cpp
         character_window_test.cpp
         frame_clock_test.cpp
+        labels_test.cpp
         renderer_test.cpp
         tooltip_manager_test.cpp
         tooltip_state_test.cpp
