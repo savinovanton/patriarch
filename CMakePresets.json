@@ -24,7 +24,10 @@
       "name": "win-msvc-asan",
       "displayName": "Windows / MSVC + AddressSanitizer",
       "inherits": "base",
-      "cacheVariables": { "PATRIARCH_SANITIZE_ADDRESS": "ON" }
+      "cacheVariables": {
+        "PATRIARCH_SANITIZE_ADDRESS": "ON",
+        "PATRIARCH_BUILD_BENCHMARKS": "OFF"
+      }
     }
   ],
   "buildPresets": [
