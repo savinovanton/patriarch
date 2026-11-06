@@ -1,0 +1,21 @@
+format_version = int:1
+trait "greedy" = {
+  cost = int:3
+  group = ident:vice
+  modifiers = {
+    corruption = int:5
+    honor = int:-2
+  }
+  triggers = {
+    age >= int:16
+    honor != int:0
+  }
+}
+province "moscow" = {
+  x = int:1
+}
+province "tver" = {
+  x = int:2
+}
+empty = {
+}

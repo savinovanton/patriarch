@@ -1,0 +1,10 @@
+format_version = 1
+tags = [ court, economy ]
+numbers = [ 1, 2, 3, ]
+mixed = [
+    "text" 1.5 yes
+    { a = 1 }
+    [ x y ]
+]
+nothing = []
+dates = [ 1703.01.01 1703.05.27 ]

@@ -1,0 +1,14 @@
+format_version = 1
+# every scalar kind
+count = 42
+negative = -5
+padded = 007
+ratio = 1.50
+small = -0.025
+flag_on = yes
+flag_off = no
+title = "Москва"
+escapes = "a\tb\\c\"d\u{41}"
+start = 1703.01.01
+kind = court.embezzling_governor
+target = scope:governor

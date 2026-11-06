@@ -1,0 +1,4 @@
+format_version = 1
+trigger = {
+    has_favor(emperor) >= 30
+}

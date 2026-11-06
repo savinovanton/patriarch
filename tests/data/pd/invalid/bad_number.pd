@@ -1,0 +1,5 @@
+format_version = 1
+x = 1e5
+y = 1.
+z = .5
+w = 0x10

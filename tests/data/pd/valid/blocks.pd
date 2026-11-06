@@ -1,0 +1,17 @@
+format_version = 1
+
+trait "greedy" {
+    cost = 3, group = vice
+    modifiers = {
+        corruption = 5
+        honor = -2
+    }
+    triggers {
+        age >= 16
+        honor != 0
+    }
+}
+
+province moscow { x = 1 }
+province "tver" { x = 2 }
+empty = { }
