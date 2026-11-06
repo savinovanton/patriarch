@@ -10,7 +10,12 @@
     "xxhash",
     "benchmark",
     "sdl3",
-    "rmlui",
+    {
+      "name": "rmlui",
+      "features": [
+        "svg"
+      ]
+    },
     {
       "name": "freetype",
       "default-features": false

@@ -3,6 +3,7 @@
 #include "pat/core/log.hpp"
 
 #include <RmlUi/Core/Vertex.h>
+#include <wincodec.h>
 
 #include <algorithm>
 #include <array>
@@ -37,6 +38,55 @@ struct CompiledGeometry {
 struct Texture {
     ComPtr<ID3D11ShaderResourceView> view;
 };
+
+/// Decodes an image file (PNG, JPEG, ...) with the Windows Imaging Component into premultiplied RGBA8,
+/// the format the UI shader expects. Returns false and leaves the outputs untouched on any failure.
+bool decode_image_file(const std::string& utf8_path, std::vector<Rml::byte>& pixels, Rml::Vector2i& size) {
+    // WIC needs COM on the calling thread; a mode mismatch (S_FALSE, RPC_E_CHANGED_MODE) is fine here.
+    (void)CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    ComPtr<IWICImagingFactory> factory;
+    if (FAILED(CoCreateInstance(
+            CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)))) {
+        return false;
+    }
+    const int wide_len = MultiByteToWideChar(CP_UTF8, 0, utf8_path.c_str(), -1, nullptr, 0);
+    if (wide_len <= 0) {
+        return false;
+    }
+    std::wstring wide(static_cast<std::size_t>(wide_len), L' ');
+    MultiByteToWideChar(CP_UTF8, 0, utf8_path.c_str(), -1, wide.data(), wide_len);
+    ComPtr<IWICBitmapDecoder> decoder;
+    if (FAILED(factory->CreateDecoderFromFilename(
+            wide.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder))) {
+        return false;
+    }
+    ComPtr<IWICBitmapFrameDecode> frame;
+    if (FAILED(decoder->GetFrame(0, &frame))) {
+        return false;
+    }
+    ComPtr<IWICFormatConverter> converter;
+    if (FAILED(factory->CreateFormatConverter(&converter)) ||
+        FAILED(converter->Initialize(frame.Get(),
+                                     GUID_WICPixelFormat32bppPRGBA,
+                                     WICBitmapDitherTypeNone,
+                                     nullptr,
+                                     0.0,
+                                     WICBitmapPaletteTypeCustom))) {
+        return false;
+    }
+    UINT w = 0;
+    UINT h = 0;
+    if (FAILED(converter->GetSize(&w, &h)) || w == 0 || h == 0 || w > 16384 || h > 16384) {
+        return false;
+    }
+    std::vector<Rml::byte> out(static_cast<std::size_t>(w) * h * 4);
+    if (FAILED(converter->CopyPixels(nullptr, w * 4, static_cast<UINT>(out.size()), out.data()))) {
+        return false;
+    }
+    pixels = std::move(out);
+    size = {static_cast<int>(w), static_cast<int>(h)};
+    return true;
+}
 
 class D3D11UiRenderer final : public Rml::RenderInterface {
 public:
@@ -233,10 +283,17 @@ public:
     }
 
     Rml::TextureHandle LoadTexture(Rml::Vector2i& texture_dimensions, const Rml::String& source) override {
-        // Image decoding arrives with the art pipeline (E26); the spike UI uses no image files.
-        (void)texture_dimensions;
-        PAT_LOG_WARN(kLogCat, "UI image loading is not implemented yet: '{}'", source);
-        return 0;
+        std::vector<Rml::byte> pixels;
+        Rml::Vector2i size{};
+        if (!decode_image_file(source, pixels, size)) {
+            PAT_LOG_WARN(kLogCat, "cannot load UI image '{}'", source);
+            return 0;
+        }
+        const Rml::TextureHandle handle = make_texture(pixels.data(), size);
+        if (handle != 0) {
+            texture_dimensions = size;
+        }
+        return handle;
     }
 
     Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> source, Rml::Vector2i dimensions) override {

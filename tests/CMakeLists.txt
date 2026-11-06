@@ -46,6 +46,7 @@ if(PATRIARCH_BUILD_ENGINE)
         labels_test.cpp
         renderer_test.cpp
         time_bar_test.cpp
+        ui_images_test.cpp
         tooltip_manager_test.cpp
         tooltip_state_test.cpp
         ui_test.cpp
@@ -53,7 +54,8 @@ if(PATRIARCH_BUILD_ENGINE)
     target_link_libraries(patriarch_tests PRIVATE patriarch::engine patriarch::ui patriarch::game)
     target_compile_definitions(patriarch_tests PRIVATE
         PATRIARCH_ENGINE_SHADER_DIR="${PATRIARCH_ENGINE_SHADER_DIR}"
-        PATRIARCH_SPIKE_UI_DIR="${CMAKE_SOURCE_DIR}/apps/spike/ui")
+        PATRIARCH_SPIKE_UI_DIR="${CMAKE_SOURCE_DIR}/apps/spike/ui"
+        PATRIARCH_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets")
 endif()
 
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.
