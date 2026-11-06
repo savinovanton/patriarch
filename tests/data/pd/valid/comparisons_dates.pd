@@ -1,0 +1,12 @@
+format_version = 1
+condition = {
+    a = 1
+    b != 2
+    c < 3
+    d <= 4
+    e > 5
+    f >= 6
+}
+1703.01.01 = { phase = start }
+1703.05.27 = { phase = foundation_of_st_petersburg }
+7 = { id = seven }

@@ -24,3 +24,6 @@ CMakeLists.txt text eol=lf
 *.wav  binary
 *.ttf  binary
 *.otf  binary
+*.pd text eol=lf
+*.tree text eol=lf
+*.expect text eol=lf

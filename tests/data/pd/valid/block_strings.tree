@@ -1,0 +1,4 @@
+format_version = int:1
+chronicle.1703 = str:"Весна 1703 года.\nЗдесь \"кавычки\" и \\n не экранируются.\n"
+inline = str:"one"
+hash = str:"a # b"

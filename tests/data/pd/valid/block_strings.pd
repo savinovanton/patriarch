@@ -1,0 +1,8 @@
+format_version = 1
+chronicle.1703 = """
+Весна 1703 года.
+Здесь "кавычки" и \n не экранируются.
+"""
+inline = """one"""
+# a "#" inside a string is not a comment
+hash = "a # b"

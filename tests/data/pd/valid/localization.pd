@@ -1,0 +1,7 @@
+format_version = 1
+# Russian string table sample (plural forms are interpreted by the localization module, not by .pd)
+ui.age.years = "{n} {n:plural(год|года|лет)}"
+evt.court.embezzling_governor.title = "Казнокрадство воеводы"
+evt.court.embezzling_governor.desc = """
+В приказных книгах {governor} обнаружена недостача.
+"""

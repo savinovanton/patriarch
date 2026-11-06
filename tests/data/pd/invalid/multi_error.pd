@@ -1,0 +1,9 @@
+format_version = 1
+a = @
+b = 2
+c = true
+d = {
+    e =
+}
+f = "unterminated
+g = 3

@@ -1,0 +1,4 @@
+format_version = int:1
+ui.age.years = str:"{n} {n:plural(год|года|лет)}"
+evt.court.embezzling_governor.title = str:"Казнокрадство воеводы"
+evt.court.embezzling_governor.desc = str:"В приказных книгах {governor} обнаружена недостача.\n"

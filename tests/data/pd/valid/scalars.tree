@@ -1,0 +1,13 @@
+format_version = int:1
+count = int:42
+negative = int:-5
+padded = int:7
+ratio = dec:1.50
+small = dec:-0.025
+flag_on = bool:yes
+flag_off = bool:no
+title = str:"Москва"
+escapes = str:"a\tb\\c\"dA"
+start = date:1703.01.01
+kind = ident:court.embezzling_governor
+target = ref:scope:governor

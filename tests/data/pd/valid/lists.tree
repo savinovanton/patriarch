@@ -1,0 +1,28 @@
+format_version = int:1
+tags = [
+  - ident:court
+  - ident:economy
+]
+numbers = [
+  - int:1
+  - int:2
+  - int:3
+]
+mixed = [
+  - str:"text"
+  - dec:1.5
+  - bool:yes
+  - {
+    a = int:1
+  }
+  - [
+    - ident:x
+    - ident:y
+  ]
+]
+nothing = [
+]
+dates = [
+  - date:1703.01.01
+  - date:1703.05.27
+]
