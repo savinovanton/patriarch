@@ -389,6 +389,50 @@ TEST_CASE("Map view: selection highlight lands on the province the CPU says is u
     CHECK(verified >= 3);
 }
 
+TEST_CASE("Map view: palettes can be replaced from simulation values") {
+    MapFixture fx;
+    const std::size_t n = fx.map.province_list.size();
+    const auto solid = [&](std::uint8_t r, std::uint8_t g, std::uint8_t b) {
+        std::vector<std::uint32_t> colors(n + 1,
+                                          0xFF000000U | (static_cast<std::uint32_t>(b) << 16U) |
+                                              (static_cast<std::uint32_t>(g) << 8U) | r);
+        return colors;
+    };
+    // Mean (red - blue) over the frame: land takes on the palette colour, the sea is unaffected.
+    const auto red_minus_blue = [](const std::vector<std::uint8_t>& px) {
+        double sum = 0.0;
+        for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+            sum += static_cast<double>(px[i]) - static_cast<double>(px[i + 2]);
+        }
+        return sum / static_cast<double>(px.size() / 4);
+    };
+
+    fx.view->set_mode(pat::engine::MapMode::Owners);
+    fx.view->set_palette(pat::engine::MapMode::Owners, solid(255, 0, 0));
+    const double red = red_minus_blue(fx.render(fx.frame()));
+    fx.view->set_palette(pat::engine::MapMode::Owners, solid(0, 0, 255));
+    const double blue = red_minus_blue(fx.render(fx.frame()));
+    CHECK(red - blue > 20.0);  // the current mode's palette updates immediately
+
+    // Updating another mode changes nothing on screen until that mode is selected.
+    fx.view->set_palette(pat::engine::MapMode::Mood, solid(255, 0, 0));
+    const double still_blue = red_minus_blue(fx.render(fx.frame()));
+    CHECK(still_blue == doctest::Approx(blue));
+    fx.view->set_mode(pat::engine::MapMode::Mood);
+    CHECK(red_minus_blue(fx.render(fx.frame())) - blue > 20.0);
+
+    // Short spans update only the leading entries; extra entries are ignored.
+    fx.view->set_palette(pat::engine::MapMode::Mood, solid(0, 0, 255));
+    const double all_blue = red_minus_blue(fx.render(fx.frame()));
+    std::vector<std::uint32_t> one_red(2, 0xFF0000FFU);  // province 1 red, index 0 irrelevant
+    fx.view->set_palette(pat::engine::MapMode::Mood, one_red);
+    const double with_one_red = red_minus_blue(fx.render(fx.frame()));
+    CHECK(with_one_red >= all_blue);
+    std::vector<std::uint32_t> huge(100000, 0xFF0000FFU);
+    fx.view->set_palette(pat::engine::MapMode::Mood, huge);  // must not overflow
+    CHECK(red_minus_blue(fx.render(fx.frame())) > all_blue);
+}
+
 TEST_CASE("Map view: rendering coexists with quads in one frame") {
     MapFixture fx;
     REQUIRE(fx.renderer->begin_frame({0, 0, 0, 1}));

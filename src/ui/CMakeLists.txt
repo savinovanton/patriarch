@@ -3,10 +3,12 @@ add_library(patriarch_ui STATIC
     include/pat/ui/character_window.hpp
     include/pat/ui/explanation.hpp
     include/pat/ui/tooltip_manager.hpp
+    include/pat/ui/time_bar.hpp
     include/pat/ui/tooltip_state.hpp
     character_snapshot.cpp
     character_window.cpp
     explanation.cpp
+    time_bar.cpp
     tooltip_manager.cpp
     tooltip_state.cpp)
 add_library(patriarch::ui ALIAS patriarch_ui)

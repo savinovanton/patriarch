@@ -14,7 +14,7 @@ body {
 #window {
     position: absolute;
     right: 16dp;
-    top: 16dp;
+    top: 72dp;
     width: 460dp;
     padding: 12dp 14dp;
     background-color: #1c1710ee;
