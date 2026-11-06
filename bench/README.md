@@ -51,3 +51,10 @@ RelWithDebInfo. Для smoke нужен Python ≥ 3.8. Пороги регре�
    `SetItemsProcessed` для throughput, понятное имя и явные размеры входа.
 
 Справочник стандартных флагов и API: [Google Benchmark User Guide](https://google.github.io/benchmark/user_guide.html).
+
+Windows-пресет `win-msvc-asan` отключает `bench`: готовый пакет Google Benchmark из
+vcpkg собран без ASan и не совместим с аннотациями STL в MSVC ASan (LNK2038
+`annotate_vector` / `annotate_string`). Остальные тесты проекта в этом пресете
+сохраняются. Бенчмарки проверяются в обычных Debug/RelWithDebInfo/Release;
+для совместной ASan-сборки Benchmark потребуется отдельный инструментированный
+пакет. Причина конфликта описана в [документации MSVC](https://learn.microsoft.com/en-us/cpp/sanitizers/error-container-overflow?view=msvc-170).

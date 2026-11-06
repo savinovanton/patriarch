@@ -12,9 +12,10 @@ def main():
     output = Path(output)
     # A stale successful result must never hide a failed invocation.
     output.unlink(missing_ok=True)
+    # Windows CPU timers need a measurement longer than their ~15.6 ms resolution.
     subprocess.run(
         [executable, "--benchmark_filter=^core.pcg32_next/1024$",
-         "--benchmark_min_time=0.001s", "--benchmark_min_warmup_time=0.001",
+         "--benchmark_min_time=0.05s", "--benchmark_min_warmup_time=0.01",
          "--benchmark_repetitions=2", "--benchmark_out=" + str(output),
          "--benchmark_out_format=json", "--benchmark_format=console"],
         check=True, timeout=40,
@@ -29,13 +30,13 @@ def main():
         assert row["run_name"] == "core.pcg32_next/1024", row
         assert row["iterations"] > 0, row
         assert math.isfinite(row["cpu_time"]) and row["cpu_time"] > 0, row
-        assert row["items_per_second"] > 0, row
+        assert math.isfinite(row["items_per_second"]) and row["items_per_second"] > 0, row
     assert any(row.get("aggregate_name") == "median" for row in rows), rows
 
     # JSON is also the default stdout format; CLI flags can override run defaults.
     process = subprocess.run(
         [executable, "--pat_cpu=none", "--benchmark_filter=^core.pcg32_next/1024$",
-         "--benchmark_min_time=0.001s", "--benchmark_min_warmup_time=0",
+         "--benchmark_min_time=0.05s", "--benchmark_min_warmup_time=0",
          "--benchmark_repetitions=1"],
         check=True, capture_output=True, text=True, timeout=10,
     )
