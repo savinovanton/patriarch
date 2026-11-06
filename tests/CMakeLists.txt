@@ -33,6 +33,13 @@ target_link_libraries(patriarch_tests PRIVATE
     patriarch::sim
     doctest::doctest)
 
+if(PATRIARCH_BUILD_ENGINE)
+    target_sources(patriarch_tests PRIVATE
+        frame_clock_test.cpp
+        window_test.cpp)
+    target_link_libraries(patriarch_tests PRIVATE patriarch::engine)
+endif()
+
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.
 target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS)
 
