@@ -1,0 +1,209 @@
+/* RmlUi has no built-in user-agent stylesheet: block-level elements must be declared. */
+h1, h2, p, div {
+    display: block;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    font-family: Arial;
+    font-size: 15dp;
+    color: #e8e0cc;
+}
+
+#window {
+    position: absolute;
+    right: 16dp;
+    top: 16dp;
+    width: 460dp;
+    padding: 12dp 14dp;
+    background-color: #1c1710ee;
+    border: 1dp #8a7a52;
+    border-radius: 4dp;
+}
+
+#header {
+    height: 64dp;
+    margin-bottom: 8dp;
+}
+
+#portrait {
+    float: left;
+    width: 56dp;
+    height: 56dp;
+    margin-right: 12dp;
+    background-color: #3a3322;
+    border: 2dp #8a7a52;
+    border-radius: 28dp;
+}
+
+.initials {
+    font-family: "Times New Roman";
+    font-size: 24dp;
+    font-weight: bold;
+    color: #f2d98a;
+    text-align: center;
+    line-height: 52dp;
+}
+
+h1 {
+    font-family: "Times New Roman";
+    font-size: 22dp;
+    font-weight: bold;
+    color: #f2d98a;
+    margin-bottom: 2dp;
+}
+
+h2 {
+    font-family: "Times New Roman";
+    font-size: 17dp;
+    color: #d8c890;
+    margin: 8dp 0 4dp 0;
+}
+
+.sub {
+    color: #b8b090;
+    font-size: 13dp;
+}
+
+#tabs {
+    margin-bottom: 6dp;
+    border-bottom: 1dp #4a4030;
+}
+
+.tab {
+    display: inline-block;
+    padding: 5dp 14dp;
+    margin-right: 2dp;
+    color: #b8b090;
+    background-color: #2a241a;
+    border: 1dp #4a4030;
+    border-bottom: 0dp;
+}
+
+.tab:hover {
+    color: #ffffff;
+    background-color: #3a3322;
+}
+
+.tab.active {
+    color: #f2d98a;
+    background-color: #4a3f28;
+}
+
+.skill {
+    height: 22dp;
+    margin-bottom: 3dp;
+}
+
+.skill-name {
+    display: inline-block;
+    width: 130dp;
+}
+
+.bar {
+    display: inline-block;
+    width: 220dp;
+    height: 10dp;
+    margin-top: 5dp;
+    background-color: #120f0a;
+    border: 1dp #4a4030;
+}
+
+.fill {
+    height: 10dp;
+    background-color: #b8954a;
+}
+
+.skill-value {
+    display: inline-block;
+    width: 30dp;
+    margin-left: 8dp;
+    color: #f2d98a;
+}
+
+.trait {
+    display: inline-block;
+    padding: 2dp 8dp;
+    margin: 0 4dp 4dp 0;
+    background-color: #3a3322;
+    border: 1dp #6a5a3a;
+    border-radius: 9dp;
+}
+
+.btn {
+    display: inline-block;
+    padding: 5dp 12dp;
+    margin: 0 6dp 6dp 0;
+    background-color: #3a3322;
+    border: 1dp #8a7a52;
+    border-radius: 3dp;
+    color: #f0e6c8;
+}
+
+.btn:hover {
+    background-color: #5a4d30;
+    color: #ffffff;
+}
+
+.btn:active {
+    background-color: #2a241a;
+}
+
+.line {
+    margin-bottom: 4dp;
+}
+
+#rel_list {
+    height: 280dp;
+    overflow-y: scroll;
+    background-color: #120f0a;
+    border: 1dp #4a4030;
+}
+
+.pad {
+    width: 100%;
+}
+
+.row {
+    box-sizing: border-box;
+    height: 24dp;
+    line-height: 24dp;
+    padding: 0 8dp;
+}
+
+.row:hover {
+    background-color: #3a3322;
+}
+
+#statusbar {
+    margin-top: 8dp;
+    color: #b8b090;
+    font-size: 13dp;
+    height: 18dp;
+}
+
+scrollbarvertical {
+    width: 14dp;
+}
+
+scrollbarvertical slidertrack {
+    background-color: #1a1610;
+}
+
+scrollbarvertical sliderbar {
+    width: 14dp;
+    min-height: 24dp;
+    background-color: #5a4d30;
+    border-radius: 6dp;
+}
+
+scrollbarvertical sliderbar:hover {
+    background-color: #7a6a42;
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc {
+    width: 0;
+    height: 0;
+}

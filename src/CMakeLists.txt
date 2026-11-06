@@ -4,4 +4,5 @@ add_subdirectory(mapdata)
 
 if(PATRIARCH_BUILD_ENGINE)
     add_subdirectory(engine)
+    add_subdirectory(ui)
 endif()
