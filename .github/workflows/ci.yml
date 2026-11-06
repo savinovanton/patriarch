@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Pinned to the same version used locally (LLVM 19.1.5) to keep results identical.
+      - name: Install clang-format
+        run: pip install clang-format==19.1.5
+      - name: Check formatting
+        shell: pwsh
+        run: ./tools/format.ps1 -Check
+
+  windows-msvc:
+    name: MSVC ${{ matrix.preset }}
+    # windows-2025 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [debug, relwithdebinfo]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Configure
+        run: cmake --preset win-msvc
+      - name: Build
+        run: cmake --build --preset win-msvc-${{ matrix.preset }}
+      - name: Test
+        run: ctest --preset win-msvc-${{ matrix.preset }}
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-msvc-${{ matrix.preset }}
+          path: out/win-msvc/Testing
+          retention-days: 7
+          if-no-files-found: ignore
+
+  windows-asan:
+    name: MSVC AddressSanitizer
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Configure
+        run: cmake --preset win-msvc-asan
+      - name: Build
+        run: cmake --build --preset win-msvc-asan-debug
+      - name: Test
+        run: ctest --preset win-msvc-asan-debug
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-msvc-asan
+          path: out/win-msvc-asan/Testing
+          retention-days: 7
+          if-no-files-found: ignore

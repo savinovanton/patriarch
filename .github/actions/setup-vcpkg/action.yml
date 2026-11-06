@@ -1,0 +1,33 @@
+name: Setup vcpkg
+description: >
+  Fetches vcpkg at the commit pinned in vcpkg.json (builtin-baseline), bootstraps it,
+  exports VCPKG_ROOT and restores/saves the vcpkg binary cache.
+
+runs:
+  using: composite
+  steps:
+    - name: Fetch vcpkg at the pinned baseline
+      shell: pwsh
+      run: |
+        $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+        if (-not $baseline) { throw 'vcpkg.json has no builtin-baseline' }
+        $root = Join-Path $env:RUNNER_TEMP 'vcpkg'
+        git init $root
+        git -C $root remote add origin https://github.com/microsoft/vcpkg.git
+        git -C $root fetch --depth 1 origin $baseline
+        git -C $root checkout --detach FETCH_HEAD
+        & "$root\bootstrap-vcpkg.bat" -disableMetrics
+        if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }
+        $cache = Join-Path $env:GITHUB_WORKSPACE '.vcpkg-binary-cache'
+        New-Item -ItemType Directory -Force -Path $cache | Out-Null
+        "VCPKG_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        "VCPKG_DEFAULT_BINARY_CACHE=$cache" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        "VCPKG_DISABLE_METRICS=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+    - name: Cache vcpkg binaries
+      uses: actions/cache@v6
+      with:
+        path: .vcpkg-binary-cache
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+        restore-keys: |
+          vcpkg-${{ runner.os }}-
