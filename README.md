@@ -2,7 +2,11 @@
 
 [![CI](https://github.com/savinovanton/patriarch/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/savinovanton/patriarch/actions/workflows/ci.yml)
 
-Околополитический симулятор-стратегия о династии в России начала XVIII века (старт 1703). Одиночная игра, PC (Windows), 2D-карта, собственный движок на C++20 (Direct3D 11, RmlUi).
+Околополитический симулятор-стратегия о династии в России начала XVIII века (старт 1703). Одиночная игра, PC (Windows), **объёмная 3D-карта в стиле Victoria 3**, собственный движок на C++20 (Direct3D 11, RmlUi).
+
+## Для ИИ-агентов (Codex, Claude Code)
+
+Начните с [AGENTS.md](AGENTS.md), затем [docs/dev/status.md](docs/dev/status.md) — там состояние проекта, правила, команды сборки и ближайшие задачи.
 
 ## Сборка
 
@@ -22,6 +26,8 @@ ctest --preset win-msvc-debug
 | [docs/01-tz.md](docs/01-tz.md) | Техническое задание (требования с ID) |
 | [docs/adr/0001-stack.md](docs/adr/0001-stack.md) | Выбор стека |
 | [docs/adr/0002-performance.md](docs/adr/0002-performance.md) | Архитектура производительности |
+| [docs/adr/0003-3d-terrain-map.md](docs/adr/0003-3d-terrain-map.md) | Объёмная 3D-карта-ландшафт (стиль Victoria 3) |
+| [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
 | [docs/gdd/01-dynasty.md](docs/gdd/01-dynasty.md) | GDD: Династия и персонажи (E7, E8, E30) |
 | [docs/gdd/02-throne-crisis.md](docs/gdd/02-throne-crisis.md) | GDD: Престол, стабильность и кризис (E12, E18) |
 | [docs/gdd/03-holdings-economy.md](docs/gdd/03-holdings-economy.md) | GDD: Владения и экономика (E9, E19, E21) |

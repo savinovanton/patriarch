@@ -17,9 +17,11 @@ add_library(patriarch_core STATIC
     include/pat/core/spsc_queue.hpp
     include/pat/core/static_vec.hpp
     include/pat/core/string_interner.hpp
+    include/pat/core/compress.hpp
     arena.cpp
     assert.cpp
     build_info.cpp
+    compress.cpp
     log.cpp
     rng.cpp
     string_interner.cpp)
@@ -30,6 +32,9 @@ target_include_directories(patriarch_core PUBLIC
 target_compile_features(patriarch_core PUBLIC cxx_std_20)
 target_compile_definitions(patriarch_core PRIVATE
     PATRIARCH_VERSION_STRING="${PROJECT_VERSION}")
+
+find_package(zstd CONFIG REQUIRED)
+target_link_libraries(patriarch_core PRIVATE zstd::libzstd)
 
 option(PATRIARCH_ENABLE_TRACY "Enable Tracy profiling zones (requires the Tracy client)" OFF)
 if(PATRIARCH_ENABLE_TRACY)

@@ -9,7 +9,8 @@ namespace pat::sim {
 
 Simulation::Simulation(World world, SimulationConfig config)
     : world_(std::move(world)), config_(config), executor_(std::make_unique<SerialExecutor>()),
-      external_(config.external_queue_capacity), scratch_(config.scratch_block_bytes) {}
+      external_(std::make_unique<core::SpscQueue<Command>>(config.external_queue_capacity)),
+      scratch_(config.scratch_block_bytes) {}
 
 void Simulation::add_system(std::unique_ptr<System> system) {
     PAT_ASSERT(system != nullptr, "add_system(nullptr)");
@@ -23,6 +24,13 @@ void Simulation::add_system(std::unique_ptr<System> system) {
 void Simulation::set_executor(std::unique_ptr<TaskExecutor> executor) {
     PAT_ASSERT(executor != nullptr, "set_executor(nullptr)");
     executor_ = std::move(executor);
+}
+
+void Simulation::restore_state(World world, std::vector<Command> pending_internal) {
+    world_ = std::move(world);
+    pending_internal_ = std::move(pending_internal);
+    log_.clear();
+    report_ = TickReport{};
 }
 
 const TickReport& Simulation::tick() {
@@ -50,9 +58,9 @@ const TickReport& Simulation::tick() {
     {
         PAT_PROFILE_SCOPE("sim.commands.external");
         batch_.clear();
-        std::size_t remaining = external_.size_approx();
+        std::size_t remaining = external_->size_approx();
         Command command;
-        while (remaining > 0 && external_.try_pop(command)) {
+        while (remaining > 0 && external_->try_pop(command)) {
             batch_.push_back(command);
             --remaining;
         }

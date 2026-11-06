@@ -10,11 +10,15 @@ add_executable(patriarch_tests
     core_smoke.cpp
     date_test.cpp
     fixed_test.cpp
+    golden_test.cpp
     ids_test.cpp
     log_test.cpp
     profile_test.cpp
+    replay_test.cpp
     result_test.cpp
     rng_test.cpp
+    runner_test.cpp
+    save_test.cpp
     sim_smoke.cpp
     simulation_test.cpp
     slot_map_test.cpp
@@ -35,16 +39,7 @@ target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADER
 patriarch_set_target_options(patriarch_tests)
 set_target_properties(patriarch_tests PROPERTIES FOLDER "tests")
 
-if(MSVC AND PATRIARCH_SANITIZE_ADDRESS)
-    # MSVC's ASan runtime DLLs live next to cl.exe and are not on PATH by default.
-    get_filename_component(_patriarch_cl_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
-    add_custom_command(TARGET patriarch_tests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${_patriarch_cl_dir}/clang_rt.asan_dynamic-x86_64.dll"
-            "${_patriarch_cl_dir}/clang_rt.asan_dbg_dynamic-x86_64.dll"
-            "$<TARGET_FILE_DIR:patriarch_tests>"
-        VERBATIM)
-endif()
+patriarch_copy_asan_runtime(patriarch_tests)
 
 include(CTest)
 include(${doctest_DIR}/doctest.cmake)

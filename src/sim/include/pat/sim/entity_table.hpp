@@ -58,6 +58,40 @@ public:
     }
     [[nodiscard]] std::span<const std::uint32_t> free_list() const noexcept { return free_; }
     [[nodiscard]] std::span<const std::uint8_t> alive_flags() const noexcept { return alive_; }
+    [[nodiscard]] std::span<const std::uint32_t> generations() const noexcept { return generation_; }
+
+    /// Rebuilds the table from saved parts (loading a save). Returns false and leaves the table
+    /// untouched when the parts are inconsistent: different lengths, a free-list entry that is out
+    /// of range, duplicated or alive, or a free list that does not cover exactly the dead slots.
+    [[nodiscard]] bool restore(std::vector<std::uint8_t> alive,
+                               std::vector<std::uint32_t> generation,
+                               std::vector<std::uint32_t> free_list) {
+        if (alive.size() != generation.size()) {
+            return false;
+        }
+        std::size_t dead = 0;
+        for (const std::uint8_t flag : alive) {
+            if (flag > 1) {
+                return false;
+            }
+            dead += flag == 0 ? 1 : 0;
+        }
+        if (free_list.size() != dead) {
+            return false;
+        }
+        std::vector<std::uint8_t> seen(alive.size(), 0);
+        for (const std::uint32_t slot : free_list) {
+            if (slot >= alive.size() || alive[slot] != 0 || seen[slot] != 0) {
+                return false;
+            }
+            seen[slot] = 1;
+        }
+        alive_ = std::move(alive);
+        generation_ = std::move(generation);
+        free_ = std::move(free_list);
+        alive_count_ = alive_.size() - dead;
+        return true;
+    }
 
     /// Visits live ids in ascending order.
     template <class F>

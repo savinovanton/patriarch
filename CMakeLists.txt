@@ -14,12 +14,20 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 option(PATRIARCH_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 option(PATRIARCH_SANITIZE_ADDRESS "Build with AddressSanitizer (MSVC)" OFF)
 option(PATRIARCH_BUILD_TESTS "Build unit tests" ON)
+option(PATRIARCH_BUILD_TOOLS "Build command line tools (simcli)" ON)
 
 include(cmake/PatriarchCompileOptions.cmake)
+
+if(PATRIARCH_BUILD_TESTS)
+    enable_testing()
+endif()
 
 add_subdirectory(src)
 
 if(PATRIARCH_BUILD_TESTS)
-    enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(PATRIARCH_BUILD_TOOLS)
+    add_subdirectory(tools)
 endif()

@@ -1,7 +1,9 @@
 #pragma once
 
+#include "pat/core/bytes.hpp"
 #include "pat/core/fixed.hpp"
 #include "pat/core/ids.hpp"
+#include "pat/core/result.hpp"
 #include "pat/core/rng.hpp"
 #include "pat/core/sparse_set.hpp"
 #include "pat/core/string_interner.hpp"
@@ -141,6 +143,17 @@ public:
     [[nodiscard]] std::shared_ptr<const World> snapshot() const {
         return std::make_shared<const World>(*this);
     }
+
+    // ---- persistence (world_io.cpp) ----
+    /// Version of the byte layout written by save_state(). Bump when the layout changes and add a
+    /// migration in save.cpp.
+    static constexpr std::uint32_t kStateSchema = 1;
+    /// Writes the complete state, including the order of the index lists, so that a loaded world
+    /// has the same hash and behaves identically in the future.
+    void save_state(core::ByteWriter& out) const;
+    /// Reads a state written by save_state(). Never throws and never trusts counts or ids: bad
+    /// input produces an error, not a crash. The result satisfies check_invariants().
+    [[nodiscard]] static core::Result<World, core::Error> load_state(core::ByteReader& in);
 
 private:
     TickCalendar calendar_;

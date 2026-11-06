@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -59,17 +60,30 @@ class Simulation {
 public:
     explicit Simulation(World world, SimulationConfig config = {});
 
+    // Movable so that factories can return a Simulation by value. Never move one while another
+    // thread may still call submit().
+    Simulation(Simulation&&) noexcept = default;
+    Simulation& operator=(Simulation&&) noexcept = default;
+    Simulation(const Simulation&) = delete;
+    Simulation& operator=(const Simulation&) = delete;
+
     /// Registers a system; call before the first tick. Names must be unique.
     void add_system(std::unique_ptr<System> system);
     void set_executor(std::unique_ptr<TaskExecutor> executor);
 
     /// Queues a command from the producer thread. Returns false if the queue is full.
-    [[nodiscard]] bool submit(const Command& command) { return external_.try_push(command); }
+    [[nodiscard]] bool submit(const Command& command) { return external_->try_push(command); }
 
     /// Advances the world by one day.
     const TickReport& tick();
     /// Convenience for tests and tools: runs `days` ticks.
     void run_days(int days);
+
+    /// Replaces the world and the not-yet-applied internal commands (loading a save). The command
+    /// log starts empty again. Simulation thread only.
+    void restore_state(World world, std::vector<Command> pending_internal);
+    /// Commands emitted by systems that will be applied at the start of the next tick.
+    [[nodiscard]] std::span<const Command> pending_internal() const noexcept { return pending_internal_; }
 
     [[nodiscard]] const World& world() const noexcept { return world_; }
     [[nodiscard]] std::shared_ptr<const World> snapshot() const { return world_.snapshot(); }
@@ -83,7 +97,7 @@ private:
     SimulationConfig config_;
     std::vector<std::unique_ptr<System>> systems_;
     std::unique_ptr<TaskExecutor> executor_;
-    core::SpscQueue<Command> external_;
+    std::unique_ptr<core::SpscQueue<Command>> external_;  // heap-allocated so Simulation stays movable
     std::vector<Command> pending_internal_;
     std::vector<Command> batch_;
     CommandLog log_;

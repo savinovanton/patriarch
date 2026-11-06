@@ -41,6 +41,13 @@ class TickCalendar {
 public:
     explicit constexpr TickCalendar(Date start) noexcept : today_(start) {}
 
+    /// Rebuilds a clock from saved values (loading a save).
+    [[nodiscard]] static constexpr TickCalendar restore(Date today, std::int64_t ticks) noexcept {
+        TickCalendar c(today);
+        c.ticks_ = ticks;
+        return c;
+    }
+
     [[nodiscard]] constexpr Date today() const noexcept { return today_; }
     /// Number of ticks executed since construction.
     [[nodiscard]] constexpr std::int64_t tick_count() const noexcept { return ticks_; }
