@@ -3,6 +3,7 @@
 #include "pat/core/result.hpp"
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/math.hpp"
+#include "pat/engine/sdf_font.hpp"
 #include "pat/engine/terrain.hpp"
 #include "pat/mapdata/map_data.hpp"
 
@@ -93,6 +94,21 @@ public:
     virtual bool reload_shaders_if_changed() = 0;
 };
 
+/// One glyph to draw: its geometry (screen pixels + atlas coordinates), fill colour and outline colour.
+struct TextQuad {
+    TextQuadGeometry geometry;
+    Color color{1, 1, 1, 1};
+    Color outline{0, 0, 0, 1};
+};
+
+/// Draws SDF text quads (E3-T05) with a fill and an outline; created for one atlas.
+class ITextRenderer {
+public:
+    virtual ~ITextRenderer() = default;
+    /// Draws the glyph quads in order with alpha blending, between begin_frame() and end_frame().
+    virtual void draw(std::span<const TextQuad> quads) = 0;
+};
+
 struct FrameStats {
     std::uint32_t draw_calls = 0;
     std::uint32_t quads = 0;
@@ -140,6 +156,10 @@ public:
     /// between begin_frame() and end_frame(); the interface must not outlive the renderer.
     [[nodiscard]] virtual core::Result<std::unique_ptr<Rml::RenderInterface>>
     create_ui_render_interface() = 0;
+
+    /// Uploads an SDF atlas and returns a renderer for text drawn with it. Must not outlive this renderer.
+    [[nodiscard]] virtual core::Result<std::unique_ptr<ITextRenderer>>
+    create_text_renderer(const SdfAtlas& atlas) = 0;
 
     /// Uploads the map layers to the GPU and returns a view that draws them.
     [[nodiscard]] virtual core::Result<std::unique_ptr<IMapView>>
