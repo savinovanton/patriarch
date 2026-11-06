@@ -28,8 +28,9 @@ jobs:
 
   windows-msvc:
     name: MSVC ${{ matrix.preset }}
-    # windows-2025 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).
-    runs-on: windows-2025
+    # windows-2022 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).
+    # Do not use windows-latest/windows-2025: those labels now point to the Visual Studio 2026 image.
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +55,7 @@ jobs:
 
   windows-asan:
     name: MSVC AddressSanitizer
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
