@@ -37,6 +37,10 @@ public:
     void set_snapshot(const CharacterSnapshot& snapshot);
     [[nodiscard]] const CharacterSnapshot& snapshot() const;
 
+    /// Explanation behind a tooltip key of this window ("skill:0" ...); null for unknown keys. Meant as
+    /// the provider of a TooltipManager.
+    [[nodiscard]] const Explanation* explanation(std::string_view key) const;
+
     /// "overview", "family" or "relations".
     void set_tab(std::string_view tab);
     [[nodiscard]] std::string_view tab() const;

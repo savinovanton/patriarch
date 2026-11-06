@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pat/ui/explanation.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -27,7 +29,9 @@ struct CharacterSnapshot {
     int age = 0;
     std::array<int, kSkillCount> skills{};
     std::vector<std::string> traits;
-    std::vector<std::string> family;     ///< one line per relative
+    std::vector<std::string> family;  ///< one line per relative
+    /// How each skill value is composed (for tooltips); the root value equals the skill value.
+    std::array<Explanation, kSkillCount> skill_explanations;
     std::vector<std::string> relations;  ///< one line per acquaintance (the 1000-row list of the spike)
 
     [[nodiscard]] std::string full_name() const;

@@ -1,7 +1,9 @@
 #include "pat/ui/character_snapshot.hpp"
 
 #include "pat/core/rng.hpp"
+#include "pat/ui/explanation.hpp"
 
+#include <algorithm>
 #include <array>
 
 namespace pat::ui {
@@ -64,6 +66,59 @@ const char* pick(core::Pcg32& rng, const A& list) {
     return list[rng.bounded(static_cast<std::uint32_t>(list.size()))];
 }
 
+/// Builds a three-level breakdown whose terms sum exactly to `total`.
+Explanation make_skill_explanation(core::Pcg32& rng,
+                                   const std::string& name,
+                                   int total,
+                                   const std::vector<std::string>& traits) {
+    Explanation root;
+    root.label = name;
+    root.value = std::to_string(total);
+    root.note = "Навыки лежат в диапазоне 0–20.";
+
+    int remaining = total;
+    const auto add = [&](Explanation term) {
+        remaining -= std::stoi(term.value);
+        root.terms.push_back(std::move(term));
+    };
+
+    const int base = std::min(total, static_cast<int>(rng.range(2, 6)));
+    add({"Базовое значение", signed_value(base), "", {}});
+
+    // Education, with a mentor (who has a breakdown of their own) and optionally study abroad.
+    const int education = std::min(std::max(remaining - 1, 0), static_cast<int>(rng.range(1, 8)));
+    if (education > 0) {
+        Explanation edu{"Образование", signed_value(education), "", {}};
+        const int abroad = education >= 3 ? 1 : 0;
+        const int mentor = education - abroad;
+        Explanation mentor_term{"Наставник", signed_value(mentor), "", {}};
+        const int mentor_skill = mentor / 2;
+        mentor_term.terms.push_back({"Навык наставника", signed_value(mentor_skill), "", {}});
+        if (mentor - mentor_skill != 0) {
+            mentor_term.terms.push_back({"Усердие ученика", signed_value(mentor - mentor_skill), "", {}});
+        }
+        edu.terms.push_back(std::move(mentor_term));
+        if (abroad > 0) {
+            edu.terms.push_back({"Обучение за границей", signed_value(abroad), "", {}});
+        }
+        add(std::move(edu));
+    }
+
+    // Traits.
+    const int trait_value = static_cast<int>(rng.range(0, 4)) - 1;
+    if (trait_value != 0 && !traits.empty()) {
+        Explanation tr{"Черты", signed_value(trait_value), "", {}};
+        tr.terms.push_back({"Черта «" + traits.front() + "»", signed_value(trait_value), "", {}});
+        add(std::move(tr));
+    }
+
+    // Whatever is left is attributed to age and experience.
+    if (remaining != 0) {
+        add({"Возраст и опыт", signed_value(remaining), "", {}});
+    }
+    return root;
+}
+
 }  // namespace
 
 std::string CharacterSnapshot::full_name() const {
@@ -92,6 +147,9 @@ CharacterSnapshot make_test_character(std::uint32_t seed, std::size_t relation_c
         if (!dup) {
             c.traits.push_back(t);
         }
+    }
+    for (std::size_t i = 0; i < kSkillCount; ++i) {
+        c.skill_explanations[i] = make_skill_explanation(rng, kSkillNames[i], c.skills[i], c.traits);
     }
     const int kin_count = static_cast<int>(rng.range(3, 6));
     for (int i = 0; i < kin_count; ++i) {

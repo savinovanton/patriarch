@@ -96,6 +96,10 @@ h2 {
     margin-bottom: 3dp;
 }
 
+.skill:hover {
+    background-color: #2a241a;
+}
+
 .skill-name {
     display: inline-block;
     width: 130dp;
