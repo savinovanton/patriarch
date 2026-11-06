@@ -19,6 +19,9 @@ function(patriarch_set_target_options target)
             # ASan is incompatible with /RTC1 and incremental linking.
             target_compile_options(${target} PRIVATE /fsanitize=address /Zi)
             target_link_options(${target} PRIVATE /INCREMENTAL:NO)
+            # vcpkg libraries are built without ASan; the STL container annotations would make the
+            # link fail with LNK2038 (annotate_vector/annotate_string mismatch) on recent MSVC.
+            target_compile_definitions(${target} PRIVATE _DISABLE_VECTOR_ANNOTATION _DISABLE_STRING_ANNOTATION)
         endif()
         target_compile_definitions(${target} PRIVATE
             NOMINMAX

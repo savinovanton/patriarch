@@ -40,6 +40,7 @@ if(PATRIARCH_BUILD_ENGINE)
         camera_terrain_test.cpp
         frame_clock_test.cpp
         renderer_test.cpp
+        ui_test.cpp
         window_test.cpp)
     target_link_libraries(patriarch_tests PRIVATE patriarch::engine)
     target_compile_definitions(patriarch_tests PRIVATE

@@ -9,6 +9,7 @@
     "zstd",
     "xxhash",
     "benchmark",
-    "sdl3"
+    "sdl3",
+    "rmlui"
   ]
 }

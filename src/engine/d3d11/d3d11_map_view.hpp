@@ -17,6 +17,8 @@ struct D3D11Shared {
     /// Set to true after the map view changed pipeline state, so the renderer rebinds its own.
     /// Points into the renderer, which therefore must outlive the view.
     bool* invalidate_pipeline = nullptr;
+    /// Current render target size in pixels (owned by the renderer, read at draw time).
+    const PixelSize* target_size = nullptr;
 };
 
 [[nodiscard]] core::Result<std::unique_ptr<IMapView>>
