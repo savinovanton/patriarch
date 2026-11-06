@@ -1,0 +1,6937 @@
+{
+  "schema": 1,
+  "started_utc": "2026-11-06T12:49:40.964300+00:00",
+  "source_sha256": {
+    "main.cpp": "6924b61de3c1c8b8edfdadc78e306bec78e6a6c99e52fb048fd1bc202ffb993b",
+    "pool_executor.cpp": "7f77abe485e6c7cb72cbd821908551656342c1378a2db3cace9db339cae118a0",
+    "pool_executor.hpp": "6a8e4c018e0367fb185aab5b1d07c8698a16e287af5821e16e585fd189e96c7e",
+    "workload.cpp": "cc98570e1ba965b39a68b9e436ccf4e57bba62b4a2742634f438ad1bf7ec097b",
+    "workload.hpp": "c11b820c1a932dedd65e1f3be4bb5f1b178b74bf12fa03badf2868d58c564483"
+  },
+  "runs": [
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.55531268525,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 38.4880372297,
+        "p50_us": 36.4,
+        "p95_us": 47,
+        "p99_us": 79.2,
+        "max_us": 370.6
+      },
+      "repeat_mean_us": [
+        39.0007117438,
+        38.6332055845,
+        37.8301943608
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 38.1177286233,
+          "p50_us": 36.3,
+          "p95_us": 45.3,
+          "p99_us": 69,
+          "max_us": 294.8
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 38.3119708995,
+          "p50_us": 36.5,
+          "p95_us": 44.9,
+          "p99_us": 65.2,
+          "max_us": 370.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 45.1584848485,
+          "p50_us": 45.1,
+          "p95_us": 51.1,
+          "p99_us": 64.3,
+          "max_us": 97.8
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 86.1533333333,
+          "p50_us": 80,
+          "p95_us": 129.2,
+          "p99_us": 147.5,
+          "max_us": 147.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 12.5032849713,
+          "active": {
+            "samples": 10959,
+            "mean_us": 12.5032849713,
+            "p50_us": 11.7,
+            "p95_us": 15.8,
+            "p99_us": 21.4,
+            "max_us": 111.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0238616662104,
+          "active": {
+            "samples": 1566,
+            "mean_us": 0.166985951469,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.3,
+            "max_us": 0.4
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.56497855644,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.7014484127,
+            "p50_us": 1.6,
+            "p95_us": 2.4,
+            "p99_us": 3.3,
+            "max_us": 76
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.228533625331,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.248462301587,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.6,
+            "max_us": 2.4
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.110867779907,
+          "active": {
+            "samples": 30,
+            "mean_us": 40.5,
+            "p50_us": 36.8,
+            "p95_us": 64.9,
+            "p99_us": 104.1,
+            "max_us": 104.1
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 23.8074459348,
+          "active": {
+            "samples": 10959,
+            "mean_us": 23.8074459348,
+            "p50_us": 22.7,
+            "p95_us": 27.7,
+            "p99_us": 37.4,
+            "max_us": 350.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 4.98545781066,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 43.2574479737,
+        "p50_us": 37.8,
+        "p95_us": 61.5,
+        "p99_us": 98,
+        "max_us": 296.1
+      },
+      "repeat_mean_us": [
+        41.6148138007,
+        42.4579134721,
+        45.6996166484
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 40.4467195068,
+          "p50_us": 37.4,
+          "p95_us": 56.3,
+          "p99_us": 67.6,
+          "max_us": 296.1
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 57.3401455026,
+          "p50_us": 53.4,
+          "p95_us": 82.1,
+          "p99_us": 120.7,
+          "max_us": 191.3
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 47.8839393939,
+          "p50_us": 46.1,
+          "p95_us": 62.6,
+          "p99_us": 88.2,
+          "max_us": 116.1
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 133.686666667,
+          "p50_us": 127,
+          "p95_us": 173,
+          "p99_us": 212.1,
+          "max_us": 212.1
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 13.7311883899,
+          "active": {
+            "samples": 10956,
+            "mean_us": 13.7311883899,
+            "p50_us": 12.4,
+            "p95_us": 20.1,
+            "p99_us": 22.6,
+            "max_us": 126.5
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 2.28255750274,
+          "active": {
+            "samples": 1563,
+            "mean_us": 15.9998080614,
+            "p50_us": 14.4,
+            "p95_us": 20,
+            "p99_us": 23.3,
+            "max_us": 136.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.62302847755,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.76407738095,
+            "p50_us": 1.6,
+            "p95_us": 2.5,
+            "p99_us": 3.4,
+            "max_us": 12.4
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.242214311793,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.263263888889,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.6,
+            "max_us": 3.5
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.237760131435,
+          "active": {
+            "samples": 30,
+            "mean_us": 86.83,
+            "p50_us": 83,
+            "p95_us": 113.6,
+            "p99_us": 149.4,
+            "max_us": 149.4
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 24.8890197152,
+          "active": {
+            "samples": 10956,
+            "mean_us": 24.8890197152,
+            "p50_us": 23.1,
+            "p95_us": 31.3,
+            "p99_us": 39,
+            "max_us": 273.9
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 5.07734208202,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 34.7010952903,
+        "p50_us": 31.4,
+        "p95_us": 47.8,
+        "p99_us": 78.6,
+        "max_us": 211.8
+      },
+      "repeat_mean_us": [
+        36.6895673604,
+        34.0793537788,
+        33.3343647317
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 32.7396961691,
+          "p50_us": 30.7,
+          "p95_us": 42,
+          "p99_us": 55.8,
+          "max_us": 140
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 43.8750661376,
+          "p50_us": 41,
+          "p95_us": 55.4,
+          "p99_us": 93.9,
+          "max_us": 172.4
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 38.7681818182,
+          "p50_us": 37.2,
+          "p95_us": 49.6,
+          "p99_us": 74.6,
+          "max_us": 146.2
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 121.506666667,
+          "p50_us": 116.1,
+          "p95_us": 154.1,
+          "p99_us": 211.8,
+          "max_us": 211.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 10.716739686,
+          "active": {
+            "samples": 10956,
+            "mean_us": 10.716739686,
+            "p50_us": 9.3,
+            "p95_us": 16.1,
+            "p99_us": 19.5,
+            "max_us": 119.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 1.57644213217,
+          "active": {
+            "samples": 1563,
+            "mean_us": 11.0502239283,
+            "p50_us": 9.8,
+            "p95_us": 15.9,
+            "p99_us": 18.2,
+            "max_us": 97.1
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 2.02779299014,
+          "active": {
+            "samples": 10080,
+            "mean_us": 2.20401785714,
+            "p50_us": 2.2,
+            "p95_us": 3.1,
+            "p99_us": 3.6,
+            "max_us": 74.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.283132530121,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.307738095238,
+            "p50_us": 0.3,
+            "p95_us": 0.5,
+            "p99_us": 0.7,
+            "max_us": 5.7
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.229755385177,
+          "active": {
+            "samples": 30,
+            "mean_us": 83.9066666667,
+            "p50_us": 80.5,
+            "p95_us": 119.1,
+            "p99_us": 159.7,
+            "max_us": 159.7
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 19.611181088,
+          "active": {
+            "samples": 10956,
+            "mean_us": 19.611181088,
+            "p50_us": 19.3,
+            "p95_us": 25.8,
+            "p99_us": 31.7,
+            "max_us": 137.2
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 2.85640617104,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 25.9041894852,
+        "p50_us": 22.1,
+        "p95_us": 28.9,
+        "p99_us": 82.2,
+        "max_us": 3016.4
+      },
+      "repeat_mean_us": [
+        26.2569824754,
+        26.4016976999,
+        25.0538882804
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 23.7977653016,
+          "p50_us": 22.1,
+          "p95_us": 26.8,
+          "p99_us": 31.2,
+          "max_us": 3016.4
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 23.7542328042,
+          "p50_us": 22.5,
+          "p95_us": 28.6,
+          "p99_us": 31.3,
+          "max_us": 107.1
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 77.7733333333,
+          "p50_us": 73.2,
+          "p95_us": 82.8,
+          "p99_us": 156.2,
+          "max_us": 842.4
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 201.526666667,
+          "p50_us": 203.4,
+          "p95_us": 219.7,
+          "p99_us": 282,
+          "max_us": 282
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 5.8023822563,
+          "active": {
+            "samples": 10956,
+            "mean_us": 5.8023822563,
+            "p50_us": 4.7,
+            "p95_us": 7.8,
+            "p99_us": 11.3,
+            "max_us": 104.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0536783497627,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.376263595649,
+            "p50_us": 0.4,
+            "p95_us": 0.5,
+            "p99_us": 0.7,
+            "max_us": 1.4
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.44493428258,
+          "active": {
+            "samples": 360,
+            "mean_us": 43.9741666667,
+            "p50_us": 41.7,
+            "p95_us": 45.4,
+            "p99_us": 70.9,
+            "max_us": 809.7
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.301962395035,
+          "active": {
+            "samples": 360,
+            "mean_us": 9.18972222222,
+            "p50_us": 8.7,
+            "p95_us": 11.7,
+            "p99_us": 11.9,
+            "max_us": 15.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.348366192041,
+          "active": {
+            "samples": 30,
+            "mean_us": 127.223333333,
+            "p50_us": 130.4,
+            "p95_us": 134,
+            "p99_us": 208.6,
+            "max_us": 208.6
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.8029937934,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.8029937934,
+            "p50_us": 17.2,
+            "p95_us": 17.5,
+            "p99_us": 21.1,
+            "max_us": 3011.5
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 1.79343168182,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 31.3384081782,
+        "p50_us": 29.3,
+        "p95_us": 32,
+        "p99_us": 58.4,
+        "max_us": 2323.6
+      },
+      "repeat_mean_us": [
+        31.1831599124,
+        31.961746988,
+        30.8703176342
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 29.937769705,
+          "p50_us": 29.2,
+          "p95_us": 30,
+          "p99_us": 50.6,
+          "max_us": 2323.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 31.1425925926,
+          "p50_us": 30.3,
+          "p95_us": 31.7,
+          "p99_us": 52.1,
+          "max_us": 701.5
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 32.4596969697,
+          "p50_us": 31.5,
+          "p95_us": 33.8,
+          "p99_us": 46.2,
+          "max_us": 119.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 452.986666667,
+          "p50_us": 411.2,
+          "p95_us": 827.1,
+          "p99_us": 1119.7,
+          "max_us": 1119.7
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 2.43383534137,
+          "active": {
+            "samples": 10956,
+            "mean_us": 2.43383534137,
+            "p50_us": 2.4,
+            "p95_us": 2.7,
+            "p99_us": 3.4,
+            "max_us": 83.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.214914202264,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.50646193218,
+            "p50_us": 1,
+            "p95_us": 1.2,
+            "p99_us": 2.3,
+            "max_us": 666.5
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.21688572472,
+          "active": {
+            "samples": 10080,
+            "mean_us": 4.5833531746,
+            "p50_us": 4.2,
+            "p95_us": 4.4,
+            "p99_us": 7.4,
+            "max_us": 2244
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.510934647682,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.555337301587,
+            "p50_us": 0.5,
+            "p95_us": 0.7,
+            "p99_us": 0.9,
+            "max_us": 25.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.15083972253,
+          "active": {
+            "samples": 30,
+            "mean_us": 420.286666667,
+            "p50_us": 378.8,
+            "p95_us": 794.2,
+            "p99_us": 1083.6,
+            "max_us": 1083.6
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.5708013874,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.5708013874,
+            "p50_us": 21.9,
+            "p95_us": 22.4,
+            "p99_us": 32.4,
+            "max_us": 301.9
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 2.79247427463,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 18.7309236948,
+        "p50_us": 14.4,
+        "p95_us": 27.1,
+        "p99_us": 102.5,
+        "max_us": 430.8
+      },
+      "repeat_mean_us": [
+        18.8177710843,
+        18.1698795181,
+        19.2051204819
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 15.1525759577,
+          "p50_us": 14.3,
+          "p95_us": 16.3,
+          "p99_us": 35.6,
+          "max_us": 135.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 16.7357804233,
+          "p50_us": 15.8,
+          "p95_us": 17.9,
+          "p99_us": 34.6,
+          "max_us": 161.3
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 99.0436363636,
+          "p50_us": 96.1,
+          "p95_us": 105.8,
+          "p99_us": 167,
+          "max_us": 212.3
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 319.37,
+          "p50_us": 306,
+          "p95_us": 403.3,
+          "p99_us": 430.8,
+          "max_us": 430.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 2.79299014239,
+          "active": {
+            "samples": 10956,
+            "mean_us": 2.79299014239,
+            "p50_us": 2.5,
+            "p95_us": 5.2,
+            "p99_us": 6.8,
+            "max_us": 110.4
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.21715954728,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.52220089571,
+            "p50_us": 1.4,
+            "p95_us": 2,
+            "p99_us": 2.4,
+            "max_us": 22.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 2.1194048923,
+          "active": {
+            "samples": 360,
+            "mean_us": 64.5005555556,
+            "p50_us": 62.3,
+            "p95_us": 70.7,
+            "p99_us": 91,
+            "max_us": 137.4
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.405284775465,
+          "active": {
+            "samples": 360,
+            "mean_us": 12.3341666667,
+            "p50_us": 12.5,
+            "p95_us": 13.2,
+            "p99_us": 16.2,
+            "max_us": 119.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.589147499087,
+          "active": {
+            "samples": 30,
+            "mean_us": 215.156666667,
+            "p50_us": 207.3,
+            "p95_us": 248.2,
+            "p99_us": 308.8,
+            "max_us": 308.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 12.3615370573,
+          "active": {
+            "samples": 10956,
+            "mean_us": 12.3615370573,
+            "p50_us": 11.7,
+            "p95_us": 13.5,
+            "p99_us": 25.9,
+            "max_us": 108.5
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 1.09963772866,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 30.8427893392,
+        "p50_us": 24.4,
+        "p95_us": 30.5,
+        "p99_us": 157.4,
+        "max_us": 755.4
+      },
+      "repeat_mean_us": [
+        31.0991511501,
+        30.4582146769,
+        30.9710021906
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 25.2108542492,
+          "p50_us": 24.3,
+          "p95_us": 25.1,
+          "p99_us": 46.2,
+          "max_us": 362.4
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 25.8483465608,
+          "p50_us": 25.3,
+          "p95_us": 26.1,
+          "p99_us": 34.5,
+          "max_us": 174.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 161.689090909,
+          "p50_us": 153.2,
+          "p95_us": 194.8,
+          "p99_us": 253,
+          "max_us": 590.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 548.603333333,
+          "p50_us": 530.6,
+          "p95_us": 630.8,
+          "p99_us": 755.4,
+          "max_us": 755.4
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 2.40998539613,
+          "active": {
+            "samples": 10956,
+            "mean_us": 2.40998539613,
+            "p50_us": 2.3,
+            "p95_us": 2.6,
+            "p99_us": 3.3,
+            "max_us": 143.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.14866739686,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.04209852847,
+            "p50_us": 1,
+            "p95_us": 1.2,
+            "p99_us": 1.9,
+            "max_us": 2.9
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 3.91586345382,
+          "active": {
+            "samples": 360,
+            "mean_us": 119.172777778,
+            "p50_us": 111.9,
+            "p95_us": 134.8,
+            "p99_us": 208.9,
+            "max_us": 523.5
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.483378970427,
+          "active": {
+            "samples": 360,
+            "mean_us": 14.7108333333,
+            "p50_us": 14.2,
+            "p95_us": 16.8,
+            "p99_us": 20.8,
+            "max_us": 98.7
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.04676889376,
+          "active": {
+            "samples": 30,
+            "mean_us": 382.28,
+            "p50_us": 376.3,
+            "p95_us": 403,
+            "p99_us": 488.2,
+            "max_us": 488.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.6406809054,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.6406809054,
+            "p50_us": 21.9,
+            "p95_us": 22.5,
+            "p99_us": 33.1,
+            "max_us": 360.2
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.10106770406,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 32.3678072817,
+        "p50_us": 30.1,
+        "p95_us": 38,
+        "p99_us": 59.9,
+        "max_us": 298.4
+      },
+      "repeat_mean_us": [
+        32.7048179578,
+        32.4038324665,
+        31.9947714208
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 32.0038846704,
+          "p50_us": 30,
+          "p95_us": 37.7,
+          "p99_us": 47.6,
+          "max_us": 298.4
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 32.4160714286,
+          "p50_us": 30.2,
+          "p95_us": 37.9,
+          "p99_us": 78.5,
+          "max_us": 145.4
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 38.4260606061,
+          "p50_us": 37.7,
+          "p95_us": 45,
+          "p99_us": 64.1,
+          "max_us": 112.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 73.5266666667,
+          "p50_us": 71.4,
+          "p95_us": 80.1,
+          "p99_us": 116.3,
+          "max_us": 116.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 10.1044894607,
+          "active": {
+            "samples": 10959,
+            "mean_us": 10.1044894607,
+            "p50_us": 8.5,
+            "p95_us": 15.9,
+            "p99_us": 16.4,
+            "max_us": 112.2
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0247741582261,
+          "active": {
+            "samples": 1566,
+            "mean_us": 0.17337164751,
+            "p50_us": 0.2,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 0.4
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.8846062597,
+          "active": {
+            "samples": 10080,
+            "mean_us": 2.0489484127,
+            "p50_us": 2.1,
+            "p95_us": 2.5,
+            "p99_us": 2.9,
+            "max_us": 93.1
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.265772424491,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.288948412698,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.6,
+            "max_us": 1.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.0949447942331,
+          "active": {
+            "samples": 30,
+            "mean_us": 34.6833333333,
+            "p50_us": 32.4,
+            "p95_us": 43,
+            "p99_us": 61.9,
+            "max_us": 61.9
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 19.7284788758,
+          "active": {
+            "samples": 10959,
+            "mean_us": 19.7284788758,
+            "p50_us": 19,
+            "p95_us": 21.2,
+            "p99_us": 30.8,
+            "max_us": 281.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 0.863137754625,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 25.2439667762,
+        "p50_us": 23.9,
+        "p95_us": 27.3,
+        "p99_us": 37.9,
+        "max_us": 282.9
+      },
+      "repeat_mean_us": [
+        25.3495345016,
+        24.9934008762,
+        25.3889649507
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 24.7873403787,
+          "p50_us": 23.8,
+          "p95_us": 27,
+          "p99_us": 30.9,
+          "max_us": 282.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 25.0665343915,
+          "p50_us": 24.2,
+          "p95_us": 27.4,
+          "p99_us": 31.2,
+          "max_us": 125.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 26.7845454545,
+          "p50_us": 24.6,
+          "p95_us": 28.1,
+          "p99_us": 101.4,
+          "max_us": 130.1
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 155.506666667,
+          "p50_us": 155.1,
+          "p95_us": 183,
+          "p99_us": 255.1,
+          "max_us": 255.1
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 5.51908543264,
+          "active": {
+            "samples": 10956,
+            "mean_us": 5.51908543264,
+            "p50_us": 4.8,
+            "p95_us": 7.8,
+            "p99_us": 11.2,
+            "max_us": 149.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.053158086893,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.372616762636,
+            "p50_us": 0.4,
+            "p95_us": 0.5,
+            "p99_us": 0.6,
+            "max_us": 2.4
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.42442497262,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.54821428571,
+            "p50_us": 1.5,
+            "p95_us": 1.6,
+            "p99_us": 1.8,
+            "max_us": 99.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.191055129609,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.207658730159,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 2.9
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.355905439942,
+          "active": {
+            "samples": 30,
+            "mean_us": 129.976666667,
+            "p50_us": 130.2,
+            "p95_us": 155.4,
+            "p99_us": 225.5,
+            "max_us": 225.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.5229828405,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.5229828405,
+            "p50_us": 17.2,
+            "p95_us": 17.6,
+            "p99_us": 20.3,
+            "max_us": 172.9
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 0.788903655878,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 30.8944779116,
+        "p50_us": 24.4,
+        "p95_us": 31,
+        "p99_us": 160.2,
+        "max_us": 864.6
+      },
+      "repeat_mean_us": [
+        30.696686747,
+        30.8199890471,
+        31.1667579409
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 25.2320343461,
+          "p50_us": 24.3,
+          "p95_us": 24.9,
+          "p99_us": 35.4,
+          "max_us": 864.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 26.017989418,
+          "p50_us": 25.4,
+          "p95_us": 26.2,
+          "p99_us": 35.2,
+          "max_us": 113.3
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 162.861818182,
+          "p50_us": 153.4,
+          "p95_us": 208.4,
+          "p99_us": 272,
+          "max_us": 707.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 539.616666667,
+          "p50_us": 532.9,
+          "p95_us": 568,
+          "p99_us": 617.6,
+          "max_us": 617.6
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 2.43514056225,
+          "active": {
+            "samples": 10956,
+            "mean_us": 2.43514056225,
+            "p50_us": 2.4,
+            "p95_us": 2.6,
+            "p99_us": 3.4,
+            "max_us": 87.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.157228915663,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.10211132438,
+            "p50_us": 1,
+            "p95_us": 1.2,
+            "p99_us": 2.1,
+            "max_us": 27.9
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 3.94021540708,
+          "active": {
+            "samples": 360,
+            "mean_us": 119.913888889,
+            "p50_us": 112.3,
+            "p95_us": 135.6,
+            "p99_us": 213.7,
+            "max_us": 646.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.47810332238,
+          "active": {
+            "samples": 360,
+            "mean_us": 14.5502777778,
+            "p50_us": 14.3,
+            "p95_us": 17,
+            "p99_us": 23.4,
+            "max_us": 24.6
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.04092734575,
+          "active": {
+            "samples": 30,
+            "mean_us": 380.146666667,
+            "p50_us": 378.1,
+            "p95_us": 400.9,
+            "p99_us": 406.3,
+            "max_us": 406.3
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.6228824388,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.6228824388,
+            "p50_us": 21.9,
+            "p95_us": 22.3,
+            "p99_us": 30.2,
+            "max_us": 861.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 4.42908322393,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 39.8947987955,
+        "p50_us": 35.2,
+        "p95_us": 58.7,
+        "p99_us": 102.8,
+        "max_us": 234.9
+      },
+      "repeat_mean_us": [
+        38.8718039967,
+        38.8774705721,
+        41.9351218177
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 37.893716298,
+          "p50_us": 35.2,
+          "p95_us": 45.6,
+          "p99_us": 65.7,
+          "max_us": 159.5
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 37.9292328042,
+          "p50_us": 35.2,
+          "p95_us": 46.2,
+          "p99_us": 61.1,
+          "max_us": 152.8
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 95.3418181818,
+          "p50_us": 90.7,
+          "p95_us": 132.4,
+          "p99_us": 163.6,
+          "max_us": 172.1
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 135.17,
+          "p50_us": 128.4,
+          "p95_us": 194.9,
+          "p99_us": 234.9,
+          "max_us": 234.9
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 13.5220731819,
+          "active": {
+            "samples": 10959,
+            "mean_us": 13.5220731819,
+            "p50_us": 11.8,
+            "p95_us": 18.2,
+            "p99_us": 21.8,
+            "max_us": 114.2
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0246464093439,
+          "active": {
+            "samples": 1566,
+            "mean_us": 0.172477650064,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.3,
+            "max_us": 1
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.17420385072,
+          "active": {
+            "samples": 360,
+            "mean_us": 35.7447222222,
+            "p50_us": 33.1,
+            "p95_us": 46.1,
+            "p99_us": 76.9,
+            "max_us": 114.3
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.590929829364,
+          "active": {
+            "samples": 360,
+            "mean_us": 17.9888888889,
+            "p50_us": 17.9,
+            "p95_us": 21,
+            "p99_us": 28.3,
+            "max_us": 88.4
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.103631718222,
+          "active": {
+            "samples": 30,
+            "mean_us": 37.8566666667,
+            "p50_us": 36.6,
+            "p95_us": 48.7,
+            "p99_us": 51.2,
+            "max_us": 51.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 24.2952641664,
+          "active": {
+            "samples": 10959,
+            "mean_us": 24.2952641664,
+            "p50_us": 23.2,
+            "p95_us": 27.6,
+            "p99_us": 38,
+            "max_us": 147
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 2.5690981784,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 45.9366100767,
+        "p50_us": 41.3,
+        "p95_us": 58.4,
+        "p99_us": 116.4,
+        "max_us": 2674.3
+      },
+      "repeat_mean_us": [
+        46.7216319825,
+        46.508762322,
+        44.5794359255
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 42.8103698811,
+          "p50_us": 40.9,
+          "p95_us": 54.3,
+          "p99_us": 84.9,
+          "max_us": 453.8
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 56.4132275132,
+          "p50_us": 53.2,
+          "p95_us": 74,
+          "p99_us": 133.6,
+          "max_us": 605.8
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 47.9375757576,
+          "p50_us": 44.8,
+          "p95_us": 61.7,
+          "p99_us": 78.9,
+          "max_us": 142.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 442.53,
+          "p50_us": 298,
+          "p95_us": 688.7,
+          "p99_us": 2674.3,
+          "max_us": 2674.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 14.6267342096,
+          "active": {
+            "samples": 10956,
+            "mean_us": 14.6267342096,
+            "p50_us": 13.8,
+            "p95_us": 19.1,
+            "p99_us": 26.5,
+            "max_us": 424.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 1.87399598394,
+          "active": {
+            "samples": 1563,
+            "mean_us": 13.1359564939,
+            "p50_us": 12.4,
+            "p95_us": 17.8,
+            "p99_us": 22.7,
+            "max_us": 542.7
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.64032493611,
+          "active": {
+            "samples": 10080,
+            "mean_us": 5.04359126984,
+            "p50_us": 4.5,
+            "p95_us": 7.1,
+            "p99_us": 9.2,
+            "max_us": 245.5
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.632238043081,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.687182539682,
+            "p50_us": 0.6,
+            "p95_us": 1,
+            "p99_us": 1.2,
+            "max_us": 104.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.07746440307,
+          "active": {
+            "samples": 30,
+            "mean_us": 393.49,
+            "p50_us": 240.2,
+            "p95_us": 626.8,
+            "p99_us": 2628.6,
+            "max_us": 2628.6
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.7998357065,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.7998357065,
+            "p50_us": 22,
+            "p95_us": 26.6,
+            "p99_us": 33.2,
+            "max_us": 214.2
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 4.44690730398,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 40.9346476816,
+        "p50_us": 38.6,
+        "p95_us": 50.2,
+        "p99_us": 138.2,
+        "max_us": 441.6
+      },
+      "repeat_mean_us": [
+        38.8409364732,
+        41.8206736035,
+        42.1423329682
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 36.01388155,
+          "p50_us": 38.1,
+          "p95_us": 40.4,
+          "p99_us": 56,
+          "max_us": 129.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 44.0766534392,
+          "p50_us": 43.1,
+          "p95_us": 50.2,
+          "p99_us": 59.6,
+          "max_us": 167.7
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 134.255757576,
+          "p50_us": 134,
+          "p95_us": 152.6,
+          "p99_us": 214.1,
+          "max_us": 402.1
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 346.053333333,
+          "p50_us": 346.7,
+          "p95_us": 396,
+          "p99_us": 441.6,
+          "max_us": 441.6
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 12.284328222,
+          "active": {
+            "samples": 10956,
+            "mean_us": 12.284328222,
+            "p50_us": 12.3,
+            "p95_us": 13.5,
+            "p99_us": 16.9,
+            "max_us": 102.9
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 1.5655166119,
+          "active": {
+            "samples": 1563,
+            "mean_us": 10.9736404351,
+            "p50_us": 10.9,
+            "p95_us": 14.5,
+            "p99_us": 16.4,
+            "max_us": 129.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 2.36704089084,
+          "active": {
+            "samples": 360,
+            "mean_us": 72.0369444444,
+            "p50_us": 73.6,
+            "p95_us": 79.8,
+            "p99_us": 133.5,
+            "max_us": 311.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.633050383352,
+          "active": {
+            "samples": 360,
+            "mean_us": 19.2658333333,
+            "p50_us": 18.1,
+            "p95_us": 21.6,
+            "p99_us": 31.2,
+            "max_us": 98.7
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.581060606061,
+          "active": {
+            "samples": 30,
+            "mean_us": 212.203333333,
+            "p50_us": 216.5,
+            "p95_us": 238.4,
+            "p99_us": 245.2,
+            "max_us": 245.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 23.2260770354,
+          "active": {
+            "samples": 10956,
+            "mean_us": 23.2260770354,
+            "p50_us": 25.5,
+            "p95_us": 27.1,
+            "p99_us": 30.8,
+            "max_us": 113.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 2.79256830727,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 53.5818638189,
+        "p50_us": 49.6,
+        "p95_us": 69,
+        "p99_us": 123.1,
+        "max_us": 435.5
+      },
+      "repeat_mean_us": [
+        52.5165115005,
+        52.9365279299,
+        55.2925520263
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 50.7048546896,
+          "p50_us": 48.5,
+          "p95_us": 63.3,
+          "p99_us": 108.1,
+          "max_us": 323.3
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 64.9739417989,
+          "p50_us": 62.5,
+          "p95_us": 82.3,
+          "p99_us": 130,
+          "max_us": 195.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 58.6987878788,
+          "p50_us": 55.6,
+          "p95_us": 77.7,
+          "p99_us": 106.7,
+          "max_us": 133.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 294.293333333,
+          "p50_us": 283,
+          "p95_us": 323.7,
+          "p99_us": 435.5,
+          "max_us": 435.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 16.3605878058,
+          "active": {
+            "samples": 10956,
+            "mean_us": 16.3605878058,
+            "p50_us": 16.1,
+            "p95_us": 21.7,
+            "p99_us": 28.5,
+            "max_us": 252.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 2.05275648047,
+          "active": {
+            "samples": 1563,
+            "mean_us": 14.3889955214,
+            "p50_us": 13.4,
+            "p95_us": 20.9,
+            "p99_us": 24.8,
+            "max_us": 109.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.89415845199,
+          "active": {
+            "samples": 10080,
+            "mean_us": 5.31948412698,
+            "p50_us": 4.9,
+            "p95_us": 7.4,
+            "p99_us": 9.6,
+            "max_us": 250.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.667077400511,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.725049603175,
+            "p50_us": 0.7,
+            "p95_us": 1,
+            "p99_us": 1.3,
+            "max_us": 84.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.643428258488,
+          "active": {
+            "samples": 30,
+            "mean_us": 234.98,
+            "p50_us": 223.9,
+            "p95_us": 260.8,
+            "p99_us": 374.5,
+            "max_us": 374.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 28.6562522819,
+          "active": {
+            "samples": 10956,
+            "mean_us": 28.6562522819,
+            "p50_us": 28.2,
+            "p95_us": 32.6,
+            "p99_us": 48.7,
+            "max_us": 265.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 0.955633538819,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.4193448307,
+        "p50_us": 18.7,
+        "p95_us": 23.1,
+        "p99_us": 28,
+        "max_us": 155.6
+      },
+      "repeat_mean_us": [
+        19.6292362442,
+        19.3517930468,
+        19.2770052012
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 19.2414988445,
+          "p50_us": 18.7,
+          "p95_us": 23,
+          "p99_us": 24.7,
+          "max_us": 155.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.3457010582,
+          "p50_us": 18.8,
+          "p95_us": 23.1,
+          "p99_us": 25,
+          "max_us": 146
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 20.8609090909,
+          "p50_us": 19.5,
+          "p95_us": 24.6,
+          "p99_us": 31.7,
+          "max_us": 147.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 61.1433333333,
+          "p50_us": 63.4,
+          "p95_us": 78.9,
+          "p99_us": 91.2,
+          "max_us": 91.2
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.297892143444,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.297892143444,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 11.4
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0136326307145,
+          "active": {
+            "samples": 1383,
+            "mean_us": 0.108026030369,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.2,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.38571949995,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.50655753968,
+            "p50_us": 1.4,
+            "p95_us": 2.3,
+            "p99_us": 2.6,
+            "max_us": 117.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.18720686194,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.203531746032,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 1.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.112072269368,
+          "active": {
+            "samples": 30,
+            "mean_us": 40.94,
+            "p50_us": 43.7,
+            "p95_us": 53.9,
+            "p99_us": 66.2,
+            "max_us": 66.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.2594671047,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.2594671047,
+            "p50_us": 16.7,
+            "p95_us": 19.9,
+            "p99_us": 21.1,
+            "max_us": 153.5
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 0.533964548226,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 20.7043537788,
+        "p50_us": 19.8,
+        "p95_us": 20.6,
+        "p99_us": 30.9,
+        "max_us": 800.9
+      },
+      "repeat_mean_us": [
+        20.7833515882,
+        20.5780120482,
+        20.7516976999
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 20.195673712,
+          "p50_us": 19.8,
+          "p95_us": 20.3,
+          "p99_us": 26.3,
+          "max_us": 293.1
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 21.0068783069,
+          "p50_us": 20.2,
+          "p95_us": 20.7,
+          "p99_us": 26.4,
+          "max_us": 800.9
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 20.8196969697,
+          "p50_us": 20.6,
+          "p95_us": 21.2,
+          "p99_us": 30.8,
+          "max_us": 32.8
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 158.216666667,
+          "p50_us": 147.6,
+          "p95_us": 251.1,
+          "p99_us": 252.3,
+          "max_us": 252.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 0.85207192406,
+          "active": {
+            "samples": 10956,
+            "mean_us": 0.85207192406,
+            "p50_us": 0.8,
+            "p95_us": 1,
+            "p99_us": 1.1,
+            "max_us": 86.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0560332238043,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.3927703135,
+            "p50_us": 0.4,
+            "p95_us": 0.5,
+            "p99_us": 0.7,
+            "max_us": 20.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.3835615188,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.50379960317,
+            "p50_us": 1.4,
+            "p95_us": 1.6,
+            "p99_us": 2.2,
+            "max_us": 184
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.181480467324,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.197251984127,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.375365096751,
+          "active": {
+            "samples": 30,
+            "mean_us": 137.083333333,
+            "p50_us": 127,
+            "p95_us": 221.1,
+            "p99_us": 229.4,
+            "max_us": 229.4
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.69045272,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.69045272,
+            "p50_us": 17.2,
+            "p95_us": 17.6,
+            "p99_us": 21.7,
+            "max_us": 711.2
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 0.132650035904,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 36.174826579,
+        "p50_us": 33.3,
+        "p95_us": 41.3,
+        "p99_us": 93.2,
+        "max_us": 562
+      },
+      "repeat_mean_us": [
+        36.2280120482,
+        36.1616922234,
+        36.1347754655
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 34.255438133,
+          "p50_us": 33.2,
+          "p95_us": 37.7,
+          "p99_us": 65.9,
+          "max_us": 269.3
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 39.4200396825,
+          "p50_us": 38.2,
+          "p95_us": 44.7,
+          "p99_us": 76.3,
+          "max_us": 271.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 39.6684848485,
+          "p50_us": 36.1,
+          "p95_us": 47.6,
+          "p99_us": 117.3,
+          "max_us": 283.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 415.376666667,
+          "p50_us": 419,
+          "p95_us": 470.7,
+          "p99_us": 562,
+          "max_us": 562
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 6.61329864914,
+          "active": {
+            "samples": 10956,
+            "mean_us": 6.61329864914,
+            "p50_us": 6.3,
+            "p95_us": 9.1,
+            "p99_us": 9.8,
+            "max_us": 183.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.736016794451,
+          "active": {
+            "samples": 1563,
+            "mean_us": 5.15918106206,
+            "p50_us": 4.9,
+            "p95_us": 7.7,
+            "p99_us": 8,
+            "max_us": 226.5
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.22548375319,
+          "active": {
+            "samples": 10080,
+            "mean_us": 4.5926984127,
+            "p50_us": 4.3,
+            "p95_us": 5,
+            "p99_us": 9.8,
+            "max_us": 114.1
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.548320554947,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.595972222222,
+            "p50_us": 0.5,
+            "p95_us": 0.8,
+            "p99_us": 1.3,
+            "max_us": 87.3
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.01996166484,
+          "active": {
+            "samples": 30,
+            "mean_us": 372.49,
+            "p50_us": 380.6,
+            "p95_us": 416.5,
+            "p99_us": 516.4,
+            "max_us": 516.4
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.7595564074,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.7595564074,
+            "p50_us": 21.9,
+            "p95_us": 25.6,
+            "p99_us": 41.5,
+            "max_us": 261.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 5.32605267416,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 22.6382895217,
+        "p50_us": 21.7,
+        "p95_us": 34.3,
+        "p99_us": 50,
+        "max_us": 249.3
+      },
+      "repeat_mean_us": [
+        21.8598849945,
+        24.0271631982,
+        22.0278203724
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 21.8815389696,
+          "p50_us": 21.5,
+          "p95_us": 30.9,
+          "p99_us": 43.1,
+          "max_us": 249.3
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 24.8491402116,
+          "p50_us": 21.9,
+          "p95_us": 42.8,
+          "p99_us": 67.6,
+          "max_us": 189.1
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 25.3912121212,
+          "p50_us": 25.2,
+          "p95_us": 36.7,
+          "p99_us": 43.7,
+          "max_us": 95.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 110.073333333,
+          "p50_us": 105.9,
+          "p95_us": 166.3,
+          "p99_us": 215.5,
+          "max_us": 215.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 5.47346659365,
+          "active": {
+            "samples": 10956,
+            "mean_us": 5.47346659365,
+            "p50_us": 4.7,
+            "p95_us": 13,
+            "p99_us": 14.6,
+            "max_us": 109.9
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.385825118656,
+          "active": {
+            "samples": 1563,
+            "mean_us": 2.70447856686,
+            "p50_us": 0.9,
+            "p95_us": 12.6,
+            "p99_us": 13.3,
+            "max_us": 103.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.82080138737,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.97903769841,
+            "p50_us": 1.7,
+            "p95_us": 2.8,
+            "p99_us": 3,
+            "max_us": 92.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.255631617379,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.277847222222,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.6,
+            "max_us": 7.3
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.235313983206,
+          "active": {
+            "samples": 30,
+            "mean_us": 85.9366666667,
+            "p50_us": 80.4,
+            "p95_us": 135.8,
+            "p99_us": 169.5,
+            "max_us": 169.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 14.2535231836,
+          "active": {
+            "samples": 10956,
+            "mean_us": 14.2535231836,
+            "p50_us": 13.3,
+            "p95_us": 17.7,
+            "p99_us": 30,
+            "max_us": 190.6
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 3.74625564297,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 33.357758306,
+        "p50_us": 31.2,
+        "p95_us": 39.5,
+        "p99_us": 96.9,
+        "max_us": 2340.7
+      },
+      "repeat_mean_us": [
+        31.9495892662,
+        33.7889649507,
+        34.334720701
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 33.0224350506,
+          "p50_us": 31.2,
+          "p95_us": 39.2,
+          "p99_us": 65.3,
+          "max_us": 2340.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 32.5233465608,
+          "p50_us": 31.5,
+          "p95_us": 38.9,
+          "p99_us": 62.3,
+          "max_us": 127.9
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 33.9403030303,
+          "p50_us": 32,
+          "p95_us": 41.8,
+          "p99_us": 99.3,
+          "max_us": 111.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 170.54,
+          "p50_us": 170.8,
+          "p95_us": 253.3,
+          "p99_us": 400.3,
+          "max_us": 400.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 13.1973713034,
+          "active": {
+            "samples": 10956,
+            "mean_us": 13.1973713034,
+            "p50_us": 12.2,
+            "p95_us": 15,
+            "p99_us": 23,
+            "max_us": 2269.9
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0572654253377,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.401407549584,
+            "p50_us": 0.4,
+            "p95_us": 0.6,
+            "p99_us": 0.8,
+            "max_us": 4.1
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.44578313253,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.57142857143,
+            "p50_us": 1.5,
+            "p95_us": 2.1,
+            "p99_us": 2.9,
+            "max_us": 116.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.203988682001,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.221716269841,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 19.4
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.362614092735,
+          "active": {
+            "samples": 30,
+            "mean_us": 132.426666667,
+            "p50_us": 138.6,
+            "p95_us": 217,
+            "p99_us": 218.9,
+            "max_us": 218.9
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.824826579,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.824826579,
+            "p50_us": 17.2,
+            "p95_us": 20.4,
+            "p99_us": 28.2,
+            "max_us": 156.1
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.71428381514,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 27.8448124829,
+        "p50_us": 24.9,
+        "p95_us": 32,
+        "p99_us": 87.7,
+        "max_us": 274.9
+      },
+      "repeat_mean_us": [
+        27.6221461812,
+        27.5194908295,
+        28.392800438
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 25.8880158468,
+          "p50_us": 24.8,
+          "p95_us": 30.7,
+          "p99_us": 39.7,
+          "max_us": 274.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 25.9532407407,
+          "p50_us": 25,
+          "p95_us": 30.8,
+          "p99_us": 33.8,
+          "max_us": 195
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 81.2203030303,
+          "p50_us": 76.1,
+          "p95_us": 112.3,
+          "p99_us": 168.3,
+          "max_us": 232.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 128.763333333,
+          "p50_us": 119.3,
+          "p95_us": 192.8,
+          "p99_us": 198,
+          "max_us": 198
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 4.48372114244,
+          "active": {
+            "samples": 10959,
+            "mean_us": 4.48372114244,
+            "p50_us": 4.2,
+            "p95_us": 7,
+            "p99_us": 7.2,
+            "max_us": 248.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0147914955744,
+          "active": {
+            "samples": 1476,
+            "mean_us": 0.109823848238,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 0.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.46806277945,
+          "active": {
+            "samples": 360,
+            "mean_us": 44.6902777778,
+            "p50_us": 41.7,
+            "p95_us": 53.5,
+            "p99_us": 125.8,
+            "max_us": 181.7
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.300793868054,
+          "active": {
+            "samples": 360,
+            "mean_us": 9.15666666667,
+            "p50_us": 8.7,
+            "p95_us": 11.7,
+            "p99_us": 18,
+            "max_us": 30.6
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.127602883475,
+          "active": {
+            "samples": 30,
+            "mean_us": 46.6133333333,
+            "p50_us": 42.8,
+            "p95_us": 64.4,
+            "p99_us": 122.1,
+            "max_us": 122.1
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 21.3197098275,
+          "active": {
+            "samples": 10959,
+            "mean_us": 21.3197098275,
+            "p50_us": 20.6,
+            "p95_us": 23.5,
+            "p99_us": 29.4,
+            "max_us": 265.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 1.32616741152,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 53.0697426068,
+        "p50_us": 48.2,
+        "p95_us": 68.6,
+        "p99_us": 131,
+        "max_us": 817.4
+      },
+      "repeat_mean_us": [
+        52.537075575,
+        53.8676067908,
+        52.8045454545
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 48.857782915,
+          "p50_us": 48,
+          "p95_us": 51.8,
+          "p99_us": 99.5,
+          "max_us": 390.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 69.148478836,
+          "p50_us": 67.9,
+          "p95_us": 76.4,
+          "p99_us": 150,
+          "max_us": 513.7
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 57.6015151515,
+          "p50_us": 51.2,
+          "p95_us": 79.2,
+          "p99_us": 151,
+          "max_us": 328.2
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 468.233333333,
+          "p50_us": 450.2,
+          "p95_us": 671,
+          "p99_us": 817.4,
+          "max_us": 817.4
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 21.3038517707,
+          "active": {
+            "samples": 10956,
+            "mean_us": 21.3038517707,
+            "p50_us": 21.1,
+            "p95_us": 23,
+            "p99_us": 30.8,
+            "max_us": 289.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 2.85788608981,
+          "active": {
+            "samples": 1563,
+            "mean_us": 20.0326295585,
+            "p50_us": 19.8,
+            "p95_us": 21.5,
+            "p99_us": 30.2,
+            "max_us": 461.2
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.23562431544,
+          "active": {
+            "samples": 10080,
+            "mean_us": 4.6037202381,
+            "p50_us": 4.3,
+            "p95_us": 4.8,
+            "p99_us": 7.6,
+            "max_us": 215.4
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.546184738956,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.593650793651,
+            "p50_us": 0.6,
+            "p95_us": 0.8,
+            "p99_us": 1,
+            "max_us": 11.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.13393574297,
+          "active": {
+            "samples": 30,
+            "mean_us": 414.113333333,
+            "p50_us": 396.5,
+            "p95_us": 614.8,
+            "p99_us": 765.6,
+            "max_us": 765.6
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.730230011,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.730230011,
+            "p50_us": 22,
+            "p95_us": 22.7,
+            "p99_us": 33,
+            "max_us": 362.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 14.4357799044,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 22.9187568456,
+        "p50_us": 18.2,
+        "p95_us": 27.7,
+        "p99_us": 91.5,
+        "max_us": 16149.4
+      },
+      "repeat_mean_us": [
+        20.4379791895,
+        21.6430996714,
+        26.6751916758
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 19.3396411273,
+          "p50_us": 18.1,
+          "p95_us": 23.2,
+          "p99_us": 32.7,
+          "max_us": 274.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.5729497354,
+          "p50_us": 18.5,
+          "p95_us": 23.8,
+          "p99_us": 34.1,
+          "max_us": 200.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 119.388181818,
+          "p50_us": 60.7,
+          "p95_us": 104.9,
+          "p99_us": 267.5,
+          "max_us": 16149.4
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 214.14,
+          "p50_us": 189,
+          "p95_us": 391.5,
+          "p99_us": 407.1,
+          "max_us": 407.1
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 0.892196056955,
+          "active": {
+            "samples": 10956,
+            "mean_us": 0.892196056955,
+            "p50_us": 0.8,
+            "p95_us": 1.2,
+            "p99_us": 1.5,
+            "max_us": 84.7
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0556224899598,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.389891234805,
+            "p50_us": 0.4,
+            "p95_us": 0.6,
+            "p99_us": 1,
+            "max_us": 2.2
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 2.89564622125,
+          "active": {
+            "samples": 360,
+            "mean_us": 88.1241666667,
+            "p50_us": 37.3,
+            "p95_us": 71.8,
+            "p99_us": 124.8,
+            "max_us": 16099.7
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.175930996714,
+          "active": {
+            "samples": 360,
+            "mean_us": 5.35416666667,
+            "p50_us": 4.8,
+            "p95_us": 8,
+            "p99_us": 10.5,
+            "max_us": 29.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.394934282585,
+          "active": {
+            "samples": 30,
+            "mean_us": 144.23,
+            "p50_us": 127,
+            "p95_us": 293.6,
+            "p99_us": 319,
+            "max_us": 319
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 18.3462212486,
+          "active": {
+            "samples": 10956,
+            "mean_us": 18.3462212486,
+            "p50_us": 17.2,
+            "p95_us": 21.8,
+            "p99_us": 31,
+            "max_us": 475.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 4.40737943132,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 39.6825575027,
+        "p50_us": 36.8,
+        "p95_us": 52.5,
+        "p99_us": 122.8,
+        "max_us": 953.8
+      },
+      "repeat_mean_us": [
+        37.723822563,
+        40.2360350493,
+        41.0878148959
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 36.6501981506,
+          "p50_us": 36.7,
+          "p95_us": 42.4,
+          "p99_us": 65.2,
+          "max_us": 375.5
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 37.5078703704,
+          "p50_us": 37.1,
+          "p95_us": 43.1,
+          "p99_us": 87.7,
+          "max_us": 317
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 113.437575758,
+          "p50_us": 116.7,
+          "p95_us": 140.1,
+          "p99_us": 252,
+          "max_us": 535.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 256.18,
+          "p50_us": 260.4,
+          "p95_us": 321.5,
+          "p99_us": 953.8,
+          "max_us": 953.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 18.8588079591,
+          "active": {
+            "samples": 10956,
+            "mean_us": 18.8588079591,
+            "p50_us": 19.5,
+            "p95_us": 22,
+            "p99_us": 32.7,
+            "max_us": 341.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0597480832421,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.418809980806,
+            "p50_us": 0.4,
+            "p95_us": 0.6,
+            "p99_us": 0.9,
+            "max_us": 1.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.75518437386,
+          "active": {
+            "samples": 360,
+            "mean_us": 53.4161111111,
+            "p50_us": 55.8,
+            "p95_us": 59.9,
+            "p99_us": 165.3,
+            "max_us": 533.6
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.729098211026,
+          "active": {
+            "samples": 360,
+            "mean_us": 22.1888888889,
+            "p50_us": 23.4,
+            "p95_us": 25.3,
+            "p99_us": 43.5,
+            "max_us": 62.3
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.361993428258,
+          "active": {
+            "samples": 30,
+            "mean_us": 132.2,
+            "p50_us": 144,
+            "p95_us": 223,
+            "p99_us": 331.3,
+            "max_us": 331.3
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.7674424973,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.7674424973,
+            "p50_us": 17.2,
+            "p95_us": 19.6,
+            "p99_us": 26,
+            "max_us": 435.5
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 0.501867758381,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 42.5889832056,
+        "p50_us": 38.4,
+        "p95_us": 60.4,
+        "p99_us": 105.8,
+        "max_us": 313.7
+      },
+      "repeat_mean_us": [
+        42.5955914567,
+        42.3720153341,
+        42.7993428258
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 38.3854689564,
+          "p50_us": 36.2,
+          "p95_us": 42.7,
+          "p99_us": 64.9,
+          "max_us": 313.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 53.8427248677,
+          "p50_us": 51.6,
+          "p95_us": 60.2,
+          "p99_us": 114.7,
+          "max_us": 170.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 93.9896969697,
+          "p50_us": 90.9,
+          "p95_us": 108.2,
+          "p99_us": 148.3,
+          "max_us": 197
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 182.816666667,
+          "p50_us": 175.1,
+          "p95_us": 221.8,
+          "p99_us": 289.2,
+          "max_us": 289.2
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 13.8461482293,
+          "active": {
+            "samples": 10956,
+            "mean_us": 13.8461482293,
+            "p50_us": 12.6,
+            "p95_us": 16.1,
+            "p99_us": 21.6,
+            "max_us": 270.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 2.14505293903,
+          "active": {
+            "samples": 1563,
+            "mean_us": 15.0359564939,
+            "p50_us": 14.4,
+            "p95_us": 19.4,
+            "p99_us": 21.5,
+            "max_us": 88.5
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.11939576488,
+          "active": {
+            "samples": 360,
+            "mean_us": 34.0669444444,
+            "p50_us": 32.6,
+            "p95_us": 38.7,
+            "p99_us": 55.5,
+            "max_us": 95.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.547973713034,
+          "active": {
+            "samples": 360,
+            "mean_us": 16.6766666667,
+            "p50_us": 16.4,
+            "p95_us": 19.2,
+            "p99_us": 22.4,
+            "max_us": 26.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.241721431179,
+          "active": {
+            "samples": 30,
+            "mean_us": 88.2766666667,
+            "p50_us": 83.4,
+            "p95_us": 125.8,
+            "p99_us": 143.6,
+            "max_us": 143.6
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 24.4969514421,
+          "active": {
+            "samples": 10956,
+            "mean_us": 24.4969514421,
+            "p50_us": 23.5,
+            "p95_us": 27.5,
+            "p99_us": 38.5,
+            "max_us": 144.3
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 2.55988820004,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 36.1053851771,
+        "p50_us": 28.5,
+        "p95_us": 47.1,
+        "p99_us": 171.6,
+        "max_us": 919.5
+      },
+      "repeat_mean_us": [
+        35.9874041621,
+        37.0829682366,
+        35.2457831325
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 30.3242844562,
+          "p50_us": 28.3,
+          "p95_us": 35.4,
+          "p99_us": 54,
+          "max_us": 486.4
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 34.6396164021,
+          "p50_us": 33.2,
+          "p95_us": 43.8,
+          "p99_us": 64.8,
+          "max_us": 161.5
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 159.521515152,
+          "p50_us": 164.7,
+          "p95_us": 200.1,
+          "p99_us": 272.5,
+          "max_us": 282.2
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 502.92,
+          "p50_us": 544.4,
+          "p95_us": 672.7,
+          "p99_us": 919.5,
+          "max_us": 919.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 6.75605147864,
+          "active": {
+            "samples": 10956,
+            "mean_us": 6.75605147864,
+            "p50_us": 6.2,
+            "p95_us": 9.6,
+            "p99_us": 14.5,
+            "max_us": 429.4
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.639156626506,
+          "active": {
+            "samples": 1563,
+            "mean_us": 4.4802303263,
+            "p50_us": 4.9,
+            "p95_us": 8,
+            "p99_us": 12.7,
+            "max_us": 116.8
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 3.54246987952,
+          "active": {
+            "samples": 360,
+            "mean_us": 107.809166667,
+            "p50_us": 115.5,
+            "p95_us": 138.5,
+            "p99_us": 207.3,
+            "max_us": 221.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.585496531581,
+          "active": {
+            "samples": 360,
+            "mean_us": 17.8186111111,
+            "p50_us": 18.1,
+            "p95_us": 22,
+            "p99_us": 34.8,
+            "max_us": 101.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.939147499087,
+          "active": {
+            "samples": 30,
+            "mean_us": 342.976666667,
+            "p50_us": 379.1,
+            "p95_us": 495.8,
+            "p99_us": 753.2,
+            "max_us": 753.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 23.4144669587,
+          "active": {
+            "samples": 10956,
+            "mean_us": 23.4144669587,
+            "p50_us": 22,
+            "p95_us": 27.8,
+            "p99_us": 40,
+            "max_us": 474
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 1.57222363231,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 45.4141748813,
+        "p50_us": 35.8,
+        "p95_us": 58.8,
+        "p99_us": 200.9,
+        "max_us": 3072.1
+      },
+      "repeat_mean_us": [
+        44.6660460022,
+        46.0883077766,
+        45.4881708653
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 37.3099185381,
+          "p50_us": 35.7,
+          "p95_us": 41.5,
+          "p99_us": 70.8,
+          "max_us": 671.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 51.7529761905,
+          "p50_us": 48.1,
+          "p95_us": 57.4,
+          "p99_us": 126.3,
+          "max_us": 3072.1
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 192.064545455,
+          "p50_us": 188.1,
+          "p95_us": 270.7,
+          "p99_us": 466.8,
+          "max_us": 738.3
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 566.753333333,
+          "p50_us": 580.5,
+          "p95_us": 861.5,
+          "p99_us": 868.7,
+          "max_us": 868.7
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 14.4778751369,
+          "active": {
+            "samples": 10956,
+            "mean_us": 14.4778751369,
+            "p50_us": 13.7,
+            "p95_us": 16.4,
+            "p99_us": 23.1,
+            "max_us": 647.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 2.00010040161,
+          "active": {
+            "samples": 1563,
+            "mean_us": 14.0198976328,
+            "p50_us": 12.4,
+            "p95_us": 15.2,
+            "p99_us": 21.3,
+            "max_us": 2165.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.03921139102,
+          "active": {
+            "samples": 360,
+            "mean_us": 122.926666667,
+            "p50_us": 123.2,
+            "p95_us": 147.9,
+            "p99_us": 342.5,
+            "max_us": 417.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.876962395035,
+          "active": {
+            "samples": 360,
+            "mean_us": 26.6888888889,
+            "p50_us": 25.6,
+            "p95_us": 36.9,
+            "p99_us": 59.8,
+            "max_us": 255.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.00887185104,
+          "active": {
+            "samples": 30,
+            "mean_us": 368.44,
+            "p50_us": 389.2,
+            "p95_us": 562.2,
+            "p99_us": 637.2,
+            "max_us": 637.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 22.7848119752,
+          "active": {
+            "samples": 10956,
+            "mean_us": 22.7848119752,
+            "p50_us": 22,
+            "p95_us": 25.4,
+            "p99_us": 34.6,
+            "max_us": 862.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 1.49014027668,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 32.8570737495,
+        "p50_us": 29.5,
+        "p95_us": 41.5,
+        "p99_us": 105.4,
+        "max_us": 319
+      },
+      "repeat_mean_us": [
+        33.0531489595,
+        33.218263965,
+        32.2998083242
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 30.3961911052,
+          "p50_us": 29.4,
+          "p95_us": 32.2,
+          "p99_us": 49.9,
+          "max_us": 319
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 30.7523148148,
+          "p50_us": 29.8,
+          "p95_us": 32.7,
+          "p99_us": 51.8,
+          "max_us": 142.3
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 93.7957575758,
+          "p50_us": 95.1,
+          "p95_us": 110.3,
+          "p99_us": 174.6,
+          "max_us": 266.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 213.766666667,
+          "p50_us": 232.8,
+          "p95_us": 263.8,
+          "p99_us": 305.5,
+          "max_us": 305.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 12.555951077,
+          "active": {
+            "samples": 10956,
+            "mean_us": 12.555951077,
+            "p50_us": 12.1,
+            "p95_us": 14.6,
+            "p99_us": 19.1,
+            "max_us": 236.7
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0560149689668,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.392642354447,
+            "p50_us": 0.4,
+            "p95_us": 0.5,
+            "p99_us": 0.7,
+            "max_us": 1.5
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.50617013509,
+          "active": {
+            "samples": 360,
+            "mean_us": 45.8377777778,
+            "p50_us": 48.8,
+            "p95_us": 53.4,
+            "p99_us": 113.6,
+            "max_us": 209.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.539393939394,
+          "active": {
+            "samples": 360,
+            "mean_us": 16.4155555556,
+            "p50_us": 16.1,
+            "p95_us": 18.7,
+            "p99_us": 26,
+            "max_us": 85.5
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.336792625046,
+          "active": {
+            "samples": 30,
+            "mean_us": 122.996666667,
+            "p50_us": 137.2,
+            "p95_us": 152.2,
+            "p99_us": 210.2,
+            "max_us": 210.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 17.7177437021,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.7177437021,
+            "p50_us": 17.2,
+            "p95_us": 17.6,
+            "p99_us": 23.2,
+            "max_us": 306.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 4.57633705831,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 39.6091091639,
+        "p50_us": 38.6,
+        "p95_us": 46.8,
+        "p99_us": 112.9,
+        "max_us": 848.6
+      },
+      "repeat_mean_us": [
+        37.5225629792,
+        40.5094468784,
+        40.7953176342
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 39.200781594,
+          "p50_us": 38.5,
+          "p95_us": 45.9,
+          "p99_us": 88.8,
+          "max_us": 848.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 39.5013888889,
+          "p50_us": 38.9,
+          "p95_us": 46.3,
+          "p99_us": 74.1,
+          "max_us": 284.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 40.2381818182,
+          "p50_us": 39.4,
+          "p95_us": 46.1,
+          "p99_us": 64.1,
+          "max_us": 285.2
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 161.76,
+          "p50_us": 184.3,
+          "p95_us": 193.9,
+          "p99_us": 230.4,
+          "max_us": 230.4
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 19.0813161738,
+          "active": {
+            "samples": 10956,
+            "mean_us": 19.0813161738,
+            "p50_us": 19.5,
+            "p95_us": 22.9,
+            "p99_us": 33.5,
+            "max_us": 819.8
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.062988316904,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.441522712732,
+            "p50_us": 0.4,
+            "p95_us": 0.7,
+            "p99_us": 1,
+            "max_us": 6.7
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.55078495801,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.68555555556,
+            "p50_us": 1.5,
+            "p95_us": 2.8,
+            "p99_us": 3.5,
+            "max_us": 76.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.224571011318,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.244087301587,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.6,
+            "max_us": 77.9
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.335085797736,
+          "active": {
+            "samples": 30,
+            "mean_us": 122.373333333,
+            "p50_us": 141.9,
+            "p95_us": 152.7,
+            "p99_us": 176.5,
+            "max_us": 176.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 18.1597937203,
+          "active": {
+            "samples": 10956,
+            "mean_us": 18.1597937203,
+            "p50_us": 17.3,
+            "p95_us": 21.7,
+            "p99_us": 26,
+            "max_us": 453
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.71964088821,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 33.0170453509,
+        "p50_us": 29.2,
+        "p95_us": 45.6,
+        "p99_us": 89.8,
+        "max_us": 281.8
+      },
+      "repeat_mean_us": [
+        33.6702983849,
+        32.738516288,
+        32.6423213797
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 31.2660504017,
+          "p50_us": 28.9,
+          "p95_us": 38.2,
+          "p99_us": 54.5,
+          "max_us": 281.8
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 31.6237433862,
+          "p50_us": 29.3,
+          "p95_us": 38.5,
+          "p99_us": 55.3,
+          "max_us": 121.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 80.3566666667,
+          "p50_us": 78.5,
+          "p95_us": 97.8,
+          "p99_us": 154.3,
+          "max_us": 178.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 112.88,
+          "p50_us": 111,
+          "p95_us": 140.7,
+          "p99_us": 145.1,
+          "max_us": 145.1
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 11.2182224656,
+          "active": {
+            "samples": 10959,
+            "mean_us": 11.2182224656,
+            "p50_us": 9.7,
+            "p95_us": 15.7,
+            "p99_us": 18.6,
+            "max_us": 258.4
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0278401313988,
+          "active": {
+            "samples": 1566,
+            "mean_us": 0.194827586207,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 4.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.06655716762,
+          "active": {
+            "samples": 360,
+            "mean_us": 32.4677777778,
+            "p50_us": 31.4,
+            "p95_us": 39.8,
+            "p99_us": 53.5,
+            "max_us": 105.6
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.419819326581,
+          "active": {
+            "samples": 360,
+            "mean_us": 12.78,
+            "p50_us": 11.5,
+            "p95_us": 16.5,
+            "p99_us": 26.6,
+            "max_us": 71.6
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.0937038050917,
+          "active": {
+            "samples": 30,
+            "mean_us": 34.23,
+            "p50_us": 32.9,
+            "p95_us": 42.5,
+            "p99_us": 43.8,
+            "max_us": 43.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 19.9885299754,
+          "active": {
+            "samples": 10959,
+            "mean_us": 19.9885299754,
+            "p50_us": 19.4,
+            "p95_us": 25.2,
+            "p99_us": 32.5,
+            "max_us": 134.3
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 1.04871044543,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 20.1361445783,
+        "p50_us": 18,
+        "p95_us": 34.9,
+        "p99_us": 63.4,
+        "max_us": 373.9
+      },
+      "repeat_mean_us": [
+        20.3643483023,
+        20.0964403067,
+        19.947645126
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 18.3740202554,
+          "p50_us": 17.9,
+          "p95_us": 24.4,
+          "p99_us": 32.4,
+          "max_us": 373.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 21.8378306878,
+          "p50_us": 18.7,
+          "p95_us": 35,
+          "p99_us": 39.3,
+          "max_us": 140.5
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 51.5045454545,
+          "p50_us": 49.4,
+          "p95_us": 72.2,
+          "p99_us": 91.2,
+          "max_us": 126.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 122.89,
+          "p50_us": 119.5,
+          "p95_us": 145,
+          "p99_us": 172.4,
+          "max_us": 172.4
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 6.08681087988,
+          "active": {
+            "samples": 10956,
+            "mean_us": 6.08681087988,
+            "p50_us": 5.6,
+            "p95_us": 11.3,
+            "p99_us": 11.9,
+            "max_us": 104.1
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.526807228916,
+          "active": {
+            "samples": 1563,
+            "mean_us": 3.69270633397,
+            "p50_us": 0.8,
+            "p95_us": 10.8,
+            "p99_us": 11.1,
+            "max_us": 83.1
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 0.811089813801,
+          "active": {
+            "samples": 360,
+            "mean_us": 24.6841666667,
+            "p50_us": 21.9,
+            "p95_us": 32,
+            "p99_us": 43.5,
+            "max_us": 46.3
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.141694048923,
+          "active": {
+            "samples": 360,
+            "mean_us": 4.31222222222,
+            "p50_us": 3.8,
+            "p95_us": 6.7,
+            "p99_us": 10.9,
+            "max_us": 12.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.204043446513,
+          "active": {
+            "samples": 30,
+            "mean_us": 74.5166666667,
+            "p50_us": 73.3,
+            "p95_us": 88.1,
+            "p99_us": 97.7,
+            "max_us": 97.7
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 12.1977820372,
+          "active": {
+            "samples": 10956,
+            "mean_us": 12.1977820372,
+            "p50_us": 11.4,
+            "p95_us": 13.2,
+            "p99_us": 24.1,
+            "max_us": 368.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 0.993997242846,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.1507984305,
+        "p50_us": 18.7,
+        "p95_us": 19.4,
+        "p99_us": 28.2,
+        "max_us": 161.9
+      },
+      "repeat_mean_us": [
+        19.3680536545,
+        19.0710922529,
+        19.0132493841
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 18.9842962474,
+          "p50_us": 18.6,
+          "p95_us": 19,
+          "p99_us": 24.3,
+          "max_us": 161.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.2074074074,
+          "p50_us": 18.8,
+          "p95_us": 19.2,
+          "p99_us": 25.1,
+          "max_us": 122.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 19.6424242424,
+          "p50_us": 19.5,
+          "p95_us": 19.9,
+          "p99_us": 24.4,
+          "max_us": 37.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 61.3233333333,
+          "p50_us": 58,
+          "p95_us": 65.8,
+          "p99_us": 145.4,
+          "max_us": 145.4
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.292572314992,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.292572314992,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.4,
+            "max_us": 38.7
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0132676339082,
+          "active": {
+            "samples": 1377,
+            "mean_us": 0.105591866376,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.2,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.32492928187,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.44046626984,
+            "p50_us": 1.4,
+            "p95_us": 1.5,
+            "p99_us": 2,
+            "max_us": 78.1
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.181293913678,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.197103174603,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.113842503878,
+          "active": {
+            "samples": 30,
+            "mean_us": 41.5866666667,
+            "p50_us": 38.5,
+            "p95_us": 42.9,
+            "p99_us": 125.5,
+            "max_us": 125.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.0643671868,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.0643671868,
+            "p50_us": 16.6,
+            "p95_us": 16.9,
+            "p99_us": 20.7,
+            "max_us": 159.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 0.99528610385,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.6363536819,
+        "p50_us": 17.1,
+        "p95_us": 25.7,
+        "p99_us": 38,
+        "max_us": 191.9
+      },
+      "repeat_mean_us": [
+        19.4215713113,
+        19.8037229674,
+        19.683766767
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 19.4761637504,
+          "p50_us": 17,
+          "p95_us": 25.4,
+          "p99_us": 34.2,
+          "max_us": 191.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.5833333333,
+          "p50_us": 17.2,
+          "p95_us": 25.6,
+          "p99_us": 33.9,
+          "max_us": 117.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 21.6445454545,
+          "p50_us": 21.8,
+          "p95_us": 26.4,
+          "p99_us": 37.5,
+          "max_us": 110.8
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 48.74,
+          "p50_us": 48.2,
+          "p95_us": 79.3,
+          "p99_us": 81.5,
+          "max_us": 81.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 5.3898165891,
+          "active": {
+            "samples": 10959,
+            "mean_us": 5.3898165891,
+            "p50_us": 4,
+            "p95_us": 10.7,
+            "p99_us": 11.6,
+            "max_us": 134.2
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0239255406515,
+          "active": {
+            "samples": 1566,
+            "mean_us": 0.167432950192,
+            "p50_us": 0.2,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.51680810293,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.64907738095,
+            "p50_us": 1.6,
+            "p95_us": 1.8,
+            "p99_us": 2.7,
+            "max_us": 75.1
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.227055388265,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.24685515873,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.4,
+            "max_us": 72.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.0732366091797,
+          "active": {
+            "samples": 30,
+            "mean_us": 26.7533333333,
+            "p50_us": 24.8,
+            "p95_us": 46,
+            "p99_us": 48.8,
+            "max_us": 48.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 12.2131855096,
+          "active": {
+            "samples": 10959,
+            "mean_us": 12.2131855096,
+            "p50_us": 12.2,
+            "p95_us": 12.8,
+            "p99_us": 23.5,
+            "max_us": 139.6
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 0.447679025746,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 46.3400237313,
+        "p50_us": 44.2,
+        "p95_us": 57.2,
+        "p99_us": 106.6,
+        "max_us": 526.7
+      },
+      "repeat_mean_us": [
+        46.578203724,
+        46.2430722892,
+        46.1987951807
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 44.0326728314,
+          "p50_us": 44,
+          "p95_us": 47.6,
+          "p99_us": 85.7,
+          "max_us": 526.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 54.8399470899,
+          "p50_us": 54.9,
+          "p95_us": 62,
+          "p99_us": 110.1,
+          "max_us": 218.5
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 49.8033333333,
+          "p50_us": 48.6,
+          "p95_us": 60.6,
+          "p99_us": 84.6,
+          "max_us": 121.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 278.513333333,
+          "p50_us": 265.7,
+          "p95_us": 355.4,
+          "p99_us": 401.7,
+          "max_us": 401.7
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 12.4839174881,
+          "active": {
+            "samples": 10956,
+            "mean_us": 12.4839174881,
+            "p50_us": 12.3,
+            "p95_us": 13.8,
+            "p99_us": 19,
+            "max_us": 236.4
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 1.5598758671,
+          "active": {
+            "samples": 1563,
+            "mean_us": 10.9341010877,
+            "p50_us": 10.9,
+            "p95_us": 15.9,
+            "p99_us": 18.3,
+            "max_us": 108.7
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 5.00184373859,
+          "active": {
+            "samples": 10080,
+            "mean_us": 5.43652777778,
+            "p50_us": 5,
+            "p95_us": 6.5,
+            "p99_us": 8.8,
+            "max_us": 134.7
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.688353413655,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.748174603175,
+            "p50_us": 0.7,
+            "p95_us": 1,
+            "p99_us": 1.2,
+            "max_us": 48.6
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.62810332238,
+          "active": {
+            "samples": 30,
+            "mean_us": 229.383333333,
+            "p50_us": 216.8,
+            "p95_us": 304.7,
+            "p99_us": 346.8,
+            "max_us": 346.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 25.6793994158,
+          "active": {
+            "samples": 10956,
+            "mean_us": 25.6793994158,
+            "p50_us": 25.9,
+            "p95_us": 26.9,
+            "p99_us": 38.5,
+            "max_us": 271
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 26.4569947863,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 55.9809967141,
+        "p50_us": 47.7,
+        "p95_us": 85.6,
+        "p99_us": 227.7,
+        "max_us": 2252.8
+      },
+      "repeat_mean_us": [
+        44.0393483023,
+        51.3494523549,
+        72.5541894852
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 48.9535226772,
+          "p50_us": 47,
+          "p95_us": 64.4,
+          "p99_us": 100.5,
+          "max_us": 1309.9
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 65.6946428571,
+          "p50_us": 57.8,
+          "p95_us": 86.2,
+          "p99_us": 136.8,
+          "max_us": 2252.8
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 170.683030303,
+          "p50_us": 152,
+          "p95_us": 247,
+          "p99_us": 336.4,
+          "max_us": 518.4
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 432.61,
+          "p50_us": 377.6,
+          "p95_us": 642.3,
+          "p99_us": 649.2,
+          "max_us": 649.2
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 17.4908086893,
+          "active": {
+            "samples": 10956,
+            "mean_us": 17.4908086893,
+            "p50_us": 16.8,
+            "p95_us": 22,
+            "p99_us": 27.4,
+            "max_us": 586.7
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 2.36550748448,
+          "active": {
+            "samples": 1563,
+            "mean_us": 16.5812539987,
+            "p50_us": 15.3,
+            "p95_us": 21.3,
+            "p99_us": 28.1,
+            "max_us": 460.1
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 3.01977911647,
+          "active": {
+            "samples": 360,
+            "mean_us": 91.9019444444,
+            "p50_us": 79.2,
+            "p95_us": 134.2,
+            "p99_us": 221.8,
+            "max_us": 260.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.815617013509,
+          "active": {
+            "samples": 360,
+            "mean_us": 24.8219444444,
+            "p50_us": 22.2,
+            "p95_us": 33.4,
+            "p99_us": 44.2,
+            "max_us": 111.2
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.727610441767,
+          "active": {
+            "samples": 30,
+            "mean_us": 265.723333333,
+            "p50_us": 221.2,
+            "p95_us": 400,
+            "p99_us": 405.4,
+            "max_us": 405.4
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 31.307411464,
+          "active": {
+            "samples": 10956,
+            "mean_us": 31.307411464,
+            "p50_us": 30.3,
+            "p95_us": 41.2,
+            "p99_us": 57.2,
+            "max_us": 1282.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 4,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.64692913434,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.4449949813,
+        "p50_us": 18.7,
+        "p95_us": 19.5,
+        "p99_us": 25.2,
+        "max_us": 2244.5
+      },
+      "repeat_mean_us": [
+        19.2601970983,
+        19.260005475,
+        19.8147823707
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 19.3106415759,
+          "p50_us": 18.7,
+          "p95_us": 19.4,
+          "p99_us": 23.8,
+          "max_us": 2244.5
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 18.9751322751,
+          "p50_us": 18.8,
+          "p95_us": 19.5,
+          "p99_us": 23.3,
+          "max_us": 149.8
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 20.0121212121,
+          "p50_us": 19.5,
+          "p95_us": 20.5,
+          "p99_us": 25.1,
+          "max_us": 106.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 77.5833333333,
+          "p50_us": 73.7,
+          "p95_us": 90.2,
+          "p99_us": 175.5,
+          "max_us": 175.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.290245460352,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.290245460352,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.4,
+            "max_us": 20.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0132858837485,
+          "active": {
+            "samples": 1392,
+            "mean_us": 0.104597701149,
+            "p50_us": 0.1,
+            "p95_us": 0.1,
+            "p99_us": 0.2,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.56010584907,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.69615079365,
+            "p50_us": 1.4,
+            "p95_us": 1.5,
+            "p99_us": 2.2,
+            "max_us": 2178
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.179122182681,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.194742063492,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 0.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.155954010402,
+          "active": {
+            "samples": 30,
+            "mean_us": 56.97,
+            "p50_us": 53.9,
+            "p95_us": 68.6,
+            "p99_us": 145.1,
+            "max_us": 145.1
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.08113879,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.08113879,
+            "p50_us": 16.7,
+            "p95_us": 17.3,
+            "p99_us": 20.6,
+            "max_us": 265.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 0.342481134558,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 20.1398211516,
+        "p50_us": 17,
+        "p95_us": 20.8,
+        "p99_us": 100.1,
+        "max_us": 357.2
+      },
+      "repeat_mean_us": [
+        20.1831097728,
+        20.1760744593,
+        20.0602792226
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 17.5343127545,
+          "p50_us": 17,
+          "p95_us": 17.5,
+          "p99_us": 26.5,
+          "max_us": 357.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 17.7479497354,
+          "p50_us": 17.2,
+          "p95_us": 17.6,
+          "p99_us": 27.2,
+          "max_us": 218.5
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 92.2342424242,
+          "p50_us": 96.8,
+          "p95_us": 112.1,
+          "p99_us": 162,
+          "max_us": 307.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 136.86,
+          "p50_us": 144,
+          "p95_us": 161.9,
+          "p99_us": 164,
+          "max_us": 164
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.293566931289,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.293566931289,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 2.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0144994981294,
+          "active": {
+            "samples": 1431,
+            "mean_us": 0.111041229909,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.70311159777,
+          "active": {
+            "samples": 360,
+            "mean_us": 51.8455555556,
+            "p50_us": 55.9,
+            "p95_us": 65.1,
+            "p99_us": 104.4,
+            "max_us": 184.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.699060133224,
+          "active": {
+            "samples": 360,
+            "mean_us": 21.2805555556,
+            "p50_us": 22.2,
+            "p95_us": 25.4,
+            "p99_us": 33.2,
+            "max_us": 62.7
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.129537366548,
+          "active": {
+            "samples": 30,
+            "mean_us": 47.32,
+            "p50_us": 45.3,
+            "p95_us": 59.7,
+            "p99_us": 61.4,
+            "max_us": 61.4
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.1647413085,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.1647413085,
+            "p50_us": 16.6,
+            "p95_us": 17.2,
+            "p99_us": 26.1,
+            "max_us": 356.9
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 23.9893678005,
+      "stable": false,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 22.1521032941,
+        "p50_us": 17,
+        "p95_us": 22.4,
+        "p99_us": 92.1,
+        "max_us": 19681
+      },
+      "repeat_mean_us": [
+        18.9078291815,
+        19.2635641938,
+        28.284916507
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 18.7038626609,
+          "p50_us": 17,
+          "p95_us": 22,
+          "p99_us": 27.1,
+          "max_us": 3226.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 18.2596560847,
+          "p50_us": 17.2,
+          "p95_us": 22.1,
+          "p99_us": 25.4,
+          "max_us": 121.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 125.424545455,
+          "p50_us": 59.7,
+          "p95_us": 103.7,
+          "p99_us": 134.7,
+          "max_us": 19681
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 126.806666667,
+          "p50_us": 99.2,
+          "p95_us": 245.6,
+          "p99_us": 483.3,
+          "max_us": 483.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.489570216261,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.489570216261,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 2004.8
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0144356236883,
+          "active": {
+            "samples": 1406,
+            "mean_us": 0.112517780939,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.2,
+            "max_us": 0.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 3.17278948809,
+          "active": {
+            "samples": 360,
+            "mean_us": 96.585,
+            "p50_us": 37.3,
+            "p95_us": 72.1,
+            "p99_us": 83.5,
+            "max_us": 19656
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.175691212702,
+          "active": {
+            "samples": 360,
+            "mean_us": 5.34833333333,
+            "p50_us": 4.7,
+            "p95_us": 8,
+            "p99_us": 8.6,
+            "max_us": 80
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.142950999179,
+          "active": {
+            "samples": 30,
+            "mean_us": 52.22,
+            "p50_us": 38.7,
+            "p95_us": 120.5,
+            "p99_us": 317.9,
+            "max_us": 317.9
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 18.0251756547,
+          "active": {
+            "samples": 10959,
+            "mean_us": 18.0251756547,
+            "p50_us": 16.6,
+            "p95_us": 21.4,
+            "p99_us": 25.8,
+            "max_us": 3225.6
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 2,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 0.646219185779,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 32.5675337714,
+        "p50_us": 32.6,
+        "p95_us": 37.5,
+        "p99_us": 69.4,
+        "max_us": 316.9
+      },
+      "repeat_mean_us": [
+        32.6202354874,
+        32.7466319825,
+        32.3357338445
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 31.596543373,
+          "p50_us": 32.5,
+          "p95_us": 36.6,
+          "p99_us": 53.6,
+          "max_us": 268.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 33.3836640212,
+          "p50_us": 34.1,
+          "p95_us": 38.6,
+          "p99_us": 64.2,
+          "max_us": 135.9
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 35.933030303,
+          "p50_us": 36,
+          "p95_us": 40.9,
+          "p99_us": 51.9,
+          "max_us": 71.4
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 248.43,
+          "p50_us": 238,
+          "p95_us": 308.1,
+          "p99_us": 316.9,
+          "max_us": 316.9
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 5.19817451625,
+          "active": {
+            "samples": 10956,
+            "mean_us": 5.19817451625,
+            "p50_us": 5.4,
+            "p95_us": 6.6,
+            "p99_us": 12.6,
+            "max_us": 138.7
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.243647316539,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.70786948177,
+            "p50_us": 1.5,
+            "p95_us": 2.1,
+            "p99_us": 8.5,
+            "max_us": 17.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.73438298649,
+          "active": {
+            "samples": 10080,
+            "mean_us": 5.1458234127,
+            "p50_us": 4.9,
+            "p95_us": 7.3,
+            "p99_us": 8,
+            "max_us": 84.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.653130704637,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.709890873016,
+            "p50_us": 0.7,
+            "p95_us": 0.9,
+            "p99_us": 1.2,
+            "max_us": 33.5
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.600273822563,
+          "active": {
+            "samples": 30,
+            "mean_us": 219.22,
+            "p50_us": 210.2,
+            "p95_us": 273.8,
+            "p99_us": 283,
+            "max_us": 283
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 20.86994341,
+          "active": {
+            "samples": 10956,
+            "mean_us": 20.86994341,
+            "p50_us": 21.5,
+            "p95_us": 24.5,
+            "p99_us": 31.9,
+            "max_us": 253.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 7.57029851414,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 22.1486856517,
+        "p50_us": 18.2,
+        "p95_us": 26.2,
+        "p99_us": 93,
+        "max_us": 2121.1
+      },
+      "repeat_mean_us": [
+        21.6189759036,
+        20.8007940854,
+        24.026286966
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 20.314993395,
+          "p50_us": 18.1,
+          "p95_us": 22,
+          "p99_us": 37.4,
+          "max_us": 2121.1
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.9378968254,
+          "p50_us": 18.5,
+          "p95_us": 22.6,
+          "p99_us": 36.4,
+          "max_us": 303
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 65.8812121212,
+          "p50_us": 60.9,
+          "p95_us": 92.9,
+          "p99_us": 149.8,
+          "max_us": 226.8
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 207.756666667,
+          "p50_us": 188,
+          "p95_us": 287.1,
+          "p99_us": 407.9,
+          "max_us": 407.9
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 0.878322380431,
+          "active": {
+            "samples": 10956,
+            "mean_us": 0.878322380431,
+            "p50_us": 0.8,
+            "p95_us": 1.1,
+            "p99_us": 1.4,
+            "max_us": 130.2
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.0518072289157,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.363147792706,
+            "p50_us": 0.3,
+            "p95_us": 0.6,
+            "p99_us": 0.8,
+            "max_us": 1.6
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.35621577218,
+          "active": {
+            "samples": 360,
+            "mean_us": 41.2741666667,
+            "p50_us": 37.3,
+            "p95_us": 61.3,
+            "p99_us": 122.4,
+            "max_us": 191.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.165489229646,
+          "active": {
+            "samples": 360,
+            "mean_us": 5.03638888889,
+            "p50_us": 4.8,
+            "p95_us": 7.2,
+            "p99_us": 9,
+            "max_us": 14.1
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.370098576123,
+          "active": {
+            "samples": 30,
+            "mean_us": 135.16,
+            "p50_us": 127.4,
+            "p95_us": 180.7,
+            "p99_us": 198.3,
+            "max_us": 198.3
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 19.169769989,
+          "active": {
+            "samples": 10956,
+            "mean_us": 19.169769989,
+            "p50_us": 17.2,
+            "p95_us": 20.6,
+            "p99_us": 35.4,
+            "max_us": 2119.6
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 9.73364269835,
+      "stable": false,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 24.1110806864,
+        "p50_us": 20.5,
+        "p95_us": 26.2,
+        "p99_us": 83.4,
+        "max_us": 7217.7
+      },
+      "repeat_mean_us": [
+        25.8559145674,
+        25.0343647317,
+        21.4429627601
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 23.3161712902,
+          "p50_us": 20.5,
+          "p95_us": 25.9,
+          "p99_us": 47.9,
+          "max_us": 7217.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 24.9334656085,
+          "p50_us": 20.9,
+          "p95_us": 26.6,
+          "p99_us": 41.2,
+          "max_us": 2241.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 29.9993939394,
+          "p50_us": 21.4,
+          "p95_us": 28.5,
+          "p99_us": 137.1,
+          "max_us": 1658.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 158.59,
+          "p50_us": 155.5,
+          "p95_us": 196.5,
+          "p99_us": 203.6,
+          "max_us": 203.6
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 1.08275830595,
+          "active": {
+            "samples": 10956,
+            "mean_us": 1.08275830595,
+            "p50_us": 0.9,
+            "p95_us": 1.3,
+            "p99_us": 1.5,
+            "max_us": 944.3
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 0.060259218693,
+          "active": {
+            "samples": 1563,
+            "mean_us": 0.422392834293,
+            "p50_us": 0.4,
+            "p95_us": 0.7,
+            "p99_us": 0.9,
+            "max_us": 19.9
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.63244797371,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.77431547619,
+            "p50_us": 1.5,
+            "p95_us": 2.6,
+            "p99_us": 3.2,
+            "max_us": 330.4
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.248119751734,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.269682539683,
+            "p50_us": 0.2,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 319.5
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.372225264695,
+          "active": {
+            "samples": 30,
+            "mean_us": 135.936666667,
+            "p50_us": 132.8,
+            "p95_us": 169.2,
+            "p99_us": 170.3,
+            "max_us": 170.3
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 20.5250456371,
+          "active": {
+            "samples": 10956,
+            "mean_us": 20.5250456371,
+            "p50_us": 17.8,
+            "p95_us": 21.8,
+            "p99_us": 35.8,
+            "max_us": 7213.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 64,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "0ada55ef88782dae",
+      "repeat_rsd_percent": 1.1733830056,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 34.3469514421,
+        "p50_us": 29.8,
+        "p95_us": 47.8,
+        "p99_us": 94.4,
+        "max_us": 283.7
+      },
+      "repeat_mean_us": [
+        34.7995071194,
+        34.0267524644,
+        34.2145947426
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 31.0693527081,
+          "p50_us": 28.7,
+          "p95_us": 35.5,
+          "p99_us": 55.7,
+          "max_us": 283.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 42.0953042328,
+          "p50_us": 42,
+          "p95_us": 48.3,
+          "p99_us": 88.9,
+          "max_us": 143.6
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 77.6984848485,
+          "p50_us": 73.4,
+          "p95_us": 95.7,
+          "p99_us": 141.9,
+          "max_us": 175.9
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 159.42,
+          "p50_us": 155,
+          "p95_us": 166.1,
+          "p99_us": 260.3,
+          "max_us": 260.3
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 1095600,
+          "mean_us_per_tick": 11.0406535232,
+          "active": {
+            "samples": 10956,
+            "mean_us": 11.0406535232,
+            "p50_us": 9.1,
+            "p95_us": 15.8,
+            "p99_us": 17.1,
+            "max_us": 114.5
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 52100,
+          "mean_us_per_tick": 1.6318090544,
+          "active": {
+            "samples": 1563,
+            "mean_us": 11.4383237364,
+            "p50_us": 9.9,
+            "p95_us": 15.7,
+            "p99_us": 17.4,
+            "max_us": 115.8
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.0073932092,
+          "active": {
+            "samples": 360,
+            "mean_us": 30.6583333333,
+            "p50_us": 28.8,
+            "p95_us": 38,
+            "p99_us": 52.9,
+            "max_us": 92.4
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.392834976269,
+          "active": {
+            "samples": 360,
+            "mean_us": 11.9552777778,
+            "p50_us": 11.3,
+            "p95_us": 15.4,
+            "p99_us": 19.3,
+            "max_us": 31.4
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 50000,
+          "mean_us_per_tick": 0.223183643666,
+          "active": {
+            "samples": 30,
+            "mean_us": 81.5066666667,
+            "p50_us": 79.2,
+            "p95_us": 84.1,
+            "p99_us": 142.1,
+            "max_us": 142.1
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11686400,
+          "mean_us_per_tick": 19.8507393209,
+          "active": {
+            "samples": 10956,
+            "mean_us": 19.8507393209,
+            "p50_us": 19.5,
+            "p95_us": 21.9,
+            "p99_us": 31.3,
+            "max_us": 263.7
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "burst",
+      "threads": 6,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 2.14611407885,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 53.3221613728,
+        "p50_us": 43.5,
+        "p95_us": 80.6,
+        "p99_us": 230.5,
+        "max_us": 1403.7
+      },
+      "repeat_mean_us": [
+        54.4243702081,
+        53.402245345,
+        52.1398685652
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 44.3945948921,
+          "p50_us": 43.3,
+          "p95_us": 54.1,
+          "p99_us": 99.7,
+          "max_us": 587.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 64.3628968254,
+          "p50_us": 63.1,
+          "p95_us": 81.5,
+          "p99_us": 139.4,
+          "max_us": 1403.7
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 204.167575758,
+          "p50_us": 210.9,
+          "p95_us": 304.4,
+          "p99_us": 363.2,
+          "max_us": 684.7
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 540.836666667,
+          "p50_us": 608.2,
+          "p95_us": 911.2,
+          "p99_us": 936.8,
+          "max_us": 936.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 21.1433917488,
+          "active": {
+            "samples": 10956,
+            "mean_us": 21.1433917488,
+            "p50_us": 21.1,
+            "p95_us": 26.6,
+            "p99_us": 40.6,
+            "max_us": 1324.9
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 2.71469514421,
+          "active": {
+            "samples": 1563,
+            "mean_us": 19.028918746,
+            "p50_us": 19.8,
+            "p95_us": 25.3,
+            "p99_us": 38.5,
+            "max_us": 303.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.00806863819,
+          "active": {
+            "samples": 360,
+            "mean_us": 121.978888889,
+            "p50_us": 130.9,
+            "p95_us": 211.2,
+            "p99_us": 301.7,
+            "max_us": 379
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 1.02591274188,
+          "active": {
+            "samples": 360,
+            "mean_us": 31.2219444444,
+            "p50_us": 33,
+            "p95_us": 41.9,
+            "p99_us": 59.2,
+            "max_us": 189.7
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 0.916684921504,
+          "active": {
+            "samples": 30,
+            "mean_us": 334.773333333,
+            "p50_us": 395.5,
+            "p95_us": 509.2,
+            "p99_us": 563.5,
+            "max_us": 563.5
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 23.2758397225,
+          "active": {
+            "samples": 10956,
+            "mean_us": 23.2758397225,
+            "p50_us": 22.1,
+            "p95_us": 27.2,
+            "p99_us": 39.4,
+            "max_us": 381
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 1,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.50762254502,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.3526325395,
+        "p50_us": 17.1,
+        "p95_us": 23.8,
+        "p99_us": 61.7,
+        "max_us": 307.2
+      },
+      "repeat_mean_us": [
+        19.233369833,
+        19.6851355051,
+        19.1393922803
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 17.765544184,
+          "p50_us": 17,
+          "p95_us": 19.1,
+          "p99_us": 29.2,
+          "max_us": 307.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 17.882010582,
+          "p50_us": 17.2,
+          "p95_us": 19.1,
+          "p99_us": 27.9,
+          "max_us": 133.9
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 62.3572727273,
+          "p50_us": 59.8,
+          "p95_us": 83.7,
+          "p99_us": 112.4,
+          "max_us": 138.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 101.15,
+          "p50_us": 98.9,
+          "p95_us": 115.2,
+          "p99_us": 129.2,
+          "max_us": 129.2
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.309818414089,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.309818414089,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 29.5
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0137238799161,
+          "active": {
+            "samples": 1396,
+            "mean_us": 0.107736389685,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.28038142166,
+          "active": {
+            "samples": 360,
+            "mean_us": 38.9769444444,
+            "p50_us": 37.2,
+            "p95_us": 48.9,
+            "p99_us": 74,
+            "max_us": 99.5
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.161930833105,
+          "active": {
+            "samples": 360,
+            "mean_us": 4.92944444444,
+            "p50_us": 4.8,
+            "p95_us": 5.6,
+            "p99_us": 8.6,
+            "max_us": 12
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.10816680354,
+          "active": {
+            "samples": 30,
+            "mean_us": 39.5133333333,
+            "p50_us": 38.8,
+            "p95_us": 44,
+            "p99_us": 45.8,
+            "max_us": 45.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.3535815312,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.3535815312,
+            "p50_us": 16.7,
+            "p95_us": 18.5,
+            "p99_us": 28.3,
+            "max_us": 306.4
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 6,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6,
+        8,
+        10
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 0.229650619598,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.2703257596,
+        "p50_us": 18.7,
+        "p95_us": 20,
+        "p99_us": 24.2,
+        "max_us": 256
+      },
+      "repeat_mean_us": [
+        19.3213523132,
+        19.2424308787,
+        19.2471940871
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 19.0336194564,
+          "p50_us": 18.7,
+          "p95_us": 19.7,
+          "p99_us": 22.4,
+          "max_us": 256
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.1891534392,
+          "p50_us": 18.9,
+          "p95_us": 19.8,
+          "p99_us": 22.5,
+          "max_us": 106.7
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 19.9036363636,
+          "p50_us": 19.6,
+          "p95_us": 21,
+          "p99_us": 24.7,
+          "max_us": 34.5
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 88.0933333333,
+          "p50_us": 82.1,
+          "p95_us": 142.8,
+          "p99_us": 167.9,
+          "max_us": 167.9
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.294023177297,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.294023177297,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.4,
+            "max_us": 49.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0130760105849,
+          "active": {
+            "samples": 1366,
+            "mean_us": 0.104904831625,
+            "p50_us": 0.1,
+            "p95_us": 0.1,
+            "p99_us": 0.2,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.35995072543,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.47854166667,
+            "p50_us": 1.4,
+            "p95_us": 1.5,
+            "p99_us": 1.8,
+            "max_us": 236.1
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.18025367278,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.195972222222,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 3.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.184004014965,
+          "active": {
+            "samples": 30,
+            "mean_us": 67.2166666667,
+            "p50_us": 61.6,
+            "p95_us": 122.9,
+            "p99_us": 147.8,
+            "max_us": 147.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.0774431974,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.0774431974,
+            "p50_us": 16.7,
+            "p95_us": 17.6,
+            "p99_us": 19.8,
+            "max_us": 118.6
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 64,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 3.626615518,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.5206679442,
+        "p50_us": 18.7,
+        "p95_us": 19.4,
+        "p99_us": 28.7,
+        "max_us": 2238.6
+      },
+      "repeat_mean_us": [
+        19.0812756638,
+        20.3373391733,
+        19.1433889953
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 19.4173104435,
+          "p50_us": 18.7,
+          "p95_us": 19.1,
+          "p99_us": 24,
+          "max_us": 2238.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.2317460317,
+          "p50_us": 18.8,
+          "p95_us": 19.2,
+          "p99_us": 24.4,
+          "max_us": 161
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 19.9796969697,
+          "p50_us": 19.5,
+          "p95_us": 19.9,
+          "p99_us": 26.6,
+          "max_us": 101.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 60.34,
+          "p50_us": 58.3,
+          "p95_us": 65.7,
+          "p99_us": 103.9,
+          "max_us": 103.9
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.501003741217,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.501003741217,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.4,
+            "max_us": 2169.6
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0133862578702,
+          "active": {
+            "samples": 1389,
+            "mean_us": 0.105615550756,
+            "p50_us": 0.1,
+            "p95_us": 0.1,
+            "p99_us": 0.2,
+            "max_us": 0.5
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.3218176841,
+          "active": {
+            "samples": 10080,
+            "mean_us": 1.43708333333,
+            "p50_us": 1.4,
+            "p95_us": 1.5,
+            "p99_us": 2,
+            "max_us": 86.8
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.180052924537,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.195753968254,
+            "p50_us": 0.2,
+            "p95_us": 0.3,
+            "p99_us": 0.4,
+            "max_us": 0.9
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.110922529428,
+          "active": {
+            "samples": 30,
+            "mean_us": 40.52,
+            "p50_us": 38.7,
+            "p95_us": 42.9,
+            "p99_us": 84.1,
+            "max_us": 84.1
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.2307236062,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.2307236062,
+            "p50_us": 16.7,
+            "p95_us": 17,
+            "p99_us": 20.7,
+            "max_us": 689
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 4,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2,
+        4,
+        6
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 1.0457358577,
+      "stable": true,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 19.7657815494,
+        "p50_us": 17,
+        "p95_us": 20.6,
+        "p99_us": 91.6,
+        "max_us": 256.7
+      },
+      "repeat_mean_us": [
+        19.5312072269,
+        19.8449219819,
+        19.9212154394
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 17.4505337295,
+          "p50_us": 17,
+          "p95_us": 17.6,
+          "p99_us": 21.8,
+          "max_us": 256.7
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 17.6395502646,
+          "p50_us": 17.1,
+          "p95_us": 17.8,
+          "p99_us": 21.2,
+          "max_us": 127.2
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 83.6639393939,
+          "p50_us": 83.2,
+          "p95_us": 100.7,
+          "p99_us": 159.4,
+          "max_us": 247.6
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 125.336666667,
+          "p50_us": 130.9,
+          "p95_us": 159.2,
+          "p99_us": 189.5,
+          "max_us": 189.5
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.294214800621,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.294214800621,
+            "p50_us": 0.3,
+            "p95_us": 0.4,
+            "p99_us": 0.5,
+            "max_us": 9
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0143717492472,
+          "active": {
+            "samples": 1436,
+            "mean_us": 0.109679665738,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.2,
+            "max_us": 0.3
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.58351126928,
+          "active": {
+            "samples": 360,
+            "mean_us": 48.2047222222,
+            "p50_us": 49.3,
+            "p95_us": 59.1,
+            "p99_us": 89.6,
+            "max_us": 168.5
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.524965781549,
+          "active": {
+            "samples": 360,
+            "mean_us": 15.9808333333,
+            "p50_us": 16,
+            "p95_us": 20.9,
+            "p99_us": 27.3,
+            "max_us": 91.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.119426955014,
+          "active": {
+            "samples": 30,
+            "mean_us": 43.6266666667,
+            "p50_us": 48.5,
+            "p95_us": 53.2,
+            "p99_us": 65.8,
+            "max_us": 65.8
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 17.0981020166,
+          "active": {
+            "samples": 10959,
+            "mean_us": 17.0981020166,
+            "p50_us": 16.6,
+            "p95_us": 17.3,
+            "p99_us": 21.4,
+            "max_us": 256.1
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year1",
+      "mode": "burst",
+      "threads": 2,
+      "grain": 256,
+      "days": 3653,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0,
+        2
+      ],
+      "hash": "93512fcbbc4c70dc",
+      "repeat_rsd_percent": 6.83238760286,
+      "stable": false,
+      "tick": {
+        "samples": 10959,
+        "mean_us": 20.9807737932,
+        "p50_us": 17.2,
+        "p95_us": 29.2,
+        "p99_us": 82.9,
+        "max_us": 581.6
+      },
+      "repeat_mean_us": [
+        22.5643580619,
+        20.6062140706,
+        19.7717492472
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9087,
+          "mean_us": 18.980411577,
+          "p50_us": 17.2,
+          "p95_us": 22.3,
+          "p99_us": 31.5,
+          "max_us": 581.6
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 19.2805555556,
+          "p50_us": 17.3,
+          "p95_us": 22.6,
+          "p99_us": 31.5,
+          "max_us": 158.7
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 75.3433333333,
+          "p50_us": 71,
+          "p95_us": 108.2,
+          "p99_us": 161.3,
+          "max_us": 365.9
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 114.593333333,
+          "p50_us": 110.3,
+          "p95_us": 164.1,
+          "p99_us": 257.8,
+          "max_us": 257.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 365300,
+          "mean_us_per_tick": 0.350050187061,
+          "active": {
+            "samples": 10959,
+            "mean_us": 0.350050187061,
+            "p50_us": 0.3,
+            "p95_us": 0.5,
+            "p99_us": 0.6,
+            "max_us": 95
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 10440,
+          "mean_us_per_tick": 0.0172552240168,
+          "active": {
+            "samples": 1470,
+            "mean_us": 0.128639455782,
+            "p50_us": 0.1,
+            "p95_us": 0.2,
+            "p99_us": 0.3,
+            "max_us": 0.4
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 48000,
+          "mean_us_per_tick": 1.47049000821,
+          "active": {
+            "samples": 360,
+            "mean_us": 44.7641666667,
+            "p50_us": 42,
+            "p95_us": 64.5,
+            "p99_us": 111.7,
+            "max_us": 192.9
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 36000,
+          "mean_us_per_tick": 0.325933023086,
+          "active": {
+            "samples": 360,
+            "mean_us": 9.92194444444,
+            "p50_us": 8.7,
+            "p95_us": 16.9,
+            "p99_us": 63.3,
+            "max_us": 148.8
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 15000,
+          "mean_us_per_tick": 0.100510995529,
+          "active": {
+            "samples": 30,
+            "mean_us": 36.7166666667,
+            "p50_us": 33.7,
+            "p95_us": 71,
+            "p99_us": 72.2,
+            "max_us": 72.2
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 11689600,
+          "mean_us_per_tick": 18.5658636737,
+          "active": {
+            "samples": 10959,
+            "mean_us": 18.5658636737,
+            "p50_us": 16.8,
+            "p95_us": 21.8,
+            "p99_us": 30.8,
+            "max_us": 580.8
+          }
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "profile": "year60x3",
+      "mode": "stagger",
+      "threads": 1,
+      "grain": 256,
+      "days": 3652,
+      "repetitions": 3,
+      "warmup_days": 31,
+      "seed": 7,
+      "ai_quota_wu": 4096,
+      "physical_cores": 6,
+      "logical_cpus": 12,
+      "build": "Release",
+      "affinity_cpus": [
+        0
+      ],
+      "hash": "d1a21ab97b3b869a",
+      "repeat_rsd_percent": 3.55728897695,
+      "stable": true,
+      "tick": {
+        "samples": 10956,
+        "mean_us": 32.0346933187,
+        "p50_us": 29.2,
+        "p95_us": 38,
+        "p99_us": 68,
+        "max_us": 2276.2
+      },
+      "repeat_mean_us": [
+        31.9230832421,
+        30.9550383352,
+        33.225958379
+      ],
+      "cadence": {
+        "daily": {
+          "samples": 9084,
+          "mean_us": 30.8986019375,
+          "p50_us": 29.1,
+          "p95_us": 37.8,
+          "p99_us": 51.3,
+          "max_us": 2276.2
+        },
+        "weekly": {
+          "samples": 1512,
+          "mean_us": 30.9877645503,
+          "p50_us": 30.1,
+          "p95_us": 39.6,
+          "p99_us": 43.6,
+          "max_us": 170.4
+        },
+        "monthly": {
+          "samples": 330,
+          "mean_us": 32.9339393939,
+          "p50_us": 31.3,
+          "p95_us": 42.2,
+          "p99_us": 48.3,
+          "max_us": 109.3
+        },
+        "yearly": {
+          "samples": 30,
+          "mean_us": 418.916666667,
+          "p50_us": 408.1,
+          "p95_us": 493,
+          "p99_us": 532.8,
+          "max_us": 532.8
+        }
+      },
+      "stages": {
+        "armies.daily": {
+          "work_per_run": 3286800,
+          "mean_us_per_tick": 2.44402154071,
+          "active": {
+            "samples": 10956,
+            "mean_us": 2.44402154071,
+            "p50_us": 2.3,
+            "p95_us": 3.2,
+            "p99_us": 3.6,
+            "max_us": 87.5
+          }
+        },
+        "schemes.weekly": {
+          "work_per_run": 156300,
+          "mean_us_per_tick": 0.155777656079,
+          "active": {
+            "samples": 1563,
+            "mean_us": 1.09193857965,
+            "p50_us": 1,
+            "p95_us": 1.9,
+            "p99_us": 2.3,
+            "max_us": 8.7
+          }
+        },
+        "economy.monthly": {
+          "work_per_run": 144000,
+          "mean_us_per_tick": 4.2061792625,
+          "active": {
+            "samples": 10080,
+            "mean_us": 4.57171626984,
+            "p50_us": 4.2,
+            "p95_us": 7,
+            "p99_us": 7.7,
+            "max_us": 128.2
+          }
+        },
+        "trade.monthly": {
+          "work_per_run": 108000,
+          "mean_us_per_tick": 0.539749908726,
+          "active": {
+            "samples": 10080,
+            "mean_us": 0.586656746032,
+            "p50_us": 0.5,
+            "p95_us": 0.8,
+            "p99_us": 1.1,
+            "max_us": 126.5
+          }
+        },
+        "demography.yearly": {
+          "work_per_run": 150000,
+          "mean_us_per_tick": 1.05684556407,
+          "active": {
+            "samples": 30,
+            "mean_us": 385.96,
+            "p50_us": 376.3,
+            "p95_us": 459.5,
+            "p99_us": 490.3,
+            "max_us": 490.3
+          }
+        },
+        "ai.daily": {
+          "work_per_run": 14958592,
+          "mean_us_per_tick": 23.3921412924,
+          "active": {
+            "samples": 10956,
+            "mean_us": 23.3921412924,
+            "p50_us": 21.9,
+            "p95_us": 26.3,
+            "p99_us": 33.2,
+            "max_us": 2239.3
+          }
+        }
+      }
+    }
+  ]
+}
