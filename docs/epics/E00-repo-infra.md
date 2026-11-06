@@ -1,6 +1,6 @@
 # E0 — Репозиторий и инфраструктура
 
-> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **в работе — T01–T05 выполнены, остаются T06–T09**.
+> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **в работе — T01–T06 выполнены, остаются T07–T09**.
 > Опирается на: ADR-0001 (стек, структура каталогов), ADR-0002 (бенчмарки, CI-гейт), TZ NFR-TEST-1, NFR-PERF-7, NFR-COMPAT-1.
 > Оценки задач: **S** ≤ 1 дн., **M** 2–3 дн., **L** ~1 нед., **XL** > 1 нед. (разбивать).
 
@@ -88,7 +88,8 @@ patriarch/
 | T03 | ✅ | `vcpkg.json` (doctest, fmt, zstd, xxhash, benchmark) с `builtin-baseline`; триплет `x64-windows-static-md` |
 | T04 | ✅ | `/W4 /permissive- /utf-8 /WX`; `.clang-format`, `.clang-tidy`, `.editorconfig`, `tools/format.ps1` (проверено: apply и `-Check`). `clang-tidy` не запускался — для генератора Visual Studio нет `compile_commands.json`; вернёмся к нему в CI |
 | T05 | ✅ | doctest + CTest (`doctest_discover_tests`), 3 smoke-теста; Debug/Release/RelWithDebInfo и ASan проходят. ASan намеренно проверен на `heap-buffer-overflow` (ловит) |
-| T06–T09 | ⏳ | CI, логирование/assert, документация (частично: `docs/dev/setup.md`), реестр ассетов |
+| T06 | ✅ | `.github/workflows/ci.yml`: `clang-format` (Ubuntu, 19.1.5), MSVC Debug и RelWithDebInfo, MSVC ASan на `windows-2022`; общее действие `setup-vcpkg` (baseline из `vcpkg.json` + кэш). Ярлыки `windows-latest`/`windows-2025` теперь указывают на образ с VS 2026 — их не использовать, пока пресеты на `Visual Studio 17 2022`. `clang-cl` и `clang-tidy` в CI — позже |
+| T07–T09 | ⏳ | Логирование/assert/профилирование-обёртки, документация (частично: `docs/dev/setup.md`), реестр ассетов |
 
 **Порядок:** T01 → T02 → (T03 ∥ T04) → T05 → (T06 ∥ T07) → T08, T09.
 

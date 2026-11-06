@@ -1,5 +1,7 @@
 # Patriarch
 
+[![CI](https://github.com/savinovanton/patriarch/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/savinovanton/patriarch/actions/workflows/ci.yml)
+
 Околополитический симулятор-стратегия о династии в России начала XVIII века (старт 1703). Одиночная игра, PC (Windows), 2D-карта, собственный движок на C++20 (Direct3D 11, RmlUi).
 
 ## Сборка
