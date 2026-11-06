@@ -26,3 +26,5 @@ if(PATRIARCH_BUILD_TESTS)
             -P ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/roundtrip.cmake)
     set_tests_properties(mapgen_roundtrip PROPERTIES TIMEOUT 300)
 endif()
+
+add_subdirectory(stressgen)
