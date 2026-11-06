@@ -5,6 +5,7 @@
 #include <RmlUi/Core.h>
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 
 namespace pat::ui {
@@ -19,6 +20,7 @@ struct SkillRow {
     int value = 0;
     int max = kSkillMax;
     Rml::String width;  // CSS width of the bar fill, e.g. "65%"
+    Rml::String tip;    // tooltip key of this row, e.g. "skill:0"
 };
 
 struct RelationRow {
@@ -98,6 +100,7 @@ struct CharacterWindow::Impl {
             row.name = kSkillNames[i];
             row.value = snapshot.skills[i];
             row.width = std::to_string(snapshot.skills[i] * 100 / kSkillMax) + "%";
+            row.tip = "skill:" + std::to_string(i);
             skills.push_back(std::move(row));
         }
         traits.assign(snapshot.traits.begin(), snapshot.traits.end());
@@ -175,6 +178,7 @@ CharacterWindow::create(engine::UiContext& ui, const std::filesystem::path& docu
         skill.RegisterMember("value", &SkillRow::value);
         skill.RegisterMember("max", &SkillRow::max);
         skill.RegisterMember("width", &SkillRow::width);
+        skill.RegisterMember("tip", &SkillRow::tip);
     }
     ctor.RegisterArray<std::vector<SkillRow>>();
     if (auto relation = ctor.RegisterStruct<RelationRow>()) {
@@ -236,6 +240,19 @@ void CharacterWindow::set_snapshot(const CharacterSnapshot& snapshot) {
 
 const CharacterSnapshot& CharacterWindow::snapshot() const {
     return impl_->snapshot;
+}
+
+const Explanation* CharacterWindow::explanation(std::string_view key) const {
+    constexpr std::string_view kSkillPrefix = "skill:";
+    if (key.substr(0, kSkillPrefix.size()) == kSkillPrefix) {
+        std::size_t index = 0;
+        const std::string_view digits = key.substr(kSkillPrefix.size());
+        const auto [end, ec] = std::from_chars(digits.data(), digits.data() + digits.size(), index);
+        if (ec == std::errc{} && end == digits.data() + digits.size() && index < kSkillCount) {
+            return &impl_->snapshot.skill_explanations[index];
+        }
+    }
+    return nullptr;
 }
 
 void CharacterWindow::set_tab(std::string_view tab) {

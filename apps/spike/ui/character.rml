@@ -22,7 +22,7 @@
     <div id="content">
         <div data-if="tab == 'overview'">
             <h2>Навыки</h2>
-            <div class="skill" data-for="skill : skills">
+            <div class="skill" data-for="skill : skills" data-attr-data-tip="skill.tip">
                 <span class="skill-name">{{ skill.name }}</span>
                 <div class="bar"><div class="fill" data-style-width="skill.width"></div></div>
                 <span class="skill-value">{{ skill.value }}</span>

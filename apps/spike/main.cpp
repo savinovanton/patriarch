@@ -20,6 +20,7 @@
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/tooltip_manager.hpp"
 
 #include <RmlUi/Core.h>
 #include <SDL3/SDL_timer.h>
@@ -64,6 +65,7 @@ struct Options {
     bool hidden = false;           // hidden window + offscreen software renderer (headless smoke run)
     bool no_vsync = false;
     float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
+    bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
     bool bench = false;            // scripted camera path, prints frame statistics, then exits
     std::int64_t bench_frames = 900;
@@ -86,6 +88,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.no_vsync = true;
         } else if (arg == "--ui-scale" && i + 1 < argc) {
             out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--demo-tooltip") {
+            out.demo_tooltip = true;
         } else if (arg == "--no-ui") {
             out.no_ui = true;
         } else if (arg == "--bench") {
@@ -244,6 +248,7 @@ int main(int argc, char** argv) {
     // are a separate decision (issue #27) and will live in assets/ with licence records.
     std::unique_ptr<UiContext> ui;
     bool character_visible = true;
+    std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
     std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
@@ -292,6 +297,16 @@ int main(int argc, char** argv) {
         } else {
             PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
         }
+        if (character) {
+            auto tooltip_result = pat::ui::TooltipManager::create(*ui, PATRIARCH_SPIKE_UI_DIR);
+            if (tooltip_result) {
+                tooltips = std::move(tooltip_result).value();
+                pat::ui::CharacterWindow* window_ptr = character.get();
+                tooltips->set_provider([window_ptr](std::string_view key) { return window_ptr->explanation(key); });
+            } else {
+                PAT_LOG_WARN("spike", "tooltips: {}", tooltip_result.error().message);
+            }
+        }
     }
 
     float cursor_x = -1.0f;
@@ -338,6 +353,9 @@ int main(int argc, char** argv) {
         for (const Event& e : events) {
             // The UI sees every event first; what it consumes (hover over UI, text focus) the game ignores.
             const bool ui_consumed = ui != nullptr && ui->handle_event(e);
+            if (tooltips) {
+                tooltips->handle_event(e);
+            }
             if (std::holds_alternative<event::Quit>(e)) {
                 running = false;
             } else if (const auto* key = std::get_if<event::Key>(&e)) {
@@ -480,6 +498,53 @@ int main(int argc, char** argv) {
             }
         }
 
+        if (opt.demo_tooltip && tooltips && character && clock.frame_count() == 2) {
+            // Scripted hover for screenshots: open a three-level tooltip on a skill that has one.
+            const auto hover_center = [&](Rml::Element* el) {
+                const Event ev = event::MouseMove{el->GetAbsoluteLeft() + el->GetOffsetWidth() * 0.5f,
+                                                  el->GetAbsoluteTop() + el->GetOffsetHeight() * 0.5f, 0.0f, 0.0f};
+                ui->handle_event(ev);
+                tooltips->handle_event(ev);
+                ui->update();
+            };
+            const auto settle = [&](int steps) {
+                for (int i = 0; i < steps; ++i) {
+                    tooltips->update(0.1f);
+                    ui->update();
+                }
+            };
+            Rml::ElementList rows;
+            character->document()->GetElementsByClassName(rows, "skill");
+            std::vector<Rml::Element*> shown;
+            for (Rml::Element* r : rows) {
+                if (r->IsVisible(true)) {
+                    shown.push_back(r);
+                }
+            }
+            std::size_t pick = 0;
+            const auto& explanations = character->snapshot().skill_explanations;
+            for (std::size_t i = 0; i < explanations.size() && i < shown.size(); ++i) {
+                for (const auto& term : explanations[i].terms) {
+                    if (!term.terms.empty() && !term.terms.front().terms.empty()) {
+                        pick = i;
+                    }
+                }
+            }
+            if (pick < shown.size()) {
+                hover_center(shown[pick]);
+                settle(6);
+                for (std::size_t level = 0; level < 2; ++level) {
+                    if (Rml::ElementDocument* d = tooltips->level_document(level)) {
+                        Rml::ElementList nested;
+                        d->GetElementsByClassName(nested, "nested");
+                        if (!nested.empty()) {
+                            hover_center(nested.front());
+                            settle(6);
+                        }
+                    }
+                }
+            }
+        }
         if (renderer->begin_frame({0.04f, 0.05f, 0.08f, 1.0f})) {
             MapFrame frame;
             frame.view_proj = camera.view_projection(aspect);
@@ -514,6 +579,9 @@ int main(int argc, char** argv) {
                         skill = (skill + 1) % (pat::ui::kSkillMax + 1);
                         character->set_snapshot(next);
                     }
+                }
+                if (tooltips) {
+                    tooltips->update(frame_dt);
                 }
                 ui->update();
                 ui->render();
