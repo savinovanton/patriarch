@@ -24,6 +24,7 @@
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/runner.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/hud_window.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
 
@@ -80,6 +81,7 @@ struct Options {
     float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
+    bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
     int offscreen_h = 0;
@@ -120,6 +122,8 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else if (arg == "--sim-speed" && i + 1 < argc) {
             out.sim_speed = std::clamp(std::atoi(argv[++i]), 0, 6);
             out.sim_speed_set = true;
+        } else if (arg == "--no-hud") {
+            out.no_hud = true;
         } else if (arg == "--no-labels") {
             out.no_labels = true;
         } else if (arg == "--no-ui") {
@@ -278,7 +282,8 @@ int main(int argc, char** argv) {
     std::vector<Event> events;
     bool running = true;
     std::uint64_t logic_steps = 0;
-    float ui_scale = effective_ui_scale(window.display_scale(), opt.user_ui_scale);
+    // The layout of the HUD is drawn for 1080p: the UI scale follows the window height (design_ui_scale).
+    float ui_scale = design_ui_scale(renderer->size(), opt.user_ui_scale);
     std::int64_t last_title_frame_count = 0;
     std::int64_t last_frame_ns = now_ns();
 
@@ -336,6 +341,8 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
     std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
     std::unique_ptr<pat::ui::TimeBar> time_bar;           // likewise
+    std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
+    bool hud_visible = true;
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
             return;
@@ -382,6 +389,21 @@ int main(int argc, char** argv) {
             character->set_command_handler([](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
         } else {
             PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+        }
+        if (!opt.no_hud) {
+            auto hud_result = pat::ui::HudWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
+                                                         PATRIARCH_SPIKE_OLIVE_DIR);
+            if (hud_result) {
+                hud = std::move(hud_result).value();
+                hud->set_snapshot(pat::ui::make_test_hud());  // placeholder numbers until the economy exists
+                pat::ui::HudWindow* h = hud.get();
+                hud->set_menu_handler([h](const std::string& key) {
+                    h->set_active_menu(key);
+                    PAT_LOG_INFO("spike", "menu: {}", key);
+                });
+            } else {
+                PAT_LOG_WARN("spike", "HUD: {}", hud_result.error().message);
+            }
         }
         if (runner) {
             auto bar = pat::ui::TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml");
@@ -483,6 +505,9 @@ int main(int argc, char** argv) {
                         view->reload_shaders_if_changed();
                     } else if (key->scancode == kScancodeL) {
                         labels_on = !labels_on;
+                    } else if (key->scancode == scancode::f4 && hud != nullptr) {
+                        hud_visible = !hud_visible;
+                        hud->show(hud_visible);
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
                         character->show(character_visible);
@@ -501,9 +526,13 @@ int main(int argc, char** argv) {
                 if (!offscreen) {
                     renderer->resize({resized->pixel_w, resized->pixel_h});
                 }
+                ui_scale = design_ui_scale(renderer->size(), opt.user_ui_scale);
+                if (ui) {
+                    ui->resize(renderer->size(), ui_scale);
+                }
                 PAT_LOG_INFO("spike", "resized to {}x{} px", resized->pixel_w, resized->pixel_h);
             } else if (const auto* scale = std::get_if<event::ScaleChanged>(&e)) {
-                ui_scale = effective_ui_scale(scale->scale, opt.user_ui_scale);
+                (void)scale;  // the UI scale follows the window height, not the OS scale
                 if (ui) {
                     ui->resize(renderer->size(), ui_scale);
                 }
