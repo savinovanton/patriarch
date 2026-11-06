@@ -2,12 +2,22 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(patriarch_tests
     main.cpp
+    arena_test.cpp
     assert_test.cpp
+    calendar_test.cpp
     core_smoke.cpp
+    date_test.cpp
+    fixed_test.cpp
+    ids_test.cpp
     log_test.cpp
     profile_test.cpp
     result_test.cpp
-    sim_smoke.cpp)
+    rng_test.cpp
+    sim_smoke.cpp
+    slot_map_test.cpp
+    sparse_set_test.cpp
+    static_vec_test.cpp
+    string_interner_test.cpp)
 
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core

@@ -2,11 +2,24 @@ add_library(patriarch_core STATIC
     include/pat/core/assert.hpp
     include/pat/core/build_info.hpp
     include/pat/core/log.hpp
+    include/pat/core/detail/sigmoid_table.hpp
+    include/pat/core/detail/wide_math.hpp
+    include/pat/core/arena.hpp
+    include/pat/core/fixed.hpp
+    include/pat/core/ids.hpp
     include/pat/core/profile.hpp
     include/pat/core/result.hpp
+    include/pat/core/rng.hpp
+    include/pat/core/slot_map.hpp
+    include/pat/core/sparse_set.hpp
+    include/pat/core/static_vec.hpp
+    include/pat/core/string_interner.hpp
+    arena.cpp
     assert.cpp
     build_info.cpp
-    log.cpp)
+    log.cpp
+    rng.cpp
+    string_interner.cpp)
 add_library(patriarch::core ALIAS patriarch_core)
 
 target_include_directories(patriarch_core PUBLIC

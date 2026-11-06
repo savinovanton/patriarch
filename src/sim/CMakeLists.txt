@@ -1,5 +1,9 @@
 add_library(patriarch_sim STATIC
+    include/pat/sim/calendar.hpp
+    include/pat/sim/date.hpp
+    include/pat/sim/scheduled_queue.hpp
     include/pat/sim/sim.hpp
+    date.cpp
     sim.cpp)
 add_library(patriarch::sim ALIAS patriarch_sim)
 
