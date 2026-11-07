@@ -104,6 +104,7 @@ jobs:
       - name: Configure
         run: cmake --preset linux-${{ matrix.compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
       - name: Build
+        # -k 0: report every compile error of a run, not just the first batch.
         run: cmake --build --preset linux-${{ matrix.compiler }} -- -k 0
       - name: Test
         run: ctest --preset linux-${{ matrix.compiler }}
