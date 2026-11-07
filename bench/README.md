@@ -41,7 +41,7 @@ ctest --preset win-msvc-relwithdebinfo -L bench --no-tests=error
 реальное выполнение, прогрев/повторы, корректность JSON, медиану, throughput,
 переопределение флагов и отклонение ошибочных параметров. JSON сохраняется рядом с
 исполняемым файлом (`bench-smoke.json`); Windows CI публикует артефакт для Debug и
-RelWithDebInfo. Для smoke нужен Python ≥ 3.8. Пороги регрессии и nightly — задача E2-T07;
+RelWithDebInfo. Для smoke нужен Python ≥ 3.8. Гейт регрессий и nightly описаны в [performance-gate.md](../docs/dev/performance-gate.md);
 шумные измерения CI не служат эталоном производительности.
 
 1. Возьмите `rng_bench.cpp` как шаблон и добавьте файл в `bench/CMakeLists.txt`.
