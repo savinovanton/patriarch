@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import os
+import sys
 import tempfile
 import threading
 import unittest
@@ -14,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "tools" / "geo" / "fetch.py"
 spec = importlib.util.spec_from_file_location("geo_fetch_under_test", SCRIPT)
 geo_fetch = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = geo_fetch  # dataclasses looks the module up by name
 spec.loader.exec_module(geo_fetch)
 
 PAYLOAD = bytes(range(256)) * 40  # 10240 bytes
