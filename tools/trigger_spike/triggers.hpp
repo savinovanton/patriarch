@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 namespace pat::trigger_spike {
@@ -59,6 +60,8 @@ struct Index {
 };
 
 struct Fixture {
+    Fixture(sim::World w, const Config& c) : world(std::move(w)), config(c) {}
+
     sim::World world;
     Config config;
     std::array<Table, 2> tables;

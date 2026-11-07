@@ -8,17 +8,27 @@
     "fmt",
     "zstd",
     "xxhash",
-    "benchmark",
-    "sdl3",
-    {
-      "name": "rmlui",
-      "features": [
-        "svg"
+    "benchmark"
+  ],
+  "default-features": [
+    "engine"
+  ],
+  "features": {
+    "engine": {
+      "description": "Window, renderer and UI libraries; the Linux determinism job builds without them.",
+      "dependencies": [
+        "sdl3",
+        {
+          "name": "rmlui",
+          "features": [
+            "svg"
+          ]
+        },
+        {
+          "name": "freetype",
+          "default-features": false
+        }
       ]
-    },
-    {
-      "name": "freetype",
-      "default-features": false
     }
-  ]
+  }
 }

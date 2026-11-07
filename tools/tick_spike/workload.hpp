@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace pat::spike {
@@ -17,6 +18,8 @@ inline constexpr std::array<std::string_view, kStages> kStageNames{
     "armies.daily", "schemes.weekly", "economy.monthly", "trade.monthly", "demography.yearly", "ai.daily"};
 
 struct State {
+    explicit State(stress::Dataset dataset) : data(std::move(dataset)) {}
+
     stress::Dataset data;
     std::size_t nodes = 30;
     std::vector<std::int64_t> population;  // province x 6 estates

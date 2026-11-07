@@ -67,3 +67,21 @@ tools\format.ps1 -Check    # проверка (для CI)
 - Сообщения MSVC локализованы (русский) — это нормально, коды ошибок (`C2027` и т.д.) остаются прежними.
 - ASan-сборка копирует runtime-DLL (`clang_rt.asan_*`) рядом с тестами автоматически (см. `tests/CMakeLists.txt`).
 - Для `doctest` включён `DOCTEST_CONFIG_USE_STD_HEADERS`, чтобы сравнивать `std::string_view` в `CHECK`.
+
+## 7. Linux: проверка детерминизма (CI)
+
+Платформа игры — Windows, но ядро симуляции обязано давать **те же хеши** на другом компиляторе и ОС (NFR-DET-1). Для этого в CI есть job `Linux gcc/clang …` (Ubuntu 24.04, GCC 13, Clang 18, Ninja). Он собирает `core`, `sim`, `mapdata`, `data`, тесты и tools **без движка** (`PATRIARCH_BUILD_ENGINE=OFF`, SDL3/RmlUi не нужны; в `vcpkg.json` они вынесены в feature `engine`, а на Linux включён `VCPKG_MANIFEST_NO_DEFAULT_FEATURES`), запускает `ctest` (включая `tests/golden_test.cpp` и `simcli_determinism`) и затем `tools/check_golden_hash.py`:
+
+- выполняет `simcli --verify-determinism --days 800 --seed 7` и печатает `final hash` — по этой строке в логах сравниваются Windows и Linux (эталонное значение для seed 7 в репозитории не хранится);
+- выполняет `simcli --seed 42 --days 1461` и сверяет **каждую часть** хеша с `kExpectedHash` из `tests/golden_test.cpp` (константы читаются оттуда же, дублей нет). Тот же шаг запускается и в MSVC-job.
+
+Локально на Linux (нужны gcc/clang, Ninja, CMake ≥ 3.25, vcpkg и `VCPKG_ROOT`):
+
+```bash
+cmake --preset linux-gcc            # или linux-clang; -DCMAKE_BUILD_TYPE=Debug для отладочной сборки
+cmake --build --preset linux-gcc
+ctest --preset linux-gcc
+python3 tools/check_golden_hash.py out/linux-gcc/tools/simcli
+```
+
+Если хеш на Linux отличается от Windows — это **баг детерминизма** (не обновляйте golden-значения): сравните части хеша (`calendar/rng/dynasties/provinces/characters`) и найдите подсистему.
