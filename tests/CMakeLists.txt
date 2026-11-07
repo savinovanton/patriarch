@@ -22,6 +22,7 @@ add_executable(patriarch_tests
     rng_test.cpp
     runner_test.cpp
     save_test.cpp
+    schema_doc_test.cpp
     schema_test.cpp
     sim_smoke.cpp
     simulation_test.cpp
@@ -64,7 +65,8 @@ endif()
 
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.
 target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS
-    PATRIARCH_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
+    PATRIARCH_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+    PATRIARCH_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 patriarch_set_target_options(patriarch_tests)
 set_target_properties(patriarch_tests PROPERTIES FOLDER "tests")
