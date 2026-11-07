@@ -1,11 +1,12 @@
 <rml>
 <head>
     <title>Time bar</title>
+    <link type="text/rcss" href="olive.rcss"/>
     <link type="text/rcss" href="timebar.rcss"/>
 </head>
 <body data-model="timebar">
 <div id="bar">
-    <span id="date">{{ date_text }}</span>
+    <div id="date">{{ date_text }}</div>
     <button class="spd" id="spd-0" data-class-active="speed == 0" data-event-click="set_speed(0)">Пауза</button>
     <button class="spd" id="spd-1" data-class-active="speed == 1" data-event-click="set_speed(1)">1</button>
     <button class="spd" id="spd-2" data-class-active="speed == 2" data-event-click="set_speed(2)">2</button>

@@ -175,3 +175,140 @@
     background-color: #c8af7738;
     border: 1dp #eee8d8;
 }
+
+/* ---- right column: holdings, armies, state affairs */
+#right {
+    position: absolute;
+    right: 28dp;
+    top: 117dp;
+    width: 258dp;
+}
+
+.box {
+    padding: 10dp 12dp 8dp 12dp;
+}
+
+.box-title {
+    position: relative;
+    height: 20dp;
+    font-size: 11dp;
+    font-weight: bold;
+    letter-spacing: 1dp;
+}
+
+.box-title .count {
+    position: absolute;
+    right: 0;
+    top: 0;
+    color: #eee8d8;
+}
+
+#tabs {
+    height: 24dp;
+    margin-bottom: 6dp;
+    border-bottom: 1dp #626d50;
+    white-space: nowrap;
+}
+
+.tab {
+    display: inline-block;
+    height: 23dp;
+    margin-right: 14dp;
+    font-size: 12dp;
+    line-height: 20dp;
+    color: #a0ad8b;
+}
+
+.tab:hover {
+    color: #eee8d8;
+}
+
+.tab.active {
+    color: #eee8d8;
+    border-bottom: 2dp #c8af77;
+}
+
+.row {
+    position: relative;
+    height: 26dp;
+    font-size: 13dp;
+}
+
+.row svg {
+    position: absolute;
+    left: 0;
+    top: 2dp;
+    width: 24dp;
+    height: 23dp;
+}
+
+.row-name {
+    position: absolute;
+    left: 34dp;
+    top: 5dp;
+}
+
+.row-value {
+    position: absolute;
+    right: 0;
+    top: 5dp;
+}
+
+.army-title {
+    margin-top: 10dp;
+}
+
+#affairs-title {
+    margin: 16dp 0 8dp 2dp;
+    font-size: 11dp;
+    font-weight: bold;
+    letter-spacing: 1dp;
+}
+
+.affair {
+    position: relative;
+    height: 54dp;
+    margin-bottom: 8dp;
+}
+
+.affair svg {
+    position: absolute;
+    left: 10dp;
+    top: 8dp;
+    width: 36dp;
+    height: 36dp;
+}
+
+.affair-title {
+    position: absolute;
+    left: 58dp;
+    top: 10dp;
+    font-size: 13dp;
+    font-weight: bold;
+}
+
+.affair-sub {
+    position: absolute;
+    left: 58dp;
+    top: 30dp;
+    font-size: 11dp;
+}
+
+/* ---- chronicle (bottom left) */
+#chronicle {
+    position: absolute;
+    left: 75dp;
+    bottom: 75dp;
+    width: 329dp;
+}
+
+.line {
+    height: 18dp;
+    font-size: 12dp;
+    white-space: nowrap;
+}
+
+.time {
+    display: inline-block;
+    width: 44dp;
+}

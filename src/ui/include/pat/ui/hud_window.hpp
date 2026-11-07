@@ -47,6 +47,11 @@ public:
     /// Called with the menu key ("realm", ...) when a menu button is pressed.
     void set_menu_handler(std::function<void(const std::string&)> handler);
 
+    /// Tab of the holdings panel: "cities" (default), "armies" or "dynasties". The tabs only switch the
+    /// list shown; they are handled inside the window.
+    void set_tab(std::string_view tab);
+    [[nodiscard]] std::string_view tab() const;
+
     [[nodiscard]] Rml::ElementDocument* document() const;
     void show(bool visible);
 

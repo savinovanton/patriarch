@@ -1,55 +1,47 @@
-div, span {
-    display: block;
-}
-
-body {
-    width: 100%;
-    height: 100%;
-    font-family: Arial;
-    font-size: 15dp;
-    color: #e8e0cc;
-}
-
+/* Date and speed controls, top right (Olive Stone, see olive.rcss for the tokens). */
 #bar {
     position: absolute;
-    left: 50%;
-    top: 12dp;
-    margin-left: -190dp;
-    width: 380dp;
-    padding: 6dp 10dp;
-    background-color: #1c1710ee;
-    border: 1dp #8a7a52;
-    border-radius: 4dp;
-    text-align: center;
+    right: 28dp;
+    top: 28dp;
+    width: 282dp;
+    height: 57dp;
+    padding: 6dp 12dp;
+    background-color: #282f26;
+    border: 1dp #626d50;
+    border-radius: 2dp;
 }
 
 #date {
-    display: inline-block;
-    width: 140dp;
-    text-align: left;
+    display: block;
     font-family: "Times New Roman";
     font-size: 17dp;
     font-weight: bold;
-    color: #f2d98a;
+    color: #eee8d8;
+    margin-bottom: 5dp;
 }
 
 .spd {
     display: inline-block;
-    padding: 3dp 9dp;
-    margin-left: 3dp;
-    background-color: #3a3322;
-    border: 1dp #6a5a3a;
-    border-radius: 3dp;
-    color: #d8cfae;
+    min-width: 26dp;
+    height: 22dp;
+    margin-right: 4dp;
+    padding: 0 4dp;
+    background-color: #3d4736;
+    border: 1dp #626d50;
+    border-radius: 2dp;
+    font-size: 12dp;
+    line-height: 20dp;
+    text-align: center;
+    color: #c5c7b5;
 }
 
 .spd:hover {
-    background-color: #5a4d30;
-    color: #ffffff;
+    background-color: #4d5a44;
+    color: #eee8d8;
 }
 
 .spd.active {
-    background-color: #8a6f2e;
+    background-color: #7b6a3f;
+    border-color: #c8af77;
     color: #ffffff;
-    border-color: #f2d98a;
 }
