@@ -103,6 +103,7 @@
 }
 
 .alert {
+    pointer-events: auto;
     display: inline-block;
     position: relative;
     width: 38dp;
@@ -143,6 +144,7 @@
 }
 
 .menu-btn {
+    pointer-events: auto;
     display: block;
     position: relative;
     width: 40dp;
@@ -259,7 +261,11 @@
 }
 
 #affairs-title {
-    margin: 16dp 0 8dp 2dp;
+    display: inline-block;
+    padding: 2dp 8dp;
+    background-color: #282f26cc;
+    border-radius: 2dp;
+    margin: 16dp 0 8dp 0;
     font-size: 11dp;
     font-weight: bold;
     letter-spacing: 1dp;

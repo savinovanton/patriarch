@@ -51,6 +51,7 @@ struct Fixture {
         const std::filesystem::path source(PATRIARCH_SPIKE_UI_DIR);
         std::filesystem::copy_file(source / "character.rml", dir / "character.rml");
         std::filesystem::copy_file(source / "character.rcss", dir / "character.rcss");
+        std::filesystem::copy_file(source / "olive.rcss", dir / "olive.rcss");
 
         RendererDesc rd;
         rd.size = {kW, kH};

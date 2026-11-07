@@ -110,6 +110,18 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     CHECK(resources[1]->GetChild(3)->IsClassSet("neg"));
     CHECK_FALSE(resources[0]->GetChild(3)->IsClassSet("neg"));
 
+    // The HUD covers the screen with its document but must let the mouse through to the map: only its
+    // panels count as UI.
+    ui->handle_event(event::MouseMove{900.0f, 600.0f, 0, 0});
+    ui->update();
+    CHECK_FALSE(ui->mouse_over_ui());
+    ui->handle_event(event::MouseMove{140.0f, 50.0f, 0, 0});  // the realm plaque
+    ui->update();
+    CHECK(ui->mouse_over_ui());
+    ui->handle_event(event::MouseMove{900.0f, 600.0f, 0, 0});
+    ui->update();
+    CHECK_FALSE(ui->mouse_over_ui());
+
     // The right panel: tabs switch the holdings list, the armies block and the cards follow the snapshot.
     const auto visible_rows = [&]() {
         Rml::ElementList all;
