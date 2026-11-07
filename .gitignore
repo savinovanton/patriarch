@@ -28,3 +28,7 @@ CMakeUserPresets.json
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Python script caches
+__pycache__/
+*.py[cod]

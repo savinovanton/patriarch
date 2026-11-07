@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "benchmarks": [
+    "core.pcg32_next/1024",
+    "core.pcg32_next/16384",
+    "sim.telemetry_tick/0/real_time",
+    "sim.telemetry_tick/1/real_time"
+  ],
+  "threshold": 0.10,
+  "max_rsd": 0.05,
+  "min_samples": 5,
+  "capture": {
+    "repetitions": 7,
+    "min_time_seconds": 0.5,
+    "warmup_seconds": 0.1
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "source_sha": "0a330c797baf41dec08247bb6e72a8180479e593",
+  "profile": {
+    "protocol": "patriarch.bench.v1",
+    "time_field": "real_time",
+    "os": "win32",
+    "architecture": "AMD64",
+    "cpu_model": "Intel64 Family 6 Model 151 Stepping 5, GenuineIntel",
+    "cpu_count": 12,
+    "cpu_affinity": "11",
+    "priority_class": "above_normal",
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1310720,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 18874368,
+        "num_sharing": 12
+      }
+    ],
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35229.0",
+      "architecture_id": "x64"
+    },
+    "configuration": "Release",
+    "benchmark_version": "v1.9.5",
+    "benchmark_library_build_type": "release"
+  },
+  "benchmarks": [
+    {
+      "name": "core.pcg32_next/1024",
+      "time_unit": "ns",
+      "samples": [
+        1466.684285800771,
+        1431.4271428572413,
+        1427.2989285278268,
+        1389.7948214435019,
+        1426.0274998378009,
+        1388.6121428056088,
+        1407.2107142835323
+      ]
+    },
+    {
+      "name": "core.pcg32_next/16384",
+      "time_unit": "ns",
+      "samples": [
+        22172.78437456116,
+        23497.181249695128,
+        22418.05000085151,
+        23148.931250034366,
+        22311.006250674836,
+        23166.468748968324,
+        23037.46562756714
+      ]
+    },
+    {
+      "name": "sim.telemetry_tick/0/real_time",
+      "time_unit": "ns",
+      "samples": [
+        283919.2081429966,
+        278271.67143305583,
+        277133.5758443221,
+        274081.23488407925,
+        283356.89982328686,
+        272928.1260409483,
+        274363.64003884833
+      ],
+      "label": "8701624565267322847"
+    },
+    {
+      "name": "sim.telemetry_tick/1/real_time",
+      "time_unit": "ns",
+      "samples": [
+        288472.6151640158,
+        289262.7889280282,
+        290127.2161588767,
+        286196.5987643603,
+        307396.8913727657,
+        293254.89375657367,
+        291889.0380609197
+      ],
+      "label": "8701624565267322847"
+    }
+  ]
+}
