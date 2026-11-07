@@ -136,6 +136,47 @@ float3 apply_haze(float3 c, float3 world) {
     return lerp(c, float3(0.63, 0.71, 0.80), saturate(amount));
 }
 
+// Sea surface (phase P3a): two scrolling noise layers give a wave normal that flattens with distance (it
+// would alias), Fresnel blends the depth colour with the sky, the sun leaves a glint and the shallows near
+// the coast carry foam.
+float wave_height(float2 p, float time) {
+    // Two scrolling layers: long swell and shorter chop (heights in texel units).
+    return value_noise(p * 0.045 + float2(time * 0.060, time * 0.035)) * 2.2 +
+           value_noise(p * 0.13 + float2(-time * 0.11, time * 0.17)) * 0.9;
+}
+
+float3 water_color(float3 world, float2 uv, float raw) {
+    const float depth = saturate((map_info.w - raw) / 0.18);
+    const float3 deep = lerp(float3(0.17, 0.36, 0.50), float3(0.04, 0.12, 0.26), sqrt(depth));
+
+    const float time = select_info.w;
+    const float2 p = world.xy;
+    const float eps = 1.5;  // texels
+    const float ha = wave_height(p, time);
+    const float hx = wave_height(p + float2(eps, 0), time);
+    const float hy = wave_height(p + float2(0, eps), time);
+    // Waves fade out when a pixel covers more than a couple of texels (they would shimmer and alias).
+    const float footprint = max(length(ddx(world.xy)), length(ddy(world.xy)));
+    const float calm = saturate(1.6 - footprint * 0.5);
+    const float2 slope = float2(hx - ha, hy - ha) / eps * calm;
+    const float3 n = normalize(float3(-slope, 1.0));
+
+    const float3 v = normalize(eye_zoom.xyz - world);
+    const float cos_v = saturate(dot(n, v));
+    const float fresnel = clamp(0.02 + 0.98 * pow(1.0 - cos_v, 5.0), 0.0, 0.65);
+    const float3 sky = lerp(float3(0.55, 0.66, 0.78), float3(0.30, 0.45, 0.68), saturate(v.z * 1.5));
+    float3 color = lerp(deep, sky, fresnel);
+
+    const float3 h = normalize(sun_dir.xyz + v);
+    const float glint = pow(saturate(dot(n, h)), 220.0) * 1.6 * calm;
+    color += float3(1.0, 0.93, 0.80) * glint;
+
+    const float shore = saturate(1.0 - (map_info.w - raw) / 0.02);
+    const float foam = shore * (0.55 + 0.45 * value_noise(p * 0.9 + time * 0.8));
+    color = lerp(color, float3(0.90, 0.95, 0.97), foam * 0.7 * calm);
+    return color;
+}
+
 float4 ps_main(VsOut input) : SV_Target {
     const int2 size = int2(map_info.xy);
     const float2 texf = input.uv * map_info.xy;
@@ -145,9 +186,8 @@ float4 ps_main(VsOut input) : SV_Target {
 
     float3 color;
     if (water) {
-        const float depth = saturate((map_info.w - raw) / 0.18);
-        color = lerp(float3(0.17, 0.36, 0.50), float3(0.04, 0.12, 0.26), sqrt(depth));
-        return float4(apply_haze(color, input.world), 1.0);
+        color = water_color(input.world, input.uv, raw);
+        return float4(saturate(apply_haze(color, input.world)), 1.0);
     }
 
     // Surface material with bilinear blending so class changes do not show as hard texel edges.
