@@ -110,6 +110,45 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     CHECK(resources[1]->GetChild(3)->IsClassSet("neg"));
     CHECK_FALSE(resources[0]->GetChild(3)->IsClassSet("neg"));
 
+    // The right panel: tabs switch the holdings list, the armies block and the cards follow the snapshot.
+    const auto visible_rows = [&]() {
+        Rml::ElementList all;
+        std::size_t n = 0;
+        doc->GetElementsByClassName(all, "row");
+        for (Rml::Element* el : all) {
+            n += el->IsVisible() ? 1 : 0;
+        }
+        return n;
+    };
+    snap = pat::ui::make_test_hud();
+    hud->set_snapshot(snap);
+    ui->update();
+    CHECK(hud->tab() == "cities");
+    CHECK(visible_rows() == 5 + 1);  // five cities and one army
+    hud->set_tab("dynasties");
+    hud->set_tab("no-such-tab");  // ignored
+    ui->update();
+    CHECK(hud->tab() == "dynasties");
+    CHECK(visible_rows() == 3 + 1);
+    CHECK(doc->GetElementById("tab-dynasties")->IsClassSet("active"));
+    CHECK_FALSE(doc->GetElementById("tab-cities")->IsClassSet("active"));
+    hud->set_tab("cities");
+    ui->update();
+    Rml::ElementList cards;
+    doc->GetElementsByClassName(cards, "affair");
+    std::size_t visible_cards = 0;
+    for (Rml::Element* el : cards) {
+        visible_cards += el->IsVisible() ? 1 : 0;
+    }
+    CHECK(visible_cards == 2);
+    Rml::ElementList lines;
+    doc->GetElementsByClassName(lines, "line");
+    std::size_t visible_lines = 0;
+    for (Rml::Element* el : lines) {
+        visible_lines += el->IsVisible() ? 1 : 0;
+    }
+    CHECK(visible_lines == 2);
+
     // The left menu: the active entry is marked and presses reach the handler.
     CHECK(hud->active_menu() == "world");
     CHECK(doc->GetElementById("menu-world")->IsClassSet("active"));

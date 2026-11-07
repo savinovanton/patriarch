@@ -13,8 +13,8 @@ body {
 
 #window {
     position: absolute;
-    right: 16dp;
-    top: 72dp;
+    right: 306dp;
+    top: 117dp;
     width: 460dp;
     padding: 12dp 14dp;
     background-color: #1c1710ee;

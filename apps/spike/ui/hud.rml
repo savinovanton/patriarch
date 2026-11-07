@@ -35,5 +35,30 @@
         <div class="ov"></div>
     </div>
 </div>
+
+<div id="right">
+    <div id="holdings" class="panel box">
+        <div class="box-title"><span class="muted">ВЛАДЕНИЯ</span><span class="count">{{ rows_total }}</span></div>
+        <div id="tabs">
+            <div class="tab" id="tab-cities" data-class-active="tab == 'cities'" data-event-click="set_tab('cities')">Города</div>
+            <div class="tab" id="tab-armies" data-class-active="tab == 'armies'" data-event-click="set_tab('armies')">Войска</div>
+            <div class="tab" id="tab-dynasties" data-class-active="tab == 'dynasties'" data-event-click="set_tab('dynasties')">Династии</div>
+        </div>
+        <div class="row" data-for="e : rows"><svg data-attr-src="e.icon"/><span class="row-name">{{ e.name }}</span><span class="row-value muted">{{ e.value }}</span></div>
+        <div class="box-title army-title"><span class="muted">ВОЙСКА</span><span class="count">{{ army_total }}</span></div>
+        <div class="row army" data-for="a : army_rows"><svg data-attr-src="a.icon"/><span class="row-name">{{ a.name }}</span><span class="row-value muted">{{ a.value }}</span></div>
+    </div>
+    <div id="affairs-title" class="muted">ДЕЛА ГОСУДАРСТВА</div>
+    <div class="affair panel" data-for="a : affairs">
+        <svg data-attr-src="a.icon"/>
+        <div class="affair-title">{{ a.title }}</div>
+        <div class="affair-sub muted">{{ a.subtitle }}</div>
+    </div>
+</div>
+
+<div id="chronicle" class="panel box">
+    <div class="box-title"><span class="muted">ЛЕТОПИСЬ</span><span class="count">{{ chronicle_total }}</span></div>
+    <div class="line" data-for="c : chronicle"><span class="time muted">{{ c.time }}</span><span class="text">{{ c.text }}</span></div>
+</div>
 </body>
 </rml>
