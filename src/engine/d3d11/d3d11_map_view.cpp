@@ -33,6 +33,8 @@ struct FrameCB {
     float select_info[4];
     float lod_ranges[kMaxLevels];
     float patch_info[4];
+    float sun_dir[4];     // xyz = unit vector towards the sun (x east, y south, z up)
+    float light_info[4];  // x = shadow strength, y = shadow steps, z = haze, w = longest shadow in texels
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -202,6 +204,20 @@ public:
                                    : 1.0f;
         }
         cb.patch_info[0] = static_cast<float>(geometry_.patch_cells);
+        {
+            constexpr float kDegToRad = 3.14159265f / 180.0f;
+            const float az = frame.light.sun_azimuth_deg * kDegToRad;
+            const float el = std::clamp(frame.light.sun_elevation_deg, 5.0f, 89.0f) * kDegToRad;
+            cb.sun_dir[0] = std::cos(el) * std::sin(az);
+            cb.sun_dir[1] = -std::cos(el) * std::cos(az);
+            cb.sun_dir[2] = std::sin(el);
+            cb.light_info[0] = std::clamp(frame.light.shadow_strength, 0.0f, 1.0f);
+            cb.light_info[1] = static_cast<float>(std::clamp(frame.light.shadow_steps, 0, 64));
+            cb.light_info[2] = std::max(frame.light.haze, 0.0f);
+            // A shadow cannot be longer than the relief divided by the slope of the sun's rays.
+            cb.light_info[3] =
+                std::min(geometry_.relief / std::max(std::sin(el), 0.15f), 0.2f * geometry_.width);
+        }
         if (SUCCEEDED(ctx->Map(frame_cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             std::memcpy(mapped.pData, &cb, sizeof(cb));
             ctx->Unmap(frame_cb_.Get(), 0);

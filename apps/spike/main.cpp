@@ -81,6 +81,8 @@ struct Options {
     float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
+    int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
+    pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
@@ -122,6 +124,17 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else if (arg == "--sim-speed" && i + 1 < argc) {
             out.sim_speed = std::clamp(std::atoi(argv[++i]), 0, 6);
             out.sim_speed_set = true;
+        } else if (arg == "--mode" && i + 1 < argc) {
+            out.start_mode = std::clamp(std::atoi(argv[++i]), 0, 3);
+        } else if (arg == "--sun" && i + 1 < argc) {
+            if (std::sscanf(argv[++i], "%f,%f", &out.light.sun_azimuth_deg, &out.light.sun_elevation_deg) != 2) {
+                std::fprintf(stderr, "--sun expects AZIMUTH,ELEVATION in degrees, e.g. 315,38\n");
+                return false;
+            }
+        } else if (arg == "--shadows" && i + 1 < argc) {
+            out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
+        } else if (arg == "--haze" && i + 1 < argc) {
+            out.light.haze = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--no-hud") {
             out.no_hud = true;
         } else if (arg == "--no-labels") {
@@ -270,7 +283,7 @@ int main(int argc, char** argv) {
     OrbitCamera camera(limits);
     camera.set_focus(geometry.width * 0.5f, geometry.height * 0.5f);
     camera.set_distance(geometry.width * 0.62f);  // start with the whole map in view
-    view->set_mode(MapMode::Owners);
+    view->set_mode(static_cast<MapMode>(opt.start_mode));
     if (opt.view_dist > 0.0f) {
         camera.set_focus(geometry.width * opt.view_fx, geometry.height * opt.view_fy);
         camera.set_distance(opt.view_dist);
@@ -734,6 +747,7 @@ int main(int argc, char** argv) {
             frame.zoom_fraction = camera.zoom_fraction();
             frame.hovered = hovered;
             frame.selected = selected;
+            frame.light = opt.light;
             frame.time_s = (static_cast<float>(logic_steps) + step.alpha) / 60.0f;
             renderer->push_marker("map");
             view->draw(frame);
