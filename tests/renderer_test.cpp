@@ -392,6 +392,29 @@ TEST_CASE("Map view: lighting - sun direction, relief shadows and haze change th
     CHECK(differing_pixels(lit(weak), without_shadows) == 0);
 }
 
+TEST_CASE("Map view: the sea is animated and only the water changes with time") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    pat::engine::MapFrame a = fx.frame();
+    a.time_s = 0.0f;
+    pat::engine::MapFrame b = a;
+    b.time_s = 7.0f;
+    const auto at_0 = fx.render(a);
+    const auto at_7 = fx.render(b);
+    const std::size_t differing = differing_pixels(at_0, at_7);
+    CHECK(differing > 500);  // waves moved
+
+    // Land is not animated: pixels that differ are bluish (water), and the same frame twice is identical.
+    std::size_t land_changes = 0;
+    for (std::size_t i = 0; i + 3 < at_0.size(); i += 4) {
+        const bool changed = at_0[i] != at_7[i] || at_0[i + 1] != at_7[i + 1] || at_0[i + 2] != at_7[i + 2];
+        const bool water_like = at_0[i + 2] > at_0[i] && at_0[i + 2] > at_0[i + 1];
+        land_changes += changed && !water_like ? 1U : 0U;
+    }
+    CHECK(land_changes < differing / 20 + 5);
+    CHECK(differing_pixels(fx.render(a), at_0) == 0);
+}
+
 TEST_CASE("Map view: selection highlight lands on the province the CPU says is under the pixel") {
     MapFixture fx;
     fx.view->set_mode(pat::engine::MapMode::Owners);
