@@ -12,9 +12,10 @@ namespace {
 void pcg32_next(benchmark::State& state) {
     core::Pcg32 rng(42, 54);
     const auto draws = state.range(0);
+    const auto work = draws + draws / 5;
     for (auto _ : state) {
         std::uint64_t checksum = 0;
-        for (std::int64_t i = 0; i < draws; ++i) {
+        for (std::int64_t i = 0; i < work; ++i) {
             checksum += rng.next_u32();
         }
         benchmark::DoNotOptimize(checksum);
