@@ -66,6 +66,16 @@ struct MapViewDesc {
 };
 
 /// Per-frame inputs of the map renderer.
+/// Lighting of the landscape (ADR-0003 phase P2): one directional sun, a sky ambient, soft shadows cast by
+/// the relief itself (ray marched through the height texture) and distance haze.
+struct MapLighting {
+    float sun_azimuth_deg = 315.0f;   ///< Where the sun is, clockwise from north (315 = north-west).
+    float sun_elevation_deg = 38.0f;  ///< Height of the sun above the horizon.
+    float shadow_strength = 0.85f;    ///< 0 = no shadows, 1 = fully dark shadows.
+    int shadow_steps = 24;            ///< Ray march steps per pixel; 0 switches terrain shadows off.
+    float haze = 1.0f;                ///< Distance haze scale; 0 = clear air.
+};
+
 struct MapFrame {
     Mat4 view_proj = Mat4::identity();
     Vec3 eye;
@@ -73,6 +83,7 @@ struct MapFrame {
     std::uint16_t hovered = 0;   ///< Province under the cursor (0 = none).
     std::uint16_t selected = 0;  ///< Selected province (0 = none).
     float time_s = 0.0f;
+    MapLighting light;
 };
 
 /// The volumetric landscape with the province layer draped over it (ADR-0003, phase P1).

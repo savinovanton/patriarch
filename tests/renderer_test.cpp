@@ -349,6 +349,49 @@ TEST_CASE("Map view: switching the map mode recolours without rebuilding geometr
     CHECK(differing_pixels(mood, random) > 5000);
 }
 
+TEST_CASE("Map view: lighting - sun direction, relief shadows and haze change the picture") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    auto lit = [&](pat::engine::MapLighting light) {
+        pat::engine::MapFrame f = fx.frame();
+        f.light = light;
+        return fx.render(f);
+    };
+    pat::engine::MapLighting base;
+    base.haze = 0.0f;
+    base.sun_elevation_deg = 10.0f;  // a low sun casts long shadows even on this gentle map
+    pat::engine::MapLighting no_shadows = base;
+    no_shadows.shadow_steps = 0;
+    const auto with_shadows = lit(base);
+    const auto without_shadows = lit(no_shadows);
+    CHECK(differing_pixels(with_shadows, without_shadows) > 200);
+
+    // Shadows only darken: no pixel gets brighter when they are switched on.
+    std::size_t brighter = 0;
+    std::size_t darker = 0;
+    for (std::size_t i = 0; i + 3 < with_shadows.size(); i += 4) {
+        const int a = with_shadows[i] + with_shadows[i + 1] + with_shadows[i + 2];
+        const int b = without_shadows[i] + without_shadows[i + 1] + without_shadows[i + 2];
+        brighter += a > b + 3 ? 1U : 0U;
+        darker += a + 3 < b ? 1U : 0U;
+    }
+    CHECK(brighter == 0);
+    CHECK(darker > 100);
+
+    // The sun direction and the haze matter.
+    pat::engine::MapLighting east = no_shadows;
+    east.sun_azimuth_deg = 90.0f;
+    CHECK(differing_pixels(without_shadows, lit(east)) > 1000);
+    pat::engine::MapLighting hazy = no_shadows;
+    hazy.haze = 2.0f;
+    CHECK(differing_pixels(without_shadows, lit(hazy)) > 1000);
+
+    // Shadow strength 0 equals no shadows.
+    pat::engine::MapLighting weak = base;
+    weak.shadow_strength = 0.0f;
+    CHECK(differing_pixels(lit(weak), without_shadows) == 0);
+}
+
 TEST_CASE("Map view: selection highlight lands on the province the CPU says is under the pixel") {
     MapFixture fx;
     fx.view->set_mode(pat::engine::MapMode::Owners);
