@@ -21,6 +21,7 @@ add_executable(patriarch_tests
     rng_test.cpp
     runner_test.cpp
     save_test.cpp
+    schema_test.cpp
     sim_smoke.cpp
     simulation_test.cpp
     slot_map_test.cpp

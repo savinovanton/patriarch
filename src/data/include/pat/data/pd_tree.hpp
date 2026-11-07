@@ -93,6 +93,18 @@ enum class ErrorCode : std::uint16_t {
     TooManyErrors = 22,
     FileTooLarge = 23,
     UnterminatedBlockString = 24,
+
+    // Schema validation (E4-T03, pat/data/schema.hpp); the PD0xx codes above come from the parser.
+    UnknownField = 101,
+    MissingField = 102,
+    WrongType = 103,
+    ValueOutOfRange = 104,
+    DuplicateField = 105,
+    UnknownEnumValue = 106,
+    InvalidDate = 107,
+    UnknownKind = 108,
+    BadLabel = 109,
+    BadOperator = 110,
 };
 
 /// "PD001" style name of an error code.
