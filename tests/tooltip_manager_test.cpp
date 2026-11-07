@@ -39,7 +39,7 @@ struct Fixture {
         std::filesystem::remove_all(dir);
         std::filesystem::create_directories(dir);
         const std::filesystem::path source(PATRIARCH_SPIKE_UI_DIR);
-        for (const char* f : {"character.rml", "character.rcss", "tooltip.rcss"}) {
+        for (const char* f : {"character.rml", "character.rcss", "olive.rcss", "tooltip.rcss"}) {
             std::filesystem::copy_file(source / f, dir / f);
         }
 

@@ -1,5 +1,6 @@
 /* Date and speed controls, top right (Olive Stone, see olive.rcss for the tokens). */
 #bar {
+    pointer-events: auto;
     position: absolute;
     right: 28dp;
     top: 28dp;
