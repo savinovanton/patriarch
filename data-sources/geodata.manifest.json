@@ -1,0 +1,182 @@
+{
+  "manifest_version": 1,
+  "description": "Third-party geodata sources for the real-geography map (ADR-0004). Candidates only: hashes and URLs are null until the owner downloads and records them (tools/geo/fetch.py --allow-unverified prints the computed values). Verdicts are copied from docs/dev/geodata-sources.md (checked 2026-11-06). Raw data is never committed.",
+  "sources": [
+    {
+      "id": "copernicus-dem-glo30",
+      "name": "Copernicus DEM GLO-30 (WorldDEM-30, 1 arc-second)",
+      "provider": "European Union / ESA (Copernicus); DLR e.V.; Airbus Defence and Space GmbH",
+      "layer": "terrain",
+      "status": "unverified",
+      "version": null,
+      "version_date": null,
+      "source_page": null,
+      "files": [],
+      "license": "LicenseRef-Copernicus-DEM",
+      "license_url": null,
+      "attribution": {
+        "required": true,
+        "text": "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. The organisations in charge of the Copernicus programme by law or by delegation do not incur any liability for any use of the Copernicus WorldDEM-30."
+      },
+      "checked_on": "2026-11-06",
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "conditional"
+      },
+      "transformations": [
+        "reproject to the common map projection (not chosen yet, see ADR-0004 section 4)",
+        "resample to the base raster resolution",
+        "filter vegetation and buildings (the data is a DSM, not bare earth)",
+        "stylise: smooth noise, vertical exaggeration (owner decision of 2026-11-06)",
+        "historical corrections: remove 20th-century reservoirs and dams (ADR-0004 section 6)"
+      ],
+      "notes": "Verdict: allowed with mandatory attribution (docs/dev/geodata-sources.md, section 2): free, worldwide, redistribution and adaptation permitted, no commercial restriction in the licence text; derived data may be shipped if the notice, the liability sentence and the no-endorsement rule are passed on. Transformations are planned, none applied yet. Version in the public AWS bucket (described as the 2021 release) must be confirmed on first download. Still to confirm on first download: whether Russian tiles are in the public GLO-30 set (list of non-public tiles not read) and Chukotka / 180th meridian coverage. Access: public AWS buckets copernicus-dem-30m (eu-central-1, no sign request) or Copernicus Data Space (registration). Vertical datum EGM2008 (EPSG:3855), horizontal WGS84 (EPSG:4326), Cloud Optimized GeoTIFF, 1x1 degree tiles. Legal review of the licence text is recommended before a commercial release.",
+      "components": []
+    },
+    {
+      "id": "copernicus-dem-glo90",
+      "name": "Copernicus DEM GLO-90 (WorldDEM-90, 3 arc-second)",
+      "provider": "European Union / ESA (Copernicus); DLR e.V.; Airbus Defence and Space GmbH",
+      "layer": "terrain",
+      "status": "unverified",
+      "version": null,
+      "version_date": null,
+      "source_page": null,
+      "files": [],
+      "license": "LicenseRef-Copernicus-DEM",
+      "license_url": null,
+      "attribution": {
+        "required": true,
+        "text": "produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved."
+      },
+      "checked_on": "2026-11-06",
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "conditional"
+      },
+      "transformations": [
+        "same planned chain as copernicus-dem-glo30 (reproject, resample, filter DSM, stylise, historical corrections)"
+      ],
+      "notes": "Verdict: allowed with mandatory attribution; base layer for the whole country, GLO-30 only for regions that need detail (ADR-0004). A separate licence text for GLO-90 was NOT read: GLO-30 terms and the wording of the collection page are applied (docs/dev/geodata-sources.md, sections 2 and 8). The liability sentence of GLO-30 should be repeated with WorldDEM-90 in the EULA. Access: public AWS bucket copernicus-dem-90m (eu-central-1, no sign request) or Copernicus Data Space. Transformations are planned, none applied yet.",
+      "components": []
+    },
+    {
+      "id": "natural-earth-10m-physical",
+      "name": "Natural Earth 1:10m physical vectors (coastline, land, ocean, lakes, rivers, minor islands)",
+      "provider": "Natural Earth",
+      "layer": "coastline",
+      "status": "unverified",
+      "version": "5.1.1",
+      "version_date": null,
+      "source_page": null,
+      "files": [],
+      "license": "Public-Domain",
+      "license_url": "https://naturalearthdata.com/about/terms-of-use/",
+      "attribution": {
+        "required": false,
+        "text": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com."
+      },
+      "checked_on": "2026-11-06",
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "yes"
+      },
+      "transformations": [
+        "reproject to the common map projection",
+        "reconcile coastline, lakes and rivers with the DEM (rivers cut into terrain, lakes flat, sea at level 0)"
+      ],
+      "notes": "Verdict: allowed, public domain; credit is unnecessary (the text above is an optional suggestion). Do NOT use the European river/lake additions (the *_europe datasets): they come from a third party licensed for a world base map only. Coastline accuracy of northern Russia is suspect: check against the DEM. Political borders are modern and unusable for 1703. Per-dataset versions are listed in components; release dates are not stated on the pages (see the natural-earth-vector CHANGELOG). Transformations are planned, none applied yet.",
+      "components": [
+        "ne_10m_coastline 4.1.0",
+        "ne_10m_land 5.1.1",
+        "ne_10m_ocean 5.1.1",
+        "ne_10m_lakes 5.0.0",
+        "ne_10m_rivers_lake_centerlines 5.0.0 (+ _scale_rank)",
+        "ne_10m_minor_islands 4.1.0"
+      ]
+    },
+    {
+      "id": "hydrolakes",
+      "name": "HydroLAKES (global lakes of 10 ha and larger)",
+      "provider": "HydroSHEDS (Messager, Lehner, Grill, Nedeva, Schmitt)",
+      "layer": "lakes",
+      "status": "unverified",
+      "version": null,
+      "version_date": null,
+      "source_page": null,
+      "files": [],
+      "license": "CC-BY-4.0",
+      "license_url": null,
+      "attribution": {
+        "required": true,
+        "text": "HydroLAKES © Messager et al. 2016, CC BY 4.0. Messager, M.L., Lehner, B., Grill, G., Nedeva, I., Schmitt, O. (2016), Nature Communications 7: 13603."
+      },
+      "checked_on": "2026-11-06",
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "yes"
+      },
+      "transformations": [
+        "reproject to the common map projection",
+        "reconcile lake outlines with the DEM (flat lake surfaces)",
+        "historical corrections: remove reservoirs created in the 20th century (ADR-0004 section 6)"
+      ],
+      "notes": "Verdict: allowed (CC BY 4.0; the licence is stated on the product page). Attribution to the authors is mandatory. Product page URL and the exact release version were not recorded in the docs: fill them in on first download. Transformations are planned, none applied yet.",
+      "components": []
+    },
+    {
+      "id": "hydrosheds-v1-family",
+      "name": "HydroSHEDS v1 / HydroRIVERS / HydroBASINS",
+      "provider": "WWF (HydroSHEDS)",
+      "layer": "hydrography",
+      "status": "blocked-on-owner",
+      "version": "1",
+      "version_date": null,
+      "source_page": null,
+      "files": [],
+      "license": "LicenseRef-WWF-HydroSHEDS-v1",
+      "license_url": null,
+      "attribution": {
+        "required": true,
+        "text": "This product [name] incorporates data from the HydroSHEDS version 1 database which is © World Wildlife Fund, Inc. (2006-2022) and has been used herein under license. WWF has not evaluated the data as altered and incorporated within [name] ... (excerpt of appendix B of the licence: the full text, third-party rights list and the Lehner, Verdin, Jarvis (2008) Eos 89(10): 93-94 citation must be taken from the licence if the owner accepts it)"
+      },
+      "checked_on": "2026-11-06",
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "conditional"
+      },
+      "transformations": [],
+      "notes": "Owner decision pending (issue #96). Not used by default: the WWF licence allows commercial use but only distribution inside a derived product under a 'no less protective' EULA, with an indemnity in favour of WWF, 2-year records with audit rights, and termination at WWF's discretion; coverage north of 60 N is coarse (HYDRO1k); Chukotka / 180th meridian coverage not confirmed. Recommendation (docs/dev/geodata-sources.md): build rivers from the Copernicus DEM and check them against Natural Earth. The fetch script never downloads blocked-on-owner sources.",
+      "decision_issue": 96,
+      "components": []
+    },
+    {
+      "id": "nlr-historical-maps",
+      "name": "National Library of Russia (expositions.nlr.ru) and other historical map collections",
+      "provider": "National Library of Russia and other map collections and archives",
+      "layer": "historical",
+      "status": "blocked-on-owner",
+      "version": null,
+      "version_date": null,
+      "source_page": "https://expositions.nlr.ru/",
+      "files": [],
+      "license": null,
+      "license_url": null,
+      "attribution": {
+        "required": null,
+        "text": null
+      },
+      "checked_on": null,
+      "distribution": {
+        "may_commit_raw": false,
+        "may_distribute_derivatives": "unknown"
+      },
+      "transformations": [
+        "own digitisation of borders and names with period, source and confidence (documented / reconstructed / approximate)"
+      ],
+      "notes": "Owner help needed (issue #97): the site was unreachable from the agent environment, so the terms of use for scans were not read. Until then no scans are committed; only own digitisation (borders, names) with source, period and confidence is allowed. Originals of the 17th-18th centuries are public domain by age, but rights to digital reproductions are unclear. Candidate sources besides the NLR: Remezov, Ludolf, Homann and Kirilov atlases held by other libraries (each must be checked). Do not substitute the 1708 guberniya division for the 1703 start state.",
+      "decision_issue": 97,
+      "components": []
+    }
+  ]
+}
