@@ -5,6 +5,10 @@ add_library(patriarch_sim STATIC
     include/pat/sim/date.hpp
     include/pat/sim/demography.hpp
     include/pat/sim/demo_scenario.hpp
+    include/pat/sim/economy/breakdown.hpp
+    include/pat/sim/economy/money.hpp
+    include/pat/sim/economy/rules.hpp
+    include/pat/sim/economy/types.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/replay.hpp
     include/pat/sim/runner.hpp
@@ -21,6 +25,8 @@ add_library(patriarch_sim STATIC
     date.cpp
     demography.cpp
     demo_scenario.cpp
+    economy/breakdown.cpp
+    economy/rules.cpp
     replay.cpp
     runner.cpp
     save.cpp

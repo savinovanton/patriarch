@@ -11,6 +11,7 @@ add_executable(patriarch_tests
     core_smoke.cpp
     date_test.cpp
     demography_test.cpp
+    economy_rules_test.cpp
     fixed_test.cpp
     golden_test.cpp
     ids_test.cpp
