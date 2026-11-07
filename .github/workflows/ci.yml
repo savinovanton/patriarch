@@ -122,6 +122,82 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # Second Windows compiler (issue #30): clang-cl from the "C++ Clang tools for Windows" component of the
+  # Visual Studio 2022 image (ClangCL platform toolset). The whole project including the engine is built with
+  # warnings as errors; the golden hashes pinned on MSVC must come out identical (NFR-DET-1).
+  windows-clangcl:
+    name: clang-cl ${{ matrix.preset }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [debug, relwithdebinfo]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Toolchain versions
+        shell: pwsh
+        run: |
+          cmake --version
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $llvm = & $vswhere -latest -products * -find 'VC\Tools\Llvm\x64\bin\clang-cl.exe'
+          Write-Host "clang-cl: $llvm"
+          & $llvm --version
+      - name: Configure
+        run: cmake --preset win-clangcl
+      - name: Build
+        run: cmake --build --preset win-clangcl-${{ matrix.preset }}
+      - name: Test
+        run: ctest --preset win-clangcl-${{ matrix.preset }}
+      - name: Compare hashes with the golden values
+        shell: pwsh
+        run: |
+          $simcli = (Get-ChildItem out/win-clangcl/tools -Recurse -Filter simcli.exe | Select-Object -First 1).FullName
+          python tools/check_golden_hash.py $simcli
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-clangcl-${{ matrix.preset }}
+          path: out/win-clangcl/Testing
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Static analysis (issue #30). Report-only for now: the job never fails the build; the number of findings is
+  # written to the job summary and the full log is uploaded. Only src/ is analysed, using the compile database of
+  # the Linux Clang preset (Ninja writes compile_commands.json; the Visual Studio generator cannot).
+  clang-tidy:
+    name: clang-tidy (report only)
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Install clang-tidy
+        run: |
+          if ! command -v run-clang-tidy-18 >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y clang-tidy-18
+          fi
+          clang-tidy-18 --version
+      - name: Configure (compile_commands.json)
+        run: cmake --preset linux-clang
+      - name: Run clang-tidy over src/
+        run: |
+          mkdir -p tidy-report
+          run-clang-tidy-18 -p out/linux-clang -j "$(nproc)" -quiet \
+            -clang-tidy-binary "$(command -v clang-tidy-18)" \
+            "$GITHUB_WORKSPACE/src/.*\.cpp$" > tidy-report/clang-tidy.txt 2>&1 || true
+      - name: Summarize findings
+        run: python3 tools/clang_tidy_summary.py tidy-report/clang-tidy.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload clang-tidy report
+        uses: actions/upload-artifact@v7
+        with:
+          name: clang-tidy-report
+          path: tidy-report
+          retention-days: 14
+          if-no-files-found: error
+
   windows-asan:
     name: MSVC AddressSanitizer
     runs-on: windows-2022

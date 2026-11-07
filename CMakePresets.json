@@ -21,6 +21,12 @@
       "inherits": "base"
     },
     {
+      "name": "win-clangcl",
+      "displayName": "Windows / clang-cl (Visual Studio ClangCL toolset, multi-config)",
+      "inherits": "base",
+      "toolset": "ClangCL"
+    },
+    {
       "name": "win-msvc-asan",
       "displayName": "Windows / MSVC + AddressSanitizer",
       "inherits": "base",
@@ -63,6 +69,9 @@
     { "name": "win-msvc-release", "configurePreset": "win-msvc", "configuration": "Release" },
     { "name": "win-msvc-relwithdebinfo", "configurePreset": "win-msvc", "configuration": "RelWithDebInfo" },
     { "name": "win-msvc-asan-debug", "configurePreset": "win-msvc-asan", "configuration": "Debug" },
+    { "name": "win-clangcl-debug", "configurePreset": "win-clangcl", "configuration": "Debug" },
+    { "name": "win-clangcl-release", "configurePreset": "win-clangcl", "configuration": "Release" },
+    { "name": "win-clangcl-relwithdebinfo", "configurePreset": "win-clangcl", "configuration": "RelWithDebInfo" },
     { "name": "linux-gcc", "configurePreset": "linux-gcc" },
     { "name": "linux-clang", "configurePreset": "linux-clang" }
   ],
@@ -89,6 +98,24 @@
       "name": "win-msvc-asan-debug",
       "configurePreset": "win-msvc-asan",
       "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-clangcl-debug",
+      "configurePreset": "win-clangcl",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-clangcl-release",
+      "configurePreset": "win-clangcl",
+      "configuration": "Release",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "win-clangcl-relwithdebinfo",
+      "configurePreset": "win-clangcl",
+      "configuration": "RelWithDebInfo",
       "output": { "outputOnFailure": true }
     },
     { "name": "linux-gcc", "configurePreset": "linux-gcc", "output": { "outputOnFailure": true } },

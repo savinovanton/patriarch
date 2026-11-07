@@ -3,15 +3,21 @@
 
 function(patriarch_set_target_options target)
     if(MSVC)
+        # MSVC is also true for clang-cl (the "ClangCL" toolset of Visual Studio); it understands most
+        # cl.exe switches, but /MP and /Zc:preprocessor are cl.exe-only and /external:* handling differs
+        # (CMake passes system include directories to clang-cl as -imsvc by itself).
         target_compile_options(${target} PRIVATE
             /W4
             /permissive-
             /utf-8
-            /Zc:__cplusplus
-            /Zc:preprocessor
-            /MP
-            /external:anglebrackets
-            /external:W0)
+            /Zc:__cplusplus)
+        if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            target_compile_options(${target} PRIVATE
+                /Zc:preprocessor
+                /MP
+                /external:anglebrackets
+                /external:W0)
+        endif()
         if(PATRIARCH_WARNINGS_AS_ERRORS)
             target_compile_options(${target} PRIVATE /WX)
         endif()
