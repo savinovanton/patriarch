@@ -16,7 +16,11 @@ runs:
         git -C $root remote add origin https://github.com/microsoft/vcpkg.git
         git -C $root fetch --depth 1 origin $baseline
         git -C $root checkout --detach FETCH_HEAD
-        & "$root\bootstrap-vcpkg.bat" -disableMetrics
+        if ($IsWindows) {
+          & "$root\bootstrap-vcpkg.bat" -disableMetrics
+        } else {
+          & "$root/bootstrap-vcpkg.sh" -disableMetrics
+        }
         if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }
         $cache = Join-Path $env:GITHUB_WORKSPACE '.vcpkg-binary-cache'
         New-Item -ItemType Directory -Force -Path $cache | Out-Null

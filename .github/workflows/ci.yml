@@ -58,6 +58,12 @@ jobs:
         run: cmake --build --preset win-msvc-${{ matrix.preset }}
       - name: Test
         run: ctest --preset win-msvc-${{ matrix.preset }}
+      # Same check as the Linux job, so the hashes of both platforms appear in the logs.
+      - name: Compare hashes with the golden values
+        shell: pwsh
+        run: |
+          $simcli = (Get-ChildItem out/win-msvc/tools -Recurse -Filter simcli.exe | Select-Object -First 1).FullName
+          python tools/check_golden_hash.py $simcli
       - name: Upload benchmark smoke results
         uses: actions/upload-artifact@v7
         with:
@@ -71,6 +77,44 @@ jobs:
         with:
           name: test-logs-msvc-${{ matrix.preset }}
           path: out/win-msvc/Testing
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Cross-platform determinism (NFR-DET-1, issue #31): the simulation core, tools and tests are built
+  # without the engine (no SDL3/RmlUi) with GCC and Clang, and the hashes must equal the golden values
+  # that were pinned on MSVC.
+  linux-determinism:
+    name: Linux ${{ matrix.compiler }} ${{ matrix.build_type }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { compiler: gcc, build_type: RelWithDebInfo }
+          - { compiler: gcc, build_type: Debug }
+          - { compiler: clang, build_type: RelWithDebInfo }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          ninja --version
+          ${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} --version
+      - name: Configure
+        run: cmake --preset linux-${{ matrix.compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build --preset linux-${{ matrix.compiler }}
+      - name: Test
+        run: ctest --preset linux-${{ matrix.compiler }}
+      - name: Compare hashes with the golden values
+        run: python3 tools/check_golden_hash.py out/linux-${{ matrix.compiler }}/tools/simcli
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-linux-${{ matrix.compiler }}-${{ matrix.build_type }}
+          path: out/linux-${{ matrix.compiler }}/Testing
           retention-days: 7
           if-no-files-found: ignore
 

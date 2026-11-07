@@ -28,13 +28,43 @@
         "PATRIARCH_SANITIZE_ADDRESS": "ON",
         "PATRIARCH_BUILD_BENCHMARKS": "OFF"
       }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VCPKG_TARGET_TRIPLET": "x64-linux",
+        "VCPKG_HOST_TRIPLET": "x64-linux",
+        "VCPKG_MANIFEST_NO_DEFAULT_FEATURES": "ON",
+        "PATRIARCH_WARNINGS_AS_ERRORS": "ON",
+        "PATRIARCH_BUILD_ENGINE": "OFF"
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "displayName": "Linux / GCC (no engine; determinism check)",
+      "inherits": "linux-base",
+      "cacheVariables": { "CMAKE_C_COMPILER": "gcc", "CMAKE_CXX_COMPILER": "g++" }
+    },
+    {
+      "name": "linux-clang",
+      "displayName": "Linux / Clang (no engine; determinism check)",
+      "inherits": "linux-base",
+      "cacheVariables": { "CMAKE_C_COMPILER": "clang", "CMAKE_CXX_COMPILER": "clang++" }
     }
   ],
   "buildPresets": [
     { "name": "win-msvc-debug", "configurePreset": "win-msvc", "configuration": "Debug" },
     { "name": "win-msvc-release", "configurePreset": "win-msvc", "configuration": "Release" },
     { "name": "win-msvc-relwithdebinfo", "configurePreset": "win-msvc", "configuration": "RelWithDebInfo" },
-    { "name": "win-msvc-asan-debug", "configurePreset": "win-msvc-asan", "configuration": "Debug" }
+    { "name": "win-msvc-asan-debug", "configurePreset": "win-msvc-asan", "configuration": "Debug" },
+    { "name": "linux-gcc", "configurePreset": "linux-gcc" },
+    { "name": "linux-clang", "configurePreset": "linux-clang" }
   ],
   "testPresets": [
     {
@@ -60,6 +90,8 @@
       "configurePreset": "win-msvc-asan",
       "configuration": "Debug",
       "output": { "outputOnFailure": true }
-    }
+    },
+    { "name": "linux-gcc", "configurePreset": "linux-gcc", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang", "configurePreset": "linux-clang", "output": { "outputOnFailure": true } }
   ]
 }
