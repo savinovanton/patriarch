@@ -18,6 +18,9 @@ cbuffer FrameConstants : register(b0) {
     float4 patch_info;    // x = cells per patch edge
     float4 sun_dir;       // xyz = unit vector towards the sun
     float4 light_info;    // x = shadow strength, y = shadow steps, z = haze, w = longest shadow (texels)
+    float4 sun_color;     // rgb = sunlight colour times intensity (0 at night)
+    float4 ambient_mul;   // rgb = multiplier of the day ambient light
+    float4 haze_color;    // rgb = colour of the haze and the horizon
 };
 
 cbuffer MaterialConstants : register(b1) {
@@ -133,7 +136,7 @@ float sun_shadow(float3 p) {
 float3 apply_haze(float3 c, float3 world) {
     const float d = distance(eye_zoom.xyz, world);
     const float amount = (1.0 - exp(-pow(d / (0.9 * map_info.x), 1.6) * 0.9)) * 0.55 * light_info.z;
-    return lerp(c, float3(0.63, 0.71, 0.80), saturate(amount));
+    return lerp(c, haze_color.rgb, saturate(amount));
 }
 
 // Sea surface (phase P3a): two scrolling noise layers give a wave normal that flattens with distance (it
@@ -164,16 +167,19 @@ float3 water_color(float3 world, float2 uv, float raw) {
     const float3 v = normalize(eye_zoom.xyz - world);
     const float cos_v = saturate(dot(n, v));
     const float fresnel = clamp(0.02 + 0.98 * pow(1.0 - cos_v, 5.0), 0.0, 0.65);
-    const float3 sky = lerp(float3(0.55, 0.66, 0.78), float3(0.30, 0.45, 0.68), saturate(v.z * 1.5));
+    const float3 sky = lerp(float3(0.55, 0.66, 0.78), float3(0.30, 0.45, 0.68), saturate(v.z * 1.5)) * ambient_mul.rgb;
     float3 color = lerp(deep, sky, fresnel);
 
     const float3 h = normalize(sun_dir.xyz + v);
     const float glint = pow(saturate(dot(n, h)), 220.0) * 1.6 * calm;
-    color += float3(1.0, 0.93, 0.80) * glint;
 
     const float shore = saturate(1.0 - (map_info.w - raw) / 0.02);
     const float foam = shore * (0.55 + 0.45 * value_noise(p * 0.9 + time * 0.8));
     color = lerp(color, float3(0.90, 0.95, 0.97), foam * 0.7 * calm);
+    // Daylight reaches the water mostly through the sky: follow it down at dusk and at night (the glint below
+    // carries the sunlight itself).
+    color *= lerp(ambient_mul.rgb, float3(1, 1, 1), 0.2);
+    color += sun_color.rgb * glint;
     return color;
 }
 
@@ -227,7 +233,7 @@ float4 ps_main(VsOut input) : SV_Target {
     const float diffuse = saturate(dot(n, sun_dir.xyz));
     const float shadow = diffuse > 0.0 ? sun_shadow(float3(input.world.xy, input.world.z + 0.2)) : 0.0;
     const float3 ambient = lerp(float3(0.30, 0.28, 0.25), float3(0.40, 0.47, 0.58), n.z * 0.5 + 0.5) * 0.9;
-    color *= ambient + float3(1.0, 0.92, 0.78) * (diffuse * shadow * 0.95);
+    color *= ambient * ambient_mul.rgb + sun_color.rgb * (diffuse * shadow * 0.95);
 
     // Highlights.
     if (prov != 0 && prov == selected) {

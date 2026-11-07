@@ -415,6 +415,36 @@ TEST_CASE("Map view: the sea is animated and only the water changes with time") 
     CHECK(differing_pixels(fx.render(a), at_0) == 0);
 }
 
+TEST_CASE("Map view: night is darker than noon and dusk is warmer than noon") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    const auto mean_rgb = [&](float elevation_deg) {
+        pat::engine::MapFrame f = fx.frame();
+        f.light.sun_elevation_deg = elevation_deg;
+        const auto px = fx.render(f);
+        double r = 0.0;
+        double g = 0.0;
+        double b = 0.0;
+        std::size_t n = 0;
+        for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+            r += px[i];
+            g += px[i + 1];
+            b += px[i + 2];
+            ++n;
+        }
+        return std::array<double, 3>{
+            r / static_cast<double>(n), g / static_cast<double>(n), b / static_cast<double>(n)};
+    };
+    const auto noon = mean_rgb(55.0f);
+    const auto dusk = mean_rgb(4.0f);
+    const auto night = mean_rgb(-25.0f);
+    const auto luma = [](const std::array<double, 3>& c) { return c[0] * 0.3 + c[1] * 0.6 + c[2] * 0.1; };
+    CHECK(luma(night) < luma(noon) * 0.6);
+    CHECK(luma(night) < luma(dusk));
+    CHECK(dusk[0] / dusk[2] > noon[0] / noon[2]);    // warmer at dusk
+    CHECK(night[2] / night[0] > noon[2] / noon[0]);  // bluer at night
+}
+
 TEST_CASE("Map view: selection highlight lands on the province the CPU says is under the pixel") {
     MapFixture fx;
     fx.view->set_mode(pat::engine::MapMode::Owners);
