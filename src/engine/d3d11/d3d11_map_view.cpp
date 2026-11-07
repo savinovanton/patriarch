@@ -1,6 +1,7 @@
 #include "d3d11_map_view.hpp"
 
 #include "pat/core/log.hpp"
+#include "pat/engine/sky.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
 #include <algorithm>
@@ -33,8 +34,11 @@ struct FrameCB {
     float select_info[4];
     float lod_ranges[kMaxLevels];
     float patch_info[4];
-    float sun_dir[4];     // xyz = unit vector towards the sun (x east, y south, z up)
-    float light_info[4];  // x = shadow strength, y = shadow steps, z = haze, w = longest shadow in texels
+    float sun_dir[4];      // xyz = unit vector towards the sun (x east, y south, z up)
+    float light_info[4];   // x = shadow strength, y = shadow steps, z = haze, w = longest shadow in texels
+    float sun_color[4];    // rgb = sunlight colour times intensity
+    float ambient_mul[4];  // rgb = multiplier of the day ambient light
+    float haze_color[4];   // rgb = colour of the haze
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -207,7 +211,14 @@ public:
         {
             constexpr float kDegToRad = 3.14159265f / 180.0f;
             const float az = frame.light.sun_azimuth_deg * kDegToRad;
-            const float el = std::clamp(frame.light.sun_elevation_deg, 5.0f, 89.0f) * kDegToRad;
+            const float el_deg = std::clamp(frame.light.sun_elevation_deg, -30.0f, 89.0f);
+            const float el = el_deg * kDegToRad;
+            const SkyColors sky = sky_colors(el_deg);
+            for (std::size_t i = 0; i < 3; ++i) {
+                cb.sun_color[i] = sky.sun[i];
+                cb.ambient_mul[i] = sky.ambient_mul[i];
+                cb.haze_color[i] = sky.haze[i];
+            }
             cb.sun_dir[0] = std::cos(el) * std::sin(az);
             cb.sun_dir[1] = -std::cos(el) * std::cos(az);
             cb.sun_dir[2] = std::sin(el);
@@ -217,6 +228,9 @@ public:
             // A shadow cannot be longer than the relief divided by the slope of the sun's rays.
             cb.light_info[3] =
                 std::min(geometry_.relief / std::max(std::sin(el), 0.15f), 0.2f * geometry_.width);
+            if (el_deg <= 1.0f) {
+                cb.light_info[1] = 0.0f;  // no shadows without sunlight
+            }
         }
         if (SUCCEEDED(ctx->Map(frame_cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             std::memcpy(mapped.pData, &cb, sizeof(cb));

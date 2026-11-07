@@ -13,6 +13,7 @@
 #include "pat/engine/camera.hpp"
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/frame_clock.hpp"
+#include "pat/engine/sky.hpp"
 #include "pat/engine/map_labels.hpp"
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/terrain.hpp"
@@ -62,6 +63,7 @@ namespace {
 constexpr int kScancode1 = 30;
 constexpr int kScancodeV = 25;
 constexpr int kScancodeL = 15;
+constexpr int kScancodeN = 17;
 constexpr int kScancodeF5 = 62;
 constexpr int kScancodeW = 26;
 constexpr int kScancodeA = 4;
@@ -83,6 +85,8 @@ struct Options {
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
+    float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
+    float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
@@ -131,6 +135,10 @@ bool parse_options(int argc, char** argv, Options& out) {
                 std::fprintf(stderr, "--sun expects AZIMUTH,ELEVATION in degrees, e.g. 315,38\n");
                 return false;
             }
+        } else if (arg == "--time" && i + 1 < argc) {
+            out.time_hour = std::clamp(static_cast<float>(std::atof(argv[++i])), 0.0f, 24.0f);
+        } else if (arg == "--day-seconds" && i + 1 < argc) {
+            out.day_seconds = std::max(0.0f, static_cast<float>(std::atof(argv[++i])));
         } else if (arg == "--shadows" && i + 1 < argc) {
             out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
         } else if (arg == "--haze" && i + 1 < argc) {
@@ -444,6 +452,11 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Sun by the clock (phase P5): fixed with --time, cycling with --day-seconds or the N key.
+    bool sun_by_time = opt.time_hour >= 0.0f || opt.day_seconds > 0.0f;
+    float solar_hour = opt.time_hour >= 0.0f ? opt.time_hour : 9.0f;
+    float day_seconds = opt.day_seconds;
+    int day_of_year = 172;  // follows the simulation date when there is one
     float cursor_x = -1.0f;
     float cursor_y = -1.0f;
     bool left_down = false;
@@ -516,6 +529,16 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == kScancodeF5) {
                         renderer->reload_shaders_if_changed();
                         view->reload_shaders_if_changed();
+                    } else if (key->scancode == kScancodeN) {
+                        // Toggle the day-night cycle (the speed of the cycle is the owner's decision, issue #25).
+                        if (sun_by_time && day_seconds > 0.0f) {
+                            sun_by_time = false;
+                            day_seconds = 0.0f;
+                        } else {
+                            sun_by_time = true;
+                            day_seconds = 90.0f;
+                        }
+                        PAT_LOG_INFO("spike", "day-night cycle {} ({} s per day)", sun_by_time ? "on" : "off", day_seconds);
                     } else if (key->scancode == kScancodeL) {
                         labels_on = !labels_on;
                     } else if (key->scancode == scancode::f4 && hud != nullptr) {
@@ -610,6 +633,7 @@ int main(int argc, char** argv) {
         // One snapshot per frame feeds the map and every window, so they always agree (US-3.5).
         if (runner) {
             world_snapshot = runner->latest_snapshot();
+            day_of_year = world_snapshot->today().day_of_year();
             const std::uint64_t version = runner->snapshot_version();
             if (version != seen_version) {
                 seen_version = version;
@@ -747,7 +771,16 @@ int main(int argc, char** argv) {
             frame.zoom_fraction = camera.zoom_fraction();
             frame.hovered = hovered;
             frame.selected = selected;
-            frame.light = opt.light;
+            pat::engine::MapLighting light = opt.light;
+            if (sun_by_time) {
+                if (day_seconds > 0.0f) {
+                    solar_hour = std::fmod(solar_hour + frame_dt * 24.0f / day_seconds, 24.0f);
+                }
+                const pat::engine::SunPosition sun = pat::engine::solar_position(solar_hour, day_of_year);
+                light.sun_azimuth_deg = sun.azimuth_deg;
+                light.sun_elevation_deg = sun.elevation_deg;
+            }
+            frame.light = light;
             frame.time_s = (static_cast<float>(logic_steps) + step.alpha) / 60.0f;
             renderer->push_marker("map");
             view->draw(frame);

@@ -48,6 +48,7 @@ if(PATRIARCH_BUILD_ENGINE)
         renderer_test.cpp
         time_bar_test.cpp
         hud_test.cpp
+        sky_test.cpp
         ui_images_test.cpp
         tooltip_manager_test.cpp
         tooltip_state_test.cpp
