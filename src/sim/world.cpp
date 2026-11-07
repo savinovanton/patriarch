@@ -463,10 +463,18 @@ bool World::set_character_traits(CharacterId id, std::span<const std::uint16_t> 
         }
         sorted[n++] = t;
     }
-    std::sort(sorted.begin(), sorted.begin() + static_cast<std::ptrdiff_t>(n));
-    if (std::adjacent_find(sorted.begin(), sorted.begin() + static_cast<std::ptrdiff_t>(n)) !=
-        sorted.begin() + static_cast<std::ptrdiff_t>(n)) {
-        return false;
+    for (std::size_t i = 1; i < n; ++i) {  // insertion sort: n <= 8, and GCC mistrusts std::sort on a prefix
+        const std::uint16_t key = sorted[i];
+        std::size_t j = i;
+        for (; j > 0 && sorted[j - 1] > key; --j) {
+            sorted[j] = sorted[j - 1];
+        }
+        sorted[j] = key;
+    }
+    for (std::size_t i = 1; i < n; ++i) {
+        if (sorted[i] == sorted[i - 1]) {
+            return false;
+        }
     }
     characters_.traits[id.index()] = sorted;  // zeros are at the end: sorted holds the entries first
     return true;
