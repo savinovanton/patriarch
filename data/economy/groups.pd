@@ -1,0 +1,80 @@
+format_version = 1
+
+# Группы населения (GDD 03 §4.1) и типы провинций (GDD 03 §2). Id задаёт группу/тип и должен быть
+# из фиксированного списка; описаны должны быть все. Числа — предложения [предл.].
+#
+# birth/death — ppm в год (разница +0,5 % в год); head_tax — копеек с головы в год (дворянство и
+# духовенство платят службой, не деньгами); wealth_base — целевой достаток (100 — норма);
+# base_mood — врождённое смещение настроения; unrest_influence — вес в беспорядках;
+# recruit_share — доля численности, образующая потенциал рекрутов.
+
+population_group "nobility" {
+    birth_ppm_year = 36000
+    death_ppm_year = 31000
+    head_tax_kop_year = 0
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 150
+    recruit_share_permille = 0
+}
+
+population_group "clergy" {
+    birth_ppm_year = 30000
+    death_ppm_year = 25000
+    head_tax_kop_year = 0
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 100
+    recruit_share_permille = 0
+}
+
+population_group "townsfolk" {
+    birth_ppm_year = 44000
+    death_ppm_year = 39000
+    head_tax_kop_year = 150
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 200
+    recruit_share_permille = 15
+}
+
+population_group "peasants" {
+    birth_ppm_year = 42000
+    death_ppm_year = 37000
+    head_tax_kop_year = 50
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 100
+    recruit_share_permille = 30
+}
+
+population_group "cossacks" {
+    birth_ppm_year = 41000
+    death_ppm_year = 36000
+    head_tax_kop_year = 20
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 250
+    recruit_share_permille = 50
+}
+
+population_group "natives" {         # резерв: в M1 численность 0
+    birth_ppm_year = 40000
+    death_ppm_year = 35000
+    head_tax_kop_year = 40
+    wealth_base = 100
+    base_mood = 0
+    unrest_influence_permille = 100
+    recruit_share_permille = 0
+}
+
+# Доля дохода владения, доходящая до владельца. Пока владелец получает всё; что на самом деле
+# достаётся владельцу города, регулирует tax.city_crown_share_permille (economy_rules).
+province_kind "rural" { owner_share_permille = 1000 }
+province_kind "city" { owner_share_permille = 1000 }
+province_kind "border" { owner_share_permille = 1000 }
+province_kind "industrial" { owner_share_permille = 1000 }
+province_kind "port" { owner_share_permille = 1000 }
+province_kind "steppe" { owner_share_permille = 1000 }
+province_kind "northern" { owner_share_permille = 1000 }
+province_kind "simplified" { owner_share_permille = 1000 }   # Сибирь и Дальний Восток

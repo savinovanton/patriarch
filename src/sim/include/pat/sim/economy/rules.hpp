@@ -13,9 +13,10 @@
 
 // EconomyRules (E9-T04, docs/dev/economy-model.md sections 9, 11 and 15, GDD 03): every number the
 // economy formulas F1...F16 read. Rules are CONTENT, not state: they are not part of the World, are
-// handed to the economy systems as an argument, and are replaced from `.pd` files by E9-T18. Until
-// then EconomyRules::defaults() is the ONLY place in the code with numeric constants of the economy
-// (rules.cpp, one named table, with the GDD section next to every group of values).
+// handed to the economy systems as an argument, and are loaded from `.pd` files (data/economy/, E9-T18,
+// pat::content::load_economy_content). EconomyRules::defaults() is the ONLY place in the code with
+// numeric constants of the economy (rules.cpp, one named table, with the GDD section next to every
+// group of values) and the fallback for tests and tools; a test checks that the shipped files equal it.
 //
 // Like DemographyRules this is pure data plus pure functions. There is no floating point:
 //   * money is Kopecks (int64, `_kop`);

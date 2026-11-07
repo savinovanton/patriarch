@@ -1,0 +1,15 @@
+format_version = 1
+
+# Типы зданий (GDD 03 §8). slot — стабильный индекс 1...255, записывается в сейвы. GDD не даёт цен;
+# economy-model §11.1 даёт один пример — мельницу. Остальные здания M1 (GDD 03 §15) добавляются
+# сюда же (E9-T17). output_permille — множитель выпуска по id товаров из goods.pd; не названные
+# товары — 1000 (без эффекта).
+
+building "mill" {
+    slot = 1
+    name_key = "building.mill"
+    cost_kop = 400000                # 4000 руб. [предл.]
+    build_days = 120
+    upkeep_kop_month = 3000          # 30 руб. в месяц
+    output_permille = { grain = 1150 }
+}
