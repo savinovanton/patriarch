@@ -12,6 +12,7 @@ add_executable(patriarch_tests
     core_smoke.cpp
     date_test.cpp
     demography_test.cpp
+    economy_content_test.cpp
     economy_rules_test.cpp
     fixed_test.cpp
     golden_test.cpp
@@ -41,6 +42,7 @@ target_link_libraries(patriarch_tests PRIVATE
     patriarch::sim
     patriarch::mapdata
     patriarch::data
+    patriarch::content
     doctest::doctest)
 
 if(PATRIARCH_BUILD_ENGINE)
@@ -69,6 +71,7 @@ endif()
 # Use the real <ostream>/<string> so doctest can stringify std::string_view etc.
 target_compile_definitions(patriarch_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS
     PATRIARCH_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+    PATRIARCH_DATA_DIR="${CMAKE_SOURCE_DIR}/data"
     PATRIARCH_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 patriarch_set_target_options(patriarch_tests)

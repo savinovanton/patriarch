@@ -1,0 +1,103 @@
+format_version = 1
+
+# Константы правил экономики E9 (docs/dev/economy-model.md §9, §15; схема — docs/dev/data-reference.md).
+# Значения равны EconomyRules::defaults() (src/sim/economy/rules.cpp): тест tests/economy_content_test.cpp
+# следит, чтобы файлы и значения по умолчанию не расходились. ВСЕ числа — предложения [предл.]
+# (открытый вопрос Q1, #136); GDD 03 даёт лишь немногие из них, остальные — нейтральные заготовки.
+# Единицы: деньги — копейки (_kop), доли и множители — промилле (_permille, 1000 = x1,0),
+# годовые ставки — ppm (_ppm_year), очки настроения — пункты (допустимы десятичные).
+
+economy_rules "main" {
+    # --- Параметры, зависящие от открытых вопросов владельцу (принятое на время, §15.2) ---
+    crown_account_mode = separate        # Q7 (#142): у короны отдельный счёт
+    build_foreign_allowed = no           # Q4 (#139): строить только в своих провинциях
+
+    # Стартовые уровни политик (см. policies.pd)
+    default_tax_level = tax_level:normal
+    default_recruit_level = recruit_level:usual
+
+    # F1: рост населения (GDD 03 §4.2). Ставки по группам — groups.pd.
+    population {
+        wealth_growth_ppm_per_point = 20
+        capacity_per_development = 25000
+    }
+
+    # F2-F4: труд и выпуск (GDD 03 §5.2). Цены — goods.pd, доли владельца — groups.pd.
+    production {
+        labour_min_permille = 300
+        labour_max_permille = 1500
+        labour_mood_slope_permille = 5
+        losses_permille = 50
+    }
+
+    # F5: потребление, запас, достаток (GDD 03 §5.3). Нормы — goods.pd.
+    consumption {
+        stock_cap_months = 3
+        wealth_inertia_permille = 200
+    }
+
+    # F6: налоги (GDD 03 §3.2, §3.2a). Ставки с головы — groups.pd, уровни — policies.pd.
+    tax {
+        law_permille = 1000
+        low_control_tax_permille = 700
+        city_crown_share_permille = 300  # Q6 (#141): доля короны в налоге города
+    }
+
+    # F7: контроль и коррупция (GDD 03 §3.2, §7.4)
+    control {
+        low_threshold = 40
+        anarchy_threshold = 15
+        administrator_neutral = 50
+        control_base = 60
+        steward_gain_permille = 400
+        unrest_penalty_permille = 300
+        control_inertia_permille = 150
+        corruption_base_permille = 150
+        integrity_gain_permille = 3
+        corruption_inertia_permille = 150
+    }
+
+    # F8: настроение (GDD 03 §4.2). Врождённое смещение — groups.pd.
+    mood {
+        wealth_slope_permille = 100
+        admin_slope_permille = 100
+        inertia_permille = 250
+    }
+
+    # F9-F10: беспорядки и бунты (GDD 03 §4.3). Вклад групп — groups.pd.
+    unrest {
+        slope_permille = 1000
+        control_slope_permille = 500
+        inertia_permille = 250
+        calm_below = 25
+        riot_from = 50
+        uprising_from = 75
+        riot_chance_min_permille = 20
+        riot_chance_max_permille = 250
+        riot_loot_permille = 300
+        riot_control_loss = 5
+    }
+
+    # F11, F14: рекруты (GDD 03 §10). Доли по группам — groups.pd, уровни — policies.pd.
+    recruit {
+        regen_permille = 100
+        quota_penalty_honor = 5
+    }
+
+    # F12-F14: займы у казны (GDD 03 §7.3). Q3 (#138) открыт: простой заём, лимит от чести,
+    # фиксированный процент.
+    loans {
+        rate_ppm_year = 100000           # 10 % в год
+        term_months = 12
+        base_limit_kop = 1000000         # 10 000 руб.
+        per_honor_kop = 10000            # 100 руб. за пункт чести
+        bankruptcy_threshold_kop = 5000000
+        bankruptcy_exit_kop = 2500000
+        max_loans_per_dynasty = 3
+    }
+
+    # F15-F16: общие правила строительства. Здания — buildings.pd.
+    buildings {
+        refund_permille = 800
+    }
+}

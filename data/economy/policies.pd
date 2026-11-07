@@ -1,0 +1,47 @@
+format_version = 1
+
+# Уровни политик (GDD 03 §9). index идёт подряд с 0; уровень "excessive" взят из
+# economy-model §11.1 (налог x1,6; давление: посад 12, крестьяне 14, казаки 16), остальные —
+# заготовки вокруг него [предл.]. mood_pressure — пункты настроения по группам; не названные
+# группы не затронуты.
+
+tax_level "low" {
+    index = 0
+    tax_permille = 700
+    mood_pressure = { townsfolk = -5, peasants = -6, cossacks = -7 }
+}
+
+tax_level "normal" {
+    index = 1
+    tax_permille = 1000
+}
+
+tax_level "high" {
+    index = 2
+    tax_permille = 1300
+    mood_pressure = { townsfolk = 6, peasants = 7, cossacks = 8 }
+}
+
+tax_level "excessive" {
+    index = 3
+    tax_permille = 1600
+    mood_pressure = { townsfolk = 12, peasants = 14, cossacks = 16 }
+}
+
+# Набор: добровольный / обычный / усиленный (x0,5 / x1,0 / x1,6) [предл.]
+recruit_level "voluntary" {
+    index = 0
+    recruit_permille = 500
+}
+
+recruit_level "usual" {
+    index = 1
+    recruit_permille = 1000
+    mood_pressure = { townsfolk = 2, peasants = 2, cossacks = 3 }
+}
+
+recruit_level "intensified" {
+    index = 2
+    recruit_permille = 1600
+    mood_pressure = { townsfolk = 6, peasants = 8, cossacks = 9 }
+}

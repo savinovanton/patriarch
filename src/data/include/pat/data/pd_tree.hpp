@@ -111,6 +111,11 @@ enum class ErrorCode : std::uint16_t {
     DuplicateObject = 112,
     UnreadableSource = 113,
     MigrationFailed = 114,
+
+    // Content rules (E9-T18): raised by a consumer of the loaded content (for example the economy
+    // rules builder in pat::content), not by the loader. Valid by the schema, rejected by a
+    // cross-object rule.
+    ContentRule = 115,
 };
 
 /// "PD001" style name of an error code.

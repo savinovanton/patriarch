@@ -1,0 +1,58 @@
+format_version = 1
+
+# Товары (GDD 03 §5.1). slot — стабильный индекс, записывается в сейвы; порядок файлов на него не
+# влияет. Цены — копейки за единицу [предл.]. need_per_head_milli — потребность человека группы
+# в месяц, тысячные доли единицы. В M1 заполнены слоты 0, 1, 2, 3, 5, 7; остальные описаны с общей
+# заготовкой цены, чтобы раскладка не менялась при их включении.
+
+good "grain" {                       # хлеб; 12 руб. (economy-model §11.1, GDD 03 §13)
+    slot = 0
+    base_price_kop = 1200
+    shortage_wealth_points = 60
+    need_per_head_milli = { nobility = 40, clergy = 40, townsfolk = 38, peasants = 35, cossacks = 38 }
+}
+
+good "salt" {
+    slot = 1
+    base_price_kop = 1000
+}
+
+good "fur" {
+    slot = 2
+    base_price_kop = 1000
+}
+
+good "timber" {
+    slot = 3
+    base_price_kop = 1000
+}
+
+good "hemp_flax" {
+    slot = 4
+    base_price_kop = 1000
+}
+
+good "iron" {
+    slot = 5
+    base_price_kop = 1000
+}
+
+good "copper_silver" {
+    slot = 6
+    base_price_kop = 1000
+}
+
+good "cloth" {
+    slot = 7
+    base_price_kop = 1000
+}
+
+good "fish" {
+    slot = 8
+    base_price_kop = 1000
+}
+
+good "arms" {
+    slot = 9
+    base_price_kop = 1000
+}
