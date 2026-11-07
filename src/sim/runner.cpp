@@ -9,7 +9,7 @@ namespace pat::sim {
 
 SimulationRunner::SimulationRunner(Simulation simulation, RunnerConfig config)
     : simulation_(std::move(simulation)), config_(config), snapshot_(simulation_.snapshot()),
-      last_publish_(Clock::now()) {
+      telemetry_(simulation_.telemetry_snapshot()), last_publish_(Clock::now()) {
     version_.store(1);
     ticks_done_.store(simulation_.tick_count());
     last_published_tick_ = simulation_.tick_count();
@@ -110,6 +110,7 @@ void SimulationRunner::publish(bool force) {
         return;
     }
     snapshot_.store(simulation_.snapshot());
+    telemetry_.store(simulation_.telemetry_snapshot());
     version_.fetch_add(1);
     last_published_tick_ = tick;
     last_publish_ = now;

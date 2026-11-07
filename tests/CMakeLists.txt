@@ -71,3 +71,5 @@ patriarch_copy_asan_runtime(patriarch_tests)
 include(CTest)
 include(${doctest_DIR}/doctest.cmake)
 doctest_discover_tests(patriarch_tests)
+
+target_sources(patriarch_tests PRIVATE telemetry_test.cpp)

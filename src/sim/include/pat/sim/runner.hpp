@@ -61,6 +61,10 @@ public:
 
     /// The most recently published state; never null. Cheap to call every frame.
     [[nodiscard]] std::shared_ptr<const World> latest_snapshot() const { return snapshot_.load(); }
+    /// Latest detached telemetry summary, or null when disabled. Safe for overlay readers.
+    [[nodiscard]] std::shared_ptr<const core::TelemetrySnapshot> latest_telemetry() const {
+        return telemetry_.load();
+    }
     /// Increases every time a new snapshot is published.
     [[nodiscard]] std::uint64_t snapshot_version() const noexcept { return version_.load(); }
     [[nodiscard]] std::int64_t ticks_done() const noexcept { return ticks_done_.load(); }
@@ -96,6 +100,7 @@ private:
 
     std::atomic<std::int64_t> ticks_done_{0};
     std::atomic<std::shared_ptr<const World>> snapshot_;
+    std::atomic<std::shared_ptr<const core::TelemetrySnapshot>> telemetry_;
     std::atomic<std::uint64_t> version_{0};
     std::int64_t last_published_tick_ = -1;  // simulation thread only
     Clock::time_point last_publish_;         // simulation thread only

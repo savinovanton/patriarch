@@ -58,3 +58,13 @@ vcpkg собран без ASan и не совместим с аннотация�
 сохраняются. Бенчмарки проверяются в обычных Debug/RelWithDebInfo/Release;
 для совместной ASan-сборки Benchmark потребуется отдельный инструментированный
 пакет. Причина конфликта описана в [документации MSVC](https://learn.microsoft.com/en-us/cpp/sanitizers/error-container-overflow?view=msvc-170).
+
+## Телеметрия (E2-T06)
+
+`sim.telemetry_tick/0` и `/1` сравнивают выключенный/включённый наблюдатель на одинаковых
+batch по 32 тика (400 провинций, 100 родов, 5 000 персонажей). Restore/snapshot/hash
+исключены из времени. `wall_ns_per_tick` — внешний wall-интервал, `observer_ns_per_tick`
+— сумма внутренних `sim.tick` на тик; `real_time` Google Benchmark относится к batch.
+`bench_telemetry` проверяет accounting, итоговый хеш и включение внутренних интервалов
+во внешние, без порога производительности. Инструкция, ограничения и измеренные числа:
+[docs/dev/telemetry.md](../docs/dev/telemetry.md).

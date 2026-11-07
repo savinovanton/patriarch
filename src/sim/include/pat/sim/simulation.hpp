@@ -2,6 +2,7 @@
 
 #include "pat/core/arena.hpp"
 #include "pat/core/spsc_queue.hpp"
+#include "pat/core/telemetry.hpp"
 #include "pat/sim/command.hpp"
 #include "pat/sim/command_log.hpp"
 #include "pat/sim/system.hpp"
@@ -71,6 +72,15 @@ public:
     void add_system(std::unique_ptr<System> system);
     void set_executor(std::unique_ptr<TaskExecutor> executor);
 
+    /// Diagnostic observer, independent of World/save/replay. Enable after registering systems;
+    /// add_system() disables it, restore_state() clears its window. Simulation thread, between ticks.
+    [[nodiscard]] core::Result<void> enable_telemetry(std::size_t window = 1024);
+    void disable_telemetry();
+    [[nodiscard]] core::Telemetry* telemetry() noexcept { return telemetry_.get(); }
+    [[nodiscard]] const core::Telemetry* telemetry() const noexcept { return telemetry_.get(); }
+    /// Detached summary for publication to an overlay. Allocates/sorts; call outside the tick.
+    [[nodiscard]] std::shared_ptr<const core::TelemetrySnapshot> telemetry_snapshot() const;
+
     /// Queues a command from the producer thread. Returns false if the queue is full.
     [[nodiscard]] bool submit(const Command& command) { return external_->try_push(command); }
 
@@ -104,6 +114,11 @@ private:
     core::Arena scratch_;
     WorkBudget budget_;
     TickReport report_;
+    struct TelemetryMetrics {
+        core::MetricId tick, weekly, monthly, quarterly, yearly, internal, external;
+    } telemetry_metrics_;
+    std::unique_ptr<core::Telemetry> telemetry_;
+    std::vector<core::MetricId> system_metrics_;
 };
 
 }  // namespace pat::sim

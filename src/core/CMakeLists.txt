@@ -45,3 +45,5 @@ endif()
 
 patriarch_set_target_options(patriarch_core)
 set_target_properties(patriarch_core PROPERTIES FOLDER "src")
+
+target_sources(patriarch_core PRIVATE telemetry.cpp include/pat/core/telemetry.hpp)

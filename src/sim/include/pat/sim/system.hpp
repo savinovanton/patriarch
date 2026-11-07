@@ -12,6 +12,10 @@
 #include <utility>
 #include <vector>
 
+namespace pat::core {
+class Telemetry;
+}
+
 namespace pat::sim {
 
 /// How often a system runs (ADR-0002 P2). Heavy per-entity work inside a periodic system should
@@ -38,11 +42,12 @@ enum class Cadence : std::uint8_t { Daily, Weekly, Monthly, Quarterly, Yearly };
 struct TickContext {
     Date date;
     TickEvents events;
-    std::int64_t tick_index = 0;    // number of ticks executed so far, including this one
-    core::Arena& scratch;           // per-tick scratch memory, reset before every tick
-    WorkBudget& budget;             // abstract work accounting (see work_budget.hpp)
-    TaskExecutor& executor;         // data-parallel loops
-    std::vector<Command>& emitted;  // commands for the NEXT tick boundary
+    std::int64_t tick_index = 0;           // number of ticks executed so far, including this one
+    core::Arena& scratch;                  // per-tick scratch memory, reset before every tick
+    WorkBudget& budget;                    // abstract work accounting (see work_budget.hpp)
+    TaskExecutor& executor;                // data-parallel loops
+    std::vector<Command>& emitted;         // commands for the NEXT tick boundary
+    core::Telemetry* telemetry = nullptr;  // Optional observer; never use timings for decisions.
 
     /// Queues a command (for example from AI). It is validated and applied at the start of the next
     /// tick, before any system runs, and recorded in the command log as Internal.

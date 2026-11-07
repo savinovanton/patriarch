@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <format>
@@ -43,6 +44,11 @@ struct Options {
     std::optional<std::string> save_path;
     std::optional<std::string> load_path;
     bool verify_determinism = false;
+    bool telemetry = false;
+    std::size_t telemetry_window = 1024;
+    bool telemetry_window_set = false;
+    std::optional<std::string> telemetry_json;
+    std::optional<std::string> telemetry_csv;
     bool hash_only = false;
     bool quiet = false;
     bool help = false;
@@ -70,6 +76,10 @@ Files:
   --load FILE           start from a saved state (cannot be combined with --record)
 
 Checks and output:
+  --telemetry           collect/print subsystem timings (off by default, inclusive nanoseconds)
+  --telemetry-window N  retain the last N ticks (1..16384, default 1024)
+  --telemetry-json FILE write the telemetry summary as JSON (implies --telemetry)
+  --telemetry-csv FILE  write the same summary as CSV (implies --telemetry)
   --verify-determinism  run the scenario several ways and require identical hashes
   --hash-only           print only the final state hash
   --quiet               print nothing but errors
@@ -125,6 +135,8 @@ std::string parse_args(int argc, char** argv, Options& options) {
             options.help = true;
         } else if (arg == "--verify-determinism") {
             options.verify_determinism = true;
+        } else if (arg == "--telemetry") {
+            options.telemetry = true;
         } else if (arg == "--hash-only") {
             options.hash_only = true;
         } else if (arg == "--quiet") {
@@ -154,6 +166,15 @@ std::string parse_args(int argc, char** argv, Options& options) {
             if (r6 < 0)
                 return "--checkpoint needs a positive integer";
             options.checkpoint_interval = static_cast<int>(std::clamp<std::uint64_t>(n, 1, 1'000'000));
+        } else if (const int telemetry_number = number("--telemetry-window"); telemetry_number != 0) {
+            if (telemetry_number < 0 || n < 1 || n > 16384)
+                return "--telemetry-window must be 1..16384";
+            options.telemetry_window = static_cast<std::size_t>(n);
+            options.telemetry_window_set = true;
+        } else if (takes_value("--telemetry-json", text)) {
+            options.telemetry_json = text;
+        } else if (takes_value("--telemetry-csv", text)) {
+            options.telemetry_csv = text;
         } else if (takes_value("--speed", text)) {
             options.speed = text;
         } else if (takes_value("--record", text)) {
@@ -169,8 +190,12 @@ std::string parse_args(int argc, char** argv, Options& options) {
         }
     }
 
-    for (const auto* path :
-         {&options.record_path, &options.replay_path, &options.save_path, &options.load_path}) {
+    for (const auto* path : {&options.record_path,
+                             &options.replay_path,
+                             &options.save_path,
+                             &options.load_path,
+                             &options.telemetry_json,
+                             &options.telemetry_csv}) {
         if (path->has_value() && *path == std::string("<missing>")) {
             return "an option is missing its argument";
         }
@@ -183,6 +208,23 @@ std::string parse_args(int argc, char** argv, Options& options) {
     }
     if (options.record_path && options.load_path) {
         return "--record cannot be combined with --load (a replay must start at the scenario start)";
+    }
+    options.telemetry =
+        options.telemetry || options.telemetry_json.has_value() || options.telemetry_csv.has_value();
+    if (options.telemetry_window_set && !options.telemetry)
+        return "--telemetry-window needs --telemetry or a telemetry output";
+    if (options.telemetry) {
+        std::vector<std::string> paths;
+        for (const auto* path :
+             {&options.record_path, &options.save_path, &options.telemetry_json, &options.telemetry_csv}) {
+            if (!*path)
+                continue;
+            if (path->value().empty())
+                return "an output path is empty";
+            if (std::find(paths.begin(), paths.end(), path->value()) != paths.end())
+                return "output paths must be distinct";
+            paths.push_back(path->value());
+        }
     }
     return {};
 }
@@ -222,7 +264,7 @@ struct TickTiming {
         }
         std::vector<double> sorted = milliseconds;
         std::sort(sorted.begin(), sorted.end());
-        return sorted[static_cast<std::size_t>(p * static_cast<double>(sorted.size() - 1))];
+        return sorted[static_cast<std::size_t>(std::ceil(p * static_cast<double>(sorted.size()))) - 1];
     }
 };
 
@@ -276,6 +318,51 @@ void print_summary(const Options& options, const Simulation& sim, const Measurem
 }
 
 // ---- running ---------------------------------------------------------------------------------------
+
+int enable_telemetry(const Options& options, Simulation& sim) {
+    if (!options.telemetry)
+        return kOk;
+    const auto enabled = sim.enable_telemetry(options.telemetry_window);
+    return enabled ? kOk : fail(kUsageOrIoError, enabled.error().message);
+}
+
+int output_telemetry(const Options& options, const Simulation& sim) {
+    if (!options.telemetry)
+        return kOk;
+    const auto snapshot = sim.telemetry_snapshot();
+    if (!snapshot)
+        return fail(kUsageOrIoError, "telemetry is not enabled");
+    if (!options.quiet && !options.hash_only) {
+        std::printf(
+            "telemetry       %zu/%zu ticks [%lld..%lld], inclusive times, active-tick quantiles (us)\n",
+            snapshot->frames,
+            snapshot->window_capacity,
+            static_cast<long long>(snapshot->first_frame),
+            static_cast<long long>(snapshot->last_frame));
+        for (const auto& metric : snapshot->metrics) {
+            const auto& d = metric.active;
+            std::printf("  %-28s calls %-6llu active %-5llu mean %.3f p50 %.3f p95 %.3f p99 %.3f\n",
+                        metric.name.c_str(),
+                        static_cast<unsigned long long>(metric.calls),
+                        static_cast<unsigned long long>(metric.active_ticks),
+                        static_cast<double>(d.mean_ns) / 1000,
+                        static_cast<double>(d.p50_ns) / 1000,
+                        static_cast<double>(d.p95_ns) / 1000,
+                        static_cast<double>(d.p99_ns) / 1000);
+        }
+    }
+    for (const bool csv : {false, true}) {
+        const auto& path = csv ? options.telemetry_csv : options.telemetry_json;
+        if (!path)
+            continue;
+        const auto text = csv ? pat::core::telemetry_csv(*snapshot) : pat::core::telemetry_json(*snapshot);
+        const std::vector<std::uint8_t> bytes(text.begin(), text.end());
+        if (const auto written = write_file_atomic(*path, bytes); !written) {
+            return fail(kUsageOrIoError, std::format("cannot write {}: {}", *path, written.error().message));
+        }
+    }
+    return kOk;
+}
 
 /// Runs `days` ticks on the calling thread, collecting timings and (optionally) a replay.
 void run_direct(Simulation& sim, int days, Measurements& m, ReplayRecorder* recorder) {
@@ -367,6 +454,8 @@ int play_replay_file(const Options& options) {
     demo::Config config = options.scenario;
     config.seed = replay.value().seed;
     Simulation sim = demo::make_simulation(config);
+    if (const int error = enable_telemetry(options, sim); error != kOk)
+        return error;
     const auto begin = Clock::now();
     const ReplayResult result = play_replay(sim, replay.value());
     const double seconds = std::chrono::duration<double>(Clock::now() - begin).count();
@@ -392,7 +481,7 @@ int play_replay_file(const Options& options) {
                     seconds,
                     replay.value().checkpoints.size());
     }
-    return kOk;
+    return output_telemetry(options, sim);
 }
 
 /// Several independent ways of producing the same simulated history must agree.
@@ -409,6 +498,8 @@ int verify_determinism(const Options& options) {
     // A: the reference run, recorded as a replay.
     Measurements m;
     Simulation a = demo::make_simulation(options.scenario);
+    if (const int error = enable_telemetry(options, a); error != kOk)
+        return error;
     ReplayRecorder recorder(
         options.scenario.seed, demo::kScenarioId, a.world().today(), options.checkpoint_interval);
     run_direct(a, days, m, &recorder);
@@ -455,7 +546,9 @@ int verify_determinism(const Options& options) {
         std::printf("final hash      %s\n", hash_line(hash_a).c_str());
         std::printf("%s\n", all_ok ? "determinism OK" : "determinism FAILED");
     }
-    return all_ok ? kOk : kDeterminismFailed;
+    if (!all_ok)
+        return kDeterminismFailed;
+    return output_telemetry(options, a);
 }
 
 int run_session(const Options& options) {
@@ -473,6 +566,8 @@ int run_session(const Options& options) {
         sim.restore_state(std::move(loaded.value().world), std::move(loaded.value().pending_internal));
     }
 
+    if (const int error = enable_telemetry(options, sim); error != kOk)
+        return error;
     std::optional<ReplayRecorder> recorder;
     if (options.record_path) {
         recorder.emplace(
@@ -493,7 +588,9 @@ int run_session(const Options& options) {
     if (options.hash_only) {
         std::printf("%016llx\n", static_cast<unsigned long long>(sim.world().compute_hash().total));
     }
-    return write_outputs(options, sim, recorder ? &*recorder : nullptr);
+    if (const int error = write_outputs(options, sim, recorder ? &*recorder : nullptr); error != kOk)
+        return error;
+    return output_telemetry(options, sim);
 }
 
 }  // namespace
