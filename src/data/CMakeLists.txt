@@ -1,10 +1,14 @@
 add_library(patriarch_data STATIC
+    include/pat/data/example_schemas.hpp
     include/pat/data/pd_parser.hpp
     include/pat/data/pd_tree.hpp
+    include/pat/data/schema.hpp
+    example_schemas.cpp
     pd_internal.hpp
     pd_lexer.cpp
     pd_parser.cpp
-    pd_tree.cpp)
+    pd_tree.cpp
+    schema.cpp)
 add_library(patriarch::data ALIAS patriarch_data)
 
 target_include_directories(patriarch_data PUBLIC
