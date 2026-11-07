@@ -26,7 +26,7 @@ bool selected(const Fixture& fixture, Scope scope, SubjectId subject) {
     const auto date = fixture.world.today().ymd();
     const auto month = static_cast<std::uint64_t>(date.year * 12 + date.month);
     std::uint64_t key = fixture.sample_key ^ (month * 0x9E3779B97F4A7C15ULL) ^
-               (static_cast<std::uint64_t>(scope) << 48U) ^ subject.value();
+                        (static_cast<std::uint64_t>(scope) << 48U) ^ subject.value();
     return core::split_mix64_next(key) % 1000 < fixture.config.sample_permille;
 }
 

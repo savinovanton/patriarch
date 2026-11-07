@@ -22,10 +22,12 @@ struct Tracked {
     ~Tracked() { --alive; }
 };
 
+#if PAT_ASSERTS_ENABLED
 int g_failures = 0;
 void count_failure(const AssertInfo&) {
     ++g_failures;
 }
+#endif
 
 }  // namespace
 

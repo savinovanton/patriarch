@@ -130,12 +130,10 @@ struct TypedValue {
 
     /// Builds a value with an explicit alternative, e.g. `TypedValue::of(std::int64_t{5})`,
     /// `TypedValue::of(core::Fixed32::from_int(1))`; used for schema defaults.
+    /// Defined after TypedField: default-constructing the variant needs TypedBlock's destructor,
+    /// which needs the complete TypedField (Clang checks this at the point of definition).
     template <class T>
-    [[nodiscard]] static TypedValue of(T value) {
-        TypedValue v;
-        v.data = Data(std::in_place_type<T>, std::move(value));
-        return v;
-    }
+    [[nodiscard]] static TypedValue of(T value);
 
     /// Pointer to the stored alternative, or nullptr when the value holds another type.
     template <class T>
@@ -150,6 +148,13 @@ struct TypedField {
     bool defaulted = false;  // true when the value comes from the schema default
     TypedValue value;
 };
+
+template <class T>
+TypedValue TypedValue::of(T value) {
+    TypedValue v;
+    v.data = Data(std::in_place_type<T>, std::move(value));
+    return v;
+}
 
 /// A validated top-level object: `kind "id" { ... }`.
 struct TypedObject {
