@@ -7,6 +7,7 @@ add_executable(patriarch_tests
     calendar_test.cpp
     command_log_test.cpp
     command_test.cpp
+    content_loader_test.cpp
     core_smoke.cpp
     date_test.cpp
     fixed_test.cpp
