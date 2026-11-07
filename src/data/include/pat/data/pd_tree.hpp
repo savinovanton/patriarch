@@ -105,6 +105,12 @@ enum class ErrorCode : std::uint16_t {
     UnknownKind = 108,
     BadLabel = 109,
     BadOperator = 110,
+
+    // Content loading (E4-T04, pat/data/content_loader.hpp).
+    UnresolvedReference = 111,
+    DuplicateObject = 112,
+    UnreadableSource = 113,
+    MigrationFailed = 114,
 };
 
 /// "PD001" style name of an error code.

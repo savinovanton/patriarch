@@ -1,8 +1,14 @@
 add_library(patriarch_data STATIC
+    include/pat/data/content_loader.hpp
+    include/pat/data/content_registry.hpp
+    include/pat/data/content_source.hpp
     include/pat/data/example_schemas.hpp
     include/pat/data/pd_parser.hpp
     include/pat/data/pd_tree.hpp
     include/pat/data/schema.hpp
+    content_loader.cpp
+    content_registry.cpp
+    content_source.cpp
     example_schemas.cpp
     pd_internal.hpp
     pd_lexer.cpp
