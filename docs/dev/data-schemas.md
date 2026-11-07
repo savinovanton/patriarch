@@ -36,6 +36,8 @@ FileResult r = validate_file(schemas, parse_pd(text).file);   // r.objects, r.er
 | `optional(name, type, default)` | при отсутствии в результат попадает `default` (`TypedField::defaulted = true`) |
 | `repeatable(name, type)` | необязательное поле, ключ может повторяться (мультикарта); значения в порядке файла, `TypedBlock::find_all` |
 
+`describe(текст)` после объявления поля и `describe_kind(текст)` для всего вида добавляют однострочные описания — они попадают в сгенерированный справочник [data-reference.md](data-reference.md) (E4-T09; на валидацию не влияют). Реальные схемы регистрируются в `content_schemas()` (`pat/data/content_schemas.hpp`); руководство автора — [data-authoring.md](data-authoring.md).
+
 Ключ без `repeatable`, повторённый дважды, — ошибка `PD105`; значение берётся из первого вхождения.
 
 ### Типы (`Type::…`)
@@ -88,4 +90,4 @@ data/traits/core.pd:16:13: error[PD106]: unknown value 'vise' (allowed: vice, vi
 - `validate_file(schemas, file)` → `FileResult{objects, errors}`: запись `format_version` пропускается, `objects` — только объекты без ошибок (в порядке файла).
 - `TypedObject{kind, id, pos, body}`; `TypedBlock::find(name)`, `find_all(name)`, `TypedMap::find(key)`; каждое `TypedValue` хранит позицию (для будущих сообщений реестра о битых ссылках).
 
-Пример схемы `trait` с комментариями — `make_example_trait_schema()` (`example_schemas.hpp`); реальные схемы M1 появятся в E4-T05.
+Пример схемы `trait` с комментариями — `make_example_trait_schema()` (`example_schemas.hpp`); реальные схемы M1 появятся в E4-T05 (регистрируются в `content_schemas()`).

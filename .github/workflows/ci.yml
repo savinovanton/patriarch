@@ -64,6 +64,9 @@ jobs:
         run: |
           $simcli = (Get-ChildItem out/win-msvc/tools -Recurse -Filter simcli.exe | Select-Object -First 1).FullName
           python tools/check_golden_hash.py $simcli
+      - name: Check the schema reference is up to date
+        if: matrix.preset == 'debug'
+        run: out/win-msvc/tools/schemadoc/Debug/schemadoc.exe --check docs/dev/data-reference.md
       - name: Upload benchmark smoke results
         uses: actions/upload-artifact@v7
         with:

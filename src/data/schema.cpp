@@ -1,5 +1,6 @@
 #include "pat/data/schema.hpp"
 
+#include "pat/core/assert.hpp"
 #include "pat/core/detail/wide_math.hpp"
 
 #include <algorithm>
@@ -143,22 +144,35 @@ const TypedValue* TypedMap::find(std::string_view key) const {
 // ---- schemas ---------------------------------------------------------------------------------
 
 ObjectSchema& ObjectSchema::required(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), true, false, std::nullopt});
+    fields_.push_back(FieldSpec{std::move(name), std::move(type), true, false, std::nullopt, std::string{}});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::optional(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, false, std::nullopt});
+    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, false, std::nullopt, std::string{}});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::optional(std::string name, Type type, TypedValue default_value) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, false, std::move(default_value)});
+    fields_.push_back(
+        FieldSpec{std::move(name), std::move(type), false, false, std::move(default_value), std::string{}});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::repeatable(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, true, std::nullopt});
+    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, true, std::nullopt, std::string{}});
+    return *this;
+}
+
+ObjectSchema& ObjectSchema::describe(std::string text) {
+    PAT_ASSERT(!fields_.empty(), "describe() must follow a field declaration");
+    if (!fields_.empty())
+        fields_.back().description = std::move(text);
+    return *this;
+}
+
+ObjectSchema& ObjectSchema::describe_kind(std::string text) {
+    description_ = std::move(text);
     return *this;
 }
 

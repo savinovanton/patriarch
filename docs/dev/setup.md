@@ -54,6 +54,8 @@ tools\format.ps1           # переформатировать исходник
 tools\format.ps1 -Check    # проверка (для CI)
 ```
 
+Справочник схем данных `docs/dev/data-reference.md` генерируется (`schemadoc --write docs/dev/data-reference.md`; exe — `out\win-msvc\tools\schemadoc\<Config>\schemadoc.exe`); актуальность проверяет `schemadoc --check docs/dev/data-reference.md` (в CI и в `ctest`).
+
 Скрипт сам ищет `clang-format` (в `PATH` или в каталоге LLVM внутри Visual Studio).
 
 ## 5. Предупреждения и политика качества

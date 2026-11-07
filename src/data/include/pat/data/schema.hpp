@@ -172,6 +172,7 @@ struct FieldSpec {
     bool required = false;
     bool repeatable = false;
     std::optional<TypedValue> default_value;
+    std::string description;  // optional one-line text for the generated reference (E4-T09)
 };
 
 /// The fields of one object kind (or of a nested block). Fluent builder.
@@ -188,13 +189,21 @@ public:
     /// An optional field whose key may occur many times (multimap).
     ObjectSchema& repeatable(std::string name, Type type);
 
+    /// Attaches a one-line description to the field added last (shown in the generated reference
+    /// docs/dev/data-reference.md). Must follow a field declaration.
+    ObjectSchema& describe(std::string text);
+    /// Sets the one-line description of the whole kind (or nested block).
+    ObjectSchema& describe_kind(std::string text);
+
     [[nodiscard]] const std::string& kind() const noexcept { return kind_; }
+    [[nodiscard]] const std::string& description() const noexcept { return description_; }
     [[nodiscard]] const std::vector<FieldSpec>& fields() const noexcept { return fields_; }
     /// Index of the field with this exact name, or -1.
     [[nodiscard]] int find_field(std::string_view name) const noexcept;
 
 private:
     std::string kind_;
+    std::string description_;
     std::vector<FieldSpec> fields_;
 };
 
