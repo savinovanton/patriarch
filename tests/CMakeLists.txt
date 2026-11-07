@@ -10,6 +10,7 @@ add_executable(patriarch_tests
     content_loader_test.cpp
     core_smoke.cpp
     date_test.cpp
+    demography_test.cpp
     fixed_test.cpp
     golden_test.cpp
     ids_test.cpp
