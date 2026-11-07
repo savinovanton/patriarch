@@ -17,6 +17,7 @@ add_executable(patriarch_tests
     fixed_test.cpp
     golden_test.cpp
     ids_test.cpp
+    kinship_test.cpp
     log_test.cpp
     mapdata_test.cpp
     pd_parser_test.cpp
