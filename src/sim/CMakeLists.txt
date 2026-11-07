@@ -3,6 +3,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/command.hpp
     include/pat/sim/command_log.hpp
     include/pat/sim/date.hpp
+    include/pat/sim/demography.hpp
     include/pat/sim/demo_scenario.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/replay.hpp
@@ -18,6 +19,7 @@ add_library(patriarch_sim STATIC
     command.cpp
     command_log.cpp
     date.cpp
+    demography.cpp
     demo_scenario.cpp
     replay.cpp
     runner.cpp
