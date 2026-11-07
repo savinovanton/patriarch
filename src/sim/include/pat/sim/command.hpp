@@ -15,13 +15,17 @@
 
 namespace pat::sim {
 
-/// Stable numeric tags: these values are written to replay files and must never change.
+/// Stable numeric tags: these values are written to replay files and must never change. They are
+/// NOT the position of the command in CommandPayload: the table in command.cpp maps each payload
+/// type to its tag, so that epics can reserve blocks (ADR-0006 D5):
+///   1..5 E1   6..31 E7 (characters and dynasties)   32..63 E9   64..95 E8   96..255 later epics
 enum class CommandType : std::uint8_t {
     SetProvinceOwner = 1,
     CreateCharacter = 2,
     KillCharacter = 3,
     SetDynastyHead = 4,
     AdjustHonor = 5,
+    CreatePerson = 9,  // E7-T02
 };
 
 namespace cmd {
@@ -54,13 +58,22 @@ struct AdjustHonor {
     [[nodiscard]] bool operator==(const AdjustHonor&) const = default;
 };
 
+/// Full character creation (scenarios, births): every column of CharacterInit. Unlike
+/// World::create_character, out-of-range values are rejected by validate() instead of clamped.
+/// System only.
+struct CreatePerson {
+    CharacterInit init;
+    [[nodiscard]] bool operator==(const CreatePerson&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::CreateCharacter,
                                     cmd::KillCharacter,
                                     cmd::SetDynastyHead,
-                                    cmd::AdjustHonor>;
+                                    cmd::AdjustHonor,
+                                    cmd::CreatePerson>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

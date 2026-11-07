@@ -288,7 +288,7 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
     const std::span<const std::uint8_t> alive = t.ids.alive_flags();
     for (std::size_t other = 0; other < alive.size() && s.relations.size() < 400; ++other) {
         const sim::CharacterId id(static_cast<std::uint32_t>(other));
-        if (alive[other] == 0 || id == character || (dynasty.valid() && t.dynasty[other] == dynasty)) {
+        if (alive[other] != 1 || id == character || (dynasty.valid() && t.dynasty[other] == dynasty)) {
             continue;
         }
         add_relation(id, "знакомый");
@@ -312,14 +312,14 @@ sim::CharacterId pick_character(const sim::World& world, std::uint32_t seed) {
     const std::span<const std::uint8_t> alive = world.characters().ids.alive_flags();
     std::size_t count = 0;
     for (const std::uint8_t a : alive) {
-        count += a != 0 ? 1U : 0U;
+        count += a == 1 ? 1U : 0U;
     }
     if (count == 0) {
         return sim::CharacterId{};
     }
     std::size_t target = hash32(seed) % count;
     for (std::size_t i = 0; i < alive.size(); ++i) {
-        if (alive[i] != 0 && target-- == 0) {
+        if (alive[i] == 1 && target-- == 0) {
             return sim::CharacterId(static_cast<std::uint32_t>(i));
         }
     }

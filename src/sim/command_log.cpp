@@ -45,6 +45,33 @@ struct Writer {
         out.u32(c.dynasty.value());
         out.i32(c.delta);
     }
+    void operator()(const cmd::CreatePerson& c) const {
+        const CharacterInit& i = c.init;
+        out.u32(i.dynasty.value());
+        out.i32(i.birth_date.days());
+        out.u8(static_cast<std::uint8_t>(i.sex));
+        out.i32(i.health.raw());
+        out.u32(i.father.value());
+        out.u32(i.mother.value());
+        out.u32(i.name.value());
+        out.u32(i.branch.value());
+        out.u16(i.portrait);
+        out.u8(static_cast<std::uint8_t>(i.legitimacy));
+        for (const core::Fixed32 skill : i.skills) {
+            out.i32(skill.raw());
+        }
+        for (const core::Fixed32 v :
+             {i.fertility, i.stress, i.piety, i.ambition, i.loyalty_head, i.loyalty_emperor}) {
+            out.i32(v.raw());
+        }
+        for (const std::uint16_t trait : i.traits) {
+            out.u16(trait);
+        }
+        out.u8(i.education.focus);
+        out.u32(i.education.tutor.value());
+        out.u8(i.education.level);
+        out.i32(i.planned_death.days());
+    }
 };
 
 }  // namespace
@@ -97,6 +124,44 @@ bool read_command(core::ByteReader& in, Command& out) {
             cmd::AdjustHonor c;
             c.dynasty = DynastyId(in.u32());
             c.delta = in.i32();
+            out.payload = c;
+            break;
+        }
+        case CommandType::CreatePerson: {
+            cmd::CreatePerson c;
+            CharacterInit& i = c.init;
+            i.dynasty = DynastyId(in.u32());
+            i.birth_date = Date::from_days(in.i32());
+            const std::uint8_t sex = in.u8();
+            if (sex > 1) {
+                return false;
+            }
+            i.sex = static_cast<Sex>(sex);
+            i.health = core::Fixed32::from_raw(in.i32());
+            i.father = CharacterId(in.u32());
+            i.mother = CharacterId(in.u32());
+            i.name = core::StringId(in.u32());
+            i.branch = BranchId(in.u32());
+            i.portrait = in.u16();
+            const std::uint8_t legitimacy = in.u8();
+            if (legitimacy >= kLegitimacyCount) {
+                return false;
+            }
+            i.legitimacy = static_cast<Legitimacy>(legitimacy);
+            for (core::Fixed32& skill : i.skills) {
+                skill = core::Fixed32::from_raw(in.i32());
+            }
+            for (core::Fixed32* v :
+                 {&i.fertility, &i.stress, &i.piety, &i.ambition, &i.loyalty_head, &i.loyalty_emperor}) {
+                *v = core::Fixed32::from_raw(in.i32());
+            }
+            for (std::uint16_t& trait : i.traits) {
+                trait = in.u16();
+            }
+            i.education.focus = in.u8();
+            i.education.tutor = CharacterId(in.u32());
+            i.education.level = in.u8();
+            i.planned_death = Date::from_days(in.i32());
             out.payload = c;
             break;
         }

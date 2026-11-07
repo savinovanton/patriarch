@@ -61,7 +61,7 @@ TEST_CASE("stressgen: profiles are valid reproducible datasets that round-trip t
 
 TEST_CASE("stressgen: exact counts and invalid workload references are handled") {
     stress::Config config;
-    config.world = {9, 7, 17, 3, sim::Date::from_ymd(1703, 1, 1)};
+    config.world = {9, 7, 17, 3, sim::Date::from_ymd(1703, 1, 1), true};
     config.armies = 4;
     config.schemes = 5;
     config.contracts = 6;
@@ -82,8 +82,39 @@ TEST_CASE("stressgen: exact counts and invalid workload references are handled")
     CHECK_FALSE(stress::generate(config));
     config.world.characters = 1'000'001;
     CHECK_FALSE(stress::generate(config));
-    config.world = {1, 0, 0, 0, sim::Date::from_ymd(1703, 1, 1)};
+    config.world = {1, 0, 0, 0, sim::Date::from_ymd(1703, 1, 1), true};
     config.armies = config.schemes = config.contracts = config.events = 0;
     REQUIRE(stress::generate(config));
     CHECK_FALSE(stress::profile_config("unknown"));
+}
+
+TEST_CASE("stressgen: worlds use the E7-T02 columns, in dynasty mode by default") {
+    stress::Config config;
+    config.world = {5, 20, 300, 10, sim::Date::from_ymd(1703, 1, 1), true};
+    config.armies = config.schemes = config.contracts = config.events = 0;
+    auto generated = stress::generate(config);
+    REQUIRE(generated);
+    const auto& world = generated.value().world;
+    CHECK(world.dynasty_mode());
+    CHECK(world.check_invariants().empty());
+    CHECK(world.branches().size() >= 10);
+    CHECK(world.living().size() == 300);
+    CHECK(world.life_queue().size() >= 300);  // one birthday per living character, plus planned deaths
+    const auto hash = world.compute_hash();
+    CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::Mode)] != 0);
+    CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::CharacterExt)] != 0);
+    CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::DynastyExt)] != 0);
+
+    // The generated world survives the save container, hash included.
+    auto loaded = sim::deserialize_save(sim::serialize_save(world));
+    REQUIRE(loaded);
+    CHECK(loaded.value().world.compute_hash() == hash);
+
+    // The E1 shape is still available and does not use the mode part.
+    config.world.dynasty_mode = false;
+    auto old_shape = stress::generate(config);
+    REQUIRE(old_shape);
+    CHECK_FALSE(old_shape.value().world.dynasty_mode());
+    CHECK(old_shape.value().world.life_queue().empty());
+    CHECK(old_shape.value().world.compute_hash().ext[static_cast<std::size_t>(sim::ExtPart::Mode)] == 0);
 }

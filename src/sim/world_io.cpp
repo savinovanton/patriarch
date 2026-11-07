@@ -3,6 +3,28 @@
 #include <string>
 #include <utility>
 
+// Binary layout of the world state (ADR-0006 D6). All integers are little endian.
+//
+//   u32 schema                       1..kStateSchema
+//   core body                        clock, random streams, dynasties and index lists, provinces,
+//                                    character slot table and one E1 record per slot  (schema 1)
+//   -- extension block, schema >= 2 --
+//   u32 world_flags                  bit 0 = dynasty mode, other bits must be 0
+//   u16 section_count                at most kMaxSections
+//   section_count x { u16 id | u16 version | u32 byte_length | bytes }   ids strictly ascending
+//
+// A section is read by its own reader and must be consumed completely. An unknown id, an
+// unsupported version, a section newer than the file's schema or a broken order is an error.
+// A section whose content equals the defaults is not written at all.
+//
+//   section 1 "person"   u32 rows | rows x person row (90 bytes), only rows that differ from the
+//                        defaults, ascending by id
+//   section 2 "dynasty"  u32 rows | rows x { u32 id | i32 unity | u8 law }  (rows that differ from the
+//                        defaults) | u32 branches | branches x { u32 name | u32 dynasty }
+//
+// Derived data (the list of the living, the life-event queue) is never stored; it is rebuilt after
+// loading and checked together with all other invariants.
+
 namespace pat::sim {
 
 namespace {
@@ -17,6 +39,42 @@ R fail(const char* message) {
 /// guards allocations against absurd counts in damaged files.
 bool plausible(const core::ByteReader& in, std::uint32_t count, std::size_t bytes_each) {
     return in.ok() && static_cast<std::uint64_t>(count) * bytes_each <= in.remaining();
+}
+
+constexpr std::uint16_t kSectionPerson = 1;
+constexpr std::uint16_t kSectionDynasty = 2;
+constexpr std::uint16_t kMaxSections = 32;
+constexpr std::size_t kPersonRowBytes = 90;
+constexpr std::size_t kDynastyRowBytes = 9;
+constexpr std::size_t kBranchRowBytes = 8;
+
+struct SectionInfo {
+    std::uint16_t id;
+    std::uint16_t version;     // the one version this build can read
+    std::uint32_t min_schema;  // the section cannot appear in older schemas
+};
+constexpr SectionInfo kSections[] = {
+    {kSectionPerson, 1, 2},
+    {kSectionDynasty, 1, 2},
+};
+
+const SectionInfo* find_section(std::uint16_t id) {
+    for (const SectionInfo& info : kSections) {
+        if (info.id == id) {
+            return &info;
+        }
+    }
+    return nullptr;
+}
+
+void write_section(core::ByteWriter& out,
+                   std::uint16_t id,
+                   std::uint16_t version,
+                   const core::ByteWriter& body) {
+    out.u16(id);
+    out.u16(version);
+    out.u32(static_cast<std::uint32_t>(body.size()));
+    out.bytes(body.data());
 }
 
 }  // namespace
@@ -82,16 +140,106 @@ void World::save_state(core::ByteWriter& out) const {
         out.u32(characters_.father[i].value());
         out.u32(characters_.mother[i].value());
     }
+
+    // ---- extension block (schema 2) ----
+    out.u32(flags_);
+
+    struct Section {
+        std::uint16_t id;
+        std::uint16_t version;
+        core::ByteWriter body;
+    };
+    std::vector<Section> sections;
+
+    {  // section 1: the columns of E7-T02, sparse by id
+        std::uint32_t rows = 0;
+        for (std::size_t i = 0; i < capacity; ++i) {
+            rows += character_extension_is_default(i) ? 0U : 1U;
+        }
+        if (rows != 0) {
+            Section section{kSectionPerson, 1, {}};
+            core::ByteWriter& w = section.body;
+            const CharacterTable& c = characters_;
+            w.u32(rows);
+            for (std::size_t i = 0; i < capacity; ++i) {
+                if (character_extension_is_default(i)) {
+                    continue;
+                }
+                w.u32(static_cast<std::uint32_t>(i));
+                w.u32(c.name[i].value());
+                w.u32(c.branch[i].value());
+                w.u16(c.portrait[i]);
+                w.u8(static_cast<std::uint8_t>(c.legitimacy[i]));
+                w.u8(c.cause_of_death[i]);
+                w.i32(c.death_date[i].days());
+                for (const core::Fixed32 skill : c.skills[i]) {
+                    w.i32(skill.raw());
+                }
+                w.i32(c.fertility[i].raw());
+                w.i32(c.stress[i].raw());
+                w.i32(c.piety[i].raw());
+                w.i32(c.ambition[i].raw());
+                w.i32(c.loyalty_head[i].raw());
+                w.i32(c.loyalty_emperor[i].raw());
+                for (const std::uint16_t trait : c.traits[i]) {
+                    w.u16(trait);
+                }
+                w.u8(c.education_focus[i]);
+                w.u32(c.education_tutor[i].value());
+                w.u8(c.education_level[i]);
+                w.i32(c.planned_death[i].days());
+            }
+            sections.push_back(std::move(section));
+        }
+    }
+    {  // section 2: unity, succession law, branches
+        std::uint32_t rows = 0;
+        for (std::size_t d = 0; d < dynasties_.size(); ++d) {
+            rows += (dynasties_.unity[d] == kDefaultUnity &&
+                     dynasties_.succession_law[d] == SuccessionLaw::Majorat)
+                        ? 0U
+                        : 1U;
+        }
+        if (rows != 0 || branches_.size() != 0) {
+            Section section{kSectionDynasty, 1, {}};
+            core::ByteWriter& w = section.body;
+            w.u32(rows);
+            for (std::size_t d = 0; d < dynasties_.size(); ++d) {
+                if (dynasties_.unity[d] == kDefaultUnity &&
+                    dynasties_.succession_law[d] == SuccessionLaw::Majorat) {
+                    continue;
+                }
+                w.u32(static_cast<std::uint32_t>(d));
+                w.i32(dynasties_.unity[d].raw());
+                w.u8(static_cast<std::uint8_t>(dynasties_.succession_law[d]));
+            }
+            w.u32(static_cast<std::uint32_t>(branches_.size()));
+            for (std::size_t b = 0; b < branches_.size(); ++b) {
+                w.u32(branches_.name[b].value());
+                w.u32(branches_.dynasty[b].value());
+            }
+            sections.push_back(std::move(section));
+        }
+    }
+
+    out.u16(static_cast<std::uint16_t>(sections.size()));
+    for (const Section& section : sections) {
+        write_section(out, section.id, section.version, section.body);
+    }
 }
 
 core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
-    if (in.u32() != kStateSchema || !in.ok()) {
+    const std::uint32_t schema = in.u32();
+    if (!in.ok() || schema == 0) {
         return fail("unsupported or missing world state schema");
+    }
+    if (schema > kStateSchema) {
+        return fail("the world state was written by a newer version of the game");
     }
 
     const Date today = Date::from_days(in.i32());
     const std::int64_t ticks = in.i64();
-    if (!in.ok() || ticks < 0) {
+    if (!in.ok() || ticks < 0 || !is_sane_date(today)) {
         return fail("invalid clock in world state");
     }
 
@@ -117,7 +265,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     world.calendar_ = TickCalendar::restore(today, ticks);
     world.rng_.restore(rng);
 
-    // dynasties
+    // dynasties (schema 1 has no unity or law: they take their defaults, see the dynasty section)
     const std::uint32_t dynasty_count = in.u32();
     if (!plausible(in, dynasty_count, 12 + 8)) {
         return fail("invalid dynasty table");
@@ -126,6 +274,8 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         world.dynasties_.name.emplace_back(in.u32());
         world.dynasties_.head.emplace_back(in.u32());
         world.dynasties_.honor.push_back(in.i32());
+        world.dynasties_.unity.push_back(kDefaultUnity);
+        world.dynasties_.succession_law.push_back(SuccessionLaw::Majorat);
         world.members_.emplace_back();
         world.owned_provinces_.emplace_back();
     }
@@ -158,7 +308,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     // characters
     const std::uint32_t capacity = in.u32();
-    if (!plausible(in, capacity, 1 + 4 + 21)) {
+    if (capacity > kMaxCharacterIds || !plausible(in, capacity, 1 + 4 + 21)) {
         return fail("invalid character table");
     }
     const auto alive_span = in.bytes(capacity);
@@ -180,24 +330,24 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         return fail("inconsistent character slot table");
     }
     CharacterTable& chars = world.characters_;
-    chars.dynasty.reserve(capacity);
     for (std::uint32_t i = 0; i < capacity; ++i) {
-        chars.dynasty.emplace_back(in.u32());
-        chars.birth_date.push_back(Date::from_days(in.i32()));
+        world.grow_character_columns();  // E7-T02 columns start at their defaults
+        chars.dynasty[i] = DynastyId(in.u32());
+        chars.birth_date[i] = Date::from_days(in.i32());
         const std::uint8_t sex = in.u8();
         if (sex > 1) {
             return fail("invalid sex value");
         }
-        chars.sex.push_back(static_cast<Sex>(sex));
-        chars.health.push_back(core::Fixed32::from_raw(in.i32()));
+        chars.sex[i] = static_cast<Sex>(sex);
+        chars.health[i] = core::Fixed32::from_raw(in.i32());
         const CharacterId father(in.u32());
         const CharacterId mother(in.u32());
         if ((father.valid() && father.value() >= capacity) ||
             (mother.valid() && mother.value() >= capacity)) {
             return fail("parent reference out of range");
         }
-        chars.father.push_back(father);
-        chars.mother.push_back(mother);
+        chars.father[i] = father;
+        chars.mother[i] = mother;
     }
     if (!in.ok()) {
         return fail("world state is truncated");
@@ -219,9 +369,128 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         }
     }
 
+    // ---- migration steps ----
+    // Schema 1 -> 2: there is no extension block. Flags are 0 (E1 mode), every E7-T02 column keeps
+    // its default and the derived data is built below. Later schemas add their own
+    // "if (schema >= N)" block here, in ascending order, so that any old file passes all steps.
+    if (schema >= 2) {
+        const std::uint32_t flags = in.u32();
+        if (!in.ok() || (flags & ~kWorldFlagDynastyMode) != 0) {
+            return fail("unknown world flags");
+        }
+        world.flags_ = flags;
+
+        const std::uint16_t section_count = in.u16();
+        if (!in.ok() || section_count > kMaxSections) {
+            return fail("invalid section count");
+        }
+        std::uint16_t previous_id = 0;
+        for (std::uint16_t s = 0; s < section_count; ++s) {
+            const std::uint16_t id = in.u16();
+            const std::uint16_t version = in.u16();
+            const std::uint32_t length = in.u32();
+            if (!in.ok() || id <= previous_id) {
+                return fail("world state sections are malformed or out of order");
+            }
+            previous_id = id;
+            const SectionInfo* info = find_section(id);
+            if (info == nullptr || info->version != version || info->min_schema > schema) {
+                return fail("unknown or unsupported world state section");
+            }
+            const std::span<const std::uint8_t> bytes = in.bytes(length);
+            if (!in.ok()) {
+                return fail("world state section is truncated");
+            }
+            core::ByteReader sr(bytes);
+
+            if (id == kSectionPerson) {
+                const std::uint32_t rows = sr.u32();
+                if (!plausible(sr, rows, kPersonRowBytes)) {
+                    return fail("invalid person section");
+                }
+                bool have_previous = false;
+                std::uint32_t previous_row = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t row = sr.u32();
+                    if (!sr.ok() || row >= capacity || (have_previous && row <= previous_row)) {
+                        return fail("person rows are out of range or out of order");
+                    }
+                    have_previous = true;
+                    previous_row = row;
+                    chars.name[row] = core::StringId(sr.u32());
+                    chars.branch[row] = BranchId(sr.u32());
+                    chars.portrait[row] = sr.u16();
+                    const std::uint8_t legitimacy = sr.u8();
+                    if (legitimacy >= kLegitimacyCount) {
+                        return fail("invalid legitimacy value");
+                    }
+                    chars.legitimacy[row] = static_cast<Legitimacy>(legitimacy);
+                    chars.cause_of_death[row] = sr.u8();
+                    chars.death_date[row] = Date::from_days(sr.i32());
+                    for (core::Fixed32& skill : chars.skills[row]) {
+                        skill = core::Fixed32::from_raw(sr.i32());
+                    }
+                    chars.fertility[row] = core::Fixed32::from_raw(sr.i32());
+                    chars.stress[row] = core::Fixed32::from_raw(sr.i32());
+                    chars.piety[row] = core::Fixed32::from_raw(sr.i32());
+                    chars.ambition[row] = core::Fixed32::from_raw(sr.i32());
+                    chars.loyalty_head[row] = core::Fixed32::from_raw(sr.i32());
+                    chars.loyalty_emperor[row] = core::Fixed32::from_raw(sr.i32());
+                    for (std::uint16_t& trait : chars.traits[row]) {
+                        trait = sr.u16();
+                    }
+                    chars.education_focus[row] = sr.u8();
+                    chars.education_tutor[row] = CharacterId(sr.u32());
+                    chars.education_level[row] = sr.u8();
+                    chars.planned_death[row] = Date::from_days(sr.i32());
+                    // Range checks that depend on the rest of the world (branch exists and belongs
+                    // to the dynasty, scales, traits) are done by check_invariants() below.
+                }
+            } else {  // kSectionDynasty
+                const std::uint32_t rows = sr.u32();
+                if (!plausible(sr, rows, kDynastyRowBytes)) {
+                    return fail("invalid dynasty section");
+                }
+                bool have_previous = false;
+                std::uint32_t previous_row = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t row = sr.u32();
+                    if (!sr.ok() || row >= dynasty_count || (have_previous && row <= previous_row)) {
+                        return fail("dynasty rows are out of range or out of order");
+                    }
+                    have_previous = true;
+                    previous_row = row;
+                    world.dynasties_.unity[row] = core::Fixed32::from_raw(sr.i32());
+                    const std::uint8_t law = sr.u8();
+                    if (law >= kSuccessionLawCount) {
+                        return fail("invalid succession law");
+                    }
+                    world.dynasties_.succession_law[row] = static_cast<SuccessionLaw>(law);
+                }
+                const std::uint32_t branch_count = sr.u32();
+                if (!plausible(sr, branch_count, kBranchRowBytes)) {
+                    return fail("invalid branch table");
+                }
+                for (std::uint32_t b = 0; b < branch_count; ++b) {
+                    const core::StringId name(sr.u32());
+                    const DynastyId owner(sr.u32());
+                    if (!sr.ok() || !owner.valid() || owner.value() >= dynasty_count) {
+                        return fail("branch refers to an unknown dynasty");
+                    }
+                    world.branches_.name.push_back(name);
+                    world.branches_.dynasty.push_back(owner);
+                }
+            }
+            if (!sr.ok() || !sr.at_end()) {
+                return fail("world state section is malformed");
+            }
+        }
+    }
+
+    world.rebuild_derived_indexes();
     const std::vector<std::string> problems = world.check_invariants();
     if (!problems.empty()) {
-        return fail("world state violates invariants");
+        return R::err(core::Error{10, "world state violates invariants: " + problems.front()});
     }
     return R::ok(std::move(world));
 }

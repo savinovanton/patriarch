@@ -19,6 +19,12 @@
 // The payload (before compression) is: World::save_state() followed by the commands that systems
 // emitted but that were not applied yet (u32 count + commands), so a loaded game continues exactly
 // where the saved one stopped. Systems must not keep persistent state outside the World.
+//
+// The container version (kSaveFormatVersion) is NOT the layout of the world: that is the schema
+// word at the start of World::save_state() (World::kStateSchema, byte layout in world_io.cpp).
+// World::load_state() reads every schema from 1 up and migrates it step by step, so the container
+// stays at version 1 (ADR-0006 D6); migrate_to_current() below is reserved for transformations of
+// the raw payload bytes.
 
 namespace pat::sim {
 

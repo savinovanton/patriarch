@@ -10,12 +10,17 @@
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/date.hpp"
 #include "pat/sim/entity_table.hpp"
+#include "pat/sim/scheduled_queue.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace pat::sim {
@@ -23,23 +28,108 @@ namespace pat::sim {
 using CharacterId = core::StrongId<struct CharacterIdTag>;
 using ProvinceId = core::StrongId<struct ProvinceIdTag>;
 using DynastyId = core::StrongId<struct DynastyIdTag>;
+using BranchId = core::StrongId<struct BranchIdTag>;  // a branch (sub-house) inside a dynasty
 
 enum class Sex : std::uint8_t { Male, Female };
+
+/// How a person came into the world (GDD 01 section 2.1). Stored as one byte.
+enum class Legitimacy : std::uint8_t { Legitimate, Illegitimate, Legitimized };
+inline constexpr std::uint8_t kLegitimacyCount = 3;
+
+/// Inheritance law of a dynasty (GDD 01 section 6). Majorat is the default.
+enum class SuccessionLaw : std::uint8_t { Majorat, Minorat, Partition, FamilyCouncil, Appointment };
+inline constexpr std::uint8_t kSuccessionLawCount = 5;
+
+/// The five skills of GDD 01 section 2.1, in column order.
+enum class Skill : std::uint8_t { Stewardship, Diplomacy, Martial, Intrigue, Learning };
+inline constexpr std::size_t kSkillCount = 5;
+inline constexpr std::size_t kTraitSlots = 8;
 
 inline constexpr std::int32_t kMinHonor = -1000;
 inline constexpr std::int32_t kMaxHonor = 10000;
 
+// ---- bounds of the character and dynasty columns (GDD 01 section 2.1) -----------------------------
+inline constexpr core::Fixed32 kSkillMax = core::Fixed32::from_int(20);  // skills: 0..20
+inline constexpr core::Fixed32 kScaleMax =
+    core::Fixed32::from_int(100);  // fertility, stress, piety, unity: 0..100
+inline constexpr core::Fixed32 kSignedScaleMax =
+    core::Fixed32::from_int(100);  // ambition, loyalties: -100..100
+inline constexpr core::Fixed32 kDefaultUnity =
+    core::Fixed32::from_int(50);                         // [predl.] a freshly created dynasty
+inline constexpr std::uint8_t kEducationFocusCount = 5;  // focus 0 = none, 1..5 = skill index + 1
+inline constexpr std::uint8_t kMaxEducationLevel = 100;  // [predl.]
+
+/// Hard limit of character ids ever allocated (ADR-0006 D1): ids are never reused in dynasty mode.
+inline constexpr std::uint32_t kMaxCharacterIds = 1'048'576;
+/// A planned death lies within this many days after the birth (200 years).
+inline constexpr std::int32_t kMaxLifeSpanDays = 200 * 366;
+/// Dates read from a file or set through the API stay within +-1,000,000 days (about 2,700 years)
+/// of the epoch; keeps all calendar arithmetic far from integer overflow.
+inline constexpr std::int32_t kSaneDateLimit = 1'000'000;
+
+/// "No date" (no death date, no planned death). Never pass it to calendar functions.
+inline constexpr Date kNoDate = Date::from_days(std::numeric_limits<std::int32_t>::min());
+
+[[nodiscard]] constexpr bool is_sane_date(Date d) noexcept {
+    return d.days() >= -kSaneDateLimit && d.days() <= kSaneDateLimit;
+}
+
+/// A planned death is either absent or lies between the birth and kMaxLifeSpanDays after it.
+[[nodiscard]] constexpr bool planned_death_is_valid(Date birth, Date planned) noexcept {
+    if (planned == kNoDate) {
+        return true;
+    }
+    return is_sane_date(birth) && is_sane_date(planned) && planned >= birth &&
+           planned - birth <= kMaxLifeSpanDays;
+}
+
+/// Traits in canonical form: non-zero entries ascending without repeats, zeros at the end. Extra
+/// entries beyond kTraitSlots are dropped.
+[[nodiscard]] inline std::array<std::uint16_t, kTraitSlots>
+sanitize_traits(const std::array<std::uint16_t, kTraitSlots>& traits) noexcept {
+    std::array<std::uint16_t, kTraitSlots> sorted = traits;
+    std::sort(sorted.begin(), sorted.end());
+    std::array<std::uint16_t, kTraitSlots> out{};
+    std::size_t n = 0;
+    for (const std::uint16_t t : sorted) {
+        if (t != 0 && (n == 0 || out[n - 1] != t)) {
+            out[n++] = t;
+        }
+    }
+    return out;
+}
+
+[[nodiscard]] inline bool
+traits_are_canonical(const std::array<std::uint16_t, kTraitSlots>& traits) noexcept {
+    return sanitize_traits(traits) == traits;
+}
+
+/// Bits of `World::world_flags()`.
+inline constexpr std::uint32_t kWorldFlagDynastyMode = 1U << 0;
+
 // ---- tables (structure of arrays) -------------------------------------------------------------
 // Columns are public for fast read access in systems; anything that touches an indexed column
-// (character dynasty, province owner, dynasty head) must go through World so indexes stay correct.
+// (character dynasty, planned death, province owner, dynasty head) must go through World so indexes
+// stay correct. World hands out const references only; the setters below clamp to the bounds.
 
 struct DynastyTable {
     std::vector<core::StringId> name;
     std::vector<CharacterId> head;
     std::vector<std::int32_t> honor;
+    std::vector<core::Fixed32> unity;  // 0..100, default kDefaultUnity
+    std::vector<SuccessionLaw> succession_law;
 
     [[nodiscard]] std::size_t size() const noexcept { return name.size(); }
     [[nodiscard]] bool operator==(const DynastyTable&) const = default;
+};
+
+/// Branches (sub-houses) of dynasties. Like dynasties they are never destroyed.
+struct BranchTable {
+    std::vector<core::StringId> name;
+    std::vector<DynastyId> dynasty;
+
+    [[nodiscard]] std::size_t size() const noexcept { return name.size(); }
+    [[nodiscard]] bool operator==(const BranchTable&) const = default;
 };
 
 struct ProvinceTable {
@@ -52,18 +142,52 @@ struct ProvinceTable {
     [[nodiscard]] bool operator==(const ProvinceTable&) const = default;
 };
 
+/// One row per character id. Group K columns (identity and facts) survive the character's death;
+/// group S columns (state of the living) are reset to their defaults when a character dies.
 struct CharacterTable {
     EntityTable<CharacterId> ids;
+    // E1 columns
     std::vector<DynastyId> dynasty;
     std::vector<Date> birth_date;
     std::vector<Sex> sex;
-    std::vector<core::Fixed32> health;  // 0..100
+    std::vector<core::Fixed32> health;  // 0..100 (S)
     std::vector<CharacterId> father;
     std::vector<CharacterId> mother;
+    // identity and facts (K); the rest of the family is added by E7-T03
+    std::vector<core::StringId> name;     // invalid = unnamed
+    std::vector<BranchId> branch;         // invalid = none; must belong to the character's dynasty
+    std::vector<std::uint16_t> portrait;  // portrait pool id
+    std::vector<Legitimacy> legitimacy;
+    std::vector<std::uint8_t> cause_of_death;  // 0 = none; the values are defined by E7-T04
+    std::vector<Date> death_date;              // kNoDate while alive
+    // state of the living (S)
+    std::vector<std::array<core::Fixed32, kSkillCount>> skills;  // 0..20 each
+    std::vector<core::Fixed32> fertility;                        // 0..100
+    std::vector<core::Fixed32> stress;                           // 0..100
+    std::vector<core::Fixed32> piety;                            // 0..100
+    std::vector<core::Fixed32> ambition;                         // -100..100
+    std::vector<core::Fixed32> loyalty_head;                     // -100..100
+    std::vector<core::Fixed32> loyalty_emperor;                  // -100..100
+    std::vector<std::array<std::uint16_t, kTraitSlots>>
+        traits;                                 // sorted ascending, 0 = empty slot (at the end)
+    std::vector<std::uint8_t> education_focus;  // 0 = none, 1..5 = skill + 1
+    std::vector<CharacterId> education_tutor;   // invalid = none
+    std::vector<std::uint8_t> education_level;  // 0..kMaxEducationLevel
+    std::vector<Date> planned_death;            // kNoDate = none (indexed: use World)
 
     [[nodiscard]] bool operator==(const CharacterTable&) const = default;
 };
 
+struct Education {
+    std::uint8_t focus = 0;  // 0 = none, 1..5 = skill + 1
+    CharacterId tutor;
+    std::uint8_t level = 0;
+
+    [[nodiscard]] bool operator==(const Education&) const = default;
+};
+
+/// Everything needed to create a character. All new fields default to "nothing special"; the
+/// defaults are exactly what a schema-1 save is migrated to.
 struct CharacterInit {
     DynastyId dynasty;
     Date birth_date;
@@ -71,7 +195,51 @@ struct CharacterInit {
     core::Fixed32 health = core::Fixed32::from_int(100);
     CharacterId father;
     CharacterId mother;
+    core::StringId name;
+    BranchId branch;
+    std::uint16_t portrait = 0;
+    Legitimacy legitimacy = Legitimacy::Legitimate;
+    std::array<core::Fixed32, kSkillCount> skills{};
+    core::Fixed32 fertility;
+    core::Fixed32 stress;
+    core::Fixed32 piety;
+    core::Fixed32 ambition;
+    core::Fixed32 loyalty_head;
+    core::Fixed32 loyalty_emperor;
+    std::array<std::uint16_t, kTraitSlots> traits{};
+    Education education;
+    Date planned_death = kNoDate;
+
+    [[nodiscard]] bool operator==(const CharacterInit&) const = default;
 };
+
+/// Reasons for entries of the life-event queue (ADR-0006 D4); the numeric value is also the
+/// priority inside a day. Labour (3) is added by E7-T12.
+enum class LifeEventKind : std::uint8_t { Birthday = 1, PlannedDeath = 2 };
+
+struct LifeEvent {
+    LifeEventKind kind = LifeEventKind::Birthday;
+    CharacterId character;
+
+    [[nodiscard]] bool operator==(const LifeEvent&) const = default;
+};
+
+/// Stable numbers of the extended hash parts (ADR-0006 D7). Part `n` lives in `WorldHash::ext[n]`.
+/// A part that has no content is 0 and is not mixed into `total`, so a world that does not use a
+/// feature has the same `total` as before the feature existed.
+enum class ExtPart : std::uint8_t {
+    Mode = 0,          // world flags
+    CharacterExt = 1,  // new character columns (living rows that differ from the defaults)
+    Archive = 2,       // E7-T04
+    DynastyExt = 3,    // unity, succession law, branches
+    Pregnancy = 4,     // E7-T12
+    Chronicle = 5,     // E7-T16
+    Opinion = 6,       // E7-T17
+};
+inline constexpr std::size_t kExtPartCount = 64;
+
+/// Name of an extended part for diagnostics ("ext[7]" for numbers without a name).
+[[nodiscard]] std::string ext_part_name(std::size_t number);
 
 /// Hash of the whole state plus the parts it is built from (helps to locate a divergence).
 struct WorldHash {
@@ -81,8 +249,14 @@ struct WorldHash {
     std::uint64_t dynasties = 0;
     std::uint64_t provinces = 0;
     std::uint64_t characters = 0;
+    std::array<std::uint64_t, kExtPartCount> ext{};
 
     [[nodiscard]] bool operator==(const WorldHash&) const = default;
+    /// Compares only `total` and the five fixed parts, i.e. the fields a replay checkpoint records.
+    [[nodiscard]] bool same_recorded_parts(const WorldHash& other) const noexcept {
+        return total == other.total && calendar == other.calendar && rng == other.rng &&
+               dynasties == other.dynasties && provinces == other.provinces && characters == other.characters;
+    }
 };
 
 /// The complete simulation state. Plain data, copyable: a copy IS a snapshot.
@@ -98,6 +272,14 @@ public:
     [[nodiscard]] core::RngStreams& rng() noexcept { return rng_; }
     [[nodiscard]] const core::RngStreams& rng() const noexcept { return rng_; }
 
+    // ---- mode ----
+    /// Switches to "dynasty mode" (ADR-0006 D1): character ids are never reused, the old destroy
+    /// operation is forbidden and every living character has an entry in the life-event queue.
+    /// Fails (false) only when the free list of character ids is not empty. Idempotent.
+    bool enable_dynasty_mode();
+    [[nodiscard]] bool dynasty_mode() const noexcept { return (flags_ & kWorldFlagDynastyMode) != 0; }
+    [[nodiscard]] std::uint32_t world_flags() const noexcept { return flags_; }
+
     // ---- dynasties (never destroyed: an extinct dynasty keeps its record) ----
     DynastyId create_dynasty(core::StringId name);
     [[nodiscard]] bool exists(DynastyId id) const noexcept {
@@ -108,6 +290,17 @@ public:
     bool set_dynasty_head(DynastyId dynasty, CharacterId head);
     /// Adds `delta` to honor, clamped to [kMinHonor, kMaxHonor].
     void add_honor(DynastyId dynasty, std::int32_t delta);
+    /// Sets the unity, clamped to 0..100.
+    void set_dynasty_unity(DynastyId dynasty, core::Fixed32 unity);
+    void set_dynasty_succession_law(DynastyId dynasty, SuccessionLaw law);
+
+    // ---- branches (never destroyed) ----
+    /// Creates a branch of an existing dynasty.
+    BranchId create_branch(DynastyId dynasty, core::StringId name);
+    [[nodiscard]] bool exists(BranchId id) const noexcept {
+        return id.valid() && id.index() < branches_.size();
+    }
+    [[nodiscard]] const BranchTable& branches() const noexcept { return branches_; }
 
     // ---- provinces (never destroyed) ----
     ProvinceId create_province(core::StringId name, DynastyId owner, core::Fixed32 population);
@@ -122,17 +315,56 @@ public:
     }
 
     // ---- characters ----
+    /// Out-of-range values in `init` are clamped (skills, scales), unknown references are cleared
+    /// (dynasty, branch, tutor) and traits are sorted; use cmd::CreatePerson to have them rejected
+    /// instead. Returns an invalid id when the table is full (kMaxCharacterIds).
     CharacterId create_character(const CharacterInit& init);
-    /// Removes the character from all indexes (and from the head slot of its dynasty).
+    /// Removes the character from all indexes (and from the head slot of its dynasty). Only
+    /// available outside dynasty mode: there the dead stay in the table (see E7-T04, cmd::Die).
     bool destroy_character(CharacterId id);
     [[nodiscard]] bool is_alive(CharacterId id) const noexcept { return characters_.ids.is_alive(id); }
+    /// True when another character can be created now.
+    [[nodiscard]] bool can_create_character() const noexcept {
+        return characters_.ids.capacity() < kMaxCharacterIds || !characters_.ids.free_list().empty();
+    }
     [[nodiscard]] const CharacterTable& characters() const noexcept { return characters_; }
     void set_character_dynasty(CharacterId id, DynastyId dynasty);
     [[nodiscard]] std::span<core::Fixed32> character_health_mut() noexcept { return characters_.health; }
 
+    // Setters of the columns of the living (E7-T02). Values are clamped to their bounds; a
+    // character that is not alive is ignored.
+    void set_character_name(CharacterId id, core::StringId name);
+    void set_character_portrait(CharacterId id, std::uint16_t portrait);
+    void set_character_legitimacy(CharacterId id, Legitimacy legitimacy);
+    /// False when the branch does not exist or belongs to another dynasty than the character.
+    bool set_character_branch(CharacterId id, BranchId branch);
+    void set_character_skill(CharacterId id, Skill skill, core::Fixed32 value);
+    void set_character_fertility(CharacterId id, core::Fixed32 value);
+    void set_character_stress(CharacterId id, core::Fixed32 value);
+    void set_character_piety(CharacterId id, core::Fixed32 value);
+    void set_character_ambition(CharacterId id, core::Fixed32 value);
+    void set_character_loyalty_head(CharacterId id, core::Fixed32 value);
+    void set_character_loyalty_emperor(CharacterId id, core::Fixed32 value);
+    /// Stores the traits sorted without gaps. False (nothing changed) when there are more than
+    /// kTraitSlots non-zero entries or a trait appears twice.
+    bool set_character_traits(CharacterId id, std::span<const std::uint16_t> traits);
+    /// False (nothing changed) when the focus or level is out of range or the tutor is unknown.
+    bool set_character_education(CharacterId id, const Education& education);
+    /// `kNoDate` clears it. False (nothing changed) when the date lies outside
+    /// [birth_date, birth_date + kMaxLifeSpanDays]. In dynasty mode this also schedules the event.
+    bool set_character_planned_death(CharacterId id, Date date);
+
     // ---- indexes (maintained incrementally, deterministic order) ----
     [[nodiscard]] std::span<const CharacterId> members_of(DynastyId dynasty) const noexcept;
     [[nodiscard]] std::span<const ProvinceId> provinces_of(DynastyId dynasty) const noexcept;
+    /// Ids of all living characters in strictly ascending order.
+    [[nodiscard]] std::span<const CharacterId> living() const noexcept { return living_; }
+    /// The life-event queue (ADR-0006 D4): a derived index over birth and planned-death dates,
+    /// empty outside dynasty mode. Not saved and not hashed; rebuilt on load.
+    [[nodiscard]] const ScheduledQueue<LifeEvent>& life_queue() const noexcept { return life_queue_; }
+    /// Rebuilds every derived index (living list, life-event queue) from the columns. The queue is
+    /// rebuilt for a state at a tick boundary: all events up to today are considered processed.
+    void rebuild_derived_indexes();
 
     // ---- verification ----
     [[nodiscard]] WorldHash compute_hash() const;
@@ -145,24 +377,40 @@ public:
     }
 
     // ---- persistence (world_io.cpp) ----
-    /// Version of the byte layout written by save_state(). Bump when the layout changes and add a
-    /// migration in save.cpp.
-    static constexpr std::uint32_t kStateSchema = 1;
+    /// Version of the byte layout written by save_state(); load_state() reads every schema from 1 to
+    /// this one. Bump when the layout changes and add the migration step to load_state (the table
+    /// of steps is in ADR-0006 D6).
+    ///   1  the E1 layout (clock, random streams, dynasties, provinces, characters)
+    ///   2  + extension block: world flags and id-versioned sections (E7-T02: sections 1 and 2)
+    static constexpr std::uint32_t kStateSchema = 2;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
-    /// Reads a state written by save_state(). Never throws and never trusts counts or ids: bad
-    /// input produces an error, not a crash. The result satisfies check_invariants().
+    /// Reads a state written by save_state() of any supported schema and migrates it to the current
+    /// one. Never throws and never trusts counts or ids: bad input produces an error, not a crash.
+    /// The result satisfies check_invariants().
     [[nodiscard]] static core::Result<World, core::Error> load_state(core::ByteReader& in);
 
 private:
+    // Defaults of the columns added in E7-T02 and helpers that keep them in sync.
+    void grow_character_columns();
+    void reset_character_extension(std::size_t index);
+    [[nodiscard]] bool character_extension_is_default(std::size_t index) const;
+    /// Queues the birthday (due `birthday_due`) and, when set, the planned death of a character.
+    void push_life_events(CharacterId id, Date birthday_due);
+    void insert_living(CharacterId id);
+
     TickCalendar calendar_;
     core::RngStreams rng_;
+    std::uint32_t flags_ = 0;
     DynastyTable dynasties_;
+    BranchTable branches_;
     ProvinceTable provinces_;
     CharacterTable characters_;
     std::vector<core::SparseSet<CharacterId>> members_;         // per dynasty
     std::vector<core::SparseSet<ProvinceId>> owned_provinces_;  // per dynasty
+    std::vector<CharacterId> living_;                           // derived, ascending
+    ScheduledQueue<LifeEvent> life_queue_;                      // derived
 };
 
 }  // namespace pat::sim
