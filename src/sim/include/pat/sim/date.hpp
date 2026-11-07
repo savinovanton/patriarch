@@ -158,6 +158,50 @@ private:
     std::int32_t days_ = 0;
 };
 
+// ---- anniversaries (E7-T02, ADR-0006 D4) --------------------------------------------------------
+// Ages and the life-event schedule use these functions only, so that "how old is X" and "when is X's
+// next birthday" can never disagree. A birthday on 29 February is celebrated on 28 February in
+// common years.
+
+/// The day on which `birth` is celebrated in `year`.
+[[nodiscard]] constexpr Date anniversary_in_year(Date birth, int year) noexcept {
+    const YearMonthDay v = birth.ymd();
+    const int day = (v.month == 2 && v.day == 29 && !Date::is_leap_year(year)) ? 28 : v.day;
+    return Date::from_ymd(year, v.month, day);
+}
+
+/// Whole years lived on `on`: the number of anniversaries that are <= `on`. Zero for dates up to
+/// and including the birth date (and before it).
+[[nodiscard]] constexpr int age_years(Date birth, Date on) noexcept {
+    if (on <= birth) {
+        return 0;
+    }
+    const int years = on.year() - birth.year();
+    return years - (on < anniversary_in_year(birth, on.year()) ? 1 : 0);
+}
+
+/// First anniversary (1 year or more after the birth) that is strictly later than `after`.
+[[nodiscard]] constexpr Date next_anniversary_after(Date birth, Date after) noexcept {
+    const int first_year = birth.year() + 1;
+    const int year = after.year() > first_year ? after.year() : first_year;
+    Date candidate = anniversary_in_year(birth, year);
+    if (candidate <= after) {
+        candidate = anniversary_in_year(birth, year + 1);
+    }
+    return candidate;
+}
+
+/// First anniversary (1 year or more after the birth) that is `on` or later.
+[[nodiscard]] constexpr Date next_anniversary_on_or_after(Date birth, Date on) noexcept {
+    const int first_year = birth.year() + 1;
+    const int year = on.year() > first_year ? on.year() : first_year;
+    Date candidate = anniversary_in_year(birth, year);
+    if (candidate < on) {
+        candidate = anniversary_in_year(birth, year + 1);
+    }
+    return candidate;
+}
+
 /// "1703-01-01" (Julian calendar, ISO-like layout) for logs and tools. Localized text (month names)
 /// belongs to the UI layer.
 [[nodiscard]] std::string to_string(Date date);

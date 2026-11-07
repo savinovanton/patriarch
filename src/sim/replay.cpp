@@ -44,9 +44,8 @@ WorldHash read_hash(core::ByteReader& in) {
     return h;
 }
 
-}  // namespace
-
-std::string first_differing_part(const WorldHash& expected, const WorldHash& actual) {
+/// Name of the first of the five classic parts that differs, "" when they are all equal.
+std::string classic_differing_part(const WorldHash& expected, const WorldHash& actual) {
     if (expected.calendar != actual.calendar) {
         return "calendar";
     }
@@ -61,6 +60,36 @@ std::string first_differing_part(const WorldHash& expected, const WorldHash& act
     }
     if (expected.characters != actual.characters) {
         return "characters";
+    }
+    return {};
+}
+
+/// A checkpoint records only `total` and the five parts, so when those parts agree and `total` does
+/// not, the divergence is in an extended part that the file cannot name. List the parts that are in
+/// use, so the reader knows where to look (the simcli tool names the part by running twice).
+std::string describe_extended_divergence(const WorldHash& actual) {
+    std::string out = "extended parts (one of:";
+    bool any = false;
+    for (std::size_t part = 0; part < kExtPartCount; ++part) {
+        if (actual.ext[part] != 0) {
+            out += (any ? ", " : " ") + ext_part_name(part);
+            any = true;
+        }
+    }
+    return out + ")";
+}
+
+}  // namespace
+
+std::string first_differing_part(const WorldHash& expected, const WorldHash& actual) {
+    std::string classic = classic_differing_part(expected, actual);
+    if (!classic.empty()) {
+        return classic;
+    }
+    for (std::size_t part = 0; part < kExtPartCount; ++part) {
+        if (expected.ext[part] != actual.ext[part]) {
+            return ext_part_name(part);
+        }
     }
     return {};
 }
@@ -122,9 +151,12 @@ ReplayResult play_replay(Simulation& simulation, const Replay& replay) {
         while (next_checkpoint < replay.checkpoints.size() && replay.checkpoints[next_checkpoint].tick == t) {
             const WorldHash actual = simulation.world().compute_hash();
             const WorldHash& expected = replay.checkpoints[next_checkpoint].hash;
-            if (actual != expected) {
-                result.divergence =
-                    ReplayDivergence{t, expected, actual, first_differing_part(expected, actual)};
+            if (!actual.same_recorded_parts(expected)) {  // checkpoints do not record the extended parts
+                std::string part = classic_differing_part(expected, actual);
+                if (part.empty()) {
+                    part = describe_extended_divergence(actual);
+                }
+                result.divergence = ReplayDivergence{t, expected, actual, std::move(part)};
                 return result;
             }
             ++next_checkpoint;

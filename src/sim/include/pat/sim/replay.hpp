@@ -69,7 +69,10 @@ struct ReplayDivergence {
     std::int64_t tick = 0;
     WorldHash expected;
     WorldHash actual;
-    std::string first_differing_part;  // "calendar", "rng", "dynasties", "provinces" or "characters"
+    // "calendar", "rng", "dynasties", "provinces" or "characters". A replay checkpoint records only
+    // total + these five parts, so when they agree and `total` does not, the cause lies in an
+    // extended part and the text lists the parts in use ("extended parts (one of: ...)").
+    std::string first_differing_part;
 };
 
 struct ReplayResult {
@@ -86,7 +89,8 @@ struct ReplayResult {
 [[nodiscard]] std::vector<std::uint8_t> serialize_replay(const Replay& replay);
 [[nodiscard]] core::Result<Replay, core::Error> deserialize_replay(std::span<const std::uint8_t> bytes);
 
-/// Name of the first hash part that differs ("" when all parts are equal).
+/// Name of the first hash part that differs ("" when all parts are equal). Extended parts are
+/// compared last, in the order of their numbers.
 [[nodiscard]] std::string first_differing_part(const WorldHash& expected, const WorldHash& actual);
 
 }  // namespace pat::sim
