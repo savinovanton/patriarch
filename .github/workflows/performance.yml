@@ -1,0 +1,64 @@
+name: Performance
+
+on:
+  pull_request:
+    paths:
+      - 'src/core/**'
+      - 'src/sim/**'
+      - 'bench/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'vcpkg.json'
+      - 'tools/bench_*.py'
+      - '.github/workflows/performance.yml'
+      - '.github/actions/setup-vcpkg/**'
+  schedule:
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: performance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Performance regression
+    runs-on: windows-2022
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Compare committed versions on this runner
+        shell: pwsh
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CANDIDATE_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          $arguments = @(
+            'tools/bench_gate.py',
+            '--suite', 'bench/baselines/suite.json',
+            '--reference', 'bench/baselines/reference.json',
+            '--candidate-sha', $env:CANDIDATE_SHA,
+            '--work-dir', 'out/performance'
+          )
+          if ($env:EVENT_NAME -eq 'pull_request') {
+            $arguments += @('--baseline-sha', $env:BASE_SHA)
+          }
+          python @arguments
+          exit $LASTEXITCODE
+      - name: Publish performance report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: performance-report
+          path: out/performance/reports/
+          retention-days: 14
+          if-no-files-found: error
