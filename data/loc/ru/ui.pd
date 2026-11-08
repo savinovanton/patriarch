@@ -1,0 +1,124 @@
+format_version = 1
+
+# Русские строки интерфейса (E4-T06). Это таблица локализации, а не определения контента: файлы
+# в data/loc/<язык>/ читает модуль pat::loc (docs/dev/localization.md), загрузчик контента их пропускает.
+#
+# Ключ — идентификатор с точками: ui.<окно>.<смысл>. Параметры: {имя}; число с неразрывными
+# пробелами между тысячами: {n:group}; форма слова по числу: {n:plural(год|года|лет)}.
+# Литеральные скобки пишутся {{ и }}.
+#
+# Строки соответствуют тому, что сейчас зашито в HUD спайка (apps/spike/ui/hud.rml, timebar.rml,
+# src/ui/hud_window.cpp) и в окне персонажа (character.rml, character_snapshot.*). HUD — временная
+# тестовая раскладка; подключение окон к таблице — отдельная задача.
+
+# ---- Общее -------------------------------------------------------------------------------------
+
+ui.age.years = "{n} {n:plural(год|года|лет)}"
+ui.fmt.number = "{n:group}"
+ui.fmt.thousands = "{n} т"
+
+# ---- Время и дата ------------------------------------------------------------------------------
+
+ui.timebar.pause = "Пауза"
+ui.date.long = "{day} {month} {year}"
+
+ui.month.january = "января"
+ui.month.february = "февраля"
+ui.month.march = "марта"
+ui.month.april = "апреля"
+ui.month.may = "мая"
+ui.month.june = "июня"
+ui.month.july = "июля"
+ui.month.august = "августа"
+ui.month.september = "сентября"
+ui.month.october = "октября"
+ui.month.november = "ноября"
+ui.month.december = "декабря"
+
+# ---- Главное меню (нижняя полоса HUD) ----------------------------------------------------------
+
+ui.menu.world = "Мир"
+ui.menu.realm = "Держава"
+ui.menu.holdings = "Владения"
+ui.menu.army = "Войско"
+ui.menu.church = "Церковь"
+ui.menu.economy = "Хозяйство"
+ui.menu.diplomacy = "Дипломатия"
+ui.menu.chronicle = "Летопись"
+ui.menu.system = "Меню"
+
+# ---- Верхняя полоса: держава и ресурсы ---------------------------------------------------------
+
+ui.hud.realm.name = "Московское царство"
+ui.hud.realm.subtitle = "Государев двор"
+
+ui.res.treasury = "Казна"
+ui.res.grain = "Запасы"
+ui.res.army = "Войско"
+ui.res.faith = "Вера"
+ui.res.influence = "Влияние"
+ui.res.tooltip = "{label}: {n:group} ({delta})"
+
+# ---- Правая панель -----------------------------------------------------------------------------
+
+ui.hud.holdings.title = "ВЛАДЕНИЯ"
+ui.hud.armies.title = "ВОЙСКА"
+ui.hud.affairs.title = "ДЕЛА ГОСУДАРСТВА"
+ui.hud.chronicle.title = "ЛЕТОПИСЬ"
+
+ui.hud.tab.cities = "Города"
+ui.hud.tab.armies = "Войска"
+ui.hud.tab.dynasties = "Династии"
+
+ui.hud.affairs.council.title = "Собор ожидает решения"
+ui.hud.affairs.council.detail = "{n} {n:plural(вопрос|вопроса|вопросов)} в повестке"
+ui.hud.affairs.embassy.title = "Прибыли послы"
+ui.hud.affairs.embassy.detail = "Ожидают приёма при дворе"
+
+ui.hud.chronicle.embassy_arrived = "Посольство прибыло в Москву"
+ui.hud.chronicle.taxes_collected = "Завершён сбор податей"
+
+# ---- Окно персонажа ----------------------------------------------------------------------------
+
+ui.character.subtitle = "{role} · {age} {age:plural(год|года|лет)} · здоровье: {health}"
+
+ui.character.tab.overview = "Обзор"
+ui.character.tab.family = "Семья"
+ui.character.tab.relations = "Отношения"
+
+ui.character.heading.skills = "Навыки"
+ui.character.heading.traits = "Черты"
+ui.character.heading.actions = "Действия"
+ui.character.heading.family = "Семья"
+ui.character.heading.relations = "Знакомые и мнения (всего: {total})"
+
+ui.character.cmd.marry = "Предложить брак"
+ui.character.cmd.appoint = "Назначить на должность"
+ui.character.cmd.educate = "Отправить в науку"
+ui.character.cmd.stub = "Команда: {id} (заглушка)"
+
+ui.health.strong = "крепкое"
+ui.health.good = "хорошее"
+ui.health.weak = "слабое"
+ui.health.sickly = "болезненное"
+
+# ---- Навыки (GDD 01 §2) ------------------------------------------------------------------------
+
+ui.skill.economy = "Хозяйство"
+ui.skill.diplomacy = "Дипломатия"
+ui.skill.martial = "Воинское дело"
+ui.skill.intrigue = "Интриги"
+ui.skill.learning = "Учёность"
+ui.skill.note = "Навыки лежат в диапазоне {min}–{max}."
+
+# ---- Подсказка «откуда число» (окно персонажа) -------------------------------------------------
+
+ui.explain.base = "Базовое значение"
+ui.explain.education = "Образование"
+ui.explain.mentor = "Наставник"
+ui.explain.mentor_skill = "Навык наставника"
+ui.explain.pupil_effort = "Усердие ученика"
+ui.explain.abroad = "Обучение за границей"
+ui.explain.traits = "Черты"
+ui.explain.trait_named = "Черта «{name}»"
+ui.explain.age_experience = "Возраст и опыт"
