@@ -1,0 +1,5 @@
+format_version = 1
+
+trait.greedy.name = "Greed"
+trait.generous.name = "Generosity"
+ui.age.years = "{n} {n:plural(year|years)}"

@@ -79,4 +79,4 @@ if (r.ok()) {
 
 ## 8. Что не входит в E4-T04
 
-Схемы и определения игры (E4-T05, каталог `data/`), локализация (E4-T06, готово: [localization.md](localization.md), модуль `src/loc`), горячая перезагрузка (E4-T07), утилита `contentlint` (E4-T08). Подключение к `sim`/`spike` не выполнено.
+Схемы и определения игры (E4-T05, каталог `data/`), локализация (E4-T06, готово: [localization.md](localization.md), модуль `src/loc`), горячая перезагрузка (E4-T07), утилита `contentlint` (E4-T08, готово: [contentlint.md](contentlint.md)). Подключение к `sim`/`spike` не выполнено.

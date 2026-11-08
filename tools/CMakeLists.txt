@@ -27,6 +27,7 @@ if(PATRIARCH_BUILD_TESTS)
     set_tests_properties(mapgen_roundtrip PROPERTIES TIMEOUT 300)
 endif()
 
+add_subdirectory(contentlint)
 add_subdirectory(schemadoc)
 add_subdirectory(stressgen)
 add_subdirectory(tick_spike)

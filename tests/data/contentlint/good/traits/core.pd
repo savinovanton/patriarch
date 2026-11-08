@@ -1,0 +1,17 @@
+format_version = 1
+
+# A small complete corpus for the contentlint tests: valid objects, references that resolve, and
+# every localisation key referenced from here (the unused-key check stays quiet).
+
+trait "greedy" {
+    name_key = "trait.greedy.name"
+    cost = 3
+    opposite = trait:generous
+    tags = [ "ui.age.years" ]
+}
+
+trait "generous" {
+    name_key = "trait.generous.name"
+    cost = 2
+    opposite = trait:greedy
+}

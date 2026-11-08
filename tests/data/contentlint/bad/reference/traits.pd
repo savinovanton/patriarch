@@ -1,0 +1,14 @@
+format_version = 1
+
+# Unresolved reference: there is no trait "honset".
+
+trait "honest" {
+    name_key = "trait.honest.name"
+    cost = 1
+}
+
+trait "liar" {
+    name_key = "trait.liar.name"
+    cost = 1
+    opposite = trait:honset
+}

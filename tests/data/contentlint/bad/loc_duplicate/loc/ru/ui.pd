@@ -1,0 +1,5 @@
+format_version = 1
+
+ui.menu.world = "Мир"
+ui.menu.court = "Двор"
+ui.menu.world = "Карта"
