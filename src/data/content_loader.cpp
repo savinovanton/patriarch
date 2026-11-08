@@ -42,8 +42,12 @@ namespace {
 
 using Key = std::pair<std::string, std::string>;  // (kind, id)
 
+// Files below the top-level directory `loc/` are localisation tables (`key = "text"`, E4-T06,
+// docs/dev/localization.md); they are read by pat::loc, not by the content loader, and are not part
+// of the content hash.
 bool is_pd_file(const std::string& path) {
-    return path.size() > 3 && path.ends_with(".pd") && path[path.size() - 4] != '/';
+    return path.size() > 3 && path.ends_with(".pd") && path[path.size() - 4] != '/' &&
+           !path.starts_with("loc/");
 }
 
 class Loader {

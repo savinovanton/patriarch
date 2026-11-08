@@ -22,6 +22,7 @@ add_executable(patriarch_tests
     golden_test.cpp
     ids_test.cpp
     kinship_test.cpp
+    localization_test.cpp
     log_test.cpp
     mapdata_test.cpp
     pd_parser_test.cpp
@@ -47,6 +48,7 @@ target_link_libraries(patriarch_tests PRIVATE
     patriarch::sim
     patriarch::mapdata
     patriarch::data
+    patriarch::loc
     patriarch::content
     doctest::doctest)
 
