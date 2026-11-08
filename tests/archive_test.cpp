@@ -1434,3 +1434,42 @@ TEST_CASE("property: the same history gives the same archive, another history an
     CHECK(hash_of(5) == hash_of(5));
     CHECK(hash_of(5).ext[ext_index(ExtPart::Archive)] != hash_of(6).ext[ext_index(ExtPart::Archive)]);
 }
+
+TEST_CASE("fixture: a schema-4 save with 160 archived people loads and goes on") {
+    // Made by the code of E7-T04 (state schema 4):
+    //   stressgen --profile year1 --seed 7 --characters 240 --dynasties 8 --provinces 24 --archived 160
+    //             --armies 0 --schemes 0 --contracts 0 --events 0 --output dynasty_v4_archive.psv
+    const auto file = read_file(fixture_path("dynasty_v4_archive.psv"));
+    REQUIRE(file.has_value());
+    auto loaded = deserialize_save(file.value());
+    REQUIRE(loaded.has_value());
+    World& world = loaded.value().world;
+    require_valid(world);
+    const WorldHash hash = world.compute_hash();
+    CHECK(hash.total == 0x0ab1c575c79b7467ULL);
+    CHECK(world.living().size() == 240);
+    CHECK(world.archived_count() == 160);
+    CHECK(world.characters().ids.capacity() == 400);
+    CHECK(hash.ext[ext_index(ExtPart::Archive)] != 0);
+    for (std::uint32_t id = 240; id < 400; ++id) {
+        const auto person = world.archived_person(CharacterId(id));
+        REQUIRE(person.has_value());
+        CHECK(person->death_date == world.today());
+        CHECK(person->cause != CauseOfDeath::None);
+        CHECK(person->father.valid());
+        CHECK(world.is_alive(person->father) != world.is_archived(person->father));
+    }
+    // the family tree runs through the dead; the founders have the dead among their children
+    CHECK(kin::children_of(world, CharacterId(0)).size() > 40);
+    // the same bytes again, and a further death is archived like any other
+    const std::vector<std::uint8_t> bytes = state_bytes(world);
+    auto copy = load(bytes);
+    REQUIRE(copy.has_value());
+    CHECK(state_bytes(copy.value()) == bytes);
+    REQUIRE(world.die(CharacterId(0), CauseOfDeath::OldAge));
+    CHECK(world.archived_count() == 161);
+    require_valid(world);
+    auto again = load(state_bytes(world));
+    REQUIRE(again.has_value());
+    CHECK(again.value().compute_hash() == world.compute_hash());
+}

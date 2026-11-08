@@ -56,15 +56,20 @@ void fill_person(sim::CharacterInit& init,
 core::Result<sim::World> generate_world(const WorldConfig& config) {
     using R = core::Result<sim::World>;
     constexpr std::uint32_t kMaxCount = 1'000'000;
-    if (config.provinces > kMaxCount || config.characters > kMaxCount || config.dynasties > 10'000) {
+    if (config.provinces > kMaxCount || config.characters > kMaxCount || config.dynasties > 10'000 ||
+        config.archived > kMaxCount ||
+        static_cast<std::uint64_t>(config.characters) + config.archived > kMaxCount) {
         return R::err({1, "counts exceed stress generator limits"});
     }
-    // World's per-dynasty SparseSets address global IDs. Bound their worst-case memory before
+    if (config.archived > 0 && (!config.dynasty_mode || config.dynasties == 0)) {
+        return R::err({1, "archived characters need dynasty mode and at least one dynasty"});
+    }
+    // The ownership index keeps a SparseSet of provinces per dynasty, which addresses global IDs
+    // (the members of a dynasty are a plain list since E7-T04). Bound its worst-case memory before
     // allocating, including user-supplied count combinations outside the standard profiles.
-    const auto index_slots = static_cast<std::uint64_t>(config.dynasties) *
-                             (static_cast<std::uint64_t>(config.characters) + config.provinces);
+    const auto index_slots = static_cast<std::uint64_t>(config.dynasties) * config.provinces;
     if (index_slots > 64'000'000) {
-        return R::err({1, "requested counts exceed the membership index memory limit"});
+        return R::err({1, "requested counts exceed the ownership index memory limit"});
     }
 
     sim::World world(config.date, config.seed);
@@ -98,6 +103,7 @@ core::Result<sim::World> generate_world(const WorldConfig& config) {
     const std::vector<sim::BranchId> no_branches;
     std::uint32_t person_number = 0;
     const auto groups = std::max(config.dynasties, 1U);
+    std::vector<std::pair<sim::CharacterId, sim::CharacterId>> founders(groups);
     for (std::uint32_t d = 0; d < groups; ++d) {
         const auto count = config.characters / groups + (d < config.characters % groups ? 1U : 0U);
         const sim::DynastyId dynasty(config.dynasties == 0 ? sim::DynastyId::kInvalid : d);
@@ -129,6 +135,35 @@ core::Result<sim::World> generate_world(const WorldConfig& config) {
             } else if (c == 1) {
                 mother = id;
                 (void)world.marry(father, mother);  // the founding couple (dynasty mode only)
+            }
+        }
+        founders[d] = {father, mother};
+    }
+
+    // The dead (E7-T04): created after all the living, so that the ids 0..characters-1 are the living
+    // ones (the workload refers to them), and archived at once. The stream is created only when it
+    // is needed, so worlds without an archive keep their random state.
+    if (config.archived > 0) {
+        auto& archive_rng = world.rng().stream("stress.archive");
+        for (std::uint32_t a = 0; a < config.archived; ++a) {
+            const std::uint32_t d = a % groups;
+            sim::CharacterInit init;
+            init.dynasty = sim::DynastyId(d);
+            const auto age = archive_rng.range(0, 41);
+            init.birth_date = std::min(
+                sim::Date::from_ymd(config.date.year() - age, 1, 1) + archive_rng.range(0, 180), config.date);
+            init.sex = archive_rng.chance_permille(500) ? sim::Sex::Female : sim::Sex::Male;
+            const auto [father, mother] = founders[d];
+            if (father.valid() && mother.valid()) {  // children of the founding couple
+                init.father = father;
+                init.mother = mother;
+            }
+            fill_person(init, persons_rng, person_number++, branches[d], age);
+            const auto id = world.create_character(init);
+            const auto cause = static_cast<sim::CauseOfDeath>(
+                1 + archive_rng.bounded(static_cast<std::uint32_t>(sim::kCauseOfDeathCount - 1)));
+            if (!id.valid() || !world.die(id, cause)) {
+                return R::err({1, "cannot archive a synthetic character"});
             }
         }
     }
