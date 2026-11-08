@@ -9,6 +9,10 @@
 #include "pat/core/string_interner.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/date.hpp"
+#include "pat/sim/economy/ledger.hpp"
+#include "pat/sim/economy/money.hpp"
+#include "pat/sim/economy/tables.hpp"
+#include "pat/sim/entity_ids.hpp"
 #include "pat/sim/entity_table.hpp"
 #include "pat/sim/scheduled_queue.hpp"
 
@@ -25,11 +29,6 @@
 #include <vector>
 
 namespace pat::sim {
-
-using CharacterId = core::StrongId<struct CharacterIdTag>;
-using ProvinceId = core::StrongId<struct ProvinceIdTag>;
-using DynastyId = core::StrongId<struct DynastyIdTag>;
-using BranchId = core::StrongId<struct BranchIdTag>;  // a branch (sub-house) inside a dynasty
 
 enum class Sex : std::uint8_t { Male, Female };
 
@@ -75,9 +74,6 @@ inline constexpr std::int32_t kMaxLifeSpanDays = 200 * 366;
 /// Dates read from a file or set through the API stay within +-1,000,000 days (about 2,700 years)
 /// of the epoch; keeps all calendar arithmetic far from integer overflow.
 inline constexpr std::int32_t kSaneDateLimit = 1'000'000;
-
-/// "No date" (no death date, no planned death). Never pass it to calendar functions.
-inline constexpr Date kNoDate = Date::from_days(std::numeric_limits<std::int32_t>::min());
 
 [[nodiscard]] constexpr bool is_sane_date(Date d) noexcept {
     return d.days() >= -kSaneDateLimit && d.days() <= kSaneDateLimit;
@@ -369,6 +365,8 @@ public:
     [[nodiscard]] const BranchTable& branches() const noexcept { return branches_; }
 
     // ---- provinces (never destroyed) ----
+    /// With the economy on, `population` (thousands) is converted to persons (truncated) and put into
+    /// the group of peasants; the cache is then refreshed from the groups (see enable_economy).
     ProvinceId create_province(core::StringId name, DynastyId owner, core::Fixed32 population);
     [[nodiscard]] bool exists(ProvinceId id) const noexcept {
         return id.valid() && id.index() < provinces_.size();
@@ -466,6 +464,84 @@ public:
     /// other, or be invalid. False (nothing changed) otherwise.
     bool set_character_godparents(CharacterId id, const std::array<CharacterId, kGodparentSlots>& godparents);
 
+    // ---- economy (E9-T02, docs/dev/economy-model.md) ----
+    // The economy tables are absent by default: a world that never calls enable_economy() behaves
+    // exactly as before and check_invariants() requires every economy table to be empty. They are
+    // not part of the hash and of the save file yet (E9-T03), but a copy of the World (snapshot)
+    // copies them.
+
+    /// Switches the economy on: builds a default row for every dynasty and province that exists and
+    /// from now on for every new one. Each province keeps its population: the persons go into the
+    /// group of peasants (see create_province). With a valid `crown_dynasty` the crown's money is held
+    /// on the account of that dynasty ("one treasury" mode of open question Q7); without it the crown
+    /// has its own account (row 0). Idempotent for the same argument; false (nothing changed) when
+    /// `crown_dynasty` does not exist, or when the economy is on already with another one.
+    bool enable_economy(DynastyId crown_dynasty = DynastyId());
+    [[nodiscard]] bool economy_present() const noexcept { return economy_.meta.present != 0; }
+    [[nodiscard]] const economy::EconomyState& economy() const noexcept { return economy_; }
+    /// Writable views of the plain numeric columns for systems; empty spans without economy. Values
+    /// are not clamped here, see economy::EconomyColumnsMut.
+    [[nodiscard]] economy::EconomyColumnsMut economy_columns_mut() noexcept;
+    /// Hash of the rules the world was built with (informational, not hashed).
+    void set_economy_rules_hash(std::uint64_t rules_hash) noexcept;
+
+    /// Development of a province, clamped to 1..economy::kMaxDevelopment (GDD 03 section 8.3).
+    void set_province_development(ProvinceId province, std::uint8_t development);
+    /// Gives a province to the crown, the Church or nobody (any kind except Dynasty, which is set by
+    /// set_province_owner together with the owner). The dynasty owner, if any, is dropped. Needs the
+    /// economy; false (nothing changed) otherwise or for an unknown province or the kind Dynasty.
+    bool set_province_owner_kind(ProvinceId province, economy::OwnerKind kind);
+    /// Sets the number of people of a group and refreshes the population cache of the province. The
+    /// total of the six groups is capped at economy::kMaxProvincePersons; returns the stored value
+    /// (0 for an unknown province or group or without economy).
+    std::uint32_t set_group_size(ProvinceId province, economy::Group group, std::uint32_t persons);
+    /// People in the six groups of a province (0 without economy).
+    [[nodiscard]] std::uint64_t population_persons(ProvinceId province) const noexcept;
+    /// `ProvinceTable::population` := total persons / 1000 (the cache of section 3.1 of the spec).
+    void refresh_population_cache(ProvinceId province) noexcept;
+    /// The administrator must be alive or invalid. False (nothing changed) otherwise, for an
+    /// unknown province or without economy. A character who dies or is destroyed is removed from
+    /// every province (invariant E-P4).
+    bool set_province_administrator(ProvinceId province, CharacterId administrator);
+    /// Puts a building (0 = empty) into a slot of a province; false when the slot is not below
+    /// `slots_total` or the province is unknown.
+    bool set_slot_building(ProvinceId province, std::size_t slot, std::uint8_t building);
+
+    /// Row of an account in the account table: the crown is row 0 (or the row of the crown dynasty
+    /// in the "one treasury" mode), dynasty `d` is row `1 + d`. nullopt without economy or for an
+    /// unknown dynasty.
+    [[nodiscard]] std::optional<std::size_t> resolve_account(economy::AccountRef account) const noexcept;
+    /// Balance of an account in kopecks (0 for an account that does not exist).
+    [[nodiscard]] economy::Kopecks treasury(economy::AccountRef account) const noexcept;
+    /// THE way to change money (economy-model section 5): adds `amount_kop` to the balance of the
+    /// account and to its line `code` of the open month, both by the same applied amount, so that
+    /// `treasury == opening + sum(lines)` holds (E-M1). Income is positive. A posting beyond
+    /// +-kMaxPostingKop, or one that would take the balance beyond +-kMaxTreasuryKop or a line
+    /// beyond +-kMaxLedgerLineKop, saturates; returns the amount really applied. Zero (nothing
+    /// changes) for an unissued code, a code of a transfer pair (those go through transfer()), a
+    /// missing account or without economy.
+    economy::Kopecks
+    post_money(economy::AccountRef account, economy::LedgerCode code, economy::Kopecks amount_kop);
+    /// THE way to move money between two accounts: `amount_kop` (> 0) leaves `from` under `out_code`
+    /// and enters `to` under `in_code`; the pair must be one of economy::kLedgerPairs. If either side
+    /// would saturate, the smaller amount moves on both sides, so the pair sums to zero (E-M3).
+    /// Returns the amount moved; 0 for a non-positive amount, an unknown pair or account.
+    economy::Kopecks transfer(economy::AccountRef from,
+                              economy::AccountRef to,
+                              economy::LedgerCode out_code,
+                              economy::LedgerCode in_code,
+                              economy::Kopecks amount_kop);
+    /// Closes the open month of every account (economy-model section 6.3, step 3): the open lines
+    /// move to the front of the 12-month ring (the oldest month drops out), `opening := treasury`,
+    /// the open lines restart at zero and `open_month_start := new_month_start`. The new start must
+    /// be the first day of a month after the current one. False (nothing changed) otherwise.
+    bool close_ledger_month(Date new_month_start);
+    /// Appends to the incident log (a ring of economy::kIncidentLogSize entries) and returns the
+    /// sequence number. `province` and `dynasty` are cleared when they do not exist. nullopt without
+    /// economy or for a kind outside 1..economy::kMaxIncidentKind (nothing is logged then).
+    std::optional<std::uint32_t>
+    log_incident(economy::IncidentKind kind, ProvinceId province, DynastyId dynasty, std::int32_t param);
+
     // ---- indexes (maintained incrementally, deterministic order) ----
     [[nodiscard]] std::span<const CharacterId> members_of(DynastyId dynasty) const noexcept;
     [[nodiscard]] std::span<const ProvinceId> provinces_of(DynastyId dynasty) const noexcept;
@@ -532,6 +608,18 @@ private:
     void link_child(CharacterId child);
     void rebuild_child_lists();
     void check_kinship_invariants(std::vector<std::string>& bad) const;
+    // Economy helpers (world_economy.cpp).
+    void economy_add_dynasty_rows();
+    /// Appends the economy rows of province `index`, which exists in ProvinceTable already: the
+    /// people come from its population cache, the owner kind from its owner.
+    void economy_add_province_rows(std::size_t index);
+    void economy_remove_administrator(CharacterId id) noexcept;
+    /// What a posting of `amount` would really change on line `line` of `account` (see post_money).
+    [[nodiscard]] economy::Kopecks
+    preview_posting(std::size_t account, std::size_t line, economy::Kopecks amount) const noexcept;
+    /// Applies a posting to line `line` of account row `row` (what post_money and transfer end in).
+    economy::Kopecks post_line(std::size_t row, std::size_t line, economy::Kopecks amount_kop);
+    void check_economy_invariants(std::vector<std::string>& bad) const;
 
     TickCalendar calendar_;
     core::RngStreams rng_;
@@ -546,6 +634,8 @@ private:
     std::vector<CharacterId> living_;                           // derived, ascending
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
+    economy::EconomyState
+        economy_;  // E9-T02: empty unless enable_economy() was called; not hashed or saved yet
 };
 
 }  // namespace pat::sim

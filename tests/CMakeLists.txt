@@ -15,6 +15,7 @@ add_executable(patriarch_tests
     demography_test.cpp
     economy_content_test.cpp
     economy_rules_test.cpp
+    economy_world_test.cpp
     fixed_test.cpp
     golden_test.cpp
     ids_test.cpp

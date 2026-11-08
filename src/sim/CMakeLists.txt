@@ -6,9 +6,12 @@ add_library(patriarch_sim STATIC
     include/pat/sim/demography.hpp
     include/pat/sim/demo_scenario.hpp
     include/pat/sim/economy/breakdown.hpp
+    include/pat/sim/economy/ledger.hpp
     include/pat/sim/economy/money.hpp
     include/pat/sim/economy/rules.hpp
+    include/pat/sim/economy/tables.hpp
     include/pat/sim/economy/types.hpp
+    include/pat/sim/entity_ids.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/replay.hpp
@@ -35,6 +38,7 @@ add_library(patriarch_sim STATIC
     sim.cpp
     simulation.cpp
     world.cpp
+    world_economy.cpp
     world_io.cpp)
 add_library(patriarch::sim ALIAS patriarch_sim)
 
