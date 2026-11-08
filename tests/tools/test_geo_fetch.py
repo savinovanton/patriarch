@@ -361,7 +361,8 @@ class CliTest(unittest.TestCase):
         code, out, _ = self.run_cli("--cache", str(self.root / "cache"), "--dry-run")
         self.assertEqual(code, 0)
         self.assertFalse((self.root / "cache").exists())
-        self.assertIn("blocked-on-owner", out)
+        # Sources the owner rejected (WWF HydroSHEDS, issue 96) are never fetched.
+        self.assertIn("status is rejected", out)
 
 
 if __name__ == "__main__":

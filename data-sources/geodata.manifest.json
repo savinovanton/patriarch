@@ -129,7 +129,7 @@
       "name": "HydroSHEDS v1 / HydroRIVERS / HydroBASINS",
       "provider": "WWF (HydroSHEDS)",
       "layer": "hydrography",
-      "status": "blocked-on-owner",
+      "status": "rejected",
       "version": "1",
       "version_date": null,
       "source_page": null,
@@ -146,7 +146,7 @@
         "may_distribute_derivatives": "conditional"
       },
       "transformations": [],
-      "notes": "Owner decision pending (issue #96). Not used by default: the WWF licence allows commercial use but only distribution inside a derived product under a 'no less protective' EULA, with an indemnity in favour of WWF, 2-year records with audit rights, and termination at WWF's discretion; coverage north of 60 N is coarse (HYDRO1k); Chukotka / 180th meridian coverage not confirmed. Recommendation (docs/dev/geodata-sources.md): build rivers from the Copernicus DEM and check them against Natural Earth. The fetch script never downloads blocked-on-owner sources.",
+      "notes": "Owner decision (2026-11-08, issue #96): not used. The WWF licence terms (indemnity, EULA, end-user records with audit rights, termination at WWF discretion) are not accepted. Rivers are built from Copernicus DEM (deterministic hydrological conditioning) and checked against Natural Earth; lakes come from HydroLAKES (CC BY 4.0). Previous note: Owner decision pending (issue #96). Not used by default: the WWF licence allows commercial use but only distribution inside a derived product under a 'no less protective' EULA, with an indemnity in favour of WWF, 2-year records with audit rights, and termination at WWF's discretion; coverage north of 60 N is coarse (HYDRO1k); Chukotka / 180th meridian coverage not confirmed. Recommendation (docs/dev/geodata-sources.md): build rivers from the Copernicus DEM and check them against Natural Earth. The fetch script never downloads blocked-on-owner sources.",
       "decision_issue": 96,
       "components": []
     },
@@ -155,7 +155,7 @@
       "name": "National Library of Russia (expositions.nlr.ru) and other historical map collections",
       "provider": "National Library of Russia and other map collections and archives",
       "layer": "historical",
-      "status": "blocked-on-owner",
+      "status": "unverified",
       "version": null,
       "version_date": null,
       "source_page": "https://expositions.nlr.ru/",
@@ -163,8 +163,8 @@
       "license": null,
       "license_url": null,
       "attribution": {
-        "required": null,
-        "text": null
+        "required": true,
+        "text": "Российская национальная библиотека"
       },
       "checked_on": null,
       "distribution": {
@@ -174,8 +174,7 @@
       "transformations": [
         "own digitisation of borders and names with period, source and confidence (documented / reconstructed / approximate)"
       ],
-      "notes": "Owner help needed (issue #97): the site was unreachable from the agent environment, so the terms of use for scans were not read. Until then no scans are committed; only own digitisation (borders, names) with source, period and confidence is allowed. Originals of the 17th-18th centuries are public domain by age, but rights to digital reproductions are unclear. Candidate sources besides the NLR: Remezov, Ludolf, Homann and Kirilov atlases held by other libraries (each must be checked). Do not substitute the 1708 guberniya division for the 1703 start state.",
-      "decision_issue": 97,
+      "notes": "Owner decision (2026-11-08, issue #97): the information from the National Library of Russia may be used freely; the source is credited as 'Российская национальная библиотека' on a separate tab of the in-game menu (credits). The agent did not read the terms itself (the site was unreachable from the agent environment), so: no scans are committed to the repository (only own digitisation of borders and names with source, period and confidence); before any scan or derived raster is distributed the exact item and its terms must be recorded here. Originals of the 17th-18th centuries are public domain by age. Candidate sources besides the NLR: Remezov, Ludolf, Homann and Kirilov atlases held by other libraries (each must be checked). Do not substitute the 1708 guberniya division for the 1703 start state.",
       "components": []
     }
   ]

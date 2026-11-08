@@ -258,10 +258,12 @@ class RepositoryManifestTest(unittest.TestCase):
 
     def test_owner_decisions_are_marked_blocked(self):
         by_id = {s["id"]: s for s in self.data["sources"]}
-        self.assertEqual(by_id["hydrosheds-v1-family"]["status"], "blocked-on-owner")
-        self.assertEqual(by_id["hydrosheds-v1-family"]["decision_issue"], 96)
-        self.assertEqual(by_id["nlr-historical-maps"]["status"], "blocked-on-owner")
-        self.assertEqual(by_id["nlr-historical-maps"]["decision_issue"], 97)
+        # Both questions were answered by the owner on 2026-11-08: HydroSHEDS (issue 96) is rejected, the
+        # National Library of Russia (issue 97) may be used with a credits entry.
+        self.assertEqual(by_id["hydrosheds-v1-family"]["status"], "rejected")
+        self.assertEqual(by_id["nlr-historical-maps"]["status"], "unverified")
+        self.assertTrue(by_id["nlr-historical-maps"]["attribution"]["required"])
+        self.assertEqual(by_id["nlr-historical-maps"]["attribution"]["text"], "Российская национальная библиотека")
 
     def test_no_invented_hashes(self):
         for source in self.data["sources"]:
