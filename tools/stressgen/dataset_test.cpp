@@ -104,6 +104,17 @@ TEST_CASE("stressgen: worlds use the E7-T02 columns, in dynasty mode by default"
     CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::Mode)] != 0);
     CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::CharacterExt)] != 0);
     CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::DynastyExt)] != 0);
+    // E7-T03: every house has a married founding couple whose children fill the family tree.
+    CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::Kinship)] != 0);
+    const auto& table = world.characters();
+    std::size_t married = 0;
+    for (const auto id : world.living()) {
+        if (table.spouse[id.index()].valid()) {
+            ++married;
+            CHECK(table.spouse[table.spouse[id.index()].index()] == id);
+        }
+    }
+    CHECK(married == 20);  // ten houses, two spouses each
 
     // The generated world survives the save container, hash included.
     auto loaded = sim::deserialize_save(sim::serialize_save(world));

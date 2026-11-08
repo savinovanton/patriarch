@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <format>
+#include <utility>
 
 namespace pat::sim {
 
@@ -70,6 +71,8 @@ std::string ext_part_name(std::size_t number) {
             return "chronicle";
         case ExtPart::Opinion:
             return "opinion";
+        case ExtPart::Kinship:
+            return "kinship";
     }
     return std::format("ext[{}]", number);
 }
@@ -84,6 +87,17 @@ bool World::enable_dynasty_mode() {
     }
     if (!characters_.ids.free_list().empty()) {
         return false;  // a freed id would be reused: the one thing dynasty mode must never do
+    }
+    // Dynasty mode keeps the family tree consistent; E1 worlds may carry parent references that
+    // would break it (a parent of the wrong sex or born after the child, a stale slot).
+    for (const CharacterId child : living_) {
+        const std::size_t i = child.index();
+        const CharacterId father = characters_.father[i];
+        const CharacterId mother = characters_.mother[i];
+        if ((father.valid() && !parent_link_is_valid(child, father, Sex::Male)) ||
+            (mother.valid() && !parent_link_is_valid(child, mother, Sex::Female))) {
+            return false;
+        }
     }
     flags_ |= kWorldFlagDynastyMode;
     rebuild_derived_indexes();
@@ -215,6 +229,105 @@ void World::grow_character_columns() {
     characters_.education_tutor.emplace_back();
     characters_.education_level.push_back(0);
     characters_.planned_death.push_back(kNoDate);
+    characters_.spouse.emplace_back();
+    characters_.marriages.push_back(0);
+    characters_.ex_spouses.emplace_back();
+    characters_.godparent.emplace_back();
+    characters_.first_child.emplace_back();
+    characters_.next_by_father.emplace_back();
+    characters_.next_by_mother.emplace_back();
+}
+
+bool World::kin_is_default(std::size_t i) const {
+    const CharacterTable& c = characters_;
+    return !c.spouse[i].valid() && c.marriages[i] == 0 &&
+           c.ex_spouses[i] == std::array<CharacterId, kMaxExSpouses>{} &&
+           c.godparent[i] == std::array<CharacterId, kGodparentSlots>{};
+}
+
+void World::reset_kinship(std::size_t i) {
+    characters_.spouse[i] = CharacterId();
+    characters_.marriages[i] = 0;
+    characters_.ex_spouses[i] = {};
+    characters_.godparent[i] = {};
+    characters_.first_child[i] = CharacterId();
+    characters_.next_by_father[i] = CharacterId();
+    characters_.next_by_mother[i] = CharacterId();
+}
+
+bool World::parent_link_is_valid(CharacterId child, CharacterId parent, Sex role) const noexcept {
+    return exists(parent) && child.valid() && child.index() < characters_.birth_date.size() &&
+           parent != child && characters_.sex[parent.index()] == role &&
+           characters_.birth_date[parent.index()] < characters_.birth_date[child.index()];
+}
+
+namespace {
+
+/// Order of the child lists: eldest first, ties by id.
+[[nodiscard]] bool born_before(const CharacterTable& c, CharacterId a, CharacterId b) noexcept {
+    const Date da = c.birth_date[a.index()];
+    const Date db = c.birth_date[b.index()];
+    return da < db || (da == db && a < b);
+}
+
+}  // namespace
+
+void World::link_child(CharacterId child) {
+    CharacterTable& c = characters_;
+    for (const Sex role : {Sex::Male, Sex::Female}) {
+        const CharacterId parent = role == Sex::Male ? c.father[child.index()] : c.mother[child.index()];
+        if (!parent_link_is_valid(child, parent, role)) {
+            continue;
+        }
+        std::vector<CharacterId>& next = role == Sex::Male ? c.next_by_father : c.next_by_mother;
+        CharacterId* link = &c.first_child[parent.index()];
+        while (link->valid() && born_before(c, *link, child)) {
+            link = &next[link->index()];
+        }
+        next[child.index()] = *link;
+        *link = child;
+    }
+}
+
+void World::rebuild_child_lists() {
+    CharacterTable& c = characters_;
+    const std::size_t capacity = c.ids.capacity();
+    c.first_child.assign(capacity, CharacterId());
+    c.next_by_father.assign(capacity, CharacterId());
+    c.next_by_mother.assign(capacity, CharacterId());
+    if (!dynasty_mode()) {
+        return;
+    }
+    // Sort once and append: linear in the number of links however many children one parent has.
+    std::vector<CharacterId> order;
+    for (std::size_t i = 0; i < capacity; ++i) {
+        if (c.ids.alive_flags()[i] == 0) {
+            continue;
+        }
+        const CharacterId child(static_cast<std::uint32_t>(i));
+        if (parent_link_is_valid(child, c.father[i], Sex::Male) ||
+            parent_link_is_valid(child, c.mother[i], Sex::Female)) {
+            order.push_back(child);
+        }
+    }
+    std::sort(order.begin(), order.end(), [&](CharacterId a, CharacterId b) { return born_before(c, a, b); });
+    std::vector<CharacterId> tail(capacity);
+    for (const CharacterId child : order) {
+        for (const Sex role : {Sex::Male, Sex::Female}) {
+            const CharacterId parent = role == Sex::Male ? c.father[child.index()] : c.mother[child.index()];
+            if (!parent_link_is_valid(child, parent, role)) {
+                continue;
+            }
+            std::vector<CharacterId>& next = role == Sex::Male ? c.next_by_father : c.next_by_mother;
+            CharacterId& last = tail[parent.index()];
+            if (last.valid()) {
+                next[last.index()] = child;
+            } else {
+                c.first_child[parent.index()] = child;
+            }
+            last = child;
+        }
+    }
 }
 
 void World::reset_character_extension(std::size_t i) {
@@ -286,6 +399,7 @@ CharacterId World::create_character(const CharacterInit& init) {
 
     // Columns added in E7-T02: clamp and clear whatever would break an invariant.
     reset_character_extension(index);
+    reset_kinship(index);
     characters_.name[index] = init.name;
     if (exists(init.branch) && branches_.dynasty[init.branch.index()] == dynasty) {
         characters_.branch[index] = init.branch;
@@ -319,8 +433,21 @@ CharacterId World::create_character(const CharacterInit& init) {
         members_[dynasty.index()].insert(id);
     }
     insert_living(id);
-    if (dynasty_mode() && is_sane_date(init.birth_date) && is_sane_date(today())) {
-        push_life_events(id, first_birthday_due(init.birth_date, today()));
+    if (dynasty_mode()) {
+        // Kinship columns of a new row are at their defaults (reset above); the family tree only
+        // keeps parents that can really be parents, then the child joins their lists.
+        if (characters_.father[index].valid() &&
+            !parent_link_is_valid(id, characters_.father[index], Sex::Male)) {
+            characters_.father[index] = CharacterId();
+        }
+        if (characters_.mother[index].valid() &&
+            !parent_link_is_valid(id, characters_.mother[index], Sex::Female)) {
+            characters_.mother[index] = CharacterId();
+        }
+        link_child(id);
+        if (is_sane_date(init.birth_date) && is_sane_date(today())) {
+            push_life_events(id, first_birthday_due(init.birth_date, today()));
+        }
     }
     return id;
 }
@@ -346,6 +473,7 @@ bool World::destroy_character(CharacterId id) {
     characters_.father[index] = CharacterId();
     characters_.mother[index] = CharacterId();
     reset_character_extension(index);
+    reset_kinship(index);
     living_.erase(std::lower_bound(living_.begin(), living_.end(), id));
     return characters_.ids.destroy(id);
 }
@@ -504,6 +632,74 @@ bool World::set_character_planned_death(CharacterId id, Date date) {
     return true;
 }
 
+// ---- kinship primitives -------------------------------------------------------------------------
+
+bool World::marry(CharacterId a, CharacterId b) {
+    if (!dynasty_mode() || a == b || !is_alive(a) || !is_alive(b)) {
+        return false;
+    }
+    CharacterTable& c = characters_;
+    const std::size_t ia = a.index();
+    const std::size_t ib = b.index();
+    if (c.spouse[ia].valid() || c.spouse[ib].valid() || c.marriages[ia] >= kMaxMarriages ||
+        c.marriages[ib] >= kMaxMarriages) {
+        return false;
+    }
+    const auto& ex = c.ex_spouses[ia];
+    if (std::find(ex.begin(), ex.end(), b) != ex.end()) {
+        return false;  // the same two people do not marry twice
+    }
+    c.spouse[ia] = b;
+    c.spouse[ib] = a;
+    ++c.marriages[ia];
+    ++c.marriages[ib];
+    return true;
+}
+
+bool World::end_marriage(CharacterId a) {
+    if (!dynasty_mode() || !is_alive(a)) {
+        return false;
+    }
+    CharacterTable& c = characters_;
+    const CharacterId b = c.spouse[a.index()];
+    if (!is_alive(b) || c.spouse[b.index()] != a) {
+        return false;
+    }
+    const auto free_slot = [](std::array<CharacterId, kMaxExSpouses>& ex) {
+        return std::find_if(ex.begin(), ex.end(), [](CharacterId x) { return !x.valid(); });
+    };
+    const auto slot_a = free_slot(c.ex_spouses[a.index()]);
+    const auto slot_b = free_slot(c.ex_spouses[b.index()]);
+    if (slot_a == c.ex_spouses[a.index()].end() || slot_b == c.ex_spouses[b.index()].end()) {
+        return false;  // cannot happen while marriages <= kMaxMarriages, but never lose a record
+    }
+    *slot_a = b;
+    *slot_b = a;
+    c.spouse[a.index()] = CharacterId();
+    c.spouse[b.index()] = CharacterId();
+    return true;
+}
+
+bool World::set_character_godparents(CharacterId id,
+                                     const std::array<CharacterId, kGodparentSlots>& godparents) {
+    if (!dynasty_mode() || !is_alive(id)) {
+        return false;
+    }
+    for (std::size_t k = 0; k < kGodparentSlots; ++k) {
+        const CharacterId g = godparents[k];
+        if (g.valid() && (!exists(g) || g == id)) {
+            return false;
+        }
+        for (std::size_t j = 0; j < k; ++j) {
+            if (g.valid() && g == godparents[j]) {
+                return false;
+            }
+        }
+    }
+    characters_.godparent[id.index()] = godparents;
+    return true;
+}
+
 // ---- indexes ------------------------------------------------------------------------------------
 
 std::span<const CharacterId> World::members_of(DynastyId dynasty) const noexcept {
@@ -519,6 +715,7 @@ void World::rebuild_derived_indexes() {
     living_.reserve(characters_.ids.alive_count());
     characters_.ids.for_each_alive([&](CharacterId id) { living_.push_back(id); });
 
+    rebuild_child_lists();
     life_queue_.clear();
     if (!dynasty_mode() || !is_sane_date(today())) {
         return;
@@ -670,6 +867,32 @@ WorldHash World::compute_hash() const {
         }
     }
 
+    {
+        // Kinship of the living rows that differ from the defaults. Parents are in `characters`
+        // already and the child lists are derived from them.
+        core::HashStream h;
+        bool any = false;
+        for (const CharacterId id : living_) {
+            const std::size_t i = id.index();
+            if (kin_is_default(i)) {
+                continue;
+            }
+            any = true;
+            h.u32(id.value());
+            h.id(characters_.spouse[i]);
+            h.u8(characters_.marriages[i]);
+            for (const CharacterId ex : characters_.ex_spouses[i]) {
+                h.id(ex);
+            }
+            for (const CharacterId godparent : characters_.godparent[i]) {
+                h.id(godparent);
+            }
+        }
+        if (any) {
+            out.ext[static_cast<std::size_t>(ExtPart::Kinship)] = nonzero(h.value());
+        }
+    }
+
     core::HashStream total;
     total.u64(out.calendar);
     total.u64(out.rng);
@@ -688,6 +911,189 @@ WorldHash World::compute_hash() const {
 
 // ---- invariants ---------------------------------------------------------------------------------
 
+/// GDD 01 section 13.3: no cycles in the family, at most two parents (one father, one mother),
+/// symmetric spouses, a child is younger than its parents; plus the consistency of the derived
+/// child lists. Expects the column sizes to be checked already.
+void World::check_kinship_invariants(std::vector<std::string>& bad) const {
+    const CharacterTable& ch = characters_;
+    const std::size_t capacity = ch.ids.capacity();
+    const bool dynasty = dynasty_mode();
+    std::size_t expected_links = 0;
+
+    for (std::size_t i = 0; i < capacity; ++i) {
+        const std::uint8_t state = ch.ids.alive_flags()[i];
+        if (state == 0) {
+            if (!kin_is_default(i) || ch.first_child[i].valid() || ch.next_by_father[i].valid() ||
+                ch.next_by_mother[i].valid()) {
+                bad.push_back(std::format("free character slot {} holds kinship data", i));
+            }
+            continue;
+        }
+        if (state != 1) {
+            continue;  // retired rows were reported already
+        }
+        const CharacterId id(static_cast<std::uint32_t>(i));
+        if (!dynasty) {
+            // E1 mode: ids of the dead are reused, so no reference to a person would stay true.
+            if (!kin_is_default(i)) {
+                bad.push_back(std::format("character {} has kinship data outside dynasty mode", i));
+            }
+            continue;
+        }
+
+        // parents
+        for (const Sex role : {Sex::Male, Sex::Female}) {
+            const CharacterId parent = role == Sex::Male ? ch.father[i] : ch.mother[i];
+            if (!parent.valid() || parent.index() >= capacity) {
+                continue;  // out-of-table parents were reported with the other columns
+            }
+            if (parent == id) {
+                bad.push_back(std::format("character {} is its own parent", i));
+            } else if (!exists(parent)) {
+                bad.push_back(std::format("character {} has a parent that does not exist", i));
+            } else if (ch.sex[parent.index()] != role) {
+                bad.push_back(std::format(
+                    "character {} has a {} of the wrong sex", i, role == Sex::Male ? "father" : "mother"));
+            } else if (ch.birth_date[parent.index()] >= ch.birth_date[i]) {
+                bad.push_back(
+                    std::format("character {} is not younger than its parent {}", i, parent.value()));
+            } else {
+                ++expected_links;
+            }
+        }
+
+        // spouse and former spouses
+        const CharacterId spouse = ch.spouse[i];
+        if (spouse.valid()) {
+            if (spouse == id) {
+                bad.push_back(std::format("character {} is married to itself", i));
+            } else if (spouse.index() >= capacity || !is_alive(spouse)) {
+                bad.push_back(std::format("the spouse of character {} is not alive", i));
+            } else if (ch.spouse[spouse.index()] != id) {
+                bad.push_back(std::format("the marriage of character {} is not symmetric", i));
+            }
+        }
+        if (ch.marriages[i] > kMaxMarriages) {
+            bad.push_back(std::format("character {} has more than {} marriages", i, kMaxMarriages));
+        }
+        std::size_t partners = spouse.valid() ? 1 : 0;
+        bool ended = false;  // an empty slot was seen: nothing may follow it
+        for (std::size_t k = 0; k < kMaxExSpouses; ++k) {
+            const CharacterId ex = ch.ex_spouses[i][k];
+            if (!ex.valid()) {
+                ended = true;
+                continue;
+            }
+            ++partners;
+            if (ended) {
+                bad.push_back(std::format("the former spouses of character {} are not packed", i));
+            }
+            if (ex == id || ex == spouse || !exists(ex)) {
+                bad.push_back(std::format("character {} has an invalid former spouse", i));
+                continue;
+            }
+            for (std::size_t j = 0; j < k; ++j) {
+                if (ch.ex_spouses[i][j] == ex) {
+                    bad.push_back(std::format("character {} lists a former spouse twice", i));
+                }
+            }
+            const auto& back = ch.ex_spouses[ex.index()];
+            if (std::find(back.begin(), back.end(), id) == back.end()) {
+                bad.push_back(std::format("the former marriage of character {} is not symmetric", i));
+            }
+        }
+        if (ch.marriages[i] < partners) {
+            bad.push_back(std::format("character {} has fewer marriages than partners", i));
+        }
+
+        // godparents (reserved)
+        for (std::size_t k = 0; k < kGodparentSlots; ++k) {
+            const CharacterId g = ch.godparent[i][k];
+            if (g.valid() && (g == id || !exists(g) || (k > 0 && ch.godparent[i][0] == g))) {
+                bad.push_back(std::format("character {} has an invalid godparent", i));
+            }
+        }
+    }
+
+    // The family has no cycles. Depth-first over the parent links of every row (iterative: a
+    // damaged file must not overflow the stack). A self link was reported above.
+    {
+        std::vector<std::uint8_t> color(capacity, 0);  // 0 unvisited, 1 on the path, 2 done
+        std::vector<std::pair<std::uint32_t, std::uint8_t>> path;
+        bool cycle = false;
+        for (std::size_t start = 0; start < capacity && !cycle; ++start) {
+            if (color[start] != 0) {
+                continue;
+            }
+            color[start] = 1;
+            path.emplace_back(static_cast<std::uint32_t>(start), 0);
+            while (!path.empty() && !cycle) {
+                const std::uint32_t node = path.back().first;
+                const std::uint8_t edge = path.back().second;
+                if (edge == 2) {
+                    color[node] = 2;
+                    path.pop_back();
+                    continue;
+                }
+                ++path.back().second;
+                const CharacterId parent = edge == 0 ? ch.father[node] : ch.mother[node];
+                if (!parent.valid() || parent.index() >= capacity || parent.value() == node) {
+                    continue;
+                }
+                if (color[parent.index()] == 1) {
+                    cycle = true;
+                } else if (color[parent.index()] == 0) {
+                    color[parent.index()] = 1;
+                    path.emplace_back(parent.value(), 0);
+                }
+            }
+        }
+        if (cycle) {
+            bad.push_back("the family tree contains a cycle");
+        }
+    }
+
+    // Child lists: exactly the valid parent links, each list eldest first, no loops.
+    if (!dynasty) {
+        for (std::size_t i = 0; i < capacity; ++i) {
+            if (ch.first_child[i].valid() || ch.next_by_father[i].valid() || ch.next_by_mother[i].valid()) {
+                bad.push_back("child lists are not empty outside dynasty mode");
+                break;
+            }
+        }
+        return;
+    }
+    std::size_t listed = 0;
+    for (std::size_t p = 0; p < capacity; ++p) {
+        if (!ch.first_child[p].valid()) {
+            continue;
+        }
+        if (ch.ids.alive_flags()[p] == 0) {
+            bad.push_back(std::format("the child list of the free slot {} is not empty", p));
+            continue;
+        }
+        const CharacterId parent(static_cast<std::uint32_t>(p));
+        const Sex role = ch.sex[p];
+        const std::vector<CharacterId>& next = role == Sex::Male ? ch.next_by_father : ch.next_by_mother;
+        CharacterId previous;
+        std::size_t steps = 0;
+        for (CharacterId c = ch.first_child[p]; c.valid(); c = next[c.index()]) {
+            if (++steps > capacity || c.index() >= capacity || !parent_link_is_valid(c, parent, role) ||
+                (role == Sex::Male ? ch.father[c.index()] : ch.mother[c.index()]) != parent ||
+                (previous.valid() && !born_before(ch, previous, c))) {
+                bad.push_back(std::format("the child list of character {} is damaged", p));
+                break;
+            }
+            ++listed;
+            previous = c;
+        }
+    }
+    if (listed != expected_links) {
+        bad.push_back(
+            std::format("child lists hold {} links but the parent columns have {}", listed, expected_links));
+    }
+}
+
 std::vector<std::string> World::check_invariants() const {
     std::vector<std::string> bad;
     auto fail = [&](std::string message) { bad.push_back(std::move(message)); };
@@ -703,7 +1109,10 @@ std::vector<std::string> World::check_invariants() const {
         ch.loyalty_head.size() != capacity || ch.loyalty_emperor.size() != capacity ||
         ch.traits.size() != capacity || ch.education_focus.size() != capacity ||
         ch.education_tutor.size() != capacity || ch.education_level.size() != capacity ||
-        ch.planned_death.size() != capacity) {
+        ch.planned_death.size() != capacity || ch.spouse.size() != capacity ||
+        ch.marriages.size() != capacity || ch.ex_spouses.size() != capacity ||
+        ch.godparent.size() != capacity || ch.first_child.size() != capacity ||
+        ch.next_by_father.size() != capacity || ch.next_by_mother.size() != capacity) {
         fail("character columns differ in size from the id table");
         return bad;  // everything below indexes the columns
     }
@@ -863,6 +1272,8 @@ std::vector<std::string> World::check_invariants() const {
             fail(std::format("character {} has an invalid planned death", who));
         }
     }
+
+    check_kinship_invariants(bad);
 
     // derived list of the living
     {

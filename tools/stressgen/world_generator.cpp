@@ -128,6 +128,7 @@ core::Result<sim::World> generate_world(const WorldConfig& config) {
                 }
             } else if (c == 1) {
                 mother = id;
+                (void)world.marry(father, mother);  // the founding couple (dynasty mode only)
             }
         }
     }
