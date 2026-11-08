@@ -87,3 +87,22 @@ python3 tools/check_golden_hash.py out/linux-gcc/tools/simcli
 ```
 
 Если хеш на Linux отличается от Windows — это **баг детерминизма** (не обновляйте golden-значения): сравните части хеша (`calendar/rng/dynasties/provinces/characters`) и найдите подсистему.
+
+## 8. Windows: второй компилятор clang-cl (CI)
+
+Job `clang-cl debug/relwithdebinfo` (windows-2022) собирает **весь** проект, включая движок, компилятором clang-cl из компонента Visual Studio 2022 «C++ Clang tools for Windows» (пресет `win-clangcl`: генератор `Visual Studio 17 2022` с тулсетом `ClangCL`; зависимости vcpkg по-прежнему собираются MSVC, кэш общий). Предупреждения — ошибки (`/W4 /WX`; для clang-cl не передаются `/MP`, `/Zc:preprocessor`, `/external:*`, см. `cmake/PatriarchCompileOptions.cmake`). Затем выполняются `ctest` и `tools/check_golden_hash.py` — golden-хеши должны совпасть с MSVC и Linux.
+
+Локально (нужен компонент `C++ Clang Compiler for Windows` / `C++ Clang-cl` в установщике Visual Studio):
+
+```powershell
+cmake --preset win-clangcl
+cmake --build --preset win-clangcl-debug
+ctest --preset win-clangcl-debug
+python tools\check_golden_hash.py (Get-ChildItem out\win-clangcl\tools -Recurse -Filter simcli.exe | Select -First 1).FullName
+```
+
+## 9. clang-tidy (CI, пока только отчёт)
+
+Job `clang-tidy (report only)` (Ubuntu, clang-tidy 18) настраивает пресет `linux-clang` (Ninja пишет `compile_commands.json`; генератор Visual Studio — нет), запускает `run-clang-tidy` по `src/**/*.cpp` (без движка/UI/game — их нет в Linux-сборке) и пишет в сводку job число находок и разбивку по проверкам (`tools/clang_tidy_summary.py`); полный лог лежит в артефакте `clang-tidy-report`. Job помечен `continue-on-error` и сборку не блокирует — сделать его обязательным можно, когда число находок будет снижено до нуля. Набор проверок — `.clang-tidy` (bugprone, performance, выборочно modernize/readability; шумные проверки отключены).
+
+Локально: сконфигурируйте любым Ninja-пресетом (или `cmake -G Ninja ...` из окружения MSVC) и запустите `clang-tidy -p <каталог сборки> <файл.cpp>`; clang-tidy есть в составе LLVM-компонента Visual Studio.
