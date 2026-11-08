@@ -12,6 +12,7 @@ add_executable(patriarch_tests
     content_loader_test.cpp
     core_smoke.cpp
     date_test.cpp
+    demography_content_test.cpp
     demography_test.cpp
     economy_content_test.cpp
     economy_rules_test.cpp

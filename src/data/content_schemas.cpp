@@ -1,5 +1,6 @@
 #include "pat/data/content_schemas.hpp"
 
+#include "pat/data/demography_schemas.hpp"
 #include "pat/data/economy_schemas.hpp"
 #include "pat/data/example_schemas.hpp"
 
@@ -11,6 +12,8 @@ SchemaSet content_schemas() {
     set.add(make_example_trait_schema());
     // E9-T18: the economy kinds (data/economy/).
     add_economy_schemas(set);
+    // E7-T07: the demography balance (data/balance/).
+    add_demography_schemas(set);
     return set;
 }
 
