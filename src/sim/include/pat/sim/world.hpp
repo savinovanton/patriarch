@@ -45,6 +45,14 @@ enum class Skill : std::uint8_t { Stewardship, Diplomacy, Martial, Intrigue, Lea
 inline constexpr std::size_t kSkillCount = 5;
 inline constexpr std::size_t kTraitSlots = 8;
 
+// ---- kinship limits (GDD 01 section 7.3, ADR-0006 D2) ---------------------------------------------
+/// A person may enter at most three marriages (the fourth is forbidden); the same number bounds the
+/// list of former spouses, so no marriage is ever forgotten.
+inline constexpr std::uint8_t kMaxMarriages = 3;
+inline constexpr std::size_t kMaxExSpouses = kMaxMarriages;
+/// Reserved for godparents (open question 3, issue 135: M2). Stored and saved, written by nobody yet.
+inline constexpr std::size_t kGodparentSlots = 2;
+
 inline constexpr std::int32_t kMinHonor = -1000;
 inline constexpr std::int32_t kMaxHonor = 10000;
 
@@ -153,13 +161,28 @@ struct CharacterTable {
     std::vector<core::Fixed32> health;  // 0..100 (S)
     std::vector<CharacterId> father;
     std::vector<CharacterId> mother;
-    // identity and facts (K); the rest of the family is added by E7-T03
+    // identity and facts (K)
     std::vector<core::StringId> name;     // invalid = unnamed
     std::vector<BranchId> branch;         // invalid = none; must belong to the character's dynasty
     std::vector<std::uint16_t> portrait;  // portrait pool id
     std::vector<Legitimacy> legitimacy;
     std::vector<std::uint8_t> cause_of_death;  // 0 = none; the values are defined by E7-T04
     std::vector<Date> death_date;              // kNoDate while alive
+    // kinship (K, E7-T03). Father and mother are the E1 columns above. A marriage always sits on
+    // both partners; ending it (for any reason, death included) clears `spouse` on both sides and
+    // appends the partner to `ex_spouses` of the other. Mutate through World::marry/end_marriage.
+    std::vector<CharacterId> spouse;      // current spouse, invalid = unmarried
+    std::vector<std::uint8_t> marriages;  // marriages entered so far, the current one included
+    std::vector<std::array<CharacterId, kMaxExSpouses>>
+        ex_spouses;  // in order of ending, packed at the front, invalid = empty slot
+    std::vector<std::array<CharacterId, kGodparentSlots>> godparent;  // reserved, see kGodparentSlots
+    // Derived child lists (not saved, not hashed; dynasty mode only, empty in E1 mode). A person
+    // heads one list: the children whose father is it (male) or whose mother is it (female), eldest
+    // first by (birth_date, id). A child sits in the list of each of its parents and has one link per
+    // parent. Read through the queries in pat/sim/kinship.hpp.
+    std::vector<CharacterId> first_child;
+    std::vector<CharacterId> next_by_father;  // next in the list of this child's father
+    std::vector<CharacterId> next_by_mother;  // next in the list of this child's mother
     // state of the living (S)
     std::vector<std::array<core::Fixed32, kSkillCount>> skills;  // 0..20 each
     std::vector<core::Fixed32> fertility;                        // 0..100
@@ -235,6 +258,7 @@ enum class ExtPart : std::uint8_t {
     Pregnancy = 4,     // E7-T12
     Chronicle = 5,     // E7-T16
     Opinion = 6,       // E7-T17
+    Kinship = 7,       // E7-T03: spouses, marriage counters, former spouses, godparents
 };
 inline constexpr std::size_t kExtPartCount = 64;
 
@@ -317,12 +341,20 @@ public:
     // ---- characters ----
     /// Out-of-range values in `init` are clamped (skills, scales), unknown references are cleared
     /// (dynasty, branch, tutor) and traits are sorted; use cmd::CreatePerson to have them rejected
-    /// instead. Returns an invalid id when the table is full (kMaxCharacterIds).
+    /// instead. In dynasty mode a parent is kept only when it exists, has the matching sex and was
+    /// born before the child; otherwise the reference is cleared. Returns an invalid id when the table
+    /// is full (kMaxCharacterIds).
     CharacterId create_character(const CharacterInit& init);
     /// Removes the character from all indexes (and from the head slot of its dynasty). Only
     /// available outside dynasty mode: there the dead stay in the table (see E7-T04, cmd::Die).
     bool destroy_character(CharacterId id);
     [[nodiscard]] bool is_alive(CharacterId id) const noexcept { return characters_.ids.is_alive(id); }
+    /// True when the row of the character exists: it is alive or (from E7-T04 on) archived. In
+    /// dynasty mode an id that exists never refers to anybody else later.
+    [[nodiscard]] bool exists(CharacterId id) const noexcept {
+        return id.valid() && id.index() < characters_.ids.capacity() &&
+               characters_.ids.alive_flags()[id.index()] != 0;
+    }
     /// True when another character can be created now.
     [[nodiscard]] bool can_create_character() const noexcept {
         return characters_.ids.capacity() < kMaxCharacterIds || !characters_.ids.free_list().empty();
@@ -354,6 +386,21 @@ public:
     /// [birth_date, birth_date + kMaxLifeSpanDays]. In dynasty mode this also schedules the event.
     bool set_character_planned_death(CharacterId id, Date date);
 
+    // ---- kinship primitives (E7-T03; the rules of marriage belong to E8) ----
+    // Dynasty mode only: outside it the ids of the dead are reused and a stored spouse would
+    // silently point to a stranger. Both return false and change nothing when a precondition fails.
+    /// Marries two living, unmarried characters. Fails when `a == b`, one of them is dead, already
+    /// married or has used kMaxMarriages marriages, or they have been married to each other before.
+    /// Sex, age, blood relationship and the Church's consent are rules for E8, not checked here.
+    bool marry(CharacterId a, CharacterId b);
+    /// Ends the marriage of a living, married character with a living spouse, for any reason
+    /// (annulment, tonsure, widowhood: Die calls this for the deceased before it is archived). Both
+    /// partners lose `spouse` and gain each other in `ex_spouses`.
+    bool end_marriage(CharacterId a);
+    /// Stores godparents (reserved for M2). Both must exist, differ from the character and from each
+    /// other, or be invalid. False (nothing changed) otherwise.
+    bool set_character_godparents(CharacterId id, const std::array<CharacterId, kGodparentSlots>& godparents);
+
     // ---- indexes (maintained incrementally, deterministic order) ----
     [[nodiscard]] std::span<const CharacterId> members_of(DynastyId dynasty) const noexcept;
     [[nodiscard]] std::span<const ProvinceId> provinces_of(DynastyId dynasty) const noexcept;
@@ -362,8 +409,8 @@ public:
     /// The life-event queue (ADR-0006 D4): a derived index over birth and planned-death dates,
     /// empty outside dynasty mode. Not saved and not hashed; rebuilt on load.
     [[nodiscard]] const ScheduledQueue<LifeEvent>& life_queue() const noexcept { return life_queue_; }
-    /// Rebuilds every derived index (living list, life-event queue) from the columns. The queue is
-    /// rebuilt for a state at a tick boundary: all events up to today are considered processed.
+    /// Rebuilds every derived index (living list, child lists, life-event queue) from the columns. The queue
+    /// is rebuilt for a state at a tick boundary: all events up to today are considered processed.
     void rebuild_derived_indexes();
 
     // ---- verification ----
@@ -382,7 +429,8 @@ public:
     /// of steps is in ADR-0006 D6).
     ///   1  the E1 layout (clock, random streams, dynasties, provinces, characters)
     ///   2  + extension block: world flags and id-versioned sections (E7-T02: sections 1 and 2)
-    static constexpr std::uint32_t kStateSchema = 2;
+    ///   3  + section 3 "kin": spouses, marriage counters, former spouses, godparents (E7-T03)
+    static constexpr std::uint32_t kStateSchema = 3;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -399,6 +447,13 @@ private:
     /// Queues the birthday (due `birthday_due`) and, when set, the planned death of a character.
     void push_life_events(CharacterId id, Date birthday_due);
     void insert_living(CharacterId id);
+    // Kinship helpers (world.cpp). The child lists are derived from the father/mother columns.
+    [[nodiscard]] bool kin_is_default(std::size_t index) const;
+    void reset_kinship(std::size_t index);
+    [[nodiscard]] bool parent_link_is_valid(CharacterId child, CharacterId parent, Sex role) const noexcept;
+    void link_child(CharacterId child);
+    void rebuild_child_lists();
+    void check_kinship_invariants(std::vector<std::string>& bad) const;
 
     TickCalendar calendar_;
     core::RngStreams rng_;

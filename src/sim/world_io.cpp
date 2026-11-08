@@ -21,9 +21,13 @@
 //                        defaults, ascending by id
 //   section 2 "dynasty"  u32 rows | rows x { u32 id | i32 unity | u8 law }  (rows that differ from the
 //                        defaults) | u32 branches | branches x { u32 name | u32 dynasty }
+//   section 3 "kin"      u32 rows | rows x kin row (29 bytes), only rows that differ from the defaults,
+//                        ascending by id: u32 id | u32 spouse | u8 marriages | 3 x u32 former spouse |
+//                        2 x u32 godparent.  Parents are the father/mother of the core body; the child
+//                        lists are derived.  (schema >= 3)
 //
-// Derived data (the list of the living, the life-event queue) is never stored; it is rebuilt after
-// loading and checked together with all other invariants.
+// Derived data (the list of the living, the child lists, the life-event queue) is never stored; it is rebuilt
+// after loading and checked together with all other invariants.
 
 namespace pat::sim {
 
@@ -43,10 +47,12 @@ bool plausible(const core::ByteReader& in, std::uint32_t count, std::size_t byte
 
 constexpr std::uint16_t kSectionPerson = 1;
 constexpr std::uint16_t kSectionDynasty = 2;
+constexpr std::uint16_t kSectionKin = 3;
 constexpr std::uint16_t kMaxSections = 32;
 constexpr std::size_t kPersonRowBytes = 90;
 constexpr std::size_t kDynastyRowBytes = 9;
 constexpr std::size_t kBranchRowBytes = 8;
+constexpr std::size_t kKinRowBytes = 4 + 4 + 1 + 4 * kMaxExSpouses + 4 * kGodparentSlots;
 
 struct SectionInfo {
     std::uint16_t id;
@@ -56,6 +62,7 @@ struct SectionInfo {
 constexpr SectionInfo kSections[] = {
     {kSectionPerson, 1, 2},
     {kSectionDynasty, 1, 2},
+    {kSectionKin, 1, 3},
 };
 
 const SectionInfo* find_section(std::uint16_t id) {
@@ -222,6 +229,34 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
+    {  // section 3: kinship, sparse by id
+        std::uint32_t rows = 0;
+        for (std::size_t i = 0; i < capacity; ++i) {
+            rows += kin_is_default(i) ? 0U : 1U;
+        }
+        if (rows != 0) {
+            Section section{kSectionKin, 1, {}};
+            core::ByteWriter& w = section.body;
+            const CharacterTable& c = characters_;
+            w.u32(rows);
+            for (std::size_t i = 0; i < capacity; ++i) {
+                if (kin_is_default(i)) {
+                    continue;
+                }
+                w.u32(static_cast<std::uint32_t>(i));
+                w.u32(c.spouse[i].value());
+                w.u8(c.marriages[i]);
+                for (const CharacterId ex : c.ex_spouses[i]) {
+                    w.u32(ex.value());
+                }
+                for (const CharacterId godparent : c.godparent[i]) {
+                    w.u32(godparent.value());
+                }
+            }
+            sections.push_back(std::move(section));
+        }
+    }
+
     out.u16(static_cast<std::uint16_t>(sections.size()));
     for (const Section& section : sections) {
         write_section(out, section.id, section.version, section.body);
@@ -371,7 +406,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     // ---- migration steps ----
     // Schema 1 -> 2: there is no extension block. Flags are 0 (E1 mode), every E7-T02 column keeps
-    // its default and the derived data is built below. Later schemas add their own
+    // its default and the derived data is built below. Schema 2 -> 3 (E7-T03): there is no kin
+    // section; every spouse, marriage counter, former spouse and godparent stays at its default and
+    // the child lists are derived from the parent columns that schema 1 already had. Parents of a
+    // dynasty-mode world are checked by check_invariants(). Later schemas add their own
     // "if (schema >= N)" block here, in ascending order, so that any old file passes all steps.
     if (schema >= 2) {
         const std::uint32_t flags = in.u32();
@@ -445,6 +483,41 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     chars.planned_death[row] = Date::from_days(sr.i32());
                     // Range checks that depend on the rest of the world (branch exists and belongs
                     // to the dynasty, scales, traits) are done by check_invariants() below.
+                }
+            } else if (id == kSectionKin) {
+                const std::uint32_t rows = sr.u32();
+                if (!plausible(sr, rows, kKinRowBytes)) {
+                    return fail("invalid kin section");
+                }
+                // A reference is either "none" or an id inside the table; whether it points to a
+                // sensible person (alive, symmetric, packed) is for check_invariants().
+                const auto reference = [&](CharacterId& out_id) {
+                    out_id = CharacterId(sr.u32());
+                    return !out_id.valid() || out_id.value() < capacity;
+                };
+                bool have_previous = false;
+                std::uint32_t previous_row = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t row = sr.u32();
+                    if (!sr.ok() || row >= capacity || (have_previous && row <= previous_row)) {
+                        return fail("kin rows are out of range or out of order");
+                    }
+                    have_previous = true;
+                    previous_row = row;
+                    bool in_range = reference(chars.spouse[row]);
+                    chars.marriages[row] = sr.u8();
+                    for (CharacterId& ex : chars.ex_spouses[row]) {
+                        in_range = reference(ex) && in_range;
+                    }
+                    for (CharacterId& godparent : chars.godparent[row]) {
+                        in_range = reference(godparent) && in_range;
+                    }
+                    if (!in_range) {
+                        return fail("kin row refers to a person outside the table");
+                    }
+                    if (chars.marriages[row] > kMaxMarriages) {
+                        return fail("invalid marriage counter");
+                    }
                 }
             } else {  // kSectionDynasty
                 const std::uint32_t rows = sr.u32();

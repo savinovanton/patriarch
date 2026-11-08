@@ -2,6 +2,7 @@
 
 #include "pat/sim/command_log.hpp"
 
+#include <algorithm>
 #include <array>
 
 namespace pat::sim {
@@ -61,10 +62,19 @@ struct Validator {
         if (!world.can_create_character()) {
             return reject(Rejection::InvalidState, "the character table is full");
         }
-        return check_parents(c.father, c.mother);
+        return check_parents(c.father, c.mother, c.birth_date);
     }
 
-    Result<void, CommandError> check_parents(CharacterId father, CharacterId mother) const {
+    Result<void, CommandError> check_parents(CharacterId father, CharacterId mother, Date birth_date) const {
+        if (world.dynasty_mode()) {
+            // The family tree of dynasty mode needs real ancestors (GDD 01 section 13.3).
+            for (const CharacterId parent : {father, mother}) {
+                if (parent.valid() && world.is_alive(parent) &&
+                    world.characters().birth_date[parent.index()] >= birth_date) {
+                    return reject(Rejection::InvalidArgument, "a parent must be born before the child");
+                }
+            }
+        }
         if (father.valid()) {
             if (!world.is_alive(father)) {
                 return reject(Rejection::UnknownEntity, "father does not exist");
@@ -139,7 +149,53 @@ struct Validator {
         if (!planned_death_is_valid(init.birth_date, init.planned_death)) {
             return reject(Rejection::InvalidArgument, "planned death lies outside the lifetime");
         }
-        return check_parents(init.father, init.mother);
+        return check_parents(init.father, init.mother, init.birth_date);
+    }
+
+    Result<void, CommandError> operator()(const cmd::Marry& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may marry characters");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "marriages need dynasty mode");
+        }
+        if (!world.is_alive(c.a) || !world.is_alive(c.b)) {
+            return reject(Rejection::UnknownEntity, "unknown or dead character");
+        }
+        if (c.a == c.b) {
+            return reject(Rejection::InvalidArgument, "a character cannot marry itself");
+        }
+        const CharacterTable& t = world.characters();
+        if (t.spouse[c.a.index()].valid() || t.spouse[c.b.index()].valid()) {
+            return reject(Rejection::InvalidState, "already married");
+        }
+        if (t.marriages[c.a.index()] >= kMaxMarriages || t.marriages[c.b.index()] >= kMaxMarriages) {
+            return reject(Rejection::InvalidState, "a person may marry at most three times");
+        }
+        const auto& ex = t.ex_spouses[c.a.index()];
+        if (std::find(ex.begin(), ex.end(), c.b) != ex.end()) {
+            return reject(Rejection::InvalidState, "these two have been married to each other before");
+        }
+        return accept();
+    }
+
+    Result<void, CommandError> operator()(const cmd::EndMarriage& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may end a marriage");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "marriages need dynasty mode");
+        }
+        if (!world.is_alive(c.a)) {
+            return reject(Rejection::UnknownEntity, "unknown or dead character");
+        }
+        if (static_cast<std::uint8_t>(c.reason) >= kMarriageEndCount) {
+            return reject(Rejection::InvalidArgument, "unknown reason to end a marriage");
+        }
+        if (!world.is_alive(world.characters().spouse[c.a.index()])) {
+            return reject(Rejection::InvalidState, "the character is not married");
+        }
+        return accept();
     }
 
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
@@ -203,6 +259,8 @@ struct Applier {
     void operator()(const cmd::SetDynastyHead& c) const { (void)world.set_dynasty_head(c.dynasty, c.head); }
     void operator()(const cmd::AdjustHonor& c) const { world.add_honor(c.dynasty, c.delta); }
     void operator()(const cmd::CreatePerson& c) const { (void)world.create_character(c.init); }
+    void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
+    void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
 
 // ---- stable tags ------------------------------------------------------------------------------
@@ -235,6 +293,14 @@ struct CommandTag<cmd::AdjustHonor> {
 template <>
 struct CommandTag<cmd::CreatePerson> {
     static constexpr CommandType value = CommandType::CreatePerson;
+};
+template <>
+struct CommandTag<cmd::Marry> {
+    static constexpr CommandType value = CommandType::Marry;
+};
+template <>
+struct CommandTag<cmd::EndMarriage> {
+    static constexpr CommandType value = CommandType::EndMarriage;
 };
 
 template <class Variant>
@@ -282,6 +348,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustHonor";
         case CommandType::CreatePerson:
             return "CreatePerson";
+        case CommandType::Marry:
+            return "Marry";
+        case CommandType::EndMarriage:
+            return "EndMarriage";
     }
     return "?";
 }

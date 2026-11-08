@@ -10,6 +10,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/rules.hpp
     include/pat/sim/economy/types.hpp
     include/pat/sim/entity_table.hpp
+    include/pat/sim/kinship.hpp
     include/pat/sim/replay.hpp
     include/pat/sim/runner.hpp
     include/pat/sim/save.hpp
@@ -27,6 +28,7 @@ add_library(patriarch_sim STATIC
     demo_scenario.cpp
     economy/breakdown.cpp
     economy/rules.cpp
+    kinship.cpp
     replay.cpp
     runner.cpp
     save.cpp

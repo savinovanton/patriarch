@@ -1391,7 +1391,9 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     CHECK(static_cast<int>(CommandType::KillCharacter) == 3);
     CHECK(static_cast<int>(CommandType::SetDynastyHead) == 4);
     CHECK(static_cast<int>(CommandType::AdjustHonor) == 5);
-    CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // first tag of the E7 block 6..31
+    CHECK(static_cast<int>(CommandType::Marry) == 7);
+    CHECK(static_cast<int>(CommandType::EndMarriage) == 8);
+    CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // E7 block 6..31, in order of arrival
 
     const std::vector<std::pair<Command, CommandType>> cases = {
         {Command{DynastyId(), cmd::SetProvinceOwner{}}, CommandType::SetProvinceOwner},
@@ -1400,6 +1402,9 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
         {Command{DynastyId(), cmd::SetDynastyHead{}}, CommandType::SetDynastyHead},
         {Command{DynastyId(), cmd::AdjustHonor{}}, CommandType::AdjustHonor},
         {Command{DynastyId(), cmd::CreatePerson{}}, CommandType::CreatePerson},
+        {Command{DynastyId(), cmd::Marry{CharacterId(1), CharacterId(2)}}, CommandType::Marry},
+        {Command{DynastyId(), cmd::EndMarriage{CharacterId(3), MarriageEnd::Tonsure}},
+         CommandType::EndMarriage},
     };
     for (const auto& [command, tag] : cases) {
         CHECK(type_of(command) == tag);
@@ -1423,8 +1428,6 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     // Tags that nobody uses are unknown commands.
     for (const std::uint8_t tag : {std::uint8_t{0},
                                    std::uint8_t{6},
-                                   std::uint8_t{7},
-                                   std::uint8_t{8},
                                    std::uint8_t{10},
                                    std::uint8_t{31},
                                    std::uint8_t{32},

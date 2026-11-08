@@ -72,6 +72,14 @@ struct Writer {
         out.u8(i.education.level);
         out.i32(i.planned_death.days());
     }
+    void operator()(const cmd::Marry& c) const {
+        out.u32(c.a.value());
+        out.u32(c.b.value());
+    }
+    void operator()(const cmd::EndMarriage& c) const {
+        out.u32(c.a.value());
+        out.u8(static_cast<std::uint8_t>(c.reason));
+    }
 };
 
 }  // namespace
@@ -162,6 +170,24 @@ bool read_command(core::ByteReader& in, Command& out) {
             i.education.tutor = CharacterId(in.u32());
             i.education.level = in.u8();
             i.planned_death = Date::from_days(in.i32());
+            out.payload = c;
+            break;
+        }
+        case CommandType::Marry: {
+            cmd::Marry c;
+            c.a = CharacterId(in.u32());
+            c.b = CharacterId(in.u32());
+            out.payload = c;
+            break;
+        }
+        case CommandType::EndMarriage: {
+            cmd::EndMarriage c;
+            c.a = CharacterId(in.u32());
+            const std::uint8_t reason = in.u8();
+            if (reason >= kMarriageEndCount) {
+                return false;
+            }
+            c.reason = static_cast<MarriageEnd>(reason);
             out.payload = c;
             break;
         }
