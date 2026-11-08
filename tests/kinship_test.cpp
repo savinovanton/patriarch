@@ -410,7 +410,8 @@ TEST_CASE("marriage: dynasty mode only, the dead do not marry") {
     CHECK_FALSE(e1.marry(a, b));
     CHECK_FALSE(e1.set_character_godparents(a, {b, CharacterId()}));
     CHECK(validate(e1, Command{DynastyId(), cmd::Marry{a, b}}).error().reason == Rejection::InvalidState);
-    CHECK(validate(e1, Command{DynastyId(), cmd::EndMarriage{a}}).error().reason == Rejection::InvalidState);
+    CHECK(validate(e1, Command{DynastyId(), cmd::EndMarriage{a, MarriageEnd::Annulment}}).error().reason ==
+          Rejection::InvalidState);
 
     World world = dynasty_world();
     const CharacterId x = add(world, Sex::Male, year(1650));
