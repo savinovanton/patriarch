@@ -1,5 +1,5 @@
 path,title,source_url,license,author,attribution_required,checked_on,notes
-ui/olive/frame.png,HUD frame (gilded frame with parchment inset),,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone. Provenance of the texture is being confirmed by the owner (issue 113); re-check before release.
+ui/olive/frame.png,HUD frame (gilded frame with parchment inset),,Original,savinovanton (project owner),no,2026-11-07,"Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone. Drawn by the owner (confirmed 2026-11-08, issue 113). Temporary design."
 ui/olive/icons/alert_bell.svg,HUD icon alert_bell,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
 ui/olive/icons/alert_charter.svg,HUD icon alert_charter,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
 ui/olive/icons/alert_embassy.svg,HUD icon alert_embassy,,Original,savinovanton (project owner),no,2026-11-07,Exported from the Figma file Patriarch Sovereign - World UI - Olive Stone (owner design).
