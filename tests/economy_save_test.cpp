@@ -942,7 +942,7 @@ TEST_CASE("hash: the same state reached in another order has the same hash") {
             }
             CHECK(a.compute_hash() == b.value().compute_hash());
         }
-        CHECK(a.economy().meta.closed_months == kLedgerRingMonths);
+        CHECK(static_cast<std::size_t>(a.economy().meta.closed_months) == kLedgerRingMonths);
         CHECK(a.economy() == b.value().economy());
         auto c = load(state_bytes(a));
         REQUIRE(c.has_value());
@@ -1471,7 +1471,8 @@ TEST_CASE("simulation: a save in the middle of a month resumes identically, to t
             CHECK(resumed.world().economy() == original.world().economy());
             CHECK(state_bytes(resumed.world()) == state_bytes(original.world()));
             CHECK(original.world().economy().incidents.size() == kIncidentLogSize);
-            CHECK(original.world().economy().meta.closed_months == kLedgerRingMonths);
+            CHECK(static_cast<std::size_t>(original.world().economy().meta.closed_months) ==
+                  kLedgerRingMonths);
             require_valid(original.world());
             require_valid(resumed.world());
         }
