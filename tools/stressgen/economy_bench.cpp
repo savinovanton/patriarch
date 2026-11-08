@@ -259,7 +259,6 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
         summarize(time_us(options.heavy_repeats, [&] { save = sim::serialize_save(world); }));
     const std::size_t file_baseline = sim::serialize_save(baseline).size();
 
-    double write_median_us = 0;
     double read_median_us = 0;
     Stat write_us;
     Stat read_us;
@@ -285,7 +284,6 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
         }
         write_us = summarize(std::move(writes));
         read_us = summarize(std::move(reads));
-        write_median_us = write_us.median;
         read_median_us = read_us.median;
         if (options.remove_scratch) {
             std::error_code ignored;
