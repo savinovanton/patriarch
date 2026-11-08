@@ -116,6 +116,9 @@ DynastyId World::create_dynasty(core::StringId name) {
     dynasties_.succession_law.push_back(SuccessionLaw::Majorat);
     members_.emplace_back();
     owned_provinces_.emplace_back();
+    if (economy_.meta.present != 0) {
+        economy_add_dynasty_rows();
+    }
     return id;
 }
 
@@ -184,6 +187,9 @@ ProvinceId World::create_province(core::StringId name, DynastyId owner, core::Fi
     } else {
         provinces_.owner.back() = DynastyId();
     }
+    if (economy_.meta.present != 0) {
+        economy_add_province_rows(id.index());
+    }
     return id;
 }
 
@@ -200,6 +206,15 @@ void World::set_province_owner(ProvinceId province, DynastyId owner) {
     current = exists(owner) ? owner : DynastyId();
     if (current.valid()) {
         owned_provinces_[current.index()].insert(province);
+    }
+    if (economy_.meta.present != 0) {
+        // owner_kind == Dynasty <=> there is an owner (economy-model E-S2)
+        std::uint8_t& kind = economy_.provinces.owner_kind[province.index()];
+        if (current.valid()) {
+            kind = static_cast<std::uint8_t>(economy::OwnerKind::Dynasty);
+        } else if (kind == static_cast<std::uint8_t>(economy::OwnerKind::Dynasty)) {
+            kind = static_cast<std::uint8_t>(economy::OwnerKind::Unowned);
+        }
     }
 }
 
@@ -535,6 +550,9 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
         }
     }
 
+    // 2b. A dead man administers nothing (economy invariant E-P4); a no-op without economy.
+    economy_remove_administrator(id);
+
     // 3. The facts of the death, then the state of the living goes away.
     characters_.death_date[i] = today();
     characters_.cause_of_death[i] = static_cast<std::uint8_t>(cause);
@@ -590,6 +608,7 @@ bool World::destroy_character(CharacterId id) {
             dynasties_.head[dynasty.index()] = CharacterId();
         }
     }
+    economy_remove_administrator(id);
     // Reset the slot so that a dead record never leaks old values into later reuse.
     characters_.dynasty[index] = DynastyId();
     characters_.birth_date[index] = Date();
@@ -1616,6 +1635,7 @@ std::vector<std::string> World::check_invariants() const {
         fail("ownership index size differs from the number of owned provinces");
     }
 
+    check_economy_invariants(bad);
     return bad;
 }
 

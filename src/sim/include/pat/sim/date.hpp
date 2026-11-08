@@ -5,6 +5,7 @@
 #include <compare>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <string>
 
 // Game calendar (E1-T04, TZ FR-TIME). Russia used the Julian calendar ("old style") until 1918, so
@@ -201,6 +202,10 @@ private:
     }
     return candidate;
 }
+
+/// "No date" (no death date, no planned death, a province slot that was never processed). Never pass
+/// it to calendar functions.
+inline constexpr Date kNoDate = Date::from_days(std::numeric_limits<std::int32_t>::min());
 
 /// "1703-01-01" (Julian calendar, ISO-like layout) for logs and tools. Localized text (month names)
 /// belongs to the UI layer.
