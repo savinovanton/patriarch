@@ -1,6 +1,6 @@
 # E0 — Репозиторий и инфраструктура
 
-> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **выполнен (T01–T09); отложено: `clang-cl`/`clang-tidy` в CI, проверка интеграции Tracy**.
+> Веха: **M0**. Размер: **S–M (~13 рабочих дней)**. Статус: **выполнен (T01–T09); `clang-cl` и `clang-tidy` в CI подключены (#30); отложено: проверка интеграции Tracy**.
 > Опирается на: ADR-0001 (стек, структура каталогов), ADR-0002 (бенчмарки, CI-гейт), TZ NFR-TEST-1, NFR-PERF-7, NFR-COMPAT-1.
 > Оценки задач: **S** ≤ 1 дн., **M** 2–3 дн., **L** ~1 нед., **XL** > 1 нед. (разбивать).
 
@@ -84,11 +84,11 @@ patriarch/
 | Задача | Статус | Заметки |
 |---|---|---|
 | T01 | ✅ | Отдельный git, `main`, публичный `origin`, `LICENSE`, первый push |
-| T02 | ✅ | `CMakeLists.txt`, `CMakePresets.json` (`win-msvc`, `win-msvc-asan`; build/test пресеты Debug/Release/RelWithDebInfo), `core`/`sim`/`tests`. Пресет `win-clangcl` отложен — `clang-cl` на машине не проверялся |
+| T02 | ✅ | `CMakeLists.txt`, `CMakePresets.json` (`win-msvc`, `win-msvc-asan`; build/test пресеты Debug/Release/RelWithDebInfo), `core`/`sim`/`tests`. Пресет `win-clangcl` (Visual Studio, тулсет ClangCL) добавлен в #30; проверяется в CI |
 | T03 | ✅ | `vcpkg.json` (doctest, fmt, zstd, xxhash, benchmark) с `builtin-baseline`; триплет `x64-windows-static-md` |
-| T04 | ✅ | `/W4 /permissive- /utf-8 /WX`; `.clang-format`, `.clang-tidy`, `.editorconfig`, `tools/format.ps1` (проверено: apply и `-Check`). `clang-tidy` не запускался — для генератора Visual Studio нет `compile_commands.json`; вернёмся к нему в CI |
+| T04 | ✅ | `/W4 /permissive- /utf-8 /WX`; `.clang-format`, `.clang-tidy`, `.editorconfig`, `tools/format.ps1` (проверено: apply и `-Check`). `clang-tidy` запускается в CI (job `clang-tidy`, Linux/Ninja, только отчёт, #30); `.clang-tidy` уточнён |
 | T05 | ✅ | doctest + CTest (`doctest_discover_tests`), 3 smoke-теста; Debug/Release/RelWithDebInfo и ASan проходят. ASan намеренно проверен на `heap-buffer-overflow` (ловит) |
-| T06 | ✅ | `.github/workflows/ci.yml`: `clang-format` (Ubuntu, 19.1.5), MSVC Debug и RelWithDebInfo, MSVC ASan на `windows-2022`; общее действие `setup-vcpkg` (baseline из `vcpkg.json` + кэш). Ярлыки `windows-latest`/`windows-2025` теперь указывают на образ с VS 2026 — их не использовать, пока пресеты на `Visual Studio 17 2022`. `clang-cl` и `clang-tidy` в CI — позже |
+| T06 | ✅ | `.github/workflows/ci.yml`: `clang-format` (Ubuntu, 19.1.5), MSVC Debug и RelWithDebInfo, MSVC ASan на `windows-2022`; общее действие `setup-vcpkg` (baseline из `vcpkg.json` + кэш). Ярлыки `windows-latest`/`windows-2025` теперь указывают на образ с VS 2026 — их не использовать, пока пресеты на `Visual Studio 17 2022`. job `windows-clangcl` (ClangCL, весь проект с движком, golden-хеши) и report-only job `clang-tidy` добавлены в #30 |
 | T07 | ✅ | `pat/core`: `log.hpp` (уровни, категории, консоль/файл/память, `ScopedLogCapture`, `PAT_LOG_*` на `std::format`), `assert.hpp` (`PAT_ASSERT` — только debug, `PAT_VERIFY` — всегда, счётчик и подменяемый обработчик), `profile.hpp` (`PAT_PROFILE_*`, пусто без Tracy; опция `PATRIARCH_ENABLE_TRACY` — интеграция Tracy не проверялась), `result.hpp` (`Result<T,E>`, `Result<void,E>`). 16 новых тестов; Debug/Release/RelWithDebInfo/ASan проходят |
 | T08 | ✅ | `docs/dev/code-style.md` (именование, слои, правила детерминизма, ошибки/логи, тесты), `docs/adr/_template.md`, `docs/adr/README.md` |
 | T09 | ✅ | `assets/LICENSES.csv` + `assets/README.md`, `tools/check_assets.py` (неучтённые файлы, запрет NC/ND, обязательные поля, даты), 13 unit-тестов (`tests/tools`), job `assets` в CI |

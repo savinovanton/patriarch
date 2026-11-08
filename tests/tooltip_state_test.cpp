@@ -162,7 +162,7 @@ TEST_CASE("place_tooltip: always inside the screen and off the cursor (fuzz)") {
         r.anchor = {r.cursor_x - 10, r.cursor_y - 8, 60, 16};
         RectF parent{0, 0, 0, 0};
         if (i % 2 == 1) {  // nested: a parent tooltip next to the cursor
-            parent = place_tooltip({r.size, r.viewport, r.cursor_x, r.cursor_y, r.anchor, nullptr, 8, 6});
+            parent = place_tooltip({r.size, r.viewport, r.cursor_x, r.cursor_y, r.anchor, nullptr, 8, 6, {}});
             r.parent = &parent;
             r.anchor = {parent.x + 4, parent.y + 30, parent.w - 8, 20};
             // the cursor is on the parent's row
