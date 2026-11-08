@@ -17,6 +17,7 @@ constexpr const char* kUsage = R"(Usage: stressgen --output FILE [options]
   --profile year1|year60|year60x3  Synthetic snapshot (default: year60)
   --seed N                       Reproducible unsigned 64-bit seed (default: 1)
   --provinces N --characters N --dynasties N
+  --archived N                   Extra characters who are already dead (dynasty mode, default: 0)
   --armies N --schemes N --contracts N --events N
   --help                         Show this help
 
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
         const auto name = arg.substr(0, equals);
         if (name != "--profile" && name != "--output" && name != "--seed" && name != "--provinces" &&
             name != "--characters" && name != "--dynasties" && name != "--armies" && name != "--schemes" &&
-            name != "--contracts" && name != "--events") {
+            name != "--contracts" && name != "--events" && name != "--archived") {
             return fail("unknown option: " + std::string(name));
         }
         std::string_view value;
@@ -91,6 +92,8 @@ int main(int argc, char** argv) {
             config.world.characters = count;
         } else if (name == "--dynasties") {
             config.world.dynasties = count;
+        } else if (name == "--archived") {
+            config.world.archived = count;
         } else if (name == "--armies") {
             config.armies = count;
         } else if (name == "--schemes") {
@@ -125,7 +128,7 @@ int main(int argc, char** argv) {
     const auto world_hash = dataset.world.compute_hash().total;
     const auto hash = stress::compute_hash(dataset);
     std::printf("{\"profile\":\"%.*s\",\"seed\":%llu,\"date\":\"%s\","
-                "\"provinces\":%u,\"characters\":%u,\"dynasties\":%u,"
+                "\"provinces\":%u,\"characters\":%u,\"archived\":%u,\"dynasties\":%u,"
                 "\"armies\":%u,\"schemes\":%u,\"contracts\":%u,\"events\":%u,"
                 "\"world_hash\":\"%016llx\",\"dataset_hash\":\"%016llx\","
                 "\"generation_ms\":%.3f,\"save_bytes\":%zu,\"workload_bytes\":%zu}\n",
@@ -135,6 +138,7 @@ int main(int argc, char** argv) {
                 sim::to_string(dataset.world.today()).c_str(),
                 config.world.provinces,
                 config.world.characters,
+                config.world.archived,
                 config.world.dynasties,
                 config.armies,
                 config.schemes,

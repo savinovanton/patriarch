@@ -61,7 +61,7 @@ TEST_CASE("stressgen: profiles are valid reproducible datasets that round-trip t
 
 TEST_CASE("stressgen: exact counts and invalid workload references are handled") {
     stress::Config config;
-    config.world = {9, 7, 17, 3, sim::Date::from_ymd(1703, 1, 1), true};
+    config.world = {9, 7, 17, 3, sim::Date::from_ymd(1703, 1, 1), true, 0};
     config.armies = 4;
     config.schemes = 5;
     config.contracts = 6;
@@ -82,7 +82,7 @@ TEST_CASE("stressgen: exact counts and invalid workload references are handled")
     CHECK_FALSE(stress::generate(config));
     config.world.characters = 1'000'001;
     CHECK_FALSE(stress::generate(config));
-    config.world = {1, 0, 0, 0, sim::Date::from_ymd(1703, 1, 1), true};
+    config.world = {1, 0, 0, 0, sim::Date::from_ymd(1703, 1, 1), true, 0};
     config.armies = config.schemes = config.contracts = config.events = 0;
     REQUIRE(stress::generate(config));
     CHECK_FALSE(stress::profile_config("unknown"));
@@ -90,7 +90,7 @@ TEST_CASE("stressgen: exact counts and invalid workload references are handled")
 
 TEST_CASE("stressgen: worlds use the E7-T02 columns, in dynasty mode by default") {
     stress::Config config;
-    config.world = {5, 20, 300, 10, sim::Date::from_ymd(1703, 1, 1), true};
+    config.world = {5, 20, 300, 10, sim::Date::from_ymd(1703, 1, 1), true, 0};
     config.armies = config.schemes = config.contracts = config.events = 0;
     auto generated = stress::generate(config);
     REQUIRE(generated);
@@ -128,4 +128,43 @@ TEST_CASE("stressgen: worlds use the E7-T02 columns, in dynasty mode by default"
     CHECK_FALSE(old_shape.value().world.dynasty_mode());
     CHECK(old_shape.value().world.life_queue().empty());
     CHECK(old_shape.value().world.compute_hash().ext[static_cast<std::size_t>(sim::ExtPart::Mode)] == 0);
+}
+
+TEST_CASE("stressgen: an archive of the dead can be requested (E7-T04)") {
+    stress::Config config;
+    config.world = {5, 20, 300, 10, sim::Date::from_ymd(1703, 1, 1), true, 600};
+    config.armies = config.schemes = config.contracts = config.events = 50;
+    auto generated = stress::generate(config);
+    REQUIRE(generated);
+    const auto& world = generated.value().world;
+    CHECK(world.living().size() == 300);
+    CHECK(world.archived_count() == 600);
+    CHECK(world.characters().ids.capacity() == 900);
+    CHECK(world.check_invariants().empty());
+    CHECK(stress::check_workload(world, generated.value().workload).empty());  // the workload uses the living
+    const auto hash = world.compute_hash();
+    CHECK(hash.ext[static_cast<std::size_t>(sim::ExtPart::Archive)] != 0);
+    for (std::uint32_t d = 0; d < 10; ++d) {
+        CHECK(world.members_of(sim::DynastyId(d)).size() == 30);  // the dead are not members
+    }
+    CHECK(world.archived_person(sim::CharacterId(300))->death_date == world.today());
+    CHECK(world.archived_person(sim::CharacterId(300))->father.valid());
+
+    // The same seed gives the same world; the living part does not change with the archive.
+    auto again = stress::generate(config);
+    REQUIRE(again);
+    CHECK(again.value().world.compute_hash() == hash);
+    stress::Config plain = config;
+    plain.world.archived = 0;
+    auto without = stress::generate(plain);
+    REQUIRE(without);
+    CHECK(without.value().world.compute_hash().ext[static_cast<std::size_t>(sim::ExtPart::Archive)] == 0);
+
+    auto loaded = sim::deserialize_save(sim::serialize_save(world));
+    REQUIRE(loaded);
+    CHECK(loaded.value().world.compute_hash() == hash);
+
+    // The E1 shape has no archive and refuses to make one.
+    config.world.dynasty_mode = false;
+    CHECK_FALSE(stress::generate(config));
 }

@@ -16,6 +16,10 @@ struct WorldConfig {
     /// Build the world in dynasty mode (ADR-0006): ids are never reused and the life-event queue is
     /// populated. This is the shape of the real game; false gives the E1 shape of the old demo.
     bool dynasty_mode = true;
+    /// Extra characters who have already died (E7-T04): the archive of the real game holds about
+    /// four dead for every living person after sixty years. They are children of the founding couples,
+    /// all dead on the snapshot date, and get the ids after the living ones. Needs dynasty mode.
+    std::uint32_t archived = 0;
 };
 
 // Constructs synthetic data directly, without simulating the intervening decades. This is

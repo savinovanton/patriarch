@@ -2,6 +2,7 @@ find_package(doctest CONFIG REQUIRED)
 
 add_executable(patriarch_tests
     main.cpp
+    archive_test.cpp
     arena_test.cpp
     assert_test.cpp
     calendar_test.cpp

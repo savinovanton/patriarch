@@ -25,6 +25,7 @@ enum class CommandType : std::uint8_t {
     KillCharacter = 3,
     SetDynastyHead = 4,
     AdjustHonor = 5,
+    Die = 6,           // E7-T04
     Marry = 7,         // E7-T03
     EndMarriage = 8,   // E7-T03
     CreatePerson = 9,  // E7-T02
@@ -72,6 +73,21 @@ struct CreatePerson {
     [[nodiscard]] bool operator==(const CreatePerson&) const = default;
 };
 
+/// A character dies (E7-T04): the row moves to the archive, see World::die. System only (the player
+/// "kills" through the commands of intrigue, execution and war, which end in Die issued by the
+/// system), dynasty mode only. In E1 mode KillCharacter is the way, and it is rejected in dynasty mode.
+///
+/// Contract for the epics that keep references to people (E8 offices, E10 schemes, E14 armies, E17
+/// regencies and treaties, E9 administrators): a Die that was applied is in the command journal of the
+/// tick (`CommandLog`, outcome None). React to it there, from your own system, and drop or hand over
+/// whatever refers to `character`; the archive record (`World::archived_person`) tells who died, when
+/// and of what, and the member list and head slot of the dynasty are already clean.
+struct Die {
+    CharacterId character;
+    CauseOfDeath cause = CauseOfDeath::OldAge;
+    [[nodiscard]] bool operator==(const Die&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -94,6 +110,7 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::SetDynastyHead,
                                     cmd::AdjustHonor,
                                     cmd::CreatePerson,
+                                    cmd::Die,
                                     cmd::Marry,
                                     cmd::EndMarriage>;
 
