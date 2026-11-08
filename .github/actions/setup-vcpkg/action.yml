@@ -6,6 +6,14 @@ description: >
 runs:
   using: composite
   steps:
+    - name: Cache vcpkg tool downloads
+      uses: actions/cache@v6
+      with:
+        path: .vcpkg-downloads
+        key: vcpkg-downloads-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        restore-keys: |
+          vcpkg-downloads-${{ runner.os }}-
+
     - name: Fetch vcpkg at the pinned baseline
       shell: pwsh
       run: |
@@ -16,16 +24,31 @@ runs:
         git -C $root remote add origin https://github.com/microsoft/vcpkg.git
         git -C $root fetch --depth 1 origin $baseline
         git -C $root checkout --detach FETCH_HEAD
-        if ($IsWindows) {
-          & "$root\bootstrap-vcpkg.bat" -disableMetrics
-        } else {
-          & "$root/bootstrap-vcpkg.sh" -disableMetrics
+        # The bootstrap downloads vcpkg.exe from a github.com release asset, which sometimes answers
+        # HTTP 504: retry with a growing pause before giving up. Downloaded tools are cached.
+        $downloads = Join-Path $env:GITHUB_WORKSPACE '.vcpkg-downloads'
+        New-Item -ItemType Directory -Force -Path $downloads | Out-Null
+        $env:VCPKG_DOWNLOADS = $downloads
+        $ok = $false
+        for ($attempt = 1; $attempt -le 5 -and -not $ok; $attempt++) {
+          if ($IsWindows) {
+            & "$root\bootstrap-vcpkg.bat" -disableMetrics
+          } else {
+            & "$root/bootstrap-vcpkg.sh" -disableMetrics
+          }
+          if ($LASTEXITCODE -eq 0) {
+            $ok = $true
+          } else {
+            Write-Host "::warning::vcpkg bootstrap failed (attempt $attempt of 5)"
+            Start-Sleep -Seconds (20 * $attempt)
+          }
         }
-        if ($LASTEXITCODE -ne 0) { throw 'vcpkg bootstrap failed' }
+        if (-not $ok) { throw 'vcpkg bootstrap failed' }
         $cache = Join-Path $env:GITHUB_WORKSPACE '.vcpkg-binary-cache'
         New-Item -ItemType Directory -Force -Path $cache | Out-Null
         "VCPKG_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
         "VCPKG_DEFAULT_BINARY_CACHE=$cache" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        "VCPKG_DOWNLOADS=$downloads" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
         "VCPKG_DISABLE_METRICS=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
     - name: Cache vcpkg binaries
