@@ -26,8 +26,13 @@
 //                        2 x u32 godparent.  Parents are the father/mother of the core body; the child
 //                        lists are derived.  (schema >= 3)
 //
-// Derived data (the list of the living, the child lists, the life-event queue) is never stored; it is rebuilt
-// after loading and checked together with all other invariants.
+// Schema 4 (E7-T04) changes no byte layout: the slot table of the core body may now hold the state 2
+// (archived, a dead person in dynasty mode). An archived row keeps its core record (health 0), its
+// rows in sections 1 (identity, death date and cause, group S at the defaults) and 3 (marriages that
+// ended); it appears in no member list. Older schemas cannot contain the state 2.
+//
+// Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
+// archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
 namespace pat::sim {
 
@@ -101,7 +106,7 @@ void World::save_state(core::ByteWriter& out) const {
         out.u64(s.inc);
     }
 
-    // dynasties and their index lists (dense order matters)
+    // dynasties and their index lists (dense order matters; members are the living only)
     out.u32(static_cast<std::uint32_t>(dynasties_.size()));
     for (std::size_t i = 0; i < dynasties_.size(); ++i) {
         out.u32(dynasties_.name[i].value());
@@ -110,7 +115,7 @@ void World::save_state(core::ByteWriter& out) const {
     }
     for (std::size_t i = 0; i < dynasties_.size(); ++i) {
         out.u32(static_cast<std::uint32_t>(members_[i].size()));
-        for (const CharacterId c : members_[i].values()) {
+        for (const CharacterId c : members_[i]) {
             out.u32(c.value());
         }
         out.u32(static_cast<std::uint32_t>(owned_provinces_[i].size()));
@@ -128,7 +133,8 @@ void World::save_state(core::ByteWriter& out) const {
         out.u8(provinces_.development[i]);
     }
 
-    // characters: slot table first, then one record per slot (dead slots hold reset values)
+    // characters: slot table first (0 free, 1 alive, 2 archived), then one record per slot (free slots
+    // hold reset values, archived ones their identity and the facts of the tree)
     const std::size_t capacity = characters_.ids.capacity();
     out.u32(static_cast<std::uint32_t>(capacity));
     out.bytes(characters_.ids.alive_flags());
@@ -364,6 +370,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         !world.characters_.ids.restore(std::move(alive), std::move(generation), std::move(free_list))) {
         return fail("inconsistent character slot table");
     }
+    // Schema 4 (E7-T04) introduced archived rows (slot state 2); no older file can hold one.
+    if (schema < 4 && world.characters_.ids.retired_count() != 0) {
+        return fail("archived character rows need state schema 4");
+    }
     CharacterTable& chars = world.characters_;
     for (std::uint32_t i = 0; i < capacity; ++i) {
         world.grow_character_columns();  // E7-T02 columns start at their defaults
@@ -392,9 +402,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     for (std::uint32_t d = 0; d < dynasty_count; ++d) {
         for (const std::uint32_t c : member_lists[d]) {
             if (c >= capacity || !world.characters_.ids.is_alive(CharacterId(c)) ||
-                chars.dynasty[c].value() != d || !world.members_[d].insert(CharacterId(c))) {
+                chars.dynasty[c].value() != d || world.member_pos_[c] != kNoMember) {
                 return fail("inconsistent member index");
             }
+            world.member_add(DynastyId(d), CharacterId(c));
         }
         for (const std::uint32_t p : owned_lists[d]) {
             if (p >= province_count || world.provinces_.owner[p].value() != d ||

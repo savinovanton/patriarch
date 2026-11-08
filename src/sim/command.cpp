@@ -198,6 +198,28 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::Die& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may let a character die");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "Die needs dynasty mode (use KillCharacter in E1 mode)");
+        }
+        if (!world.exists(c.character)) {
+            return reject(Rejection::UnknownEntity, "unknown character");
+        }
+        if (!world.is_alive(c.character)) {
+            return reject(Rejection::InvalidState, "the character is already dead");
+        }
+        if (c.cause == CauseOfDeath::None || static_cast<std::uint8_t>(c.cause) >= kCauseOfDeathCount) {
+            return reject(Rejection::InvalidArgument, "unknown cause of death");
+        }
+        if (world.characters().birth_date[c.character.index()] > world.today()) {
+            return reject(Rejection::InvalidState, "the character is not born yet");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -259,6 +281,7 @@ struct Applier {
     void operator()(const cmd::SetDynastyHead& c) const { (void)world.set_dynasty_head(c.dynasty, c.head); }
     void operator()(const cmd::AdjustHonor& c) const { world.add_honor(c.dynasty, c.delta); }
     void operator()(const cmd::CreatePerson& c) const { (void)world.create_character(c.init); }
+    void operator()(const cmd::Die& c) const { (void)world.die(c.character, c.cause); }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -293,6 +316,10 @@ struct CommandTag<cmd::AdjustHonor> {
 template <>
 struct CommandTag<cmd::CreatePerson> {
     static constexpr CommandType value = CommandType::CreatePerson;
+};
+template <>
+struct CommandTag<cmd::Die> {
+    static constexpr CommandType value = CommandType::Die;
 };
 template <>
 struct CommandTag<cmd::Marry> {
@@ -348,6 +375,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustHonor";
         case CommandType::CreatePerson:
             return "CreatePerson";
+        case CommandType::Die:
+            return "Die";
         case CommandType::Marry:
             return "Marry";
         case CommandType::EndMarriage:

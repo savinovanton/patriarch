@@ -1279,7 +1279,7 @@ TEST_CASE("save v2: damaged extension blocks are rejected with an error") {
     }
 }
 
-TEST_CASE("save v2: dynasty mode needs an empty free list, retired rows are not supported yet") {
+TEST_CASE("save v2: dynasty mode needs an empty free list, archived rows need dynasty mode") {
     World world(Date::from_ymd(1703, 1, 1), 1);
     const DynastyId d = world.create_dynasty(StringId(0));
     const CharacterId a = world.create_character(adult(d));
@@ -1291,7 +1291,8 @@ TEST_CASE("save v2: dynasty mode needs an empty free list, retired rows are not 
     REQUIRE_FALSE(moded.has_value());
     CHECK(moded.error().message.find("free list") != std::string::npos);
 
-    // A slot byte of 2 (retired) in the table is refused until E7-T04 defines the archive.
+    // A slot byte of 2 (archived) without the dynasty mode, the death date and the cause of an archived
+    // row is refused (the archive itself is tested in archive_test.cpp).
     World two(Date::from_ymd(1703, 1, 1), 1);
     const DynastyId e = two.create_dynasty(StringId(0));
     (void)two.create_character(adult(e));
@@ -1391,6 +1392,7 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     CHECK(static_cast<int>(CommandType::KillCharacter) == 3);
     CHECK(static_cast<int>(CommandType::SetDynastyHead) == 4);
     CHECK(static_cast<int>(CommandType::AdjustHonor) == 5);
+    CHECK(static_cast<int>(CommandType::Die) == 6);
     CHECK(static_cast<int>(CommandType::Marry) == 7);
     CHECK(static_cast<int>(CommandType::EndMarriage) == 8);
     CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // E7 block 6..31, in order of arrival
@@ -1402,6 +1404,7 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
         {Command{DynastyId(), cmd::SetDynastyHead{}}, CommandType::SetDynastyHead},
         {Command{DynastyId(), cmd::AdjustHonor{}}, CommandType::AdjustHonor},
         {Command{DynastyId(), cmd::CreatePerson{}}, CommandType::CreatePerson},
+        {Command{DynastyId(), cmd::Die{CharacterId(4), CauseOfDeath::Grief}}, CommandType::Die},
         {Command{DynastyId(), cmd::Marry{CharacterId(1), CharacterId(2)}}, CommandType::Marry},
         {Command{DynastyId(), cmd::EndMarriage{CharacterId(3), MarriageEnd::Tonsure}},
          CommandType::EndMarriage},
@@ -1427,8 +1430,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     }
     // Tags that nobody uses are unknown commands.
     for (const std::uint8_t tag : {std::uint8_t{0},
-                                   std::uint8_t{6},
                                    std::uint8_t{10},
+                                   std::uint8_t{11},
                                    std::uint8_t{31},
                                    std::uint8_t{32},
                                    std::uint8_t{255}}) {

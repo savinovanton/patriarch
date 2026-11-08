@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/core/hash_stream.hpp"
+#include "pat/sim/kinship.hpp"
 
 #include <algorithm>
 #include <format>
@@ -236,6 +237,7 @@ void World::grow_character_columns() {
     characters_.first_child.emplace_back();
     characters_.next_by_father.emplace_back();
     characters_.next_by_mother.emplace_back();
+    member_pos_.push_back(kNoMember);
 }
 
 bool World::kin_is_default(std::size_t i) const {
@@ -370,6 +372,38 @@ void World::insert_living(CharacterId id) {
     }
 }
 
+void World::member_add(DynastyId dynasty, CharacterId id) {
+    PAT_ASSERT(member_pos_[id.index()] == kNoMember, "member_add: already a member");
+    std::vector<CharacterId>& list = members_[dynasty.index()];
+    member_pos_[id.index()] = static_cast<std::uint32_t>(list.size());
+    list.push_back(id);
+}
+
+bool World::member_remove(DynastyId dynasty, CharacterId id) {
+    if (!member_contains(dynasty, id)) {
+        return false;
+    }
+    // Swap-remove: the last member takes the place of the removed one. The order is a function of
+    // the sequence of insertions and removals only, and it is part of the saved state.
+    std::vector<CharacterId>& list = members_[dynasty.index()];
+    const std::uint32_t position = member_pos_[id.index()];
+    const CharacterId last = list.back();
+    list[position] = last;
+    member_pos_[last.index()] = position;
+    list.pop_back();
+    member_pos_[id.index()] = kNoMember;
+    return true;
+}
+
+bool World::member_contains(DynastyId dynasty, CharacterId id) const noexcept {
+    if (!exists(dynasty) || !id.valid() || id.index() >= member_pos_.size()) {
+        return false;
+    }
+    const std::uint32_t position = member_pos_[id.index()];
+    const std::vector<CharacterId>& list = members_[dynasty.index()];
+    return position < list.size() && list[position] == id;
+}
+
 void World::push_life_events(CharacterId id, Date birthday_due) {
     life_queue_.push(birthday_due, LifeEvent{LifeEventKind::Birthday, id});
     const Date planned = characters_.planned_death[id.index()];
@@ -430,7 +464,7 @@ CharacterId World::create_character(const CharacterInit& init) {
     }
 
     if (dynasty.valid()) {
-        members_[dynasty.index()].insert(id);
+        member_add(dynasty, id);
     }
     insert_living(id);
     if (dynasty_mode()) {
@@ -452,6 +486,97 @@ CharacterId World::create_character(const CharacterInit& init) {
     return id;
 }
 
+void World::reset_living_state(std::size_t i) {
+    characters_.health[i] = kZero;
+    characters_.skills[i] = {};
+    characters_.fertility[i] = kZero;
+    characters_.stress[i] = kZero;
+    characters_.piety[i] = kZero;
+    characters_.ambition[i] = kZero;
+    characters_.loyalty_head[i] = kZero;
+    characters_.loyalty_emperor[i] = kZero;
+    characters_.traits[i] = {};
+    characters_.education_focus[i] = 0;
+    characters_.education_tutor[i] = CharacterId();
+    characters_.education_level[i] = 0;
+    characters_.planned_death[i] = kNoDate;
+}
+
+bool World::living_state_is_default(std::size_t i) const {
+    const CharacterTable& c = characters_;
+    return c.health[i] == kZero && c.skills[i] == std::array<core::Fixed32, kSkillCount>{} &&
+           c.fertility[i] == kZero && c.stress[i] == kZero && c.piety[i] == kZero && c.ambition[i] == kZero &&
+           c.loyalty_head[i] == kZero && c.loyalty_emperor[i] == kZero &&
+           c.traits[i] == std::array<std::uint16_t, kTraitSlots>{} && c.education_focus[i] == 0 &&
+           !c.education_tutor[i].valid() && c.education_level[i] == 0 && c.planned_death[i] == kNoDate;
+}
+
+bool World::die(CharacterId id, CauseOfDeath cause) {
+    if (!dynasty_mode() || !is_alive(id) || cause == CauseOfDeath::None ||
+        static_cast<std::uint8_t>(cause) >= kCauseOfDeathCount) {
+        return false;
+    }
+    const std::size_t i = id.index();
+    if (!is_sane_date(today()) || characters_.birth_date[i] > today()) {
+        return false;  // nobody dies before being born
+    }
+
+    // 1. Widowhood: both partners lose `spouse` and list each other as a former spouse. Done first,
+    //    while the dead one still counts as alive for end_marriage().
+    (void)end_marriage(id);
+    PAT_ASSERT(!characters_.spouse[i].valid(), "die: the marriage did not end");
+
+    // 2. Out of the member list and the head slot (the successor is E7-T15's business).
+    const DynastyId dynasty = characters_.dynasty[i];
+    if (dynasty.valid()) {
+        member_remove(dynasty, id);
+        if (dynasties_.head[dynasty.index()] == id) {
+            dynasties_.head[dynasty.index()] = CharacterId();
+        }
+    }
+
+    // 3. The facts of the death, then the state of the living goes away.
+    characters_.death_date[i] = today();
+    characters_.cause_of_death[i] = static_cast<std::uint8_t>(cause);
+    reset_living_state(i);
+
+    // 4. The queue has no business with the dead (birthday and planned death).
+    life_queue_.remove_if([id](Date, const LifeEvent& event) { return event.character == id; });
+
+    // 5. The list of the living and the slot itself. The row is frozen from here on.
+    living_.erase(std::lower_bound(living_.begin(), living_.end(), id));
+    const bool retired = characters_.ids.retire(id);
+    PAT_ASSERT(retired, "die: retire failed");
+    archive_sum_ += archive_row_hash(i);
+    return retired;
+}
+
+std::optional<ArchivedPerson> World::archived_person(CharacterId id) const {
+    if (!is_archived(id)) {
+        return std::nullopt;
+    }
+    const CharacterTable& c = characters_;
+    const std::size_t i = id.index();
+    ArchivedPerson out;
+    out.id = id;
+    out.dynasty = c.dynasty[i];
+    out.branch = c.branch[i];
+    out.name = c.name[i];
+    out.portrait = c.portrait[i];
+    out.sex = c.sex[i];
+    out.legitimacy = c.legitimacy[i];
+    out.birth_date = c.birth_date[i];
+    out.death_date = c.death_date[i];
+    out.cause = static_cast<CauseOfDeath>(c.cause_of_death[i]);
+    out.father = c.father[i];
+    out.mother = c.mother[i];
+    out.marriages = c.marriages[i];
+    out.ex_spouses = c.ex_spouses[i];
+    out.godparent = c.godparent[i];
+    out.children = kin::children_of(*this, id);
+    return out;
+}
+
 bool World::destroy_character(CharacterId id) {
     PAT_ASSERT(!dynasty_mode(), "destroy_character is not available in dynasty mode");
     if (dynasty_mode() || !characters_.ids.is_alive(id)) {
@@ -460,7 +585,7 @@ bool World::destroy_character(CharacterId id) {
     const std::size_t index = id.index();
     const DynastyId dynasty = characters_.dynasty[index];
     if (dynasty.valid()) {
-        members_[dynasty.index()].erase(id);
+        member_remove(dynasty, id);
         if (dynasties_.head[dynasty.index()] == id) {
             dynasties_.head[dynasty.index()] = CharacterId();
         }
@@ -486,14 +611,14 @@ void World::set_character_dynasty(CharacterId id, DynastyId dynasty) {
     }
     DynastyId& current = characters_.dynasty[id.index()];
     if (current.valid()) {
-        members_[current.index()].erase(id);
+        member_remove(current, id);
         if (dynasties_.head[current.index()] == id) {
             dynasties_.head[current.index()] = CharacterId();
         }
     }
     current = exists(dynasty) ? dynasty : DynastyId();
     if (current.valid()) {
-        members_[current.index()].insert(id);
+        member_add(current, id);
     }
     BranchId& branch = characters_.branch[id.index()];
     if (branch.valid() && branches_.dynasty[branch.index()] != current) {
@@ -703,7 +828,8 @@ bool World::set_character_godparents(CharacterId id,
 // ---- indexes ------------------------------------------------------------------------------------
 
 std::span<const CharacterId> World::members_of(DynastyId dynasty) const noexcept {
-    return exists(dynasty) ? members_[dynasty.index()].values() : std::span<const CharacterId>();
+    return exists(dynasty) ? std::span<const CharacterId>(members_[dynasty.index()])
+                           : std::span<const CharacterId>();
 }
 
 std::span<const ProvinceId> World::provinces_of(DynastyId dynasty) const noexcept {
@@ -714,6 +840,7 @@ void World::rebuild_derived_indexes() {
     living_.clear();
     living_.reserve(characters_.ids.alive_count());
     characters_.ids.for_each_alive([&](CharacterId id) { living_.push_back(id); });
+    archive_sum_ = compute_archive_sum();
 
     rebuild_child_lists();
     life_queue_.clear();
@@ -759,7 +886,7 @@ WorldHash World::compute_hash() const {
             h.i32(dynasties_.honor[i]);
             // index contents in their (deterministic) order
             h.u64(members_[i].size());
-            for (const CharacterId c : members_[i].values()) {
+            for (const CharacterId c : members_[i]) {
                 h.id(c);
             }
             h.u64(owned_provinces_[i].size());
@@ -893,6 +1020,15 @@ WorldHash World::compute_hash() const {
         }
     }
 
+    if (characters_.ids.retired_count() != 0) {
+        // The dead: the sum of the hashes of their rows (order of death does not matter) and their
+        // number. Rows are frozen, so the sum is kept up to date by die() and rebuilt on load.
+        core::HashStream h;
+        h.u64(archive_sum_);
+        h.u64(characters_.ids.retired_count());
+        out.ext[static_cast<std::size_t>(ExtPart::Archive)] = nonzero(h.value());
+    }
+
     core::HashStream total;
     total.u64(out.calendar);
     total.u64(out.rng);
@@ -909,7 +1045,97 @@ WorldHash World::compute_hash() const {
     return out;
 }
 
+std::uint64_t World::archive_row_hash(std::size_t i) const {
+    // Every column of group K of a dead row: identity, facts of the tree and of the death.
+    const CharacterTable& c = characters_;
+    core::HashStream h;
+    h.u32(static_cast<std::uint32_t>(i));
+    h.id(c.dynasty[i]);
+    h.i32(c.birth_date[i].days());
+    h.u8(static_cast<std::uint8_t>(c.sex[i]));
+    h.id(c.father[i]);
+    h.id(c.mother[i]);
+    h.id(c.name[i]);
+    h.id(c.branch[i]);
+    h.u16(c.portrait[i]);
+    h.u8(static_cast<std::uint8_t>(c.legitimacy[i]));
+    h.u8(c.cause_of_death[i]);
+    h.i32(c.death_date[i].days());
+    h.id(c.spouse[i]);
+    h.u8(c.marriages[i]);
+    for (const CharacterId ex : c.ex_spouses[i]) {
+        h.id(ex);
+    }
+    for (const CharacterId godparent : c.godparent[i]) {
+        h.id(godparent);
+    }
+    return h.value();
+}
+
+std::uint64_t World::compute_archive_sum() const {
+    std::uint64_t sum = 0;
+    for (std::size_t i = 0; i < characters_.ids.capacity(); ++i) {
+        if (characters_.ids.alive_flags()[i] == 2) {
+            sum += archive_row_hash(i);
+        }
+    }
+    return sum;
+}
+
 // ---- invariants ---------------------------------------------------------------------------------
+
+/// The archive (ADR-0006 D3): a dead row has its group S at the defaults, a death date and cause, no
+/// place in any member list, and the running sum behind the hash of the archive is right.
+void World::check_archive_invariants(std::vector<std::string>& bad) const {
+    const CharacterTable& ch = characters_;
+    const std::size_t capacity = ch.ids.capacity();
+    std::size_t archived = 0;
+    for (std::size_t i = 0; i < capacity; ++i) {
+        if (ch.ids.alive_flags()[i] != 2) {
+            continue;
+        }
+        ++archived;
+        if (!is_sane_date(ch.birth_date[i])) {
+            bad.push_back(std::format("archived character {} has an implausible birth date", i));
+        }
+        for (const CharacterId parent : {ch.father[i], ch.mother[i]}) {
+            if (parent.valid() && parent.index() >= capacity) {
+                bad.push_back(std::format("archived character {} has a parent outside the id table", i));
+            }
+        }
+        if (!is_sane_date(ch.death_date[i]) || ch.death_date[i] == kNoDate ||
+            ch.death_date[i] < ch.birth_date[i]) {
+            bad.push_back(std::format("archived character {} has no plausible death date", i));
+        }
+        if (ch.cause_of_death[i] == 0 || ch.cause_of_death[i] >= kCauseOfDeathCount) {
+            bad.push_back(std::format("archived character {} has no known cause of death", i));
+        }
+        if (!living_state_is_default(i)) {
+            bad.push_back(std::format("archived character {} still holds the state of a living person", i));
+        }
+        if (member_pos_[i] != kNoMember) {
+            bad.push_back(std::format("archived character {} is still in a member list", i));
+        }
+        if (static_cast<std::uint8_t>(ch.legitimacy[i]) >= kLegitimacyCount) {
+            bad.push_back(std::format("archived character {} has an unknown legitimacy", i));
+        }
+        const DynastyId dynasty = ch.dynasty[i];
+        if (dynasty.valid() && !exists(dynasty)) {
+            bad.push_back(std::format("archived character {} belongs to an unknown dynasty", i));
+        }
+        const BranchId branch = ch.branch[i];
+        if (branch.valid() && (!exists(branch) || branches_.dynasty[branch.index()] != dynasty)) {
+            bad.push_back(std::format(
+                "archived character {} is in a branch of another dynasty or an unknown branch", i));
+        }
+    }
+    if (archived != ch.ids.retired_count()) {
+        bad.push_back("the archive count differs from the id table");
+    }
+    if (archive_sum_ != compute_archive_sum()) {
+        bad.push_back("the running hash of the archive differs from its rows");
+    }
+}
 
 /// GDD 01 section 13.3: no cycles in the family, at most two parents (one father, one mother),
 /// symmetric spouses, a child is younger than its parents; plus the consistency of the derived
@@ -929,13 +1155,11 @@ void World::check_kinship_invariants(std::vector<std::string>& bad) const {
             }
             continue;
         }
-        if (state != 1) {
-            continue;  // retired rows were reported already
-        }
         const CharacterId id(static_cast<std::uint32_t>(i));
         if (!dynasty) {
             // E1 mode: ids of the dead are reused, so no reference to a person would stay true.
-            if (!kin_is_default(i)) {
+            // (Archived rows do not exist there; they were reported by check_invariants.)
+            if (state == 1 && !kin_is_default(i)) {
                 bad.push_back(std::format("character {} has kinship data outside dynasty mode", i));
             }
             continue;
@@ -965,7 +1189,9 @@ void World::check_kinship_invariants(std::vector<std::string>& bad) const {
         // spouse and former spouses
         const CharacterId spouse = ch.spouse[i];
         if (spouse.valid()) {
-            if (spouse == id) {
+            if (state == 2) {
+                bad.push_back(std::format("archived character {} is still married", i));
+            } else if (spouse == id) {
                 bad.push_back(std::format("character {} is married to itself", i));
             } else if (spouse.index() >= capacity || !is_alive(spouse)) {
                 bad.push_back(std::format("the spouse of character {} is not alive", i));
@@ -1112,7 +1338,8 @@ std::vector<std::string> World::check_invariants() const {
         ch.planned_death.size() != capacity || ch.spouse.size() != capacity ||
         ch.marriages.size() != capacity || ch.ex_spouses.size() != capacity ||
         ch.godparent.size() != capacity || ch.first_child.size() != capacity ||
-        ch.next_by_father.size() != capacity || ch.next_by_mother.size() != capacity) {
+        ch.next_by_father.size() != capacity || ch.next_by_mother.size() != capacity ||
+        member_pos_.size() != capacity) {
         fail("character columns differ in size from the id table");
         return bad;  // everything below indexes the columns
     }
@@ -1139,8 +1366,8 @@ std::vector<std::string> World::check_invariants() const {
     if (capacity > kMaxCharacterIds) {
         fail("the character table exceeds kMaxCharacterIds");
     }
-    if (characters_.ids.retired_count() != 0) {
-        fail("retired character rows are not supported yet (E7-T04)");
+    if (characters_.ids.retired_count() != 0 && !dynasty_mode()) {
+        fail("archived character rows need dynasty mode");
     }
 
     // free list: unique, dead slots only
@@ -1165,13 +1392,17 @@ std::vector<std::string> World::check_invariants() const {
     // characters vs member index
     std::size_t indexed = 0;
     for (std::size_t d = 0; d < dynasties_.size(); ++d) {
-        for (const CharacterId c : members_[d].values()) {
+        for (std::size_t k = 0; k < members_[d].size(); ++k) {
+            const CharacterId c = members_[d][k];
             ++indexed;
-            if (!is_alive(c)) {
+            if (!c.valid() || c.index() >= capacity || !is_alive(c)) {
                 fail(std::format("dynasty {} indexes dead character {}", d, c.value()));
             } else if (characters_.dynasty[c.index()].value() != d) {
                 fail(std::format(
                     "character {} is indexed under dynasty {} but belongs elsewhere", c.value(), d));
+            } else if (member_pos_[c.index()] != k) {
+                fail(std::format(
+                    "character {} has a wrong position in the member list of dynasty {}", c.value(), d));
             }
         }
     }
@@ -1182,7 +1413,7 @@ std::vector<std::string> World::check_invariants() const {
             ++expected_indexed;
             if (!exists(d)) {
                 fail(std::format("character {} has unknown dynasty {}", c.value(), d.value()));
-            } else if (!members_[d.index()].contains(c)) {
+            } else if (!member_contains(d, c)) {
                 fail(std::format(
                     "character {} missing from the member index of dynasty {}", c.value(), d.value()));
             }
@@ -1225,7 +1456,7 @@ std::vector<std::string> World::check_invariants() const {
             continue;
         }
         if (state != 1) {
-            continue;  // retired rows were reported above
+            continue;  // archived rows: check_archive_invariants()
         }
         const std::size_t who = i;
         if (!is_sane_date(ch.birth_date[i])) {
@@ -1274,6 +1505,7 @@ std::vector<std::string> World::check_invariants() const {
     }
 
     check_kinship_invariants(bad);
+    check_archive_invariants(bad);
 
     // derived list of the living
     {
@@ -1293,8 +1525,8 @@ std::vector<std::string> World::check_invariants() const {
     // derived life-event queue. At a tick boundary every living character in dynasty mode has
     // exactly one birthday entry at an anniversary that is not later than the next one after
     // today (earlier is allowed: nothing consumes the queue yet), and its planned death is queued.
-    // Entries of characters that are not alive and planned-death entries whose date was changed
-    // are stale and tolerated.
+    // Planned-death entries whose date was changed are stale and tolerated; the entries of a
+    // character who died are dropped by die().
     {
         std::vector<std::uint8_t> birthdays(capacity, 0);
         std::vector<std::uint8_t> death_queued(capacity, 0);
@@ -1310,6 +1542,8 @@ std::vector<std::string> World::check_invariants() const {
                 break;
             }
             if (!is_alive(c)) {
+                fail(std::format("the life-event queue holds an entry of character {}, who is not alive",
+                                 c.value()));
                 continue;
             }
             const Date birth = ch.birth_date[i];

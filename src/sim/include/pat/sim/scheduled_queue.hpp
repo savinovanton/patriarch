@@ -43,6 +43,19 @@ public:
         return processed;
     }
 
+    /// Removes every entry for which pred(due, item) is true and returns how many were removed. The
+    /// order of the remaining entries (by due date, then insertion sequence) is not affected.
+    template <class Pred>
+    std::size_t remove_if(Pred&& pred) {
+        const std::size_t before = heap_.size();
+        heap_.erase(std::remove_if(heap_.begin(),
+                                   heap_.end(),
+                                   [&](const Entry& entry) { return pred(entry.due, entry.item); }),
+                    heap_.end());
+        std::make_heap(heap_.begin(), heap_.end(), later);
+        return before - heap_.size();
+    }
+
     [[nodiscard]] std::optional<Date> next_due() const {
         return heap_.empty() ? std::nullopt : std::optional<Date>(heap_.front().due);
     }

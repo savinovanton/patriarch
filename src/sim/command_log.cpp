@@ -72,6 +72,10 @@ struct Writer {
         out.u8(i.education.level);
         out.i32(i.planned_death.days());
     }
+    void operator()(const cmd::Die& c) const {
+        out.u32(c.character.value());
+        out.u8(static_cast<std::uint8_t>(c.cause));
+    }
     void operator()(const cmd::Marry& c) const {
         out.u32(c.a.value());
         out.u32(c.b.value());
@@ -170,6 +174,17 @@ bool read_command(core::ByteReader& in, Command& out) {
             i.education.tutor = CharacterId(in.u32());
             i.education.level = in.u8();
             i.planned_death = Date::from_days(in.i32());
+            out.payload = c;
+            break;
+        }
+        case CommandType::Die: {
+            cmd::Die c;
+            c.character = CharacterId(in.u32());
+            const std::uint8_t cause = in.u8();
+            if (cause >= kCauseOfDeathCount) {
+                return false;
+            }
+            c.cause = static_cast<CauseOfDeath>(cause);
             out.payload = c;
             break;
         }

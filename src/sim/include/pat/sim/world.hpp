@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -112,6 +113,22 @@ traits_are_canonical(const std::array<std::uint16_t, kTraitSlots>& traits) noexc
     return sanitize_traits(traits) == traits;
 }
 
+/// Why a character died (GDD 01 section 3, ADR-0006 D3). Stored as one byte in `cause_of_death`;
+/// 0 means "alive". The numbers are part of the save format: only append.
+enum class CauseOfDeath : std::uint8_t {
+    None = 0,
+    OldAge,
+    Illness,
+    Childbirth,
+    War,
+    Execution,
+    Murder,
+    Accident,
+    Wounds,
+    Grief,
+};
+inline constexpr std::uint8_t kCauseOfDeathCount = 10;  // values 0..9; Die accepts 1..9
+
 /// Bits of `World::world_flags()`.
 inline constexpr std::uint32_t kWorldFlagDynastyMode = 1U << 0;
 
@@ -166,7 +183,7 @@ struct CharacterTable {
     std::vector<BranchId> branch;         // invalid = none; must belong to the character's dynasty
     std::vector<std::uint16_t> portrait;  // portrait pool id
     std::vector<Legitimacy> legitimacy;
-    std::vector<std::uint8_t> cause_of_death;  // 0 = none; the values are defined by E7-T04
+    std::vector<std::uint8_t> cause_of_death;  // CauseOfDeath, 0 while alive
     std::vector<Date> death_date;              // kNoDate while alive
     // kinship (K, E7-T03). Father and mother are the E1 columns above. A marriage always sits on
     // both partners; ending it (for any reason, death included) clears `spouse` on both sides and
@@ -236,6 +253,31 @@ struct CharacterInit {
     [[nodiscard]] bool operator==(const CharacterInit&) const = default;
 };
 
+/// A dead person as the archive hands it out: a copy of the group K fields (ADR-0006 D3). Nothing
+/// here refers into the world's storage, so the archive can later be packed without changing callers.
+struct ArchivedPerson {
+    CharacterId id;
+    DynastyId dynasty;  // the house the person belonged to (the dead are not in its member list)
+    BranchId branch;
+    core::StringId name;
+    std::uint16_t portrait = 0;
+    Sex sex = Sex::Male;
+    Legitimacy legitimacy = Legitimacy::Legitimate;
+    Date birth_date;
+    Date death_date = kNoDate;
+    CauseOfDeath cause = CauseOfDeath::None;
+    CharacterId father;
+    CharacterId mother;
+    std::uint8_t marriages = 0;
+    /// Everybody the person was married to, in order of ending; the widow(er) is the last one. There
+    /// is no current spouse: death ended the marriage.
+    std::array<CharacterId, kMaxExSpouses> ex_spouses{};
+    std::array<CharacterId, kGodparentSlots> godparent{};
+    std::vector<CharacterId> children;  // eldest first, the dead among them
+
+    [[nodiscard]] bool operator==(const ArchivedPerson&) const = default;
+};
+
 /// Reasons for entries of the life-event queue (ADR-0006 D4); the numeric value is also the
 /// priority inside a day. Labour (3) is added by E7-T12.
 enum class LifeEventKind : std::uint8_t { Birthday = 1, PlannedDeath = 2 };
@@ -253,7 +295,7 @@ struct LifeEvent {
 enum class ExtPart : std::uint8_t {
     Mode = 0,          // world flags
     CharacterExt = 1,  // new character columns (living rows that differ from the defaults)
-    Archive = 2,       // E7-T04
+    Archive = 2,       // E7-T04: the dead (sum of the hashes of their rows, and their number)
     DynastyExt = 3,    // unity, succession law, branches
     Pregnancy = 4,     // E7-T12
     Chronicle = 5,     // E7-T16
@@ -346,15 +388,38 @@ public:
     /// is full (kMaxCharacterIds).
     CharacterId create_character(const CharacterInit& init);
     /// Removes the character from all indexes (and from the head slot of its dynasty). Only
-    /// available outside dynasty mode: there the dead stay in the table (see E7-T04, cmd::Die).
+    /// available outside dynasty mode: there the dead stay in the table (see die()).
     bool destroy_character(CharacterId id);
+    /// Kills a living character and moves its row to the archive (E7-T04, ADR-0006 D3), in one step:
+    ///   * the death date (today) and the cause are recorded;
+    ///   * a marriage ends (end_marriage): the spouse is a widow(er), the dead one keeps the partner
+    ///     in `ex_spouses`;
+    ///   * the person leaves the member list of the dynasty and the list of the living and stops
+    ///     being head of the dynasty (the successor is chosen by E7-T15, not here);
+    ///   * the group S columns (health, skills, scales, traits, education, planned death) are reset
+    ///     and the entries of the life-event queue are dropped;
+    ///   * the slot becomes archived; the id is never handed out again.
+    /// Identity, parents, children and marriages stay: they are facts of the family tree. Dynasty
+    /// mode only. False (nothing changed) when the character is not alive, the cause is None or
+    /// unknown, or the person is not born yet.
+    bool die(CharacterId id, CauseOfDeath cause);
     [[nodiscard]] bool is_alive(CharacterId id) const noexcept { return characters_.ids.is_alive(id); }
-    /// True when the row of the character exists: it is alive or (from E7-T04 on) archived. In
-    /// dynasty mode an id that exists never refers to anybody else later.
+    /// True when the character is dead and its row sits in the archive (dynasty mode).
+    [[nodiscard]] bool is_archived(CharacterId id) const noexcept {
+        return id.valid() && id.index() < characters_.ids.capacity() &&
+               characters_.ids.alive_flags()[id.index()] == 2;
+    }
+    /// True when the row of the character exists: it is alive or archived. In dynasty mode an id
+    /// that exists never refers to anybody else later.
     [[nodiscard]] bool exists(CharacterId id) const noexcept {
         return id.valid() && id.index() < characters_.ids.capacity() &&
                characters_.ids.alive_flags()[id.index()] != 0;
     }
+    /// The archived record of a dead character, copied by value; nullopt for anybody who is not in
+    /// the archive (alive, unknown, or E1 mode).
+    [[nodiscard]] std::optional<ArchivedPerson> archived_person(CharacterId id) const;
+    /// Number of rows in the archive.
+    [[nodiscard]] std::size_t archived_count() const noexcept { return characters_.ids.retired_count(); }
     /// True when another character can be created now.
     [[nodiscard]] bool can_create_character() const noexcept {
         return characters_.ids.capacity() < kMaxCharacterIds || !characters_.ids.free_list().empty();
@@ -430,7 +495,8 @@ public:
     ///   1  the E1 layout (clock, random streams, dynasties, provinces, characters)
     ///   2  + extension block: world flags and id-versioned sections (E7-T02: sections 1 and 2)
     ///   3  + section 3 "kin": spouses, marriage counters, former spouses, godparents (E7-T03)
-    static constexpr std::uint32_t kStateSchema = 3;
+    ///   4  the slot table may hold archived rows (slot state 2), dynasty mode only (E7-T04)
+    static constexpr std::uint32_t kStateSchema = 4;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -447,6 +513,18 @@ private:
     /// Queues the birthday (due `birthday_due`) and, when set, the planned death of a character.
     void push_life_events(CharacterId id, Date birthday_due);
     void insert_living(CharacterId id);
+    // Member lists (one vector per dynasty, swap-remove) and the position of every member in its list.
+    static constexpr std::uint32_t kNoMember = 0xFFFFFFFFU;
+    void member_add(DynastyId dynasty, CharacterId id);
+    bool member_remove(DynastyId dynasty, CharacterId id);
+    [[nodiscard]] bool member_contains(DynastyId dynasty, CharacterId id) const noexcept;
+    // Archive (E7-T04): the group S columns of a dead row are at their defaults; the hash of the
+    // archive is the sum of the hashes of its rows, kept in `archive_sum_` (derived, rebuilt on load).
+    void reset_living_state(std::size_t index);
+    [[nodiscard]] bool living_state_is_default(std::size_t index) const;
+    [[nodiscard]] std::uint64_t archive_row_hash(std::size_t index) const;
+    [[nodiscard]] std::uint64_t compute_archive_sum() const;
+    void check_archive_invariants(std::vector<std::string>& bad) const;
     // Kinship helpers (world.cpp). The child lists are derived from the father/mother columns.
     [[nodiscard]] bool kin_is_default(std::size_t index) const;
     void reset_kinship(std::size_t index);
@@ -462,10 +540,12 @@ private:
     BranchTable branches_;
     ProvinceTable provinces_;
     CharacterTable characters_;
-    std::vector<core::SparseSet<CharacterId>> members_;         // per dynasty
+    std::vector<std::vector<CharacterId>> members_;             // per dynasty
+    std::vector<std::uint32_t> member_pos_;                     // per character id, derived from members_
     std::vector<core::SparseSet<ProvinceId>> owned_provinces_;  // per dynasty
     std::vector<CharacterId> living_;                           // derived, ascending
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
+    std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
 };
 
 }  // namespace pat::sim
