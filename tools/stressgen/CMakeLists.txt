@@ -1,7 +1,13 @@
 add_library(patriarch_stress STATIC
     include/pat/stress/world_generator.hpp
     include/pat/stress/dataset.hpp
+    include/pat/stress/economy_generator.hpp
+    include/pat/stress/economy_skeleton.hpp
+    include/pat/stress/economy_bench.hpp
     world_generator.cpp
+    economy_generator.cpp
+    economy_skeleton.cpp
+    economy_bench.cpp
     dataset.cpp)
 target_include_directories(patriarch_stress PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(patriarch_stress PUBLIC patriarch::sim)
@@ -16,7 +22,7 @@ set_target_properties(stressgen PROPERTIES FOLDER "tools")
 
 if(PATRIARCH_BUILD_TESTS)
     find_package(doctest CONFIG REQUIRED)
-    add_executable(stressgen_tests "${PROJECT_SOURCE_DIR}/tests/main.cpp" dataset_test.cpp)
+    add_executable(stressgen_tests "${PROJECT_SOURCE_DIR}/tests/main.cpp" dataset_test.cpp economy_test.cpp)
     target_link_libraries(stressgen_tests PRIVATE patriarch_stress doctest::doctest)
     target_compile_definitions(stressgen_tests PRIVATE DOCTEST_CONFIG_USE_STD_HEADERS)
     patriarch_set_target_options(stressgen_tests)
