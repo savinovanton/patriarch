@@ -68,6 +68,12 @@ core::Result<Dataset> generate(const Config& config) {
     }
     Dataset dataset{std::move(generated).value(), {}};
     auto& world = dataset.world;
+    if (config.economy.enabled) {
+        // Before the workload streams below, so that the workload header binds the final world hash.
+        if (const auto filled = populate_economy(world, config.economy); !filled) {
+            return R::err(filled.error());
+        }
+    }
     auto& workload = dataset.workload;
     auto& armies_rng = world.rng().stream("stress.armies");
     auto& schemes_rng = world.rng().stream("stress.schemes");

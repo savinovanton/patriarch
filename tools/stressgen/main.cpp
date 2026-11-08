@@ -1,5 +1,7 @@
 #include "pat/sim/save.hpp"
 #include "pat/stress/dataset.hpp"
+#include "pat/stress/economy_bench.hpp"
+#include "pat/stress/economy_generator.hpp"
 
 #include <charconv>
 #include <chrono>
@@ -8,6 +10,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -19,10 +22,20 @@ constexpr const char* kUsage = R"(Usage: stressgen --output FILE [options]
   --provinces N --characters N --dynasties N
   --archived N                   Extra characters who are already dead (dynasty mode, default: 0)
   --armies N --schemes N --contracts N --events N
+  --economy                      Fill the economy (E9-T05): population groups, buildings, loans, quotas,
+                                 a 12-month statement, incidents. Works with every profile
+  --closed-months N              Closed statement months of the economy, 0..12 (default: 12)
+  --bench                        Measure the economy state (memory, copy, save, load, checks, the
+                                 skeleton of the economy systems) and print a JSON report; implies
+                                 --economy. --output is optional: with it the save stays on disk
+  --bench-repeats N              Repeats of the cheap operations (default: 30)
+  --bench-heavy-repeats N        Repeats of save and load (default: 5)
+  --bench-days N                 Days the economy skeleton runs, 1..16000 (default: 400)
   --help                         Show this help
 
 Counts override the profile regardless of argument order. Both --name N and --name=N work.
 Writes an E1 PSV1 save and FILE.psl with the synthetic workload, then a JSON summary to stdout.
+Timings of --bench mean something only in a Release build.
 )";
 
 int fail(const std::string& message) {
@@ -36,6 +49,8 @@ int main(int argc, char** argv) {
     using namespace pat;
     std::string_view profile = "year60";
     std::filesystem::path output;
+    bool economy = false;
+    bool bench = false;
     std::vector<std::pair<std::string_view, std::string_view>> flags;
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg(argv[i]);
@@ -45,9 +60,18 @@ int main(int argc, char** argv) {
         }
         const auto equals = arg.find('=');
         const auto name = arg.substr(0, equals);
+        if (name == "--economy" || name == "--bench") {
+            if (equals != std::string_view::npos) {
+                return fail(std::string(name) + " takes no value");
+            }
+            (name == "--economy" ? economy : bench) = true;
+            continue;
+        }
         if (name != "--profile" && name != "--output" && name != "--seed" && name != "--provinces" &&
             name != "--characters" && name != "--dynasties" && name != "--armies" && name != "--schemes" &&
-            name != "--contracts" && name != "--events" && name != "--archived") {
+            name != "--contracts" && name != "--events" && name != "--archived" &&
+            name != "--closed-months" && name != "--bench-repeats" && name != "--bench-heavy-repeats" &&
+            name != "--bench-days") {
             return fail("unknown option: " + std::string(name));
         }
         std::string_view value;
@@ -72,6 +96,8 @@ int main(int argc, char** argv) {
         return fail(preset.error().message);
     }
     auto config = preset.value();
+    config.economy.enabled = economy || bench;
+    stress::EconomyBenchOptions bench_options;
     for (const auto& [name, text] : flags) {
         std::uint64_t value = 0;
         const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
@@ -102,7 +128,31 @@ int main(int argc, char** argv) {
             config.contracts = count;
         } else if (name == "--events") {
             config.events = count;
+        } else if (name == "--closed-months") {
+            config.economy.closed_months = count;
+        } else if (name == "--bench-repeats") {
+            bench_options.repeats = count;
+        } else if (name == "--bench-heavy-repeats") {
+            bench_options.heavy_repeats = count;
+        } else if (name == "--bench-days") {
+            bench_options.days = count;
         }
+    }
+    if (bench) {
+        if (output.empty()) {  // a temporary file for the disk timings
+            std::error_code ignored;
+            bench_options.scratch =
+                std::filesystem::temp_directory_path(ignored) / "patriarch-stressgen-bench.psv";
+            bench_options.remove_scratch = true;
+        } else {
+            bench_options.scratch = output;
+        }
+        const auto report = stress::run_economy_bench(config, bench_options);
+        if (!report) {
+            return fail(report.error().message);
+        }
+        std::printf("%s\n", report.value().c_str());
+        return 0;
     }
     if (output.empty()) {
         return fail("--output FILE is required (see --help)");
@@ -131,7 +181,7 @@ int main(int argc, char** argv) {
                 "\"provinces\":%u,\"characters\":%u,\"archived\":%u,\"dynasties\":%u,"
                 "\"armies\":%u,\"schemes\":%u,\"contracts\":%u,\"events\":%u,"
                 "\"world_hash\":\"%016llx\",\"dataset_hash\":\"%016llx\","
-                "\"generation_ms\":%.3f,\"save_bytes\":%zu,\"workload_bytes\":%zu}\n",
+                "\"generation_ms\":%.3f,\"save_bytes\":%zu,\"workload_bytes\":%zu",
                 static_cast<int>(profile.size()),
                 profile.data(),
                 static_cast<unsigned long long>(config.world.seed),
@@ -149,5 +199,25 @@ int main(int argc, char** argv) {
                 milliseconds,
                 save.size(),
                 workload.size());
+    if (config.economy.enabled) {
+        // E9-T05: the counters of economy-model section 14. Bytes are the elements in use.
+        const auto memory = stress::economy_memory(dataset.world);
+        const auto economy_hash =
+            dataset.world.compute_hash().ext[static_cast<std::size_t>(sim::ExtPart::Economy)];
+        std::printf(",\"economy\":true,\"closed_months\":%u,\"economy_hash\":\"%016llx\","
+                    "\"economy_bytes\":%zu,\"bytes_per_province\":%.1f,"
+                    "\"bytes_per_province_without_ledger\":%.1f,\"ledger_bytes\":%zu",
+                    config.economy.closed_months,
+                    static_cast<unsigned long long>(economy_hash),
+                    memory.used_total(),
+                    memory.provinces == 0
+                        ? 0.0
+                        : static_cast<double>(memory.used_total()) / static_cast<double>(memory.provinces),
+                    memory.provinces == 0 ? 0.0
+                                          : static_cast<double>(memory.used_without_ledger()) /
+                                                static_cast<double>(memory.provinces),
+                    memory.ledger_bytes);
+    }
+    std::printf("}\n");
     return 0;
 }

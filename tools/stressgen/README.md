@@ -72,10 +72,36 @@ payload hash (u64/u64), затем четыре секции с u32 count и з�
 схемы — 16, договоры — 20, события — 16. Все числа little-endian, без padding структур.
 Новый формат нагрузки независим от версии игрового сейва E1.
 
+## Экономика (E9-T05)
+
+Флаг `--economy` заполняет экономику мира (любой профиль; 400 провинций — `year60`, ×3 — `year60x3`): население по 6 группам,
+виды и владельцев провинций, политики, управителей, здания, очередь стройки, займы, квоты и их итоги, ведомость
+(корона + все роды, до 12 закрытых месяцев, открытый месяц — месяц даты снимка), полное кольцо происшествий. Всё из отдельных
+именованных потоков `stress.economy.*` (создаются только при `--economy`, поэтому мир без флага не меняется ни на бит), без
+`float`/`double`: один seed — один хеш. Библиотека: `pat/stress/economy_generator.hpp` (`populate_economy`, `economy_memory`).
+
+```powershell
+stressgen --profile year60 --seed 7 --economy --output out/year60-economy.psv        # + economy_bytes, bytes_per_province, ledger_bytes в JSON
+stressgen --profile year60x3 --economy --closed-months 6 --output out/x3.psv         # меньше закрытых месяцев ведомости
+simcli --load out/year60-economy.psv --days 0 --hash-only                            # сейв читается как обычный
+```
+
+`--bench` (подразумевает `--economy`; `--output` необязателен — иначе диск замеряется на временном файле) печатает JSON-отчёт:
+память по таблицам (по размеру и по ёмкости), время заполнения, `check_invariants`, `compute_hash`, `economy_hash_parts`, копию
+мира `World::snapshot()` и её освобождение — для мира **без** и **с** экономикой, размеры и время `save_state`/`serialize_save`/
+записи/чтения/`deserialize_save`, нижнюю границу пересборки кэша модификаторов и прогон каркаса систем (`pat/stress/economy_skeleton.hpp`):
+три пустые системы `economy.settlement` (Monthly), `economy.construction`, `economy.provinces` (Daily), которые только считают и
+дают метрики `system.economy.*` с p50/p95/p99. Параметры: `--bench-repeats` (30), `--bench-heavy-repeats` (5), `--bench-days` (400).
+Время имеет смысл только в Release на целевом ПК; результаты и разбор — [docs/benchmarks/E9-T05-economy-state.md](../../docs/benchmarks/E9-T05-economy-state.md).
+
+Каркас систем — заглушки под будущие `install_economy_systems` (E9-T06+): они не читают и не меняют мир и не могут сдвинуть хеш;
+тесты `economy skeleton` сверяют хеш прогона с заглушками и без них.
+
 ## Проверки
 
-`ctest --preset win-msvc-debug -L stressgen` запускает только две проверки этой задачи:
-детерминизм/инварианты/round-trip профилей и CLI → обычный `simcli --load`.
+`ctest --preset win-msvc-debug -L stressgen` запускает две проверки:
+детерминизм/инварианты/round-trip профилей (включая экономику и каркас систем) и CLI → обычный `simcli --load`
+(в том числе `--economy` и `--bench`).
 Проверки не устанавливают порог времени на общих CI-раннерах. Критерий ≤ 2 с проверяется
 одним Release-замером на целевом ПК для самого большого профиля `year60x3`.
 

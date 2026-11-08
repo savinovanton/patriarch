@@ -1,0 +1,2711 @@
+{
+ "command": "stressgen --profile <p> --seed 7 --bench --bench-repeats 100 --bench-heavy-repeats 10 --bench-days 400",
+ "runs": {
+  "year1": [
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1703-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 1500,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 1.377,
+     "economy": 1.792
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 257.4,
+      "median": 270.1,
+      "mean": 282.959,
+      "p95": 362.9,
+      "max": 394.0
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 244.7,
+      "median": 257.1,
+      "mean": 258.356,
+      "p95": 283.5,
+      "max": 382.3
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 62.6,
+      "median": 86.5,
+      "mean": 93.469,
+      "p95": 132.1,
+      "max": 256.6
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 32.9,
+      "median": 40.2,
+      "mean": 44.514,
+      "p95": 53.8,
+      "max": 242.9
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 402.1,
+      "median": 416.9,
+      "mean": 439.361,
+      "p95": 605.6,
+      "max": 653.7
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 681.5,
+      "median": 714.3,
+      "mean": 710.617,
+      "p95": 741.1,
+      "max": 947.2
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 172.6,
+      "median": 199.6,
+      "mean": 215.762,
+      "p95": 281.2,
+      "max": 426.2
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 61.4,
+      "median": 76.6,
+      "mean": 85.137,
+      "p95": 115.1,
+      "max": 314.4
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.8,
+     "median": 457.7,
+     "mean": 453.772,
+     "p95": 479.6,
+     "max": 498.1
+    },
+    "save": {
+     "raw_bytes_without_economy": 197350,
+     "raw_bytes": 635607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 96633,
+     "file_bytes": 211636,
+     "file_bytes_of_economy": 115003,
+     "save_state_ms": {
+      "n": 10,
+      "min": 1.593,
+      "median": 1.8,
+      "mean": 1.863,
+      "p95": 2.233,
+      "max": 2.233
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 4.439,
+      "median": 4.842,
+      "mean": 4.975,
+      "p95": 6.25,
+      "max": 6.25
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.74,
+      "median": 0.832,
+      "mean": 0.858,
+      "p95": 0.982,
+      "max": 0.982
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.121,
+      "median": 4.804,
+      "mean": 4.901,
+      "p95": 6.276,
+      "max": 6.276
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 2.761,
+      "median": 3.017,
+      "mean": 3.074,
+      "p95": 3.802,
+      "max": 3.802
+     },
+     "load_ms": 7.821
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 1.7,
+     "median": 1.8,
+     "mean": 1.763,
+     "p95": 1.8,
+     "max": 1.8
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 252,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 1500
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 252,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 1500
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 0,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 23,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 18,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 18,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 37,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 37,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      }
+     ]
+    },
+    "world_hash": "7c0ac846e7616620",
+    "economy_hash": "0f7d6476e892eef3",
+    "loaded_hash_equal": true,
+    "sink": "586aea2c37873660"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1703-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 1500,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 1.296,
+     "economy": 1.512
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 256.4,
+      "median": 268.0,
+      "mean": 277.84,
+      "p95": 372.5,
+      "max": 415.3
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 244.6,
+      "median": 249.3,
+      "mean": 261.447,
+      "p95": 290.4,
+      "max": 533.9
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 83.5,
+      "median": 110.6,
+      "mean": 112.718,
+      "p95": 167.6,
+      "max": 249.5
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 33.0,
+      "median": 40.3,
+      "mean": 44.937,
+      "p95": 63.7,
+      "max": 83.2
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 383.8,
+      "median": 398.5,
+      "mean": 410.689,
+      "p95": 486.7,
+      "max": 654.2
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 681.5,
+      "median": 689.7,
+      "mean": 713.084,
+      "p95": 839.2,
+      "max": 1044.2
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 175.7,
+      "median": 230.3,
+      "mean": 224.192,
+      "p95": 273.2,
+      "max": 294.5
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 61.7,
+      "median": 86.7,
+      "mean": 85.64,
+      "p95": 108.7,
+      "max": 119.9
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.8,
+     "median": 446.1,
+     "mean": 452.554,
+     "p95": 492.9,
+     "max": 583.3
+    },
+    "save": {
+     "raw_bytes_without_economy": 197350,
+     "raw_bytes": 635607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 96633,
+     "file_bytes": 211636,
+     "file_bytes_of_economy": 115003,
+     "save_state_ms": {
+      "n": 10,
+      "min": 1.593,
+      "median": 1.759,
+      "mean": 1.907,
+      "p95": 2.424,
+      "max": 2.424
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 4.325,
+      "median": 4.796,
+      "mean": 5.069,
+      "p95": 6.445,
+      "max": 6.445
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.751,
+      "median": 0.884,
+      "mean": 0.879,
+      "p95": 1.099,
+      "max": 1.099
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.345,
+      "median": 4.938,
+      "mean": 4.852,
+      "p95": 5.858,
+      "max": 5.858
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 2.689,
+      "median": 3.04,
+      "mean": 3.057,
+      "p95": 3.665,
+      "max": 3.665
+     },
+     "load_ms": 7.978
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 3.3,
+     "median": 4.0,
+     "mean": 3.766,
+     "p95": 4.1,
+     "max": 4.1
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 437,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 40700
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 437,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 40700
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 1,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 46,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 26,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 26,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 46,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 46,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      }
+     ]
+    },
+    "world_hash": "7c0ac846e7616620",
+    "economy_hash": "0f7d6476e892eef3",
+    "loaded_hash_equal": true,
+    "sink": "586aea2c37873660"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1703-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 1500,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 1.283,
+     "economy": 1.412
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 256.1,
+      "median": 273.3,
+      "mean": 273.655,
+      "p95": 285.3,
+      "max": 333.7
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 244.7,
+      "median": 251.0,
+      "mean": 252.501,
+      "p95": 263.5,
+      "max": 309.1
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 65.3,
+      "median": 74.4,
+      "mean": 77.856,
+      "p95": 97.4,
+      "max": 139.7
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 23.7,
+      "median": 27.0,
+      "mean": 27.914,
+      "p95": 31.7,
+      "max": 96.5
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 395.9,
+      "median": 447.9,
+      "mean": 498.996,
+      "p95": 669.2,
+      "max": 696.0
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 681.7,
+      "median": 714.9,
+      "mean": 716.547,
+      "p95": 744.9,
+      "max": 873.1
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 158.5,
+      "median": 203.9,
+      "mean": 215.888,
+      "p95": 274.6,
+      "max": 407.6
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 51.2,
+      "median": 79.4,
+      "mean": 85.68,
+      "p95": 111.7,
+      "max": 200.2
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.8,
+     "median": 440.3,
+     "mean": 452.588,
+     "p95": 495.9,
+     "max": 724.1
+    },
+    "save": {
+     "raw_bytes_without_economy": 197350,
+     "raw_bytes": 635607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 96633,
+     "file_bytes": 211636,
+     "file_bytes_of_economy": 115003,
+     "save_state_ms": {
+      "n": 10,
+      "min": 1.442,
+      "median": 1.943,
+      "mean": 1.931,
+      "p95": 2.277,
+      "max": 2.277
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 4.386,
+      "median": 5.144,
+      "mean": 5.139,
+      "p95": 6.375,
+      "max": 6.375
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.747,
+      "median": 0.835,
+      "mean": 0.856,
+      "p95": 1.054,
+      "max": 1.054
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.485,
+      "median": 5.217,
+      "mean": 5.135,
+      "p95": 5.746,
+      "max": 5.746
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 2.596,
+      "median": 3.014,
+      "mean": 2.989,
+      "p95": 3.681,
+      "max": 3.681
+     },
+     "load_ms": 8.231
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 1.7,
+     "median": 1.8,
+     "mean": 1.766,
+     "p95": 1.8,
+     "max": 1.8
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 255,
+        "p50_ns": 300,
+        "p95_ns": 300,
+        "p99_ns": 300,
+        "max_ns": 1600
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 255,
+        "p50_ns": 300,
+        "p95_ns": 300,
+        "p99_ns": 300,
+        "max_ns": 1600
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 1,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 38,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 18,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 18,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 39,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 39,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      }
+     ]
+    },
+    "world_hash": "7c0ac846e7616620",
+    "economy_hash": "0f7d6476e892eef3",
+    "loaded_hash_equal": true,
+    "sink": "586aea2c37873660"
+   }
+  ],
+  "year60": [
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 5000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 3.51,
+     "economy": 2.111
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 905.5,
+      "median": 1070.2,
+      "mean": 1100.413,
+      "p95": 1396.4,
+      "max": 1690.5
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 777.2,
+      "median": 814.1,
+      "mean": 818.611,
+      "p95": 915.0,
+      "max": 1006.6
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 260.6,
+      "median": 292.5,
+      "mean": 307.673,
+      "p95": 384.2,
+      "max": 426.2
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 80.4,
+      "median": 97.4,
+      "mean": 103.372,
+      "p95": 137.1,
+      "max": 258.2
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 1052.8,
+      "median": 1144.6,
+      "mean": 1232.806,
+      "p95": 1563.7,
+      "max": 1656.4
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 1214.4,
+      "median": 1237.7,
+      "mean": 1263.714,
+      "p95": 1384.6,
+      "max": 1556.6
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 306.8,
+      "median": 373.7,
+      "mean": 388.594,
+      "p95": 490.4,
+      "max": 773.7
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 102.0,
+      "median": 142.1,
+      "mean": 146.294,
+      "p95": 200.1,
+      "max": 221.6
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.9,
+     "median": 459.4,
+     "mean": 465.219,
+     "p95": 490.1,
+     "max": 670.9
+    },
+    "save": {
+     "raw_bytes_without_economy": 617350,
+     "raw_bytes": 1055607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 295101,
+     "file_bytes": 411314,
+     "file_bytes_of_economy": 116213,
+     "save_state_ms": {
+      "n": 10,
+      "min": 2.426,
+      "median": 2.533,
+      "mean": 2.553,
+      "p95": 2.761,
+      "max": 2.761
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 6.989,
+      "median": 8.257,
+      "mean": 8.051,
+      "p95": 9.209,
+      "max": 9.209
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.82,
+      "median": 0.985,
+      "mean": 0.946,
+      "p95": 1.102,
+      "max": 1.102
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.34,
+      "median": 5.02,
+      "mean": 4.815,
+      "p95": 5.162,
+      "max": 5.162
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 5.368,
+      "median": 5.759,
+      "mean": 5.851,
+      "p95": 6.867,
+      "max": 6.867
+     },
+     "load_ms": 10.779
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 1.7,
+     "median": 1.8,
+     "mean": 3.16,
+     "p95": 2.9,
+     "max": 120.8
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 258,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 6500
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 258,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 6500
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 0,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 23,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 16,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 16,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 35,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 35,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      }
+     ]
+    },
+    "world_hash": "69be480270d91249",
+    "economy_hash": "20e7ed1058ede160",
+    "loaded_hash_equal": true,
+    "sink": "c19e99cb4a13b432"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 5000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 3.808,
+     "economy": 2.867
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 915.3,
+      "median": 981.7,
+      "mean": 1027.603,
+      "p95": 1270.1,
+      "max": 1805.6
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 777.1,
+      "median": 795.2,
+      "mean": 811.597,
+      "p95": 919.2,
+      "max": 969.8
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 229.2,
+      "median": 265.9,
+      "mean": 279.126,
+      "p95": 345.6,
+      "max": 404.3
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 71.5,
+      "median": 88.7,
+      "mean": 97.348,
+      "p95": 150.4,
+      "max": 194.7
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 1058.4,
+      "median": 1173.9,
+      "mean": 1318.387,
+      "p95": 1664.9,
+      "max": 1826.9
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 1214.5,
+      "median": 1236.5,
+      "mean": 1250.941,
+      "p95": 1297.0,
+      "max": 1571.3
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 341.8,
+      "median": 401.5,
+      "mean": 426.244,
+      "p95": 526.9,
+      "max": 896.2
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 108.0,
+      "median": 175.6,
+      "mean": 167.819,
+      "p95": 206.0,
+      "max": 296.4
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.8,
+     "median": 439.7,
+     "mean": 449.266,
+     "p95": 481.0,
+     "max": 541.2
+    },
+    "save": {
+     "raw_bytes_without_economy": 617350,
+     "raw_bytes": 1055607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 295101,
+     "file_bytes": 411314,
+     "file_bytes_of_economy": 116213,
+     "save_state_ms": {
+      "n": 10,
+      "min": 2.607,
+      "median": 3.013,
+      "mean": 2.991,
+      "p95": 3.561,
+      "max": 3.561
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 7.05,
+      "median": 8.007,
+      "mean": 8.015,
+      "p95": 9.649,
+      "max": 9.649
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.845,
+      "median": 1.036,
+      "mean": 1.022,
+      "p95": 1.239,
+      "max": 1.239
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.317,
+      "median": 5.121,
+      "mean": 5.155,
+      "p95": 6.497,
+      "max": 6.497
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 5.675,
+      "median": 5.778,
+      "mean": 5.87,
+      "p95": 6.24,
+      "max": 6.24
+     },
+     "load_ms": 10.899
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 1.7,
+     "median": 1.8,
+     "mean": 1.777,
+     "p95": 1.8,
+     "max": 1.8
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 245,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 1300
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 245,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 1300
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 0,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 23,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 17,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 17,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 31,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 31,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      }
+     ]
+    },
+    "world_hash": "69be480270d91249",
+    "economy_hash": "20e7ed1058ede160",
+    "loaded_hash_equal": true,
+    "sink": "c19e99cb4a13b432"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 400,
+     "dynasties": 100,
+     "characters": 5000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 3.806,
+     "economy": 1.983
+    },
+    "memory": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 476037,
+     "allocated_bytes_without_ledger": 139053,
+     "allocated_bytes_per_province": 1190.1
+    },
+    "memory_after_load": {
+     "provinces": 400,
+     "dynasties": 100,
+     "tables_used_bytes": {
+      "groups": 48000,
+      "provinces": 37200,
+      "dynasties": 500,
+      "construction": 5580,
+      "loans": 3330,
+      "quotas": 625,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 336984
+     },
+     "economy_bytes": 438075,
+     "economy_bytes_without_ledger": 101091,
+     "ledger_bytes": 336984,
+     "bytes_per_province": 1095.2,
+     "bytes_per_province_without_ledger": 252.7,
+     "ledger_bytes_per_province": 842.5,
+     "allocated_bytes": 440398,
+     "allocated_bytes_without_ledger": 103414,
+     "allocated_bytes_per_province": 1101.0
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 912.8,
+      "median": 948.7,
+      "mean": 1000.216,
+      "p95": 1247.1,
+      "max": 1422.8
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 777.2,
+      "median": 815.0,
+      "mean": 819.708,
+      "p95": 867.4,
+      "max": 1005.2
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 258.9,
+      "median": 288.4,
+      "mean": 300.548,
+      "p95": 367.7,
+      "max": 495.7
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 78.4,
+      "median": 95.8,
+      "mean": 100.426,
+      "p95": 134.1,
+      "max": 270.6
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 1060.3,
+      "median": 1148.3,
+      "mean": 1277.197,
+      "p95": 1677.9,
+      "max": 1860.3
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 1214.9,
+      "median": 1276.0,
+      "mean": 1280.487,
+      "p95": 1366.0,
+      "max": 1428.8
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 319.7,
+      "median": 383.9,
+      "mean": 403.77,
+      "p95": 508.3,
+      "max": 568.0
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 101.7,
+      "median": 138.1,
+      "mean": 151.184,
+      "p95": 206.4,
+      "max": 446.9
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 436.9,
+     "median": 458.1,
+     "mean": 462.62,
+     "p95": 505.5,
+     "max": 838.3
+    },
+    "save": {
+     "raw_bytes_without_economy": 617350,
+     "raw_bytes": 1055607,
+     "raw_bytes_of_economy": 438257,
+     "file_bytes_without_economy": 295101,
+     "file_bytes": 411314,
+     "file_bytes_of_economy": 116213,
+     "save_state_ms": {
+      "n": 10,
+      "min": 2.466,
+      "median": 2.633,
+      "mean": 2.701,
+      "p95": 3.012,
+      "max": 3.012
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 7.428,
+      "median": 8.23,
+      "mean": 8.431,
+      "p95": 10.511,
+      "max": 10.511
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 0.86,
+      "median": 0.97,
+      "mean": 1.017,
+      "p95": 1.342,
+      "max": 1.342
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.717,
+      "median": 5.461,
+      "mean": 5.56,
+      "p95": 6.963,
+      "max": 6.963
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 5.537,
+      "median": 6.494,
+      "mean": 6.413,
+      "p95": 7.408,
+      "max": 7.408
+     },
+     "load_ms": 11.955
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 1.7,
+     "median": 1.8,
+     "mean": 1.779,
+     "p95": 1.8,
+     "max": 1.8
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 5260,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 343,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 1500
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 343,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 1500
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 0,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 23,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 27,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 27,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 49,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 49,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       }
+      }
+     ]
+    },
+    "world_hash": "69be480270d91249",
+    "economy_hash": "20e7ed1058ede160",
+    "loaded_hash_equal": true,
+    "sink": "c19e99cb4a13b432"
+   }
+  ],
+  "year60x3": [
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 1200,
+     "dynasties": 300,
+     "characters": 15000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 12.008,
+     "economy": 6.953
+    },
+    "memory": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1345943,
+     "allocated_bytes_without_ledger": 341759,
+     "allocated_bytes_per_province": 1121.6
+    },
+    "memory_after_load": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1305037,
+     "allocated_bytes_without_ledger": 300853,
+     "allocated_bytes_per_province": 1087.5
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 2882.9,
+      "median": 3059.5,
+      "mean": 3146.069,
+      "p95": 3694.1,
+      "max": 4031.8
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 2336.0,
+      "median": 2451.4,
+      "mean": 2458.618,
+      "p95": 2548.8,
+      "max": 2904.9
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 994.1,
+      "median": 1130.9,
+      "mean": 1149.077,
+      "p95": 1349.6,
+      "max": 1506.9
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 249.6,
+      "median": 314.4,
+      "mean": 333.608,
+      "p95": 435.2,
+      "max": 639.4
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 3298.3,
+      "median": 3556.9,
+      "mean": 3623.946,
+      "p95": 4250.5,
+      "max": 4773.3
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 3662.4,
+      "median": 3847.2,
+      "mean": 3875.235,
+      "p95": 4100.6,
+      "max": 4471.1
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 1111.3,
+      "median": 1334.1,
+      "mean": 1389.742,
+      "p95": 1783.0,
+      "max": 1990.4
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 337.4,
+      "median": 473.5,
+      "mean": 479.908,
+      "p95": 635.0,
+      "max": 907.2
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 1295.8,
+     "median": 1359.1,
+     "mean": 1358.767,
+     "p95": 1448.3,
+     "max": 1608.9
+    },
+    "save": {
+     "raw_bytes_without_economy": 1851518,
+     "raw_bytes": 3148380,
+     "raw_bytes_of_economy": 1296862,
+     "file_bytes_without_economy": 881222,
+     "file_bytes": 1216520,
+     "file_bytes_of_economy": 335298,
+     "save_state_ms": {
+      "n": 10,
+      "min": 6.889,
+      "median": 7.906,
+      "mean": 7.851,
+      "p95": 10.402,
+      "max": 10.402
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 21.177,
+      "median": 22.738,
+      "mean": 22.47,
+      "p95": 24.967,
+      "max": 24.967
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 1.093,
+      "median": 1.226,
+      "mean": 1.238,
+      "p95": 1.439,
+      "max": 1.439
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.668,
+      "median": 5.42,
+      "mean": 5.49,
+      "p95": 6.398,
+      "max": 6.398
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 17.102,
+      "median": 17.54,
+      "mean": 17.855,
+      "p95": 19.108,
+      "max": 19.108
+     },
+     "load_ms": 22.961
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 5.2,
+     "median": 5.3,
+     "mean": 5.289,
+     "p95": 5.3,
+     "max": 9.0
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 15772,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 350,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 2300
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 350,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 2300
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 1,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 38,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 25,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 25,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 64,
+        "p50_ns": 100,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 64,
+        "p50_ns": 100,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       }
+      }
+     ]
+    },
+    "world_hash": "9b65d4d683b8cfb8",
+    "economy_hash": "766ce7d1872e8942",
+    "loaded_hash_equal": true,
+    "sink": "d3a3cfc74e1dc2a3"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 1200,
+     "dynasties": 300,
+     "characters": 15000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 10.9,
+     "economy": 6.808
+    },
+    "memory": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1345943,
+     "allocated_bytes_without_ledger": 341759,
+     "allocated_bytes_per_province": 1121.6
+    },
+    "memory_after_load": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1305037,
+     "allocated_bytes_without_ledger": 300853,
+     "allocated_bytes_per_province": 1087.5
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 2881.2,
+      "median": 3129.1,
+      "mean": 3347.128,
+      "p95": 4116.0,
+      "max": 4291.5
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 2334.8,
+      "median": 2452.9,
+      "mean": 2459.576,
+      "p95": 2581.1,
+      "max": 2913.3
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 933.9,
+      "median": 1102.2,
+      "mean": 1147.876,
+      "p95": 1539.4,
+      "max": 1903.2
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 246.3,
+      "median": 339.5,
+      "mean": 362.277,
+      "p95": 519.4,
+      "max": 705.8
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 3283.0,
+      "median": 3647.5,
+      "mean": 3829.183,
+      "p95": 4809.4,
+      "max": 5001.4
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 3641.7,
+      "median": 3814.6,
+      "mean": 3805.586,
+      "p95": 3932.9,
+      "max": 4085.9
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 999.4,
+      "median": 1323.4,
+      "mean": 1368.071,
+      "p95": 1649.7,
+      "max": 2013.6
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 321.9,
+      "median": 474.8,
+      "mean": 498.894,
+      "p95": 676.0,
+      "max": 1092.4
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 1295.3,
+     "median": 1361.1,
+     "mean": 1368.148,
+     "p95": 1452.2,
+     "max": 1705.1
+    },
+    "save": {
+     "raw_bytes_without_economy": 1851518,
+     "raw_bytes": 3148380,
+     "raw_bytes_of_economy": 1296862,
+     "file_bytes_without_economy": 881222,
+     "file_bytes": 1216520,
+     "file_bytes_of_economy": 335298,
+     "save_state_ms": {
+      "n": 10,
+      "min": 7.248,
+      "median": 7.512,
+      "mean": 8.053,
+      "p95": 10.157,
+      "max": 10.157
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 21.324,
+      "median": 23.43,
+      "mean": 23.618,
+      "p95": 25.59,
+      "max": 25.59
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 1.059,
+      "median": 1.338,
+      "mean": 1.288,
+      "p95": 1.504,
+      "max": 1.504
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 5.029,
+      "median": 5.449,
+      "mean": 5.559,
+      "p95": 6.205,
+      "max": 6.205
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 17.205,
+      "median": 18.059,
+      "mean": 17.932,
+      "p95": 18.802,
+      "max": 18.802
+     },
+     "load_ms": 23.508
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 4.9,
+     "median": 5.0,
+     "mean": 5.067,
+     "p95": 5.1,
+     "max": 10.7
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 15772,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 247,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 2500
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 247,
+        "p50_ns": 200,
+        "p95_ns": 300,
+        "p99_ns": 400,
+        "max_ns": 2500
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 1,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 30,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 19,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 19,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 40,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 40,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       }
+      }
+     ]
+    },
+    "world_hash": "9b65d4d683b8cfb8",
+    "economy_hash": "766ce7d1872e8942",
+    "loaded_hash_equal": true,
+    "sink": "d3a3cfc74e1dc2a3"
+   },
+   {
+    "report": "E9-T05 economy state",
+    "profile_world": {
+     "seed": 7,
+     "date": "1762-01-01",
+     "provinces": 1200,
+     "dynasties": 300,
+     "characters": 15000,
+     "closed_months": 12
+    },
+    "options": {
+     "repeats": 100,
+     "heavy_repeats": 10,
+     "days": 400,
+     "disk": true
+    },
+    "generation_ms": {
+     "world": 10.53,
+     "economy": 6.394
+    },
+    "memory": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1345943,
+     "allocated_bytes_without_ledger": 341759,
+     "allocated_bytes_per_province": 1121.6
+    },
+    "memory_after_load": {
+     "provinces": 1200,
+     "dynasties": 300,
+     "tables_used_bytes": {
+      "groups": 144000,
+      "provinces": 111600,
+      "dynasties": 1500,
+      "construction": 17400,
+      "loans": 9953,
+      "quotas": 2375,
+      "outcomes": 480,
+      "incidents": 5376,
+      "ledger": 1004184
+     },
+     "economy_bytes": 1296868,
+     "economy_bytes_without_ledger": 292684,
+     "ledger_bytes": 1004184,
+     "bytes_per_province": 1080.7,
+     "bytes_per_province_without_ledger": 243.9,
+     "ledger_bytes_per_province": 836.8,
+     "allocated_bytes": 1305037,
+     "allocated_bytes_without_ledger": 300853,
+     "allocated_bytes_per_province": 1087.5
+    },
+    "without_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 2868.6,
+      "median": 3194.1,
+      "mean": 3326.889,
+      "p95": 4053.1,
+      "max": 4641.7
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 2335.8,
+      "median": 2439.2,
+      "mean": 2438.407,
+      "p95": 2571.2,
+      "max": 2703.4
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 913.8,
+      "median": 1130.1,
+      "mean": 1143.363,
+      "p95": 1428.0,
+      "max": 1905.5
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 268.7,
+      "median": 336.9,
+      "mean": 352.315,
+      "p95": 468.4,
+      "max": 662.0
+     }
+    },
+    "with_economy": {
+     "check_invariants_us": {
+      "n": 100,
+      "min": 3314.4,
+      "median": 3637.1,
+      "mean": 3865.943,
+      "p95": 5283.0,
+      "max": 5376.0
+     },
+     "compute_hash_us": {
+      "n": 100,
+      "min": 3635.6,
+      "median": 3788.3,
+      "mean": 3793.523,
+      "p95": 3963.6,
+      "max": 4167.7
+     },
+     "snapshot_copy_us": {
+      "n": 100,
+      "min": 1041.1,
+      "median": 1314.3,
+      "mean": 1359.368,
+      "p95": 1722.1,
+      "max": 2176.1
+     },
+     "snapshot_free_us": {
+      "n": 100,
+      "min": 320.5,
+      "median": 486.5,
+      "mean": 490.974,
+      "p95": 658.8,
+      "max": 749.8
+     }
+    },
+    "economy_hash_parts_us": {
+     "n": 100,
+     "min": 1295.2,
+     "median": 1361.4,
+     "mean": 1373.15,
+     "p95": 1482.6,
+     "max": 1582.6
+    },
+    "save": {
+     "raw_bytes_without_economy": 1851518,
+     "raw_bytes": 3148380,
+     "raw_bytes_of_economy": 1296862,
+     "file_bytes_without_economy": 881222,
+     "file_bytes": 1216520,
+     "file_bytes_of_economy": 335298,
+     "save_state_ms": {
+      "n": 10,
+      "min": 7.296,
+      "median": 9.072,
+      "mean": 8.661,
+      "p95": 10.488,
+      "max": 10.488
+     },
+     "serialize_ms": {
+      "n": 10,
+      "min": 21.198,
+      "median": 23.58,
+      "mean": 24.11,
+      "p95": 27.683,
+      "max": 27.683
+     },
+     "write_ms": {
+      "n": 10,
+      "min": 1.048,
+      "median": 1.123,
+      "mean": 1.174,
+      "p95": 1.42,
+      "max": 1.42
+     },
+     "read_ms": {
+      "n": 10,
+      "min": 4.657,
+      "median": 5.352,
+      "mean": 5.293,
+      "p95": 5.82,
+      "max": 5.82
+     },
+     "deserialize_ms": {
+      "n": 10,
+      "min": 16.571,
+      "median": 17.92,
+      "mean": 17.568,
+      "p95": 18.48,
+      "max": 18.48
+     },
+     "load_ms": 23.272
+    },
+    "cache_rebuild_floor_us": {
+     "n": 100,
+     "min": 5.2,
+     "median": 5.3,
+     "mean": 6.483,
+     "p95": 8.1,
+     "max": 101.9
+    },
+    "skeleton": {
+     "days": 400,
+     "settlement_runs": 13,
+     "construction_runs": 400,
+     "province_runs": 400,
+     "slots_visited": 15772,
+     "hash_unchanged": true,
+     "metrics": [
+      {
+       "name": "sim.tick",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 318,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 2000
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 318,
+        "p50_ns": 300,
+        "p95_ns": 400,
+        "p99_ns": 500,
+        "max_ns": 2000
+       }
+      },
+      {
+       "name": "system.economy.settlement",
+       "calls": 13,
+       "active_ticks": 13,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 1,
+        "p50_ns": 0,
+        "p95_ns": 0,
+        "p99_ns": 0,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 13,
+        "mean_ns": 30,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.construction",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 21,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 21,
+        "p50_ns": 0,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 100
+       }
+      },
+      {
+       "name": "system.economy.provinces",
+       "calls": 400,
+       "active_ticks": 400,
+       "per_tick": {
+        "samples": 400,
+        "mean_ns": 62,
+        "p50_ns": 100,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       },
+       "active": {
+        "samples": 400,
+        "mean_ns": 62,
+        "p50_ns": 100,
+        "p95_ns": 100,
+        "p99_ns": 100,
+        "max_ns": 200
+       }
+      }
+     ]
+    },
+    "world_hash": "9b65d4d683b8cfb8",
+    "economy_hash": "766ce7d1872e8942",
+    "loaded_hash_equal": true,
+    "sink": "d3a3cfc74e1dc2a3"
+   }
+  ]
+ }
+}

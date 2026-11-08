@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/stress/economy_generator.hpp"
 #include "pat/stress/world_generator.hpp"
 
 #include <cstdint>
@@ -16,6 +17,8 @@ struct Config {
     std::uint32_t schemes = 100;
     std::uint32_t contracts = 400;
     std::uint32_t events = 500;
+    /// E9-T05: fill the economy of the world (off by default; the profiles above stay as they were).
+    EconomyConfig economy;
 };
 
 // Dense synthetic SoA tables, used only by tools/benchmarks until real game systems exist.
