@@ -800,9 +800,12 @@ TEST_CASE("the shipped Russian table loads and every key formats") {
         CHECK(out.find("{!") == std::string::npos);
     }
 
-    // The keys are well formed: lower-case dotted identifiers under a known section.
-    for (const std::string& key : keys)
-        CHECK((key.starts_with("ui.")));
+    // The shipped tables now include content names as well as UI messages.
+    for (const std::string& key : keys) {
+        CHECK(key.find('.') != std::string::npos);
+        for (const char c : key)
+            CHECK(((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '.'));
+    }
 
     // US-4.3 through the shipped table.
     const std::pair<std::int64_t, const char*> ages[] = {{1, "1 год"},

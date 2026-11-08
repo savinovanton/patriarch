@@ -60,7 +60,7 @@ struct Options {
     std::vector<std::string> fallback;
     /// Warnings become errors.
     bool strict = false;
-    /// Run the economy and demography builders (cross-object rules). Off for a mod linted alone.
+    /// Run cross-object validation. Off for a mod linted alone.
     bool run_rules = true;
     /// Report localisation keys nobody references.
     bool check_unused = true;

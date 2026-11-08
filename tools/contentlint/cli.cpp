@@ -34,7 +34,7 @@ constexpr const char* kUsage =
     "  --no-scan            search only the content roots for key references\n"
     "  --ignore-unused PFX  never report keys starting with PFX as unused (repeatable)\n"
     "  --no-unused          skip the unused-key check\n"
-    "  --no-rules           skip the economy and demography builders (lint a mod without the base game)\n"
+    "  --no-rules           skip cross-object rules (lint a mod without the base game)\n"
     "  --help               this text\n"
     "exit codes: 0 clean, 1 errors (or warnings under --strict), 2 usage or I/O error\n";
 

@@ -5,13 +5,16 @@ format_version = 1
 
 trait "greedy" {
     name_key = "trait.greedy.name"
-    cost = 3
+    desc_key = "trait.greedy.desc"
+    slot = 1
+    category = personality
     opposite = trait:generous
-    tags = [ "ui.age.years" ]
 }
 
 trait "generous" {
     name_key = "trait.generous.name"
-    cost = 2
+    desc_key = "trait.generous.desc"
+    slot = 2
+    category = personality
     opposite = trait:greedy
 }

@@ -89,7 +89,7 @@ TEST_CASE("contentlint: the good corpus is clean even with --strict") {
 
 TEST_CASE("contentlint: the real data/ is clean with --strict") {
     // ui.* keys are not referenced by the UI yet (docs/dev/contentlint.md); everything else is checked,
-    // including the economy and demography builders.
+    // including cross-object rules for the economy, demography and M1 definitions.
     const CliRun r = run({"--root", PATRIARCH_DATA_DIR, "--strict", "--ignore-unused", "ui."});
     INFO(r.out);
     CHECK(r.code == 0);
@@ -108,19 +108,27 @@ TEST_CASE("contentlint: broken schema file reports every problem with position")
     const CliRun r = run({"--root", corpus("bad/schema"), "--no-rules"});
     CHECK(r.code == 1);
     INFO(r.out);
-    CHECK(r.out.find("traits.pd:9:5: error[PD101]") != std::string::npos);  // skils
-    CHECK(r.out.find("error[PD104]") != std::string::npos);                 // cost = 11
-    CHECK(r.out.find("error[PD103]") != std::string::npos);                 // name_key = 5
-    CHECK(r.out.find("error[PD102]") != std::string::npos);                 // missing name_key
-    CHECK(r.out.find("error[PD014]") != std::string::npos);                 // unterminated object
+    CHECK(r.out.find("traits.pd:11:5: error[PD101]") != std::string::npos);  // skils
+    CHECK(r.out.find("did you mean 'skills'") != std::string::npos);
+    CHECK(r.out.find("traits.pd:9:12: error[PD104]") != std::string::npos);   // slot = 0
+    CHECK(r.out.find("traits.pd:15:16: error[PD103]") != std::string::npos);  // name_key = 5
+    CHECK(r.out.find("traits.pd:21:1: error[PD102]") != std::string::npos);   // missing name_key
+    CHECK(r.out.find("traits.pd:27:11: error[PD014]") != std::string::npos);  // unterminated object
     CHECK(r.out.find("/bad/schema/traits.pd:") != std::string::npos);
 }
 
 TEST_CASE("contentlint: unresolved reference is PD111 with a hint") {
     const CliRun r = run({"--root", corpus("bad/reference"), "--no-rules"});
     CHECK(r.code == 1);
-    CHECK(r.out.find("traits.pd:13:16: error[PD111]") != std::string::npos);
+    CHECK(r.out.find("traits.pd:17:16: error[PD111]") != std::string::npos);
     CHECK(r.out.find("did you mean 'honest'") != std::string::npos);
+}
+
+TEST_CASE("contentlint: schema-valid trait errors are reported by the rule validator") {
+    const CliRun r = run({"--root", corpus("bad/rules")});
+    INFO(r.out);
+    CHECK(r.code == 1);
+    CHECK(r.out.find("traits.pd:8:5: error[PD115]: a trait cannot be its own opposite") != std::string::npos);
 }
 
 TEST_CASE("contentlint: duplicate localisation key is LC003 at the second definition") {
@@ -142,7 +150,7 @@ TEST_CASE("contentlint: --format github writes workflow annotations") {
     const CliRun r = run({"--root", corpus("bad/reference"), "--no-rules", "--format", "github"});
     CHECK(r.code == 1);
     CHECK(r.out.find("::error file=") != std::string::npos);
-    CHECK(r.out.find(",line=13,col=16,title=PD111::") != std::string::npos);
+    CHECK(r.out.find(",line=17,col=16,title=PD111::") != std::string::npos);
     CHECK(r.out.find("contentlint: ") != std::string::npos);
 
     Finding f;
@@ -167,8 +175,22 @@ TEST_CASE("contentlint: output is deterministic and sorted") {
     CHECK(a.out == b.out);
 
     MemorySource root("m");
-    root.add("z.pd", "format_version = 1\ntrait \"z\" { name_key = 1  cost = 1 }\n");
-    root.add("a.pd", "format_version = 1\ntrait \"a\" { name_key = 1  cost = 1 }\n");
+    root.add("z.pd", R"(format_version = 1
+trait "z" {
+    name_key = 1
+    desc_key = "trait.z.desc"
+    slot = 1
+    category = personality
+}
+)");
+    root.add("a.pd", R"(format_version = 1
+trait "a" {
+    name_key = 1
+    desc_key = "trait.a.desc"
+    slot = 2
+    category = personality
+}
+)");
     const Report report = lint_memory(root, plain_options());
     REQUIRE(report.findings.size() == 2);
     CHECK(report.findings[0].file == "m/a.pd");
@@ -206,15 +228,15 @@ TEST_CASE("contentlint: garbage input is reported, never a crash") {
     root.add("empty.pd", "");
     root.add("bom_only.pd", "\xEF\xBB\xBF");
     root.add("truncated.pd", "format_version = 1\ntrait \"a\" {\n    name_key = \"tra");
-    root.add("nul.pd", raw("format_version = 1\ntrait \"a\" { name_key = \"x\0y\" cost = 1 }\n"));
+    root.add("nul.pd", raw("format_version = 1\ntrait \"a\" { name_key = \"x\0y\" slot = 1 }\n"));
     root.add("bytes.pd", raw("\xFF\xFE\x00\x01\x80\x80 trait { = = }}} \xC3"));
     root.add("deep.pd",
              "format_version = 1\ntrait \"a\" " + std::string(20000, '{') + std::string(20000, '}'));
     root.add(
         "big_number.pd",
-        "format_version = 1\ntrait \"a\" { name_key = \"k\"  cost = 99999999999999999999999999999999 }\n");
+        "format_version = 1\ntrait \"a\" { name_key = \"k\" slot = 99999999999999999999999999999999 }\n");
     root.add("long_line.pd",
-             "format_version = 1\n# " + std::string(1 << 20, 'x') + "\ntrait \"q\" { cost = }\n");
+             "format_version = 1\n# " + std::string(1 << 20, 'x') + "\ntrait \"q\" { slot = }\n");
     root.add("future.pd", "format_version = 99\n");
     root.add("loc/ru/empty.pd", "");
     root.add("loc/ru/junk.pd", raw("format_version = 1\nui.x = \"{\xFF\x00}\"\n\x01\x02 = = =\n"));
@@ -284,7 +306,14 @@ TEST_CASE("contentlint: coverage, extra keys, parameter mismatch and missing tab
 
 TEST_CASE("contentlint: a mod root without loc tables and without --fallback is silent") {
     MemorySource root("mod");
-    root.add("traits.pd", "format_version = 1\ntrait \"a\" { name_key = \"x\" cost = 1 }\n");
+    root.add("traits.pd", R"(format_version = 1
+trait "a" {
+    name_key = "trait.a.name"
+    desc_key = "trait.a.desc"
+    slot = 1
+    category = personality
+}
+)");
     const Report report = lint_memory(root, plain_options());
     CHECK(report.findings.empty());
     CHECK(report.exit_code() == 0);
@@ -338,7 +367,7 @@ TEST_CASE("contentlint: --used-keys and --scan on the command line") {
     fs::create_directories(dir / "src", ec);
     {
         std::ofstream list(dir / "keys.txt", std::ios::binary);
-        list << "# keys used by code\n\n  ui.age.years  \r\ntrait.greedy.name\n";
+        list << "# keys used by code\n\n  trait.greedy.desc  \r\ntrait.greedy.name\n";
     }
     {
         std::ofstream code(dir / "src" / "x.cpp", std::ios::binary);
@@ -388,7 +417,14 @@ TEST_CASE("contentlint: scan_text_for_keys finds exact keys and run-time prefixe
 
 TEST_CASE("contentlint: valid files without the economy and demography objects fail the rule builders") {
     MemorySource root("m");
-    root.add("traits.pd", "format_version = 1\ntrait \"a\" { name_key = \"x\" cost = 1 }\n");
+    root.add("traits.pd", R"(format_version = 1
+trait "a" {
+    name_key = "trait.a.name"
+    desc_key = "trait.a.desc"
+    slot = 1
+    category = personality
+}
+)");
     Options options;
     options.check_unused = false;
     const Report report = lint_memory(root, options);

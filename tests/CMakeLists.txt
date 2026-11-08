@@ -25,6 +25,9 @@ add_executable(patriarch_tests
     localization_test.cpp
     log_test.cpp
     mapdata_test.cpp
+    m1_content_test.cpp
+    m1_definitions_test.cpp
+    province_bindings_test.cpp
     pd_parser_test.cpp
     profile_test.cpp
     replay_test.cpp

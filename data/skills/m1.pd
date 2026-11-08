@@ -1,0 +1,33 @@
+format_version = 1
+
+# Stable slots match sim::Skill. Numeric skill values and training rules belong to the simulation.
+
+skill "stewardship" {
+    slot = 0
+    name_key = "skill.stewardship.name"
+    desc_key = "skill.stewardship.desc"
+}
+
+skill "diplomacy" {
+    slot = 1
+    name_key = "skill.diplomacy.name"
+    desc_key = "skill.diplomacy.desc"
+}
+
+skill "martial" {
+    slot = 2
+    name_key = "skill.martial.name"
+    desc_key = "skill.martial.desc"
+}
+
+skill "intrigue" {
+    slot = 3
+    name_key = "skill.intrigue.name"
+    desc_key = "skill.intrigue.desc"
+}
+
+skill "learning" {
+    slot = 4
+    name_key = "skill.learning.name"
+    desc_key = "skill.learning.desc"
+}

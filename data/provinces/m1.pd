@@ -1,0 +1,26 @@
+format_version = 1
+
+# Development definitions for the 20-province procedural PMD1 map. Keys follow decision #201:
+# province id 1 maps to p0001, id 20 to p0020. These are not historical boundaries or names.
+# Owners and the historical scenario are assigned by E30/Geo, not by this definition pool.
+
+province "p0001" { name_key = "province.p0001.name" kind = province_kind:rural }
+province "p0002" { name_key = "province.p0002.name" kind = province_kind:rural }
+province "p0003" { name_key = "province.p0003.name" kind = province_kind:rural }
+province "p0004" { name_key = "province.p0004.name" kind = province_kind:rural }
+province "p0005" { name_key = "province.p0005.name" kind = province_kind:rural }
+province "p0006" { name_key = "province.p0006.name" kind = province_kind:rural }
+province "p0007" { name_key = "province.p0007.name" kind = province_kind:rural }
+province "p0008" { name_key = "province.p0008.name" kind = province_kind:rural }
+province "p0009" { name_key = "province.p0009.name" kind = province_kind:rural }
+province "p0010" { name_key = "province.p0010.name" kind = province_kind:rural }
+province "p0011" { name_key = "province.p0011.name" kind = province_kind:rural }
+province "p0012" { name_key = "province.p0012.name" kind = province_kind:rural }
+province "p0013" { name_key = "province.p0013.name" kind = province_kind:rural }
+province "p0014" { name_key = "province.p0014.name" kind = province_kind:rural }
+province "p0015" { name_key = "province.p0015.name" kind = province_kind:rural }
+province "p0016" { name_key = "province.p0016.name" kind = province_kind:rural }
+province "p0017" { name_key = "province.p0017.name" kind = province_kind:rural }
+province "p0018" { name_key = "province.p0018.name" kind = province_kind:rural }
+province "p0019" { name_key = "province.p0019.name" kind = province_kind:rural }
+province "p0020" { name_key = "province.p0020.name" kind = province_kind:rural }

@@ -2,17 +2,21 @@ add_library(patriarch_content STATIC
     include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
     include/pat/content/load_errors.hpp
+    include/pat/content/m1_content.hpp
+    include/pat/content/province_bindings.hpp
     demography_content.cpp
     economy_content.cpp
-    load_errors.cpp)
+    load_errors.cpp
+    m1_content.cpp
+    province_bindings.cpp)
 add_library(patriarch::content ALIAS patriarch_content)
 
 target_include_directories(patriarch_content PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
-# Glue between loaded .pd content (patriarch::data) and the simulation's rule structures
-# (patriarch::sim). It is a separate module because data must depend on core only and sim must not
-# depend on data; it is not part of the engine, so headless tools and tests can use it.
-target_link_libraries(patriarch_content PUBLIC patriarch::data patriarch::sim patriarch::core)
+# Glue between loaded definitions, simulation rules and map keys. Keeping it above data/sim/mapdata
+# preserves their boundaries: data and mapdata depend only on core, sim never depends on mapdata or
+# the data loader. Headless tools and tests use this module without the engine.
+target_link_libraries(patriarch_content PUBLIC patriarch::data patriarch::sim patriarch::core patriarch::mapdata)
 
 patriarch_set_target_options(patriarch_content)
 set_target_properties(patriarch_content PROPERTIES FOLDER "src")

@@ -1,0 +1,9 @@
+format_version = 1
+
+trait "self_opposed" {
+    name_key = "trait.self_opposed.name"
+    desc_key = "trait.self_opposed.desc"
+    slot = 1
+    category = personality
+    opposite = trait:self_opposed
+}

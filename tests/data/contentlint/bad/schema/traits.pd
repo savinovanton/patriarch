@@ -5,18 +5,27 @@ format_version = 1
 
 trait "a" {
     name_key = "trait.a.name"
-    cost = 11
+    desc_key = "trait.a.desc"
+    slot = 0
+    category = personality
     skils = 2
 }
 
 trait "b" {
     name_key = 5
-    cost = 1
+    desc_key = "trait.b.desc"
+    slot = 2
+    category = personality
 }
 
 trait "c" {
-    cost = 1
+    desc_key = "trait.c.desc"
+    slot = 3
+    category = personality
 }
 
 trait "d" {
     name_key = "trait.d.name"
+    desc_key = "trait.d.desc"
+    slot = 4
+    category = personality

@@ -1,0 +1,236 @@
+format_version = 1
+
+# The 25-trait M1 pool follows GDD 01 section 4. Stable nonzero slots address sim's u16 trait slots.
+# All numeric effects, AI hints and inheritance chances below are initial balance [предл.]. They
+# describe definitions only: applying effects, inheritance and scenario assignment are later tasks.
+# Skill effects are skill points; modifiers are points of the named character scale. Opposites are
+# reciprocal. Slots must stay stable when definitions are reordered or extended.
+
+# ---- Personality ------------------------------------------------------------------------------
+
+trait "ambitious" {
+    slot = 1
+    category = personality
+    name_key = "trait.ambitious.name"
+    desc_key = "trait.ambitious.desc"
+    skills = { diplomacy = 1 intrigue = 2 }
+    modifiers = { ambition = 30 }
+    ai_hint = { seeks_promotion = 2 joins_plots = 1 }
+}
+
+trait "cautious" {
+    slot = 2
+    category = personality
+    name_key = "trait.cautious.name"
+    desc_key = "trait.cautious.desc"
+    skills = { intrigue = 1 martial = -1 }
+}
+
+trait "cruel" {
+    slot = 3
+    category = personality
+    name_key = "trait.cruel.name"
+    desc_key = "trait.cruel.desc"
+    opposite = trait:merciful
+    skills = { martial = 1 diplomacy = -1 }
+}
+
+trait "merciful" {
+    slot = 4
+    category = personality
+    name_key = "trait.merciful.name"
+    desc_key = "trait.merciful.desc"
+    opposite = trait:cruel
+    skills = { diplomacy = 1 }
+    modifiers = { piety = 5 }
+}
+
+trait "generous" {
+    slot = 5
+    category = personality
+    name_key = "trait.generous.name"
+    desc_key = "trait.generous.desc"
+    opposite = trait:greedy
+    skills = { diplomacy = 1 stewardship = -1 }
+}
+
+trait "greedy" {
+    slot = 6
+    category = personality
+    name_key = "trait.greedy.name"
+    desc_key = "trait.greedy.desc"
+    opposite = trait:generous
+    skills = { stewardship = 1 diplomacy = -1 }
+}
+
+trait "devout" {
+    slot = 7
+    category = personality
+    name_key = "trait.devout.name"
+    desc_key = "trait.devout.desc"
+    opposite = trait:freethinker
+    skills = { learning = 1 }
+    modifiers = { piety = 20 }
+}
+
+trait "freethinker" {
+    slot = 8
+    category = personality
+    name_key = "trait.freethinker.name"
+    desc_key = "trait.freethinker.desc"
+    opposite = trait:devout
+    skills = { learning = 2 }
+    modifiers = { piety = -10 }
+}
+
+trait "proud" {
+    slot = 9
+    category = personality
+    name_key = "trait.proud.name"
+    desc_key = "trait.proud.desc"
+    skills = { diplomacy = -1 }
+    modifiers = { ambition = 15 }
+}
+
+trait "lazy" {
+    slot = 10
+    category = personality
+    name_key = "trait.lazy.name"
+    desc_key = "trait.lazy.desc"
+    skills = { stewardship = -2 }
+    modifiers = { stress = -5 }
+}
+
+# ---- Education --------------------------------------------------------------------------------
+
+trait "scholar" {
+    slot = 11
+    category = education
+    name_key = "trait.scholar.name"
+    desc_key = "trait.scholar.desc"
+    skills = { learning = 3 }
+}
+
+trait "warrior" {
+    slot = 12
+    category = education
+    name_key = "trait.warrior.name"
+    desc_key = "trait.warrior.desc"
+    skills = { martial = 3 }
+}
+
+trait "steward" {
+    slot = 13
+    category = education
+    name_key = "trait.steward.name"
+    desc_key = "trait.steward.desc"
+    skills = { stewardship = 3 }
+}
+
+trait "courtier" {
+    slot = 14
+    category = education
+    name_key = "trait.courtier.name"
+    desc_key = "trait.courtier.desc"
+    skills = { diplomacy = 1 intrigue = 2 }
+}
+
+trait "diplomat" {
+    slot = 15
+    category = education
+    name_key = "trait.diplomat.name"
+    desc_key = "trait.diplomat.desc"
+    skills = { diplomacy = 3 }
+}
+
+trait "schemer" {
+    slot = 16
+    category = education
+    name_key = "trait.schemer.name"
+    desc_key = "trait.schemer.desc"
+    skills = { intrigue = 3 }
+}
+
+# ---- Health and fortune ------------------------------------------------------------------------
+
+trait "sickly" {
+    slot = 17
+    category = health
+    name_key = "trait.sickly.name"
+    desc_key = "trait.sickly.desc"
+    opposite = trait:robust
+    modifiers = { health = -15 fertility = -10 }
+    inherit_chance = 0.1
+}
+
+trait "robust" {
+    slot = 18
+    category = health
+    name_key = "trait.robust.name"
+    desc_key = "trait.robust.desc"
+    opposite = trait:sickly
+    modifiers = { health = 15 fertility = 10 }
+    inherit_chance = 0.4
+}
+
+trait "lame" {
+    slot = 19
+    category = health
+    name_key = "trait.lame.name"
+    desc_key = "trait.lame.desc"
+    skills = { martial = -2 }
+}
+
+trait "beautiful" {
+    slot = 20
+    category = health
+    name_key = "trait.beautiful.name"
+    desc_key = "trait.beautiful.desc"
+    skills = { diplomacy = 2 }
+    inherit_chance = 0.15
+}
+
+trait "dimwitted" {
+    slot = 21
+    category = health
+    name_key = "trait.dimwitted.name"
+    desc_key = "trait.dimwitted.desc"
+    skills = { learning = -3 stewardship = -1 }
+    inherit_chance = 0.05
+}
+
+# ---- Life events -------------------------------------------------------------------------------
+
+trait "war_hero" {
+    slot = 22
+    category = life
+    name_key = "trait.war_hero.name"
+    desc_key = "trait.war_hero.desc"
+    skills = { martial = 1 diplomacy = 1 }
+}
+
+trait "disgraced" {
+    slot = 23
+    category = life
+    name_key = "trait.disgraced.name"
+    desc_key = "trait.disgraced.desc"
+    skills = { diplomacy = -2 }
+    modifiers = { ambition = -10 }
+}
+
+trait "emperor_favorite" {
+    slot = 24
+    category = life
+    name_key = "trait.emperor_favorite.name"
+    desc_key = "trait.emperor_favorite.desc"
+    skills = { diplomacy = 2 }
+    modifiers = { ambition = 10 }
+}
+
+trait "widowed" {
+    slot = 25
+    category = life
+    name_key = "trait.widowed.name"
+    desc_key = "trait.widowed.desc"
+    modifiers = { stress = 10 }
+}
