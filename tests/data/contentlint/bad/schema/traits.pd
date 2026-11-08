@@ -1,0 +1,22 @@
+format_version = 1
+
+# Broken schema file: unknown field, value out of range, wrong type, missing required field and a
+# truncated object at the end of the file.
+
+trait "a" {
+    name_key = "trait.a.name"
+    cost = 11
+    skils = 2
+}
+
+trait "b" {
+    name_key = 5
+    cost = 1
+}
+
+trait "c" {
+    cost = 1
+}
+
+trait "d" {
+    name_key = "trait.d.name"

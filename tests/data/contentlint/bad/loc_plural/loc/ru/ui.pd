@@ -1,0 +1,6 @@
+format_version = 1
+
+# Russian needs three plural forms.
+ui.age.years = "{n} {n:plural(год|лет)}"
+ui.broken = "{n:plural(а|б|в"
+ui.stray = "закрывающая } скобка"

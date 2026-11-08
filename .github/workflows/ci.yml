@@ -40,6 +40,26 @@ jobs:
       - name: Check generated tables are up to date
         run: python3 tools/gen_tables.py --check
 
+  # Content and localisation lint (E4-T08, docs/dev/contentlint.md): a minimal Linux build of the tool
+  # alone (no tests, no benchmarks, no engine), then data/ is checked with warnings as errors. The
+  # annotations show up on the changed lines of the pull request. The corpus tests (the linter must fail on
+  # broken input) run in the ctest runs of the build jobs.
+  contentlint:
+    name: contentlint (data/ and localisation)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Configure
+        uses: ./.github/actions/cmake-configure
+        with:
+          args: --preset linux-gcc -DPATRIARCH_BUILD_TESTS=OFF -DPATRIARCH_BUILD_BENCHMARKS=OFF
+      - name: Build contentlint
+        run: cmake --build --preset linux-gcc --target contentlint
+      # ui.* keys are not wired to the UI yet; drop --ignore-unused when the UI reads the table.
+      - name: Lint data/
+        run: out/linux-gcc/tools/contentlint/contentlint --root data --strict --ignore-unused ui. --format github
+
   windows-msvc:
     name: MSVC ${{ matrix.preset }}
     # windows-2022 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).

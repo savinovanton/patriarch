@@ -52,6 +52,12 @@ target_link_libraries(patriarch_tests PRIVATE
     patriarch::content
     doctest::doctest)
 
+if(PATRIARCH_BUILD_TOOLS)
+    # contentlint's library part (E4-T08) is tested through its API with in-memory corpora.
+    target_sources(patriarch_tests PRIVATE contentlint_test.cpp)
+    target_link_libraries(patriarch_tests PRIVATE patriarch::contentlint)
+endif()
+
 if(PATRIARCH_BUILD_ENGINE)
     target_sources(patriarch_tests PRIVATE
         camera_terrain_test.cpp
