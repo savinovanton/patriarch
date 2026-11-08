@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/content/load_errors.hpp"
 #include "pat/core/result.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_registry.hpp"
@@ -49,8 +50,5 @@ using EconomyContentResult = core::Result<EconomyContent, std::vector<data::Load
 
 /// Convenience for a single root.
 [[nodiscard]] EconomyContentResult load_economy_content(const data::ContentSource& root);
-
-/// The errors, one per line (LoadError::format()), for logs and test output.
-[[nodiscard]] std::string format_errors(const std::vector<data::LoadError>& errors);
 
 }  // namespace pat::content

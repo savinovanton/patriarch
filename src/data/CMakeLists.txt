@@ -3,6 +3,7 @@ add_library(patriarch_data STATIC
     include/pat/data/content_registry.hpp
     include/pat/data/content_schemas.hpp
     include/pat/data/content_source.hpp
+    include/pat/data/demography_schemas.hpp
     include/pat/data/economy_schemas.hpp
     include/pat/data/example_schemas.hpp
     include/pat/data/pd_parser.hpp
@@ -13,6 +14,7 @@ add_library(patriarch_data STATIC
     content_registry.cpp
     content_schemas.cpp
     content_source.cpp
+    demography_schemas.cpp
     economy_schemas.cpp
     example_schemas.cpp
     pd_internal.hpp

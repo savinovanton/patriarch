@@ -1,0 +1,82 @@
+format_version = 1
+
+# Баланс демографии рода (GDD 01 §3; схема — docs/dev/data-reference.md, вид demography_rules).
+# Значения равны kDefaultDemography (src/sim/include/pat/sim/demography.hpp): тест
+# tests/demography_content_test.cpp следит, чтобы файл и запасные значения не расходились.
+# ВСЕ числа — предложения [предл.]; это «мягкий реализм» (решение владельца #134): таблицы GDD 01 §3.2
+# с множителем ×0,8 для знатных детей. Подбор под допуск вымирания (≤ ~15-20 % родов за 100 лет) —
+# задача E7-T19, не эта.
+#
+# Единицы: шансы и множители — промилле (_permille, 1000 = 1,0 или 100 %); возраст — полные годы;
+# здоровье — 0...100. Таблицы по возрасту — списком ступеней { from_age, значение }: ступень действует
+# с from_age до начала следующей; первая начинается с 0, возраст строго растёт, ступеней 1...16.
+
+demography_rules "main" {
+    # --- Смертность (GDD 01 §3.2) ---
+    mortality {
+        # Базовый годовой шанс смерти по возрасту, промилле
+        buckets = [
+            { from_age = 0, permille = 220 }  # первый год жизни (с выкидышами и мертворождением)
+            { from_age = 1, permille = 70 }   # 1-4
+            { from_age = 5, permille = 20 }   # 5-14
+            { from_age = 15, permille = 15 }   # 15-29
+            { from_age = 30, permille = 22 }   # 30-44
+            { from_age = 45, permille = 45 }   # 45-59
+            { from_age = 60, permille = 110 }  # 60-69
+            { from_age = 70, permille = 240 }  # 70-79
+            { from_age = 80, permille = 450 }  # 80+
+        ]
+        # Знатные (полная детализация) до 15 лет — ×0,8 (детские ступени 0-14)
+        noble_child_age_limit = 15
+        noble_child_multiplier_permille = 800
+        # Здоровье < 30 удваивает шанс, здоровье >= 80 снижает на 25 %
+        low_health_multiplier_permille = 2000
+        high_health_multiplier_permille = 750
+    }
+
+    # Пороги здоровья для смертности, зачатия и родов
+    health {
+        low_below = 30
+        high_from = 80
+    }
+
+    # --- Зачатие (GDD 01 §3.3): база × возраст × здоровье × черты × вместе ---
+    conception {
+        base_permille = 12  # около 1,2 % в месяц
+        # Множитель по возрасту жены (младше 15 зачатие невозможно: наименьший брачный возраст 15)
+        age_factor = [
+            { from_age = 0, factor_permille = 0 }
+            { from_age = 15, factor_permille = 800 }   # 15-19
+            { from_age = 20, factor_permille = 1000 }  # 20-29
+            { from_age = 30, factor_permille = 800 }   # 30-34
+            { from_age = 35, factor_permille = 500 }   # 35-39
+            { from_age = 40, factor_permille = 200 }   # 40-44
+            { from_age = 45, factor_permille = 0 }     # 45+
+        ]
+        # Множители здоровья GDD не задаёт: заготовки (слабая жена — вдвое реже, крепкая — на 10 % чаще)
+        low_health_factor_permille = 500
+        high_health_factor_permille = 1100
+        max_children_per_woman = 14
+        pregnancy_months = 9
+    }
+
+    # --- Роды (GDD 01 §3.3) ---
+    birth {
+        boys_per_100_girls = 105
+        # Риск смерти матери: 5 %; +1 % при слабом здоровье, -1 % при крепком, -1 % с лекарем при дворе
+        risk_base_permille = 50
+        risk_high_health_delta_permille = -10
+        risk_low_health_delta_permille = 10
+        risk_physician_delta_permille = -10
+    }
+
+    # --- Возрастные периоды и брак (GDD 01 §3.1) ---
+    life_stages {
+        adolescent_from = 7
+        prime_from = 16
+        mature_from = 51
+        elder_from = 66
+        marriage_age_male = 16
+        marriage_age_female = 15
+    }
+}

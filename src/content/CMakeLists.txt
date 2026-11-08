@@ -1,6 +1,10 @@
 add_library(patriarch_content STATIC
+    include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
-    economy_content.cpp)
+    include/pat/content/load_errors.hpp
+    demography_content.cpp
+    economy_content.cpp
+    load_errors.cpp)
 add_library(patriarch::content ALIAS patriarch_content)
 
 target_include_directories(patriarch_content PUBLIC

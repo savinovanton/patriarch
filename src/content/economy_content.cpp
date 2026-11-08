@@ -652,13 +652,4 @@ EconomyContentResult load_economy_content(const data::ContentSource& root) {
     return load_economy_content(roots);
 }
 
-std::string format_errors(const std::vector<data::LoadError>& errors) {
-    std::string out;
-    for (const data::LoadError& error : errors) {
-        out += error.format();
-        out += '\n';
-    }
-    return out;
-}
-
 }  // namespace pat::content
