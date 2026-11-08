@@ -38,8 +38,6 @@ using pat::core::StringId;
 
 namespace {
 
-constexpr std::uint32_t kNone = 0xFFFFFFFFU;
-
 Fixed32 fx(int value) {
     return Fixed32::from_int(value);
 }
