@@ -26,6 +26,7 @@ ctest --preset win-msvc-debug
 | [docs/01-tz.md](docs/01-tz.md) | Техническое задание (требования с ID) |
 | [docs/adr/0001-stack.md](docs/adr/0001-stack.md) | Выбор стека |
 | [docs/adr/0002-performance.md](docs/adr/0002-performance.md) | Архитектура производительности |
+| [docs/dev/e2-spike-report.md](docs/dev/e2-spike-report.md) | Итоги E2: измеренные факты, решения по исполнению/событиям/снапшотам и открытые риски |
 | [docs/adr/0003-3d-terrain-map.md](docs/adr/0003-3d-terrain-map.md) | Объёмная 3D-карта-ландшафт (стиль Victoria 3) |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
 | [docs/dev/agents-workflow.md](docs/dev/agents-workflow.md) | Работа двух агентов (Claude, Codex) через Issues, метки, вехи, PR |

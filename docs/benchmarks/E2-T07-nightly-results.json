@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "status": "regression",
+  "exit_code": 1,
+  "baseline_sha": "0a330c797baf41dec08247bb6e72a8180479e593",
+  "candidate_sha": "1030a9d63a5c6e6f98e4a53d012aa90741c41f56",
+  "profile": {
+    "protocol": "patriarch.bench.v1",
+    "time_field": "real_time",
+    "os": "win32",
+    "architecture": "AMD64",
+    "cpu_model": "AMD64 Family 26 Model 2 Stepping 1, AuthenticAMD",
+    "cpu_count": 4,
+    "cpu_affinity": "3",
+    "priority_class": "above_normal",
+    "caches": [
+      {
+        "type": "Data",
+        "level": 1,
+        "size": 49152,
+        "num_sharing": 2
+      },
+      {
+        "type": "Instruction",
+        "level": 1,
+        "size": 32768,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 2,
+        "size": 1048576,
+        "num_sharing": 2
+      },
+      {
+        "type": "Unified",
+        "level": 3,
+        "size": 33554432,
+        "num_sharing": 4
+      }
+    ],
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35229.0",
+      "architecture_id": "x64"
+    },
+    "configuration": "Release",
+    "benchmark_version": "v1.9.5",
+    "benchmark_library_build_type": "release"
+  },
+  "policy": {
+    "schema": 1,
+    "benchmarks": [
+      "core.pcg32_next/1024",
+      "core.pcg32_next/16384",
+      "sim.telemetry_tick/0/real_time",
+      "sim.telemetry_tick/1/real_time"
+    ],
+    "threshold": 0.1,
+    "max_rsd": 0.05,
+    "min_samples": 5,
+    "require_same_label": false,
+    "capture": {
+      "repetitions": 7,
+      "min_time_seconds": 0.5,
+      "warmup_seconds": 0.1
+    }
+  },
+  "benchmarks": [
+    {
+      "name": "core.pcg32_next/1024",
+      "baseline": {
+        "samples": 7,
+        "median_ns": 985.56063144617,
+        "mean_ns": 987.3026587296885,
+        "rsd": 0.005764447097953139
+      },
+      "candidate": {
+        "samples": 7,
+        "median_ns": 983.3609895709604,
+        "mean_ns": 985.1361545948429,
+        "rsd": 0.004812714308033666
+      },
+      "change_fraction": -0.0022318686491991247,
+      "label_changed": false,
+      "status": "pass",
+      "reason": "within threshold"
+    },
+    {
+      "name": "core.pcg32_next/16384",
+      "baseline": {
+        "samples": 7,
+        "median_ns": 15702.591517856896,
+        "mean_ns": 15709.336734693496,
+        "rsd": 0.004942153341465545
+      },
+      "candidate": {
+        "samples": 7,
+        "median_ns": 15739.51339285681,
+        "mean_ns": 15856.367665816239,
+        "rsd": 0.018036747721356203
+      },
+      "change_fraction": 0.002351323662589494,
+      "label_changed": false,
+      "status": "pass",
+      "reason": "within threshold"
+    },
+    {
+      "name": "sim.telemetry_tick/0/real_time",
+      "baseline": {
+        "samples": 7,
+        "median_ns": 179252.3109802398,
+        "mean_ns": 179272.73004821697,
+        "rsd": 0.0038198043133916013
+      },
+      "candidate": {
+        "samples": 7,
+        "median_ns": 229440.17313245888,
+        "mean_ns": 228989.41052531055,
+        "rsd": 0.005959545795823399
+      },
+      "change_fraction": 0.2799844636745109,
+      "label_changed": false,
+      "status": "regression",
+      "reason": "stable median exceeds the threshold"
+    },
+    {
+      "name": "sim.telemetry_tick/1/real_time",
+      "baseline": {
+        "samples": 7,
+        "median_ns": 186999.33774651855,
+        "mean_ns": 188043.20529802365,
+        "rsd": 0.014298663273806127
+      },
+      "candidate": {
+        "samples": 7,
+        "median_ns": 237896.57299592305,
+        "mean_ns": 238329.10506185342,
+        "rsd": 0.011529491113650354
+      },
+      "change_fraction": 0.2721786925170652,
+      "label_changed": false,
+      "status": "regression",
+      "reason": "stable median exceeds the threshold"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "summary": {
+    "total": 4,
+    "regressions": 2,
+    "inconclusive": 0,
+    "passed": 2
+  }
+}
