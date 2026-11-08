@@ -1,0 +1,28 @@
+name: CMake configure with retries
+description: >
+  Runs `cmake <args>`; vcpkg downloads build tools (cmake, ninja) from github.com release assets,
+  which occasionally answer HTTP 504. A failed configure is retried a few times with a growing pause.
+
+inputs:
+  args:
+    description: Arguments passed to cmake, for example "--preset win-msvc".
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: cmake ${{ inputs.args }}
+      shell: bash
+      env:
+        CMAKE_ARGS: ${{ inputs.args }}
+      run: |
+        for attempt in 1 2 3 4; do
+          # shellcheck disable=SC2086
+          if cmake $CMAKE_ARGS; then
+            exit 0
+          fi
+          echo "::warning::cmake configure failed (attempt $attempt of 4)"
+          [ "$attempt" -lt 4 ] && sleep $((attempt * 30))
+        done
+        echo "::error::cmake configure failed after 4 attempts"
+        exit 1
