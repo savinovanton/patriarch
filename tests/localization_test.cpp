@@ -98,14 +98,6 @@ std::string age_text(std::int64_t n) {
     return out;
 }
 
-const LocError* find_error(const LocLoadResult& r, const std::string& code) {
-    for (const LocError& e : r.errors) {
-        if (e.code == code)
-            return &e;
-    }
-    return nullptr;
-}
-
 /// Loads `body` as the Russian table and returns the single expected error.
 LocLoadResult load_ru_with_error(const std::string& body) {
     const MemorySource src = ru_source(body);
