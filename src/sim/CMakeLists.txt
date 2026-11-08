@@ -39,6 +39,7 @@ add_library(patriarch_sim STATIC
     simulation.cpp
     world.cpp
     world_economy.cpp
+    world_economy_io.cpp
     world_io.cpp)
 add_library(patriarch::sim ALIAS patriarch_sim)
 

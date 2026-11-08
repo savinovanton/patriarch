@@ -18,25 +18,10 @@
 #include <string>
 #include <vector>
 
+#include "economy_test_access.hpp"
+
 // E9-T02: the economy tables of the World, the single money function with its double entry, and the
 // invariants (docs/dev/economy-model.md sections 4, 5, 6, 12).
-
-namespace pat::sim::economy {
-
-/// The tests damage the private columns of the account table on purpose to prove that
-/// check_invariants() notices (declared a friend in tables.hpp).
-struct AccountTableTestAccess {
-    static std::vector<Kopecks>& treasury(AccountTable& t) { return t.treasury_; }
-    static std::vector<Kopecks>& opening(AccountTable& t) { return t.opening_; }
-    static std::vector<Kopecks>& open_lines(AccountTable& t) { return t.open_lines_; }
-    static std::vector<Kopecks>& ring_opening(AccountTable& t) { return t.ring_opening_; }
-    static std::vector<Kopecks>& ring_lines(AccountTable& t) { return t.ring_lines_; }
-    static std::array<Date, kLedgerRingMonths>& ring_month_start(AccountTable& t) {
-        return t.ring_month_start_;
-    }
-};
-
-}  // namespace pat::sim::economy
 
 using namespace pat::sim;
 using namespace pat::sim::economy;
@@ -1371,7 +1356,7 @@ TEST_CASE("economy world: comparison sees every table and column") {
 
 // ---- a world without economy behaves as before ---------------------------------------------------
 
-TEST_CASE("economy world: the economy is not in the hash or the save file yet") {
+TEST_CASE("economy world: switching the economy on changes the hash and the save, off it changes nothing") {
     // Whole-thousand populations survive the conversion to persons and back exactly.
     World plain = make_plain_world();
     for (std::uint32_t d = 0; d < 3; ++d) {
@@ -1383,6 +1368,8 @@ TEST_CASE("economy world: the economy is not in the hash or the save file yet") 
     const WorldHash before = plain.compute_hash();
     pat::core::ByteWriter before_bytes;
     plain.save_state(before_bytes);
+    // A world without the economy has an empty economy hash part and writes no economy section.
+    CHECK(before.ext[static_cast<std::size_t>(ExtPart::Economy)] == 0);
 
     World world = plain;
     REQUIRE(world.enable_economy());
@@ -1393,10 +1380,17 @@ TEST_CASE("economy world: the economy is not in the hash or the save file yet") 
     REQUIRE(world.close_ledger_month(Date::from_ymd(1703, 2, 1)));
     world.economy_columns_mut().unrest[0] = Fixed32::from_int(60);
 
-    CHECK(world.compute_hash() == before);
+    const WorldHash after = world.compute_hash();
+    CHECK(after.ext[static_cast<std::size_t>(ExtPart::Economy)] != 0);
+    CHECK(after.total != before.total);
+    // The five fixed parts (and the other extended parts) are those of the plain world.
+    CHECK(after.calendar == before.calendar);
+    CHECK(after.rng == before.rng);
+    CHECK(after.dynasties == before.dynasties);
+    CHECK(after.characters == before.characters);
     pat::core::ByteWriter after_bytes;
     world.save_state(after_bytes);
-    CHECK(after_bytes.data() == before_bytes.data());
+    CHECK(after_bytes.size() > before_bytes.size());
     require_valid(world);
 }
 

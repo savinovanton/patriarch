@@ -297,6 +297,7 @@ enum class ExtPart : std::uint8_t {
     Chronicle = 5,     // E7-T16
     Opinion = 6,       // E7-T17
     Kinship = 7,       // E7-T03: spouses, marriage counters, former spouses, godparents
+    Economy = 16,      // E9-T03 (numbers 16..23 are E9's): hash of the nine economy sub-hashes
 };
 inline constexpr std::size_t kExtPartCount = 64;
 
@@ -466,9 +467,10 @@ public:
 
     // ---- economy (E9-T02, docs/dev/economy-model.md) ----
     // The economy tables are absent by default: a world that never calls enable_economy() behaves
-    // exactly as before and check_invariants() requires every economy table to be empty. They are
-    // not part of the hash and of the save file yet (E9-T03), but a copy of the World (snapshot)
-    // copies them.
+    // exactly as before and check_invariants() requires every economy table to be empty. Once on,
+    // they are part of the hash (ExtPart::Economy, 0 and outside `total` while the economy is off),
+    // of the save file (sections 32..39, written only when the economy is on) and of a copy of the
+    // World (snapshot).
 
     /// Switches the economy on: builds a default row for every dynasty and province that exists and
     /// from now on for every new one. Each province keeps its population: the persons go into the
@@ -482,8 +484,11 @@ public:
     /// Writable views of the plain numeric columns for systems; empty spans without economy. Values
     /// are not clamped here, see economy::EconomyColumnsMut.
     [[nodiscard]] economy::EconomyColumnsMut economy_columns_mut() noexcept;
-    /// Hash of the rules the world was built with (informational, not hashed).
+    /// Hash of the rules the world was built with. Saved with the economy, but not hashed.
     void set_economy_rules_hash(std::uint64_t rules_hash) noexcept;
+    /// The sub-hashes of the economy (economy::EconomyHashPart order); all 0 without economy. A
+    /// diagnostic: `compute_hash().ext[ExtPart::Economy]` is the hash of these nine numbers.
+    [[nodiscard]] std::array<std::uint64_t, economy::kEconomyHashPartCount> economy_hash_parts() const;
 
     /// Development of a province, clamped to 1..economy::kMaxDevelopment (GDD 03 section 8.3).
     void set_province_development(ProvinceId province, std::uint8_t development);
@@ -572,7 +577,8 @@ public:
     ///   2  + extension block: world flags and id-versioned sections (E7-T02: sections 1 and 2)
     ///   3  + section 3 "kin": spouses, marriage counters, former spouses, godparents (E7-T03)
     ///   4  the slot table may hold archived rows (slot state 2), dynasty mode only (E7-T04)
-    static constexpr std::uint32_t kStateSchema = 4;
+    ///   5  + the economy: sections 32..39 of the extension block (E9-T03); older files have none
+    static constexpr std::uint32_t kStateSchema = 5;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -608,6 +614,18 @@ private:
     void link_child(CharacterId child);
     void rebuild_child_lists();
     void check_kinship_invariants(std::vector<std::string>& bad) const;
+    // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
+    struct StateSection {
+        std::uint16_t id = 0;
+        std::uint16_t version = 1;
+        core::ByteWriter body;
+    };
+    /// Appends the sections of the economy (nothing when it is off), ascending by id.
+    void economy_write_sections(std::vector<StateSection>& sections) const;
+    /// Reads one economy section into the tables. `closed_months` etc. come from the section 32 read
+    /// before (ids ascend). Returns nullptr on success, otherwise a description of the damage; the
+    /// invariants are checked by the caller once everything has been read.
+    [[nodiscard]] const char* economy_read_section(std::uint16_t id, core::ByteReader& in);
     // Economy helpers (world_economy.cpp).
     void economy_add_dynasty_rows();
     /// Appends the economy rows of province `index`, which exists in ProvinceTable already: the
@@ -634,8 +652,7 @@ private:
     std::vector<CharacterId> living_;                           // derived, ascending
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
-    economy::EconomyState
-        economy_;  // E9-T02: empty unless enable_economy() was called; not hashed or saved yet
+    economy::EconomyState economy_;  // E9-T02: empty unless enable_economy() was called
 };
 
 }  // namespace pat::sim

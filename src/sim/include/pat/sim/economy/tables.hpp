@@ -25,7 +25,8 @@
 // plain numeric columns are written through `World::economy_columns_mut()`. check_invariants() catches
 // whatever slips through.
 //
-// Nothing here is hashed or saved yet: that is E9-T03.
+// The tables are part of the state hash (World::compute_hash, ExtPart::Economy) and of the save file
+// (sections 32..39, see src/sim/world_economy_io.cpp); the derived data of section 4.10 is not.
 
 namespace pat::sim {
 class World;
@@ -343,6 +344,25 @@ struct EconomyState {
 
     [[nodiscard]] bool operator==(const EconomyState&) const = default;
 };
+
+/// The sub-hashes the economy hash is built from (economy-model section 13.1), in the order they are
+/// mixed. They let a test or a tool find out WHICH table diverged; the game compares only the sum
+/// (`WorldHash::ext[ExtPart::Economy]`). All are 0 in a world without economy.
+enum class EconomyHashPart : std::uint8_t {
+    Meta = 0,      ///< the scalars (not `rules_hash`)
+    Dynasties,     ///< DynastyEconomy
+    Provinces,     ///< ProvinceEconomy, the building grid included
+    Groups,        ///< PopulationGroups
+    Construction,  ///< ConstructionQueue
+    Loans,         ///< LoanTable
+    Quotas,        ///< QuotaTable and QuotaOutcomeRing
+    Incidents,     ///< IncidentLog
+    Accounts,      ///< balances and statement, ring in the order old -> new
+};
+inline constexpr std::size_t kEconomyHashPartCount = 9;
+
+/// Name of a sub-hash for diagnostics.
+[[nodiscard]] const char* economy_hash_part_name(std::size_t part) noexcept;
 
 /// Writable views of the plain numeric columns (World::economy_columns_mut). The spans have the
 /// size of the tables and cannot grow them. Values are NOT clamped: check_invariants() reports a

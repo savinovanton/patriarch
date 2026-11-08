@@ -3,6 +3,8 @@
 #include <string>
 #include <utility>
 
+#include "state_sections.hpp"
+
 // Binary layout of the world state (ADR-0006 D6). All integers are little endian.
 //
 //   u32 schema                       1..kStateSchema
@@ -31,6 +33,10 @@
 // rows in sections 1 (identity, death date and cause, group S at the defaults) and 3 (marriages that
 // ended); it appears in no member list. Older schemas cannot contain the state 2.
 //
+// Schema 5 (E9-T03) adds the economy as sections 32..39 (world_economy_io.cpp). They are written only
+// when the economy is on, so every world that does not use it saves the same bytes as under schema 4.
+// A file of an older schema has none and migrates to a world without economy.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -44,15 +50,11 @@ R fail(const char* message) {
     return R::err(core::Error{10, message});
 }
 
-/// True when `count` entries of at least `bytes_each` bytes could still be present in the input;
-/// guards allocations against absurd counts in damaged files.
-bool plausible(const core::ByteReader& in, std::uint32_t count, std::size_t bytes_each) {
-    return in.ok() && static_cast<std::uint64_t>(count) * bytes_each <= in.remaining();
-}
+using detail::kSectionDynasty;
+using detail::kSectionKin;
+using detail::kSectionPerson;
+using detail::plausible;
 
-constexpr std::uint16_t kSectionPerson = 1;
-constexpr std::uint16_t kSectionDynasty = 2;
-constexpr std::uint16_t kSectionKin = 3;
 constexpr std::uint16_t kMaxSections = 32;
 constexpr std::size_t kPersonRowBytes = 90;
 constexpr std::size_t kDynastyRowBytes = 9;
@@ -68,6 +70,14 @@ constexpr SectionInfo kSections[] = {
     {kSectionPerson, 1, 2},
     {kSectionDynasty, 1, 2},
     {kSectionKin, 1, 3},
+    {detail::kSectionEconomy, 1, 5},
+    {detail::kSectionEconomyDynasty, 1, 5},
+    {detail::kSectionEconomyProvince, 1, 5},
+    {detail::kSectionEconomyPopulation, 1, 5},
+    {detail::kSectionEconomyAccounts, 1, 5},
+    {detail::kSectionEconomyConstruction, 1, 5},
+    {detail::kSectionEconomyCredit, 1, 5},
+    {detail::kSectionEconomyIncidents, 1, 5},
 };
 
 const SectionInfo* find_section(std::uint16_t id) {
@@ -157,11 +167,7 @@ void World::save_state(core::ByteWriter& out) const {
     // ---- extension block (schema 2) ----
     out.u32(flags_);
 
-    struct Section {
-        std::uint16_t id;
-        std::uint16_t version;
-        core::ByteWriter body;
-    };
+    using Section = StateSection;
     std::vector<Section> sections;
 
     {  // section 1: the columns of E7-T02, sparse by id
@@ -262,6 +268,8 @@ void World::save_state(core::ByteWriter& out) const {
             sections.push_back(std::move(section));
         }
     }
+
+    economy_write_sections(sections);  // ids 32..39, after the sections above
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
     for (const Section& section : sections) {
@@ -529,6 +537,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     if (chars.marriages[row] > kMaxMarriages) {
                         return fail("invalid marriage counter");
                     }
+                }
+            } else if (id >= detail::kSectionEconomy) {
+                if (const char* problem = world.economy_read_section(id, sr)) {
+                    return fail(problem);
                 }
             } else {  // kSectionDynasty
                 const std::uint32_t rows = sr.u32();

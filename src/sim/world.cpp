@@ -74,6 +74,8 @@ std::string ext_part_name(std::size_t number) {
             return "opinion";
         case ExtPart::Kinship:
             return "kinship";
+        case ExtPart::Economy:
+            return "economy";
     }
     return std::format("ext[{}]", number);
 }
@@ -1046,6 +1048,15 @@ WorldHash World::compute_hash() const {
         h.u64(archive_sum_);
         h.u64(characters_.ids.retired_count());
         out.ext[static_cast<std::size_t>(ExtPart::Archive)] = nonzero(h.value());
+    }
+
+    if (economy_.meta.present != 0) {
+        // The economy: the nine sub-hashes of its tables (economy_hash_parts). Off = part 0.
+        core::HashStream h;
+        for (const std::uint64_t part : economy_hash_parts()) {
+            h.u64(part);
+        }
+        out.ext[static_cast<std::size_t>(ExtPart::Economy)] = nonzero(h.value());
     }
 
     core::HashStream total;

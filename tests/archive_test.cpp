@@ -624,7 +624,7 @@ TEST_CASE("Die: the record in the command log is exact and any shorter record is
 // save and load
 // =================================================================================================
 
-TEST_CASE("save: a world with an archive round-trips, re-saves to the same bytes, schema 4") {
+TEST_CASE("save: a world with an archive round-trips and re-saves to the same bytes") {
     Family f;
     World& w = f.world;
     w.advance_day();
@@ -632,8 +632,7 @@ TEST_CASE("save: a world with an archive round-trips, re-saves to the same bytes
     REQUIRE(w.die(f.grandmother, CauseOfDeath::OldAge));
     const std::vector<std::uint8_t> bytes = state_bytes(w);
     ByteReader schema(std::span<const std::uint8_t>(bytes.data(), 4));
-    CHECK(schema.u32() == 4);
-    CHECK(World::kStateSchema == 4);
+    CHECK(schema.u32() == World::kStateSchema);
 
     auto loaded = load(bytes);
     REQUIRE(loaded.has_value());
@@ -741,7 +740,7 @@ TEST_CASE("migration: a file that says schema 3 cannot hold an archived row") {
     const auto old = load(bytes);
     REQUIRE_FALSE(old.has_value());
     CHECK(std::string_view(old.error().message).find("schema 4") != std::string_view::npos);
-    bytes[0] = 5;  // newer than this build
+    bytes[0] = static_cast<std::uint8_t>(World::kStateSchema + 1);  // newer than this build
     CHECK_FALSE(load(bytes).has_value());
 }
 
