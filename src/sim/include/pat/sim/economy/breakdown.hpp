@@ -35,7 +35,7 @@ enum class Unit : std::uint8_t {
     People = 1,
     Points = 2,    ///< Fixed32 raw value (mood, control, unrest, wealth)
     Permille = 3,  ///< per-mille (ratios, probabilities)
-    Pieces = 4,    ///< units of goods
+    Pieces = 4,    ///< units of goods, as Fixed32 raw (Q16.16: value / 65536 = units)
     Ppm = 5,       ///< parts per million (yearly growth rates)
 };
 
@@ -162,15 +162,23 @@ inline constexpr std::uint16_t kOutputBuildings = 4003;
 inline constexpr std::uint16_t kOutputControl = 4004;
 inline constexpr std::uint16_t kOutputLosses = 4005;
 inline constexpr std::uint16_t kOutputHarvest = 4006;
+inline constexpr std::uint16_t kOutputLabourWorkforce = 4007;  // labour factor: workers / base, clamped
+inline constexpr std::uint16_t kOutputLabourMood = 4008;       // labour factor: the sullen peasants
+inline constexpr std::uint16_t kOutputTotal = 4009;            // the root of an output breakdown
 inline constexpr std::uint16_t kOutputValue = 4010;
 inline constexpr std::uint16_t kOutputOwnerShare = 4011;
+inline constexpr std::uint16_t kOutputIncome = 4012;  // the root of a holding income breakdown
 // 5000: consumption, stock and wealth (F5)
 inline constexpr std::uint16_t kConsumptionNeed = 5001;
 inline constexpr std::uint16_t kConsumptionStock = 5002;
 inline constexpr std::uint16_t kConsumptionShortage = 5003;
+inline constexpr std::uint16_t kConsumptionOpening = 5004;   // grain stock at the start of the month
+inline constexpr std::uint16_t kConsumptionOutput = 5005;    // grain produced this month
+inline constexpr std::uint16_t kConsumptionStockCap = 5006;  // surplus above the stock cap, lost
 inline constexpr std::uint16_t kWealthBase = 5010;
 inline constexpr std::uint16_t kWealthShortage = 5011;
 inline constexpr std::uint16_t kWealthBuildings = 5014;
+inline constexpr std::uint16_t kWealthTarget = 5015;  // the root of a wealth breakdown: the target
 // 6000: control and corruption (F7)
 inline constexpr std::uint16_t kControlAdministrator = 6001;
 inline constexpr std::uint16_t kControlBuildings = 6002;

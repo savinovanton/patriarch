@@ -2,6 +2,8 @@
 
 #include "pat/core/rng.hpp"
 #include "pat/sim/economy/ledger.hpp"
+#include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/rules.hpp"
 #include "pat/sim/economy/tables.hpp"
 
 #include <algorithm>
@@ -176,6 +178,22 @@ core::Result<void> populate_economy(sim::World& world, const EconomyConfig& conf
         c.trade_node[p] = static_cast<std::uint16_t>(rng.bounded(31));
         for (const std::size_t good : kProducedGoods) {
             c.capacity[p * eco::kMaxGoods + good] = Fixed32::from_int(rng.range(5, 800));
+        }
+        // Grain is sized to the people (E9-T07): a peaceful province feeds itself with a fifth to
+        // spare at its starting workforce and control, so the 50 years of peace of the tests and the
+        // benchmarks are not a famine. The draw above is kept so that the other goods stay as they were.
+        {
+            std::array<std::uint32_t, eco::kGroupCount> sizes{};
+            for (std::size_t g = 0; g < eco::kGroupCount; ++g) {
+                sizes[g] = world.economy().groups.size[eco::group_row(p, static_cast<eco::Group>(g))];
+            }
+            const eco::EconomyRules rules = eco::EconomyRules::defaults();
+            const eco::Quantity need = eco::compute_need(rules.consumption, sizes, eco::kGrainGood);
+            const std::int64_t control = std::max<std::int64_t>(1, eco::control_permille(c.control[p]));
+            const std::int64_t kept = 1000 - rules.production.losses_permille;
+            const std::int64_t raw = need * 1200 / 1000 * 1000 / control * 1000 / kept;
+            c.capacity[p * eco::kMaxGoods + eco::kGrainGood] = Fixed32::from_raw(
+                static_cast<std::int32_t>(std::min<std::int64_t>(raw, eco::kStockMax.raw())));
         }
 
         // Administrator: a living member of the owning dynasty, for about half of the provinces.

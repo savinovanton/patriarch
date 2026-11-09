@@ -3,6 +3,7 @@
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/economy/breakdown.hpp"
 #include "pat/sim/economy/population.hpp"
+#include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/economy/systems.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -86,6 +87,17 @@ World peaceful_world(std::uint32_t provinces, int year = 1703, std::int32_t fill
             c.wealth[row] = Fixed32::from_int(wealth_steps[p % 3]);
             c.growth_modifier[row] = p % 5 == 3 ? 2000 : (p % 5 == 4 ? -1000 : 0);
         }
+        // E9-T07: the province feeds itself (a fifth to spare) and its workforce is the reference of
+        // the labour factor, so that the production of the system keeps wealth, and with it growth,
+        // where the tests of the population put them.
+        std::array<std::uint32_t, kGroupCount> sizes{};
+        for (std::size_t g = 0; g < kGroupCount; ++g) {
+            sizes[g] = world.economy().groups.size[group_row(p, static_cast<Group>(g))];
+        }
+        const Quantity need = compute_need(rules().consumption, sizes, kGrainGood);
+        c.capacity[p * kMaxGoods + kGrainGood] = Fixed32::from_raw(
+            static_cast<std::int32_t>(std::min<Quantity>(need * 1200 / 950, kStockMax.raw())));
+        c.labour_base[p] = sizes[index_of(Group::Peasants)] + sizes[index_of(Group::Townsfolk)];
     }
     require_valid(world);
     return world;
@@ -494,7 +506,7 @@ TEST_CASE("economy.provinces: fifty years of peace stay in the corridor of the G
 }
 
 TEST_CASE("economy.provinces: a province at its capacity stops growing and one in decline keeps shrinking") {
-    World world = peaceful_world(2, 1703, 10'000);  // 10x the 10% fill: far beyond the capacity
+    World world = peaceful_world(2, 1703, 10'000);  // 10x the 10% fill: right at the capacity
     const std::uint64_t crowded = world.population_persons(ProvinceId(0));
     const EconomyColumnsMut c = world.economy_columns_mut();
     for (std::size_t g = 0; g < kGroupCount; ++g) {
