@@ -1,0 +1,249 @@
+format_version = 1
+
+# Пул мужских имён (E7-T09, GDD 01 §2.1; схема — docs/dev/data-reference.md, вид given_name; правила — docs/dev/names.md).
+# Id имени записывается в колонку name персонажа. Формы отчества записаны явно (без морфологии):
+# patronymic_son_key — для сына, patronymic_daughter_key — для дочери. Тексты — data/loc/ru/names.pd.
+# weight — относительная частота в пуле [предл.]: более частые православные имена знати выше.
+# Это общий пул имён, а не список реальных лиц: стартовые персонажи сценария задаёт E30.
+# [проверить] В 1703 году отчество на -ович/-евич было привилегией высшего круга, остальные писались
+# «Иванов сын»; в игре все члены рода получают отчество единообразно (упрощение).
+
+given_name "ivan" {
+    sex = male
+    weight = 30
+    name_key = "name.given.ivan"
+    patronymic_son_key = "name.patronymic.ivan.son"
+    patronymic_daughter_key = "name.patronymic.ivan.daughter"
+}
+
+given_name "petr" {
+    sex = male
+    weight = 24
+    name_key = "name.given.petr"
+    patronymic_son_key = "name.patronymic.petr.son"
+    patronymic_daughter_key = "name.patronymic.petr.daughter"
+}
+
+given_name "mikhail" {
+    sex = male
+    weight = 22
+    name_key = "name.given.mikhail"
+    patronymic_son_key = "name.patronymic.mikhail.son"
+    patronymic_daughter_key = "name.patronymic.mikhail.daughter"
+}
+
+given_name "aleksei" {
+    sex = male
+    weight = 22
+    name_key = "name.given.aleksei"
+    patronymic_son_key = "name.patronymic.aleksei.son"
+    patronymic_daughter_key = "name.patronymic.aleksei.daughter"
+}
+
+given_name "fedor" {
+    sex = male
+    weight = 20
+    name_key = "name.given.fedor"
+    patronymic_son_key = "name.patronymic.fedor.son"
+    patronymic_daughter_key = "name.patronymic.fedor.daughter"
+}
+
+given_name "vasily" {
+    sex = male
+    weight = 20
+    name_key = "name.given.vasily"
+    patronymic_son_key = "name.patronymic.vasily.son"
+    patronymic_daughter_key = "name.patronymic.vasily.daughter"
+}
+
+given_name "andrei" {
+    sex = male
+    weight = 18
+    name_key = "name.given.andrei"
+    patronymic_son_key = "name.patronymic.andrei.son"
+    patronymic_daughter_key = "name.patronymic.andrei.daughter"
+}
+
+given_name "dmitry" {
+    sex = male
+    weight = 16
+    name_key = "name.given.dmitry"
+    patronymic_son_key = "name.patronymic.dmitry.son"
+    patronymic_daughter_key = "name.patronymic.dmitry.daughter"
+}
+
+given_name "nikita" {
+    sex = male
+    weight = 14
+    name_key = "name.given.nikita"
+    patronymic_son_key = "name.patronymic.nikita.son"
+    patronymic_daughter_key = "name.patronymic.nikita.daughter"
+}
+
+given_name "grigory" {
+    sex = male
+    weight = 12
+    name_key = "name.given.grigory"
+    patronymic_son_key = "name.patronymic.grigory.son"
+    patronymic_daughter_key = "name.patronymic.grigory.daughter"
+}
+
+given_name "semyon" {
+    sex = male
+    weight = 12
+    name_key = "name.given.semyon"
+    patronymic_son_key = "name.patronymic.semyon.son"
+    patronymic_daughter_key = "name.patronymic.semyon.daughter"
+}
+
+given_name "aleksandr" {
+    sex = male
+    weight = 12
+    name_key = "name.given.aleksandr"
+    patronymic_son_key = "name.patronymic.aleksandr.son"
+    patronymic_daughter_key = "name.patronymic.aleksandr.daughter"
+}
+
+given_name "stepan" {
+    sex = male
+    weight = 10
+    name_key = "name.given.stepan"
+    patronymic_son_key = "name.patronymic.stepan.son"
+    patronymic_daughter_key = "name.patronymic.stepan.daughter"
+}
+
+given_name "nikolai" {
+    sex = male
+    weight = 10
+    name_key = "name.given.nikolai"
+    patronymic_son_key = "name.patronymic.nikolai.son"
+    patronymic_daughter_key = "name.patronymic.nikolai.daughter"
+}
+
+given_name "boris" {
+    sex = male
+    weight = 8
+    name_key = "name.given.boris"
+    patronymic_son_key = "name.patronymic.boris.son"
+    patronymic_daughter_key = "name.patronymic.boris.daughter"
+}
+
+given_name "yakov" {
+    sex = male
+    weight = 8
+    name_key = "name.given.yakov"
+    patronymic_son_key = "name.patronymic.yakov.son"
+    patronymic_daughter_key = "name.patronymic.yakov.daughter"
+}
+
+given_name "matvei" {
+    sex = male
+    weight = 8
+    name_key = "name.given.matvei"
+    patronymic_son_key = "name.patronymic.matvei.son"
+    patronymic_daughter_key = "name.patronymic.matvei.daughter"
+}
+
+given_name "yury" {
+    sex = male
+    weight = 7
+    name_key = "name.given.yury"
+    patronymic_son_key = "name.patronymic.yury.son"
+    patronymic_daughter_key = "name.patronymic.yury.daughter"
+}
+
+given_name "afanasy" {
+    sex = male
+    weight = 6
+    name_key = "name.given.afanasy"
+    patronymic_son_key = "name.patronymic.afanasy.son"
+    patronymic_daughter_key = "name.patronymic.afanasy.daughter"
+}
+
+given_name "kirill" {
+    sex = male
+    weight = 6
+    name_key = "name.given.kirill"
+    patronymic_son_key = "name.patronymic.kirill.son"
+    patronymic_daughter_key = "name.patronymic.kirill.daughter"
+}
+
+given_name "timofei" {
+    sex = male
+    weight = 6
+    name_key = "name.given.timofei"
+    patronymic_son_key = "name.patronymic.timofei.son"
+    patronymic_daughter_key = "name.patronymic.timofei.daughter"
+}
+
+given_name "vladimir" {
+    sex = male
+    weight = 5
+    name_key = "name.given.vladimir"
+    patronymic_son_key = "name.patronymic.vladimir.son"
+    patronymic_daughter_key = "name.patronymic.vladimir.daughter"
+}
+
+given_name "lev" {
+    sex = male
+    weight = 5
+    name_key = "name.given.lev"
+    patronymic_son_key = "name.patronymic.lev.son"
+    patronymic_daughter_key = "name.patronymic.lev.daughter"
+}
+
+given_name "artemy" {
+    sex = male
+    weight = 5
+    name_key = "name.given.artemy"
+    patronymic_son_key = "name.patronymic.artemy.son"
+    patronymic_daughter_key = "name.patronymic.artemy.daughter"
+}
+
+given_name "ilya" {
+    sex = male
+    weight = 5
+    name_key = "name.given.ilya"
+    patronymic_son_key = "name.patronymic.ilya.son"
+    patronymic_daughter_key = "name.patronymic.ilya.daughter"
+}
+
+given_name "pavel" {
+    sex = male
+    weight = 5
+    name_key = "name.given.pavel"
+    patronymic_son_key = "name.patronymic.pavel.son"
+    patronymic_daughter_key = "name.patronymic.pavel.daughter"
+}
+
+given_name "kozma" {
+    sex = male
+    weight = 4
+    name_key = "name.given.kozma"
+    patronymic_son_key = "name.patronymic.kozma.son"
+    patronymic_daughter_key = "name.patronymic.kozma.daughter"
+}
+
+given_name "larion" {
+    sex = male
+    weight = 4
+    name_key = "name.given.larion"
+    patronymic_son_key = "name.patronymic.larion.son"
+    patronymic_daughter_key = "name.patronymic.larion.daughter"
+}
+
+given_name "leonty" {
+    sex = male
+    weight = 4
+    name_key = "name.given.leonty"
+    patronymic_son_key = "name.patronymic.leonty.son"
+    patronymic_daughter_key = "name.patronymic.leonty.daughter"
+}
+
+given_name "yefim" {
+    sex = male
+    weight = 4
+    name_key = "name.given.yefim"
+    patronymic_son_key = "name.patronymic.yefim.son"
+    patronymic_daughter_key = "name.patronymic.yefim.daughter"
+}

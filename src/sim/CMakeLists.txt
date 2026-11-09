@@ -18,6 +18,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/mortality.hpp
+    include/pat/sim/names.hpp
     include/pat/sim/replay.hpp
     include/pat/sim/runner.hpp
     include/pat/sim/save.hpp
@@ -40,6 +41,7 @@ add_library(patriarch_sim STATIC
     economy/systems.cpp
     kinship.cpp
     mortality.cpp
+    names.cpp
     replay.cpp
     runner.cpp
     save.cpp

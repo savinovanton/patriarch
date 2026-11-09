@@ -3,6 +3,7 @@
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
+#include "pat/content/names_content.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -256,6 +257,11 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 content::build_demography_rules(loaded.registry);
             if (!demography) {
                 for (const data::LoadError& error : demography.error())
+                    findings.push_back(from_load_error(error));
+            }
+            const content::NamePoolsResult names = content::build_name_pools(loaded.registry);
+            if (!names) {
+                for (const data::LoadError& error : names.error())
                     findings.push_back(from_load_error(error));
             }
             for (const data::LoadError& error : content::validate_m1_definitions(loaded.registry))

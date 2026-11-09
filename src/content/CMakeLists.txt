@@ -5,6 +5,7 @@ add_library(patriarch_content STATIC
     include/pat/content/m1_content.hpp
     include/pat/content/m1_hot_reload.hpp
     include/pat/content/m1_scenario.hpp
+    include/pat/content/names_content.hpp
     include/pat/content/province_bindings.hpp
     demography_content.cpp
     economy_content.cpp
@@ -12,6 +13,7 @@ add_library(patriarch_content STATIC
     m1_content.cpp
     m1_hot_reload.cpp
     m1_scenario.cpp
+    names_content.cpp
     province_bindings.cpp)
 add_library(patriarch::content ALIAS patriarch_content)
 

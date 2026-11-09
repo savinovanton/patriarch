@@ -1,0 +1,184 @@
+format_version = 1
+
+# Пул женских имён (E7-T09, GDD 01 §2.1; вид given_name, см. given_male.pd). У женских имён отчества нет:
+# отчество ребёнка строится от мужского имени отца. Тексты — data/loc/ru/names.pd.
+
+given_name "anna" {
+    sex = female
+    weight = 25
+    name_key = "name.given.anna"
+}
+
+given_name "maria" {
+    sex = female
+    weight = 25
+    name_key = "name.given.maria"
+}
+
+given_name "evdokia" {
+    sex = female
+    weight = 22
+    name_key = "name.given.evdokia"
+}
+
+given_name "praskovya" {
+    sex = female
+    weight = 20
+    name_key = "name.given.praskovya"
+}
+
+given_name "natalya" {
+    sex = female
+    weight = 20
+    name_key = "name.given.natalya"
+}
+
+given_name "tatyana" {
+    sex = female
+    weight = 14
+    name_key = "name.given.tatyana"
+}
+
+given_name "darya" {
+    sex = female
+    weight = 14
+    name_key = "name.given.darya"
+}
+
+given_name "elena" {
+    sex = female
+    weight = 12
+    name_key = "name.given.elena"
+}
+
+given_name "irina" {
+    sex = female
+    weight = 12
+    name_key = "name.given.irina"
+}
+
+given_name "anastasia" {
+    sex = female
+    weight = 12
+    name_key = "name.given.anastasia"
+}
+
+given_name "ulyana" {
+    sex = female
+    weight = 10
+    name_key = "name.given.ulyana"
+}
+
+given_name "agrafena" {
+    sex = female
+    weight = 10
+    name_key = "name.given.agrafena"
+}
+
+given_name "marfa" {
+    sex = female
+    weight = 10
+    name_key = "name.given.marfa"
+}
+
+given_name "sofya" {
+    sex = female
+    weight = 10
+    name_key = "name.given.sofya"
+}
+
+given_name "varvara" {
+    sex = female
+    weight = 10
+    name_key = "name.given.varvara"
+}
+
+given_name "alexandra" {
+    sex = female
+    weight = 8
+    name_key = "name.given.alexandra"
+}
+
+given_name "ekaterina" {
+    sex = female
+    weight = 8
+    name_key = "name.given.ekaterina"
+}
+
+given_name "agafya" {
+    sex = female
+    weight = 8
+    name_key = "name.given.agafya"
+}
+
+given_name "matryona" {
+    sex = female
+    weight = 8
+    name_key = "name.given.matryona"
+}
+
+given_name "pelageya" {
+    sex = female
+    weight = 8
+    name_key = "name.given.pelageya"
+}
+
+given_name "xenia" {
+    sex = female
+    weight = 8
+    name_key = "name.given.xenia"
+}
+
+given_name "aksinya" {
+    sex = female
+    weight = 8
+    name_key = "name.given.aksinya"
+}
+
+given_name "efrosinya" {
+    sex = female
+    weight = 8
+    name_key = "name.given.efrosinya"
+}
+
+given_name "nadezhda" {
+    sex = female
+    weight = 6
+    name_key = "name.given.nadezhda"
+}
+
+given_name "lyubov" {
+    sex = female
+    weight = 6
+    name_key = "name.given.lyubov"
+}
+
+given_name "vera" {
+    sex = female
+    weight = 5
+    name_key = "name.given.vera"
+}
+
+given_name "evfimia" {
+    sex = female
+    weight = 5
+    name_key = "name.given.evfimia"
+}
+
+given_name "fekla" {
+    sex = female
+    weight = 5
+    name_key = "name.given.fekla"
+}
+
+given_name "vasilisa" {
+    sex = female
+    weight = 5
+    name_key = "name.given.vasilisa"
+}
+
+given_name "feodosia" {
+    sex = female
+    weight = 4
+    name_key = "name.given.feodosia"
+}
