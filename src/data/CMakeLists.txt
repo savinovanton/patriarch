@@ -7,6 +7,7 @@ add_library(patriarch_data STATIC
     include/pat/data/economy_schemas.hpp
     include/pat/data/example_schemas.hpp
     include/pat/data/m1_schemas.hpp
+    include/pat/data/names_schemas.hpp
     include/pat/data/pd_parser.hpp
     include/pat/data/pd_tree.hpp
     include/pat/data/schema.hpp
@@ -19,6 +20,7 @@ add_library(patriarch_data STATIC
     economy_schemas.cpp
     example_schemas.cpp
     m1_schemas.cpp
+    names_schemas.cpp
     pd_internal.hpp
     pd_lexer.cpp
     pd_parser.cpp

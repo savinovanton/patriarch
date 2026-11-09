@@ -1,0 +1,32 @@
+format_version = 1
+
+# Пул портретов (E7-T09, вид portrait): какие id доступны полу и возрастной полосе. Сами гравюры
+# подключает E26 (FR-UI-8), пока id зарезервированы под заглушки. Раскладка id [предл.]:
+# 100·(пол: 1 — мужской, 2 — женский) + 10·(полоса: 0 ребёнок … 4 старость) + номер.
+# Нужен хотя бы один портрет на каждый пол и полосу; id уникален и не равен 0 (0 — «без портрета»).
+
+portrait "m_child_1" { sex = male  stage = child  portrait_id = 101 }
+portrait "m_child_2" { sex = male  stage = child  portrait_id = 102 }
+portrait "m_adolescent_1" { sex = male  stage = adolescent  portrait_id = 111 }
+portrait "m_adolescent_2" { sex = male  stage = adolescent  portrait_id = 112 }
+portrait "m_prime_1" { sex = male  stage = prime  portrait_id = 121 }
+portrait "m_prime_2" { sex = male  stage = prime  portrait_id = 122 }
+portrait "m_prime_3" { sex = male  stage = prime  portrait_id = 123 }
+portrait "m_mature_1" { sex = male  stage = mature  portrait_id = 131 }
+portrait "m_mature_2" { sex = male  stage = mature  portrait_id = 132 }
+portrait "m_mature_3" { sex = male  stage = mature  portrait_id = 133 }
+portrait "m_elder_1" { sex = male  stage = elder  portrait_id = 141 }
+portrait "m_elder_2" { sex = male  stage = elder  portrait_id = 142 }
+
+portrait "f_child_1" { sex = female  stage = child  portrait_id = 201 }
+portrait "f_child_2" { sex = female  stage = child  portrait_id = 202 }
+portrait "f_adolescent_1" { sex = female  stage = adolescent  portrait_id = 211 }
+portrait "f_adolescent_2" { sex = female  stage = adolescent  portrait_id = 212 }
+portrait "f_prime_1" { sex = female  stage = prime  portrait_id = 221 }
+portrait "f_prime_2" { sex = female  stage = prime  portrait_id = 222 }
+portrait "f_prime_3" { sex = female  stage = prime  portrait_id = 223 }
+portrait "f_mature_1" { sex = female  stage = mature  portrait_id = 231 }
+portrait "f_mature_2" { sex = female  stage = mature  portrait_id = 232 }
+portrait "f_mature_3" { sex = female  stage = mature  portrait_id = 233 }
+portrait "f_elder_1" { sex = female  stage = elder  portrait_id = 241 }
+portrait "f_elder_2" { sex = female  stage = elder  portrait_id = 242 }

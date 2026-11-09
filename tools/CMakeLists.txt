@@ -42,6 +42,6 @@ if(PATRIARCH_BUILD_TESTS)
     add_test(NAME simcli_m1 COMMAND Python3::Interpreter
         "${PROJECT_SOURCE_DIR}/tests/tools/m1_scenario_cli_test.py"
         "$<TARGET_FILE:simcli>" "$<TARGET_FILE:mapgen>" "${PROJECT_SOURCE_DIR}/data"
-        4b5783bcef109a87 7a17fa660c54867f)
+        af6142a682491b2a 924d0acf26397352)
     set_tests_properties(simcli_m1 PROPERTIES TIMEOUT 90)
 endif()

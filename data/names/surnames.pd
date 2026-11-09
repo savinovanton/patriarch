@@ -1,0 +1,28 @@
+format_version = 1
+
+# Написание фамилий родов в мужской и женской форме (E7-T09, вид surname). По одному объекту на каждый
+# род из data/dynasties; формы записаны явно: Меншиков / Меншикова. Тексты — data/loc/ru/names.pd.
+
+surname "menshikov" {
+    dynasty = dynasty:menshikov
+    male_key = "name.surname.menshikov.male"
+    female_key = "name.surname.menshikov.female"
+}
+
+surname "sheremetev" {
+    dynasty = dynasty:sheremetev
+    male_key = "name.surname.sheremetev.male"
+    female_key = "name.surname.sheremetev.female"
+}
+
+surname "golitsyn" {
+    dynasty = dynasty:golitsyn
+    male_key = "name.surname.golitsyn.male"
+    female_key = "name.surname.golitsyn.female"
+}
+
+surname "naryshkin" {
+    dynasty = dynasty:naryshkin
+    male_key = "name.surname.naryshkin.male"
+    female_key = "name.surname.naryshkin.female"
+}
