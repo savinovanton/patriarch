@@ -229,6 +229,11 @@ MapLabelRenderer::create(IRenderer& renderer, SdfAtlas atlas, MapLabelSet labels
     return R::ok(std::move(out));
 }
 
+void MapLabelRenderer::replace_labels(MapLabelSet labels) {
+    placed_.clear();
+    labels_ = std::move(labels);
+}
+
 LabelLayoutStats MapLabelRenderer::draw(const LabelLayoutInput& input, const LabelStyle& style) {
     const LabelLayoutStats stats = layout_labels(labels_.labels, input, style, placed_);
     quads_.clear();
