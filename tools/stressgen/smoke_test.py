@@ -35,7 +35,7 @@ def check_economy(executable, simcli, folder):
                            check=True, capture_output=True, text=True, timeout=60)
     report = json.loads(bench.stdout)
     assert report["memory"]["provinces"] == 30, report
-    assert report["skeleton"]["hash_unchanged"] is True, report
+    assert report["skeleton"]["deterministic"] is True, report
     assert report["loaded_hash_equal"] is True, report
     names = {metric["name"] for metric in report["skeleton"]["metrics"]}
     assert {"system.economy.settlement", "system.economy.construction", "system.economy.provinces"} <= names, names

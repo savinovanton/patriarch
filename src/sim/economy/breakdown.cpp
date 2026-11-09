@@ -40,6 +40,7 @@ constexpr std::array kTermKeys{
     TermKey{term::kGrowthCrowding, "economy.growth.crowding"},
     TermKey{term::kGrowthMigration, "economy.growth.migration"},
     TermKey{term::kGrowthFamine, "economy.growth.famine"},
+    TermKey{term::kGrowthNet, "economy.growth.net"},
 
     TermKey{term::kOutputCapacity, "economy.output.capacity"},
     TermKey{term::kOutputLabour, "economy.output.labour"},

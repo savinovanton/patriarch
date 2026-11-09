@@ -1,5 +1,7 @@
 #include "pat/stress/economy_skeleton.hpp"
 
+#include "pat/sim/economy/rules.hpp"
+#include "pat/sim/economy/systems.hpp"
 #include "pat/sim/economy/types.hpp"
 #include "pat/sim/system.hpp"
 
@@ -35,29 +37,32 @@ private:
     std::shared_ptr<EconomySkeletonCounters> counters_;
 };
 
-/// Walks the provinces of the day's stagger slot (index % 28 == day - 1, days 1..28) without touching
-/// them: the same iteration the real system will do, so the count is the real number of slots.
+/// `economy.provinces`: counts the slots of the day (the same stagger iteration as the real system, so
+/// the count is the real number of slots) and then runs the REAL system of E9-T06 (growth of the
+/// population) under the same name, so the telemetry metric `system.economy.provinces` measures it.
 class ProvincesStub final : public sim::System {
 public:
     explicit ProvincesStub(std::shared_ptr<EconomySkeletonCounters> counters)
-        : counters_(std::move(counters)) {}
+        : counters_(std::move(counters)),
+          real_(sim::economy::make_provinces_system(sim::economy::EconomyRules::defaults())) {}
     [[nodiscard]] std::string_view name() const override { return kEconomyProvincesName; }
     [[nodiscard]] sim::Cadence cadence() const override { return sim::Cadence::Daily; }
     void run(sim::World& world, sim::TickContext& context) override {
         ++counters_->province_runs;
         const int day = context.date.day();
-        if (day > sim::economy::kStaggerDays) {
-            return;
+        if (day <= sim::economy::kStaggerDays) {
+            const auto count = static_cast<std::uint32_t>(world.provinces().size());
+            constexpr auto kStride = static_cast<std::uint32_t>(sim::economy::kStaggerDays);
+            for (auto index = static_cast<std::uint32_t>(day - 1); index < count; index += kStride) {
+                ++counters_->slots_visited;
+            }
         }
-        const auto count = static_cast<std::uint32_t>(world.provinces().size());
-        constexpr auto kStride = static_cast<std::uint32_t>(sim::economy::kStaggerDays);
-        for (auto index = static_cast<std::uint32_t>(day - 1); index < count; index += kStride) {
-            ++counters_->slots_visited;
-        }
+        real_->run(world, context);
     }
 
 private:
     std::shared_ptr<EconomySkeletonCounters> counters_;
+    std::unique_ptr<sim::System> real_;
 };
 
 }  // namespace

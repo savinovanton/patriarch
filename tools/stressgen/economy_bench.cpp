@@ -113,6 +113,14 @@ std::uint64_t sweep_economy(const sim::World& world) {
     return acc;
 }
 
+std::uint64_t total_persons(const sim::World& world) {
+    std::uint64_t total = 0;
+    for (const std::uint32_t size : world.economy().groups.size) {
+        total += size;
+    }
+    return total;
+}
+
 std::string json_memory(const EconomyMemory& m) {
     const auto per_province = [&](std::size_t bytes) {
         return m.provinces == 0 ? 0.0 : static_cast<double>(bytes) / static_cast<double>(m.provinces);
@@ -307,20 +315,46 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
     const Stat sweep_us = summarize(time_us(options.repeats, [&] { sink += sweep_economy(loaded.world); }));
     const EconomyMemory loaded_memory = economy_memory(loaded.world);
 
-    // ---- the skeleton of the economy systems on the loaded world ---------------------------------
+    // ---- the economy systems on the loaded world -------------------------------------------------
+    // `economy.provinces` is the real system of E9-T06 (growth of the population); settlement and
+    // construction are still empty stubs. Each tick is timed on its own and sorted by what the day is:
+    // a day of the stagger (1..28), a day that selects nobody (29..31) and the first of a month, when
+    // the monthly systems run too. A second, identical run proves that the economy tick is deterministic.
     const sim::WorldHash hash_before = loaded.world.compute_hash();
+    const std::uint64_t persons_before = total_persons(loaded.world);
+    sim::World second_world = loaded.world;
     sim::Simulation with_stubs(std::move(loaded.world));
     const auto counters = install_economy_skeleton(with_stubs);
     if (const auto enabled = with_stubs.enable_telemetry(1024); !enabled) {
         return R::err(enabled.error());
     }
-    with_stubs.run_days(static_cast<int>(options.days));
+    std::vector<double> tick_all_us;
+    std::vector<double> tick_slot_us;
+    std::vector<double> tick_free_us;
+    std::vector<double> tick_month_start_us;
+    for (std::uint32_t day = 0; day < options.days; ++day) {
+        const auto t0 = Clock::now();
+        const sim::TickReport& report = with_stubs.tick();
+        const auto t1 = Clock::now();
+        const double us = std::chrono::duration<double, std::micro>(t1 - t0).count();
+        tick_all_us.push_back(us);
+        const int day_of_month = report.date.day();
+        (day_of_month > sim::economy::kStaggerDays ? tick_free_us : tick_slot_us).push_back(us);
+        if (report.events.new_month) {
+            tick_month_start_us.push_back(us);
+        }
+    }
     const auto telemetry = with_stubs.telemetry_snapshot();
-    sim::Simulation without_stubs(world);
-    without_stubs.run_days(static_cast<int>(options.days));
-    const bool skeleton_is_inert = with_stubs.world().compute_hash() == without_stubs.world().compute_hash();
-    if (!skeleton_is_inert) {
-        return R::err({5, "the skeleton of the economy systems changed the world"});
+    sim::Simulation again(std::move(second_world));
+    (void)install_economy_skeleton(again);
+    again.run_days(static_cast<int>(options.days));
+    const bool deterministic = with_stubs.world().compute_hash() == again.world().compute_hash();
+    if (!deterministic) {
+        return R::err({5, "two runs of the economy systems from the same world diverged"});
+    }
+    const std::uint64_t persons_after = total_persons(with_stubs.world());
+    if (!with_stubs.world().check_invariants().empty()) {
+        return R::err({5, "the economy systems broke an invariant of the world"});
     }
 
     // ---- the report ----------------------------------------------------------------------------
@@ -375,13 +409,21 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
     out += ",\"cache_rebuild_floor_us\":" + json_stat(sweep_us);
     out += std::format(
         ",\"skeleton\":{{\"days\":{},\"settlement_runs\":{},\"construction_runs\":{},\"province_runs\":{},"
-        "\"slots_visited\":{},\"hash_unchanged\":{},\"metrics\":[{}]}}",
+        "\"slots_visited\":{},\"deterministic\":{},\"persons_before\":{},\"persons_after\":{},"
+        "\"tick_us\":{{\"all\":{},\"stagger_days\":{},\"free_days\":{},\"month_starts\":{}}},\"metrics\":[{}]"
+        "}}",
         options.days,
         counters->settlement_runs,
         counters->construction_runs,
         counters->province_runs,
         counters->slots_visited,
-        skeleton_is_inert ? "true" : "false",
+        deterministic ? "true" : "false",
+        persons_before,
+        persons_after,
+        json_stat(summarize(std::move(tick_all_us))),
+        json_stat(summarize(std::move(tick_slot_us))),
+        json_stat(summarize(std::move(tick_free_us))),
+        json_stat(summarize(std::move(tick_month_start_us))),
         metrics);
     out += std::format(",\"world_hash\":{},\"economy_hash\":{},\"loaded_hash_equal\":{},\"sink\":{}}}",
                        hex64(hash_before.total),
