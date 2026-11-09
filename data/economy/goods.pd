@@ -2,8 +2,9 @@ format_version = 1
 
 # Товары (GDD 03 §5.1). slot — стабильный индекс, записывается в сейвы; порядок файлов на него не
 # влияет. Цены — копейки за единицу [предл.]. need_per_head_milli — потребность человека группы
-# в месяц, тысячные доли единицы. В M1 заполнены слоты 0, 1, 2, 3, 5, 7; остальные описаны с общей
-# заготовкой цены, чтобы раскладка не менялась при их включении.
+# в месяц, тысячные доли единицы (соль и сукно — собственные заготовки; без торговли E19 они не
+# влияют на достаток: shortage_wealth_points у них нет). В M1 заполнены слоты 0, 1, 2, 3, 5, 7;
+# остальные описаны с общей заготовкой цены, чтобы раскладка не менялась при их включении.
 
 good "grain" {                       # хлеб; 12 руб. (economy-model §11.1, GDD 03 §13)
     slot = 0
@@ -15,6 +16,7 @@ good "grain" {                       # хлеб; 12 руб. (economy-model §11.
 good "salt" {
     slot = 1
     base_price_kop = 1000
+    need_per_head_milli = { nobility = 3, clergy = 3, townsfolk = 3, peasants = 3, cossacks = 3 }
 }
 
 good "fur" {
@@ -45,6 +47,7 @@ good "copper_silver" {
 good "cloth" {
     slot = 7
     base_price_kop = 1000
+    need_per_head_milli = { nobility = 6, clergy = 4, townsfolk = 3, peasants = 2, cossacks = 3 }
 }
 
 good "fish" {

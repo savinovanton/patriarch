@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/population.hpp"
+#include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/tables.hpp"
 
 #include <cstdint>
@@ -15,7 +16,9 @@ namespace {
 
 class ProvincesSystem final : public System {
 public:
-    explicit ProvincesSystem(const EconomyRules& rules) : rules_(rules) {}
+    ProvincesSystem(const EconomyRules& rules, std::shared_ptr<const PriceSource> prices)
+        : rules_(rules),
+          prices_(prices ? std::move(prices) : std::make_shared<const StaticPriceSource>(rules.production)) {}
 
     [[nodiscard]] std::string_view name() const override { return kProvincesSystemName; }
     [[nodiscard]] Cadence cadence() const override { return Cadence::Daily; }
@@ -42,6 +45,9 @@ private:
     void process_province(World& world, ProvinceId province, Date today) {
         // Step 2: growth of the population.
         (void)step_province_population(world, rules_.population, province);
+        // Step 3: production and consumption (F2-F5); the grain stock and the wealth are written. Its
+        // result carries the holding income that step 4 (taxes, E9-T08) will post.
+        (void)step_province_production(world, rules_, *prices_, province);
         // Step 8: the slot is done. (The population cache was refreshed by the World with the sizes.)
         PAT_ASSERT(world.economy().provinces.last_slot_date[province.index()] != today,
                    "a province must be processed once per month");
@@ -49,16 +55,20 @@ private:
     }
 
     EconomyRules rules_;
+    std::shared_ptr<const PriceSource> prices_;
 };
 
 }  // namespace
 
-std::unique_ptr<System> make_provinces_system(const EconomyRules& rules) {
-    return std::make_unique<ProvincesSystem>(rules);
+std::unique_ptr<System> make_provinces_system(const EconomyRules& rules,
+                                              std::shared_ptr<const PriceSource> prices) {
+    return std::make_unique<ProvincesSystem>(rules, std::move(prices));
 }
 
-void install_economy_systems(Simulation& simulation, const EconomyRules& rules) {
-    simulation.add_system(make_provinces_system(rules));
+void install_economy_systems(Simulation& simulation,
+                             const EconomyRules& rules,
+                             std::shared_ptr<const PriceSource> prices) {
+    simulation.add_system(make_provinces_system(rules, std::move(prices)));
 }
 
 }  // namespace pat::sim::economy

@@ -66,18 +66,20 @@ constexpr EconomyRules kDefaultEconomyRules{
         {
             // economy-model s.11.1: grain need per head per month, in thousandths of a unit:
             // nobility 40, clergy 40, townsfolk 38, peasants 35, cossacks 38. The GDD (s.5.3) names
-            // salt and cloth as consumed but gives no norms: zero (not consumed) until data brings
-            // them. Natives have size 0 in M1.
+            // salt and cloth as consumed but gives no norms: own placeholders (salt 3 for everybody;
+            // cloth 6, 4, 3, 2, 3 by group). Natives have size 0 in M1.
             .need_per_head_milli = {{
-                {{40, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-                {{40, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-                {{38, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-                {{35, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
-                {{38, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
+                {{40, 3, 0, 0, 0, 0, 0, 6, 0, 0}},
+                {{40, 3, 0, 0, 0, 0, 0, 4, 0, 0}},
+                {{38, 3, 0, 0, 0, 0, 0, 3, 0, 0}},
+                {{35, 3, 0, 0, 0, 0, 0, 2, 0, 0}},
+                {{38, 3, 0, 0, 0, 0, 0, 3, 0, 0}},
                 {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
             }},
             // own placeholders: a grain stock of up to 3 months of need; a missing grain supply
-            // costs 60 wealth points; wealth tends to 100 (norm) and closes 20 % of the gap a month
+            // costs 60 wealth points (salt and cloth cost none until E19 brings trade: a province
+            // that does not make them could not get them); wealth tends to 100 (norm) and closes
+            // 20 % of the gap a month
             .stock_cap_months = 3,
             .shortage_wealth_points = {{60, 0, 0, 0, 0, 0, 0, 0, 0, 0}},
             .wealth_base = {{100, 100, 100, 100, 100, 100}},
