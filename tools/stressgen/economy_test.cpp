@@ -1,4 +1,6 @@
 #include "pat/core/telemetry.hpp"
+#include "pat/sim/economy/rules.hpp"
+#include "pat/sim/economy/systems.hpp"
 #include "pat/sim/save.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/stress/dataset.hpp"
@@ -13,6 +15,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace pat;
 
@@ -182,7 +185,8 @@ TEST_CASE("stressgen economy: memory per province is counted from the tables and
               .used_total() == 0);
 }
 
-TEST_CASE("economy skeleton: the empty systems register as system.economy.*, count and change nothing") {
+TEST_CASE(
+    "economy skeleton: the systems register as system.economy.*, count, and only the population moves") {
     auto generated = stress::generate(economy_config("year60", 7));
     REQUIRE(generated);
     const sim::World& world = generated.value().world;
@@ -196,9 +200,16 @@ TEST_CASE("economy skeleton: the empty systems register as system.economy.*, cou
     sim::Simulation without(world);
     without.run_days(365);
 
-    // They cannot move the hash.
-    CHECK(with.world().compute_hash() == without.world().compute_hash());
+    // The stubs change nothing; the real `economy.provinces` of E9-T06 grows the population (a year of
+    // peace: every group of a province is processed once a month) and touches only people and slots.
+    CHECK(with.world().compute_hash() != without.world().compute_hash());
     CHECK(with.world().check_invariants().empty());
+    CHECK(with.world().economy().accounts == without.world().economy().accounts);
+    CHECK(with.world().economy().provinces.control == without.world().economy().provinces.control);
+    CHECK(with.world().economy().groups.mood == without.world().economy().groups.mood);
+    for (std::size_t p = 0; p < provinces; ++p) {
+        CHECK(with.world().economy().provinces.last_slot_date[p] != sim::kNoDate);
+    }
     // Daily systems every day, the monthly one on the 12 first days of a month, and every province
     // falls into its stagger slot exactly once a month.
     CHECK(counters->construction_runs == 365);
@@ -247,11 +258,68 @@ TEST_CASE("economy bench: the report of a small world is complete and consistent
                             "\"system.economy.provinces\"",
                             "\"system.economy.settlement\"",
                             "\"system.economy.construction\"",
-                            "\"hash_unchanged\":true",
+                            "\"deterministic\":true",
+                            "\"tick_us\":",
+                            "\"month_starts\":",
                             "\"loaded_hash_equal\":true"}) {
         CAPTURE(key);
         CHECK(json.find(key) != std::string::npos);
     }
     options.days = 0;
     CHECK_FALSE(stress::run_economy_bench(config, options));
+}
+
+TEST_CASE("economy.provinces: fifty years of peace on the 400 provinces of the stress profile") {
+    namespace eco = sim::economy;
+    auto generated = stress::generate(economy_config("year60", 7));
+    REQUIRE(generated);
+    const sim::World& world = generated.value().world;
+    REQUIRE(world.provinces().size() == 400);
+    const auto rules = eco::EconomyRules::defaults();
+
+    sim::Simulation a(world);
+    eco::install_economy_systems(a, rules);
+    sim::Simulation b(world);
+    eco::install_economy_systems(b, rules);
+    const std::vector<std::uint32_t> first = world.economy().groups.size;
+    const auto total = [](const std::vector<std::uint32_t>& sizes) {
+        std::uint64_t sum = 0;
+        for (const std::uint32_t v : sizes) {
+            sum += v;
+        }
+        return sum;
+    };
+    const std::uint64_t first_total = total(first);
+    for (int year = 0; year < 50; ++year) {
+        a.run_days(365 + (a.world().today().year() % 4 == 3 ? 1 : 0));
+        b.run_days(365 + (b.world().today().year() % 4 == 3 ? 1 : 0));
+    }
+    // deterministic, and the state is valid
+    CHECK(a.world().compute_hash() == b.world().compute_hash());
+    CHECK(a.world().economy() == b.world().economy());
+    CHECK(a.world().check_invariants().empty());
+
+    const auto& last = a.world().economy().groups.size;
+    // not exponential: the whole empire grows by less than 1.0 % a year on average
+    const double factor = static_cast<double>(total(last)) / static_cast<double>(first_total);
+    CHECK(factor >= 1.0);
+    CHECK(factor < 1.65);  // 1.010 ^ 50
+    // no group dies out or explodes (the random growth modifiers of the profile are +-0.5 % a year)
+    for (std::size_t row = 0; row < last.size(); ++row) {
+        if (first[row] >= 1000) {
+            INFO("row " << row);
+            CHECK(last[row] > 0);
+            CHECK(last[row] < first[row] * 2U);
+            CHECK(last[row] > first[row] / 2U);
+        }
+        CHECK(a.world().economy().groups.growth_carry[row] > -1'000'000);
+        CHECK(a.world().economy().groups.growth_carry[row] < 1'000'000);
+    }
+    // every province is within the cap of persons and was processed in the last month
+    for (std::uint32_t p = 0; p < 400; ++p) {
+        CHECK(a.world().population_persons(sim::ProvinceId(p)) <= eco::kMaxProvincePersons);
+        const sim::Date seen = a.world().economy().provinces.last_slot_date[p];
+        CHECK(seen <= a.world().today());
+        CHECK(a.world().today() - seen < 31);  // processed within the last month
+    }
 }

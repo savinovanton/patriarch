@@ -8,7 +8,9 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/breakdown.hpp
     include/pat/sim/economy/ledger.hpp
     include/pat/sim/economy/money.hpp
+    include/pat/sim/economy/population.hpp
     include/pat/sim/economy/rules.hpp
+    include/pat/sim/economy/systems.hpp
     include/pat/sim/economy/tables.hpp
     include/pat/sim/economy/types.hpp
     include/pat/sim/entity_ids.hpp
@@ -30,7 +32,9 @@ add_library(patriarch_sim STATIC
     demography.cpp
     demo_scenario.cpp
     economy/breakdown.cpp
+    economy/population.cpp
     economy/rules.cpp
+    economy/systems.cpp
     kinship.cpp
     replay.cpp
     runner.cpp

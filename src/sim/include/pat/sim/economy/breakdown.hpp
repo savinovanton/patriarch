@@ -36,6 +36,7 @@ enum class Unit : std::uint8_t {
     Points = 2,    ///< Fixed32 raw value (mood, control, unrest, wealth)
     Permille = 3,  ///< per-mille (ratios, probabilities)
     Pieces = 4,    ///< units of goods
+    Ppm = 5,       ///< parts per million (yearly growth rates)
 };
 
 using NodeIndex = std::uint8_t;
@@ -153,6 +154,7 @@ inline constexpr std::uint16_t kGrowthModifier = 3004;
 inline constexpr std::uint16_t kGrowthCrowding = 3005;
 inline constexpr std::uint16_t kGrowthMigration = 3006;
 inline constexpr std::uint16_t kGrowthFamine = 3007;
+inline constexpr std::uint16_t kGrowthNet = 3008;  // the root of a growth breakdown: the net yearly rate
 // 4000: output and holding income (F2-F4)
 inline constexpr std::uint16_t kOutputCapacity = 4001;
 inline constexpr std::uint16_t kOutputLabour = 4002;
