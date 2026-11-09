@@ -8,9 +8,11 @@
 // WASD/arrows = move, Q/E = rotate, 1-4 = map mode (terrain / owners / mood / random),
 // V = vsync, F5 = reload shaders, F11 = fullscreen, Esc = quit.
 
+#include "pat/content/m1_hot_reload.hpp"
 #include "pat/content/m1_scenario.hpp"
 #include "pat/core/log.hpp"
 #include "pat/core/png_writer.hpp"
+#include "pat/data/content_source.hpp"
 #include "pat/engine/camera.hpp"
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/frame_clock.hpp"
@@ -83,6 +85,7 @@ constexpr int kScancodeLeft = 80;
 constexpr int kScancodeDown = 81;
 constexpr int kScancodeUp = 82;
 constexpr std::uint64_t kSimulationSeed = 1;
+constexpr std::int64_t kReloadPollNs = 200'000'000;
 
 enum class ScenarioKind { Demo, M1 };
 
@@ -110,6 +113,7 @@ struct Options {
     float view_fx = 0.5f, view_fy = 0.5f, view_dist = -1.0f, view_yaw = 0.0f;  // --view start camera
     ScenarioKind scenario = ScenarioKind::Demo;
     std::filesystem::path data_root = PATRIARCH_M1_DATA_DIR;
+    bool dev = false;              // poll M1 definitions for changes
     std::string map_file;          // load a PMD1 map instead of generating one
     bool gen_size_set = false;
     bool provinces_set = false;
@@ -186,6 +190,8 @@ bool parse_options(int argc, char** argv, Options& out) {
                 std::fprintf(stderr, "--scenario must be demo or m1\n");
                 return false;
             }
+        } else if (arg == "--dev") {
+            out.dev = true;
         } else if (arg == "--data" && i + 1 < argc) {
             out.data_root = argv[++i];
         } else if (arg == "--map" && i + 1 < argc) {
@@ -206,13 +212,17 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
-                         "                       [--provinces N (demo)] [--frames N] [--hidden]\n"
+                         "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
                          "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
     }
     if (out.scenario == ScenarioKind::M1 && out.provinces_set) {
         std::fprintf(stderr, "--provinces is only available for the demo scenario\n");
+        return false;
+    }
+    if (out.dev && out.scenario != ScenarioKind::M1) {
+        std::fprintf(stderr, "--dev requires --scenario m1\n");
         return false;
     }
     return true;
@@ -287,6 +297,10 @@ int main(int argc, char** argv) {
     }
     const auto map_to_world =
         m1 ? std::span<const pat::sim::ProvinceId>(m1->map_to_world) : std::span<const pat::sim::ProvinceId>{};
+    pat::content::M1HotReload::Snapshot presentation;
+    const auto m1_province_names = [&]() -> std::span<const std::string> {
+        return presentation ? presentation->province_names : m1->province_names;
+    };
 
     if (opt.bench && !opt.sim_speed_set) {
         opt.sim_speed = 5;  // benchmark the UI while the simulation runs at speed 5 (US-3.5)
@@ -378,7 +392,7 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "labels: {}", atlas.error().message);
                 break;
             }
-            MapLabelSet set = m1 ? make_province_labels(map, picker, atlas.value(), m1->province_names)
+            MapLabelSet set = m1 ? make_province_labels(map, picker, atlas.value(), m1_province_names())
                                  : make_test_map_labels(map, geometry, picker, atlas.value());
             PAT_LOG_INFO("spike", "labels: {} provinces + {} regions", set.province_labels, set.region_labels);
             auto created_labels = MapLabelRenderer::create(*renderer, std::move(atlas).value(), std::move(set));
@@ -536,6 +550,38 @@ int main(int argc, char** argv) {
     std::uint16_t selected = 0;
     bool key_w = false, key_a = false, key_s = false, key_d = false, key_q = false, key_e = false;
 
+    const auto update_selected_province = [&] {
+        if (!m1 || !hud || !world_snapshot) {
+            return;
+        }
+        const auto names = m1_province_names();
+        const bool has_selection = selected != 0 && selected < names.size() &&
+                                   selected < map_to_world.size() && world_snapshot->exists(map_to_world[selected]);
+        const std::string_view name = has_selection ? std::string_view(names[selected]) : std::string_view{};
+        if (hud->snapshot().realm_subtitle != name) {
+            auto state = hud->snapshot();
+            state.realm_subtitle = name;
+            hud->set_snapshot(state);
+        }
+    };
+
+    std::optional<pat::data::DirectorySource> reload_source;
+    std::optional<pat::content::M1HotReload> hot_reload;
+    std::optional<std::string> reload_error;
+    std::int64_t next_reload_poll_ns = 0;
+    if (opt.dev) {
+        reload_source.emplace(opt.data_root);
+        hot_reload.emplace(*reload_source, map);
+        hot_reload->subscribe([&](pat::content::M1HotReload::Snapshot next) {
+            const bool names_changed = !std::ranges::equal(m1_province_names(), next->province_names);
+            presentation = std::move(next);
+            if (labels && names_changed) {
+                labels->replace_labels(make_province_labels(map, picker, labels->atlas(), m1_province_names()));
+            }
+            update_selected_province();
+        });
+    }
+
     // Benchmark bookkeeping.
     std::vector<double> frame_ms;
     std::vector<double> gpu_ms;
@@ -546,6 +592,19 @@ int main(int argc, char** argv) {
 
     while (running) {
         const std::int64_t frame_start = now_ns();
+        bool reload_status_changed = false;
+        if (hot_reload && frame_start >= next_reload_poll_ns) {
+            const auto reloaded = hot_reload->poll();
+            next_reload_poll_ns = now_ns() + kReloadPollNs;
+            if (reloaded) {
+                reload_status_changed = reload_error.has_value();
+                reload_error.reset();
+            } else if (!reload_error || *reload_error != reloaded.error().message) {
+                reload_error = reloaded.error().message;
+                PAT_LOG_ERROR("spike", "M1 content reload: {}", *reload_error);
+                reload_status_changed = true;
+            }
+        }
         events.clear();
         window.poll_events(events);
         const PixelSize px = offscreen ? renderer->size() : window.pixel_size();
@@ -681,14 +740,7 @@ int main(int argc, char** argv) {
                                     character_refresh = 1.0e9f;  // refresh the window now
                                 }
                             }
-                            if (m1 && hud && world_snapshot) {
-                                auto state = hud->snapshot();
-                                const bool has_selection = selected != 0 && selected < map_to_world.size() &&
-                                                           world_snapshot->exists(map_to_world[selected]);
-                                state.realm_subtitle =
-                                    has_selection ? m1->province_names[selected] : std::string{};
-                                hud->set_snapshot(state);
-                            }
+                            update_selected_province();
                         }
                     }
                 } else if (button->button == 3) {
@@ -936,7 +988,8 @@ int main(int argc, char** argv) {
             }
         }
 
-        if (clock.fps() > 0.0f && static_cast<std::int64_t>(clock.frame_count()) - last_title_frame_count >= 30) {
+        if (reload_status_changed ||
+            (clock.fps() > 0.0f && static_cast<std::int64_t>(clock.frame_count()) - last_title_frame_count >= 30)) {
             last_title_frame_count = static_cast<std::int64_t>(clock.frame_count());
             char info[96] = "";
             if (const auto* p = map.province(hovered != 0 ? hovered : selected)) {
@@ -945,7 +998,8 @@ int main(int argc, char** argv) {
             }
             char title[320];
             std::snprintf(title, sizeof(title),
-                          "Patriarch - spike | %.0f fps (%.2f ms) | %zu nodes | %zu labels | mode %s | vsync %s | %s | %s",
+                          "Patriarch - spike%s | %.0f fps (%.2f ms) | %zu nodes | %zu labels | mode %s | vsync %s | %s | %s",
+                          reload_error ? " | M1 reload error" : "",
                           static_cast<double>(clock.fps()), static_cast<double>(clock.frame_ms()),
                           view->last_node_count(), label_stats.placed, mode_name(view->mode()), renderer->vsync() ? "on" : "off",
                           std::string(renderer->adapter_name()).c_str(), info);

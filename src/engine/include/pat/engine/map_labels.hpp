@@ -42,6 +42,9 @@ public:
     [[nodiscard]] static core::Result<std::unique_ptr<MapLabelRenderer>>
     create(IRenderer& renderer, SdfAtlas atlas, MapLabelSet labels);
 
+    /// Updates the label data between frames, reusing the existing atlas and text renderer.
+    void replace_labels(MapLabelSet labels);
+
     /// Lays out the labels for this camera and draws them (between begin_frame and end_frame).
     LabelLayoutStats draw(const LabelLayoutInput& input, const LabelStyle& style = {});
 

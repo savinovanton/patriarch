@@ -28,6 +28,7 @@ add_executable(patriarch_tests
     mapdata_test.cpp
     m1_content_test.cpp
     m1_definitions_test.cpp
+    m1_hot_reload_test.cpp
     province_bindings_test.cpp
     pd_parser_test.cpp
     profile_test.cpp
