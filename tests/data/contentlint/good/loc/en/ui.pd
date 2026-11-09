@@ -1,5 +1,6 @@
 format_version = 1
 
 trait.greedy.name = "Greed"
+trait.greedy.desc = "Has hoarded wealth for {n} {n:plural(year|years)}."
 trait.generous.name = "Generosity"
-ui.age.years = "{n} {n:plural(year|years)}"
+trait.generous.desc = "Shares wealth with others."

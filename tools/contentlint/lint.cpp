@@ -2,6 +2,7 @@
 
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
+#include "pat/content/m1_content.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -257,9 +258,10 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 for (const data::LoadError& error : demography.error())
                     findings.push_back(from_load_error(error));
             }
+            for (const data::LoadError& error : content::validate_m1_definitions(loaded.registry))
+                findings.push_back(from_load_error(error));
         } else {
-            report.notes.emplace_back(
-                "economy and demography rules were not checked: fix the load errors first");
+            report.notes.emplace_back("cross-object rules were not checked: fix the load errors first");
         }
     }
 

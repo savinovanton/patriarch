@@ -4,11 +4,15 @@ format_version = 1
 
 trait "honest" {
     name_key = "trait.honest.name"
-    cost = 1
+    desc_key = "trait.honest.desc"
+    slot = 1
+    category = personality
 }
 
 trait "liar" {
     name_key = "trait.liar.name"
-    cost = 1
+    desc_key = "trait.liar.desc"
+    slot = 2
+    category = personality
     opposite = trait:honset
 }

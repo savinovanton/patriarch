@@ -1,0 +1,24 @@
+format_version = 1
+
+# Definition pool for M1. These names do not choose the starting dynasty, holdings or historical
+# biographies; scenario composition and all people belong to E30.
+
+dynasty "menshikov" {
+    name_key = "dynasty.menshikov.name"
+    desc_key = "dynasty.menshikov.desc"
+}
+
+dynasty "sheremetev" {
+    name_key = "dynasty.sheremetev.name"
+    desc_key = "dynasty.sheremetev.desc"
+}
+
+dynasty "golitsyn" {
+    name_key = "dynasty.golitsyn.name"
+    desc_key = "dynasty.golitsyn.desc"
+}
+
+dynasty "naryshkin" {
+    name_key = "dynasty.naryshkin.name"
+    desc_key = "dynasty.naryshkin.desc"
+}

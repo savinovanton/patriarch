@@ -1,0 +1,113 @@
+format_version = 1
+
+# Original Russian text for the M1 definition pool (E4-T05). Province names identify the procedural
+# test map only. Dynasty descriptions do not choose scenario roles or assert historical facts.
+
+# ---- Procedural provinces ----------------------------------------------------------------------
+
+province.p0001.name = "Тестовая провинция 1"
+province.p0002.name = "Тестовая провинция 2"
+province.p0003.name = "Тестовая провинция 3"
+province.p0004.name = "Тестовая провинция 4"
+province.p0005.name = "Тестовая провинция 5"
+province.p0006.name = "Тестовая провинция 6"
+province.p0007.name = "Тестовая провинция 7"
+province.p0008.name = "Тестовая провинция 8"
+province.p0009.name = "Тестовая провинция 9"
+province.p0010.name = "Тестовая провинция 10"
+province.p0011.name = "Тестовая провинция 11"
+province.p0012.name = "Тестовая провинция 12"
+province.p0013.name = "Тестовая провинция 13"
+province.p0014.name = "Тестовая провинция 14"
+province.p0015.name = "Тестовая провинция 15"
+province.p0016.name = "Тестовая провинция 16"
+province.p0017.name = "Тестовая провинция 17"
+province.p0018.name = "Тестовая провинция 18"
+province.p0019.name = "Тестовая провинция 19"
+province.p0020.name = "Тестовая провинция 20"
+
+# ---- Dynasty names ----------------------------------------------------------------------------
+
+dynasty.menshikov.name = "Меншиковы"
+dynasty.menshikov.desc = "Честь и будущее рода зависят от решений его главы."
+dynasty.sheremetev.name = "Шереметевы"
+dynasty.sheremetev.desc = "Судьба рода складывается из союзов, службы и семейных решений."
+dynasty.golitsyn.name = "Голицыны"
+dynasty.golitsyn.desc = "Новые поколения продолжают историю рода."
+dynasty.naryshkin.name = "Нарышкины"
+dynasty.naryshkin.desc = "Каждый союз и каждая служба оставляют след в истории рода."
+
+# ---- Skills -----------------------------------------------------------------------------------
+
+skill.stewardship.name = "Хозяйство"
+skill.stewardship.desc = "Умение вести дела, распоряжаться доходами и развивать владения."
+skill.diplomacy.name = "Дипломатия"
+skill.diplomacy.desc = "Умение договариваться, поддерживать связи и склонять собеседников к согласию."
+skill.martial.name = "Воинское дело"
+skill.martial.desc = "Умение руководить войском и выбирать способ ведения боя."
+skill.intrigue.name = "Интриги"
+skill.intrigue.desc = "Умение хранить тайны, распознавать замыслы и готовить скрытые действия."
+skill.learning.name = "Учёность"
+skill.learning.desc = "Знания, способность к обучению и пониманию сложных вопросов."
+
+# ---- Personality ------------------------------------------------------------------------------
+
+trait.ambitious.name = "Честолюбивый"
+trait.ambitious.desc = "Стремится к высоким должностям и ищет случай возвысить своё имя."
+trait.cautious.name = "Осторожный"
+trait.cautious.desc = "Предпочитает узнать о риске заранее и обдумать последствия поступка."
+trait.cruel.name = "Жестокий"
+trait.cruel.desc = "Легко прибегает к суровым мерам и редко щадит противников."
+trait.merciful.name = "Милосердный"
+trait.merciful.desc = "Старается смягчить наказание и помочь тем, кто оказался в беде."
+trait.generous.name = "Щедрый"
+trait.generous.desc = "Охотно делится достатком и расположением с окружающими."
+trait.greedy.name = "Скупой"
+trait.greedy.desc = "Бережёт средства и с трудом соглашается на лишние расходы."
+trait.devout.name = "Набожный"
+trait.devout.desc = "Придаёт большое значение вере и соблюдению религиозного долга."
+trait.freethinker.name = "Вольнодумец"
+trait.freethinker.desc = "Склонен задавать неудобные вопросы и сомневаться в привычных суждениях."
+trait.proud.name = "Гордый"
+trait.proud.desc = "Высоко ценит своё достоинство и болезненно воспринимает пренебрежение."
+trait.lazy.name = "Ленивый"
+trait.lazy.desc = "Избегает утомительных забот и охотно откладывает дела."
+
+# ---- Education --------------------------------------------------------------------------------
+
+trait.scholar.name = "Учёный"
+trait.scholar.desc = "Получил основательное образование и привык искать ответы в знаниях."
+trait.warrior.name = "Воин"
+trait.warrior.desc = "Обучен воинскому делу и увереннее чувствует себя в походе."
+trait.steward.name = "Хозяйственник"
+trait.steward.desc = "Обучен управлению хозяйством и умеет разбираться в доходах и расходах."
+trait.courtier.name = "Придворный"
+trait.courtier.desc = "Знаком с порядками двора и умеет замечать перемены в расположении людей."
+trait.diplomat.name = "Дипломат"
+trait.diplomat.desc = "Обучен переговорам и умеет находить приемлемые условия соглашения."
+trait.schemer.name = "Интриган"
+trait.schemer.desc = "Обучен скрытным действиям и умеет вести сложный замысел."
+
+# ---- Health and fortune ------------------------------------------------------------------------
+
+trait.sickly.name = "Болезненный"
+trait.sickly.desc = "Обладает слабым здоровьем и тяжелее переносит недуги."
+trait.robust.name = "Крепкий"
+trait.robust.desc = "Обладает крепким здоровьем и легче переносит жизненные тяготы."
+trait.lame.name = "Хромой"
+trait.lame.desc = "Последствия увечья затрудняют передвижение и участие в походах."
+trait.beautiful.name = "Красавец"
+trait.beautiful.desc = "Привлекательная внешность помогает произвести благоприятное первое впечатление."
+trait.dimwitted.name = "Слабоумный"
+trait.dimwitted.desc = "Испытывает большие трудности в учении и решении сложных дел."
+
+# ---- Life events -------------------------------------------------------------------------------
+
+trait.war_hero.name = "Герой войны"
+trait.war_hero.desc = "Заслужил признание за поступки на войне."
+trait.disgraced.name = "Опальный"
+trait.disgraced.desc = "Лишился прежнего расположения при дворе и должен считаться с последствиями."
+trait.emperor_favorite.name = "Любимец императора"
+trait.emperor_favorite.desc = "Пользуется особым расположением императора."
+trait.widowed.name = "Вдовец / вдова"
+trait.widowed.desc = "Пережил смерть супруга и хранит память о прежнем браке."
