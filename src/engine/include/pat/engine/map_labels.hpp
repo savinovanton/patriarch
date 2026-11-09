@@ -8,6 +8,8 @@
 #include "pat/mapdata/map_data.hpp"
 
 #include <memory>
+#include <span>
+#include <string>
 #include <vector>
 
 namespace pat::engine {
@@ -26,6 +28,13 @@ struct MapLabelSet {
                                                const TerrainGeometry& geometry,
                                                const HeightfieldPicker& picker,
                                                const SdfAtlas& atlas);
+
+/// Builds province labels from UTF-8 names indexed by map province id, with index 0 reserved for water.
+/// Missing names are skipped. Uses the same placement anchors and text measurement as the test labels.
+[[nodiscard]] MapLabelSet make_province_labels(const mapdata::MapData& map,
+                                               const HeightfieldPicker& picker,
+                                               const SdfAtlas& atlas,
+                                               std::span<const std::string> names);
 
 /// Draws the labels of a map: placement per frame, glyph layout and SDF text rendering.
 class MapLabelRenderer {

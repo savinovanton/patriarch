@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -30,19 +31,25 @@ namespace pat::game {
 inline constexpr std::uint32_t kUnownedColor = 0xFF707070U;
 
 /// Map palette indexed by map province id (index 0 unused, size map_province_count + 1): the owner's
-/// colour. Map province `i` corresponds to simulation province index `i - 1`.
+/// colour. `map_to_world` is indexed by map province id. An empty mapping uses the demo order,
+/// where map province `i` corresponds to simulation province index `i - 1`.
 [[nodiscard]] std::vector<std::uint32_t> owner_palette(const sim::World& world,
-                                                       std::size_t map_province_count);
+                                                       std::size_t map_province_count,
+                                                       std::span<const sim::ProvinceId> map_to_world = {});
 
 /// A value-driven palette (the province's development level, red = low, green = high).
-[[nodiscard]] std::vector<std::uint32_t> development_palette(const sim::World& world,
-                                                             std::size_t map_province_count);
+[[nodiscard]] std::vector<std::uint32_t>
+development_palette(const sim::World& world,
+                    std::size_t map_province_count,
+                    std::span<const sim::ProvinceId> map_to_world = {});
 
 /// Window data for a character. The character must be alive.
 [[nodiscard]] ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::CharacterId character);
 
 /// Head of the dynasty that owns map province `map_province` (invalid if unowned or without a head).
-[[nodiscard]] sim::CharacterId head_for_province(const sim::World& world, std::size_t map_province);
+[[nodiscard]] sim::CharacterId head_for_province(const sim::World& world,
+                                                 std::size_t map_province,
+                                                 std::span<const sim::ProvinceId> map_to_world = {});
 
 /// A living character picked pseudo-randomly from `seed` (invalid if nobody is alive).
 [[nodiscard]] sim::CharacterId pick_character(const sim::World& world, std::uint32_t seed);

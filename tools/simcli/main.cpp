@@ -1,8 +1,11 @@
 // simcli - headless runner for the simulation core (E1-T11).
 //
-// Runs the built-in demo scenario without any graphics: useful for CI, profiling, replay checks and
-// reproducing bugs. See --help for the options.
+// Runs the demo and M1 scenarios without graphics. See --help for the options.
 
+#include "pat/content/m1_scenario.hpp"
+#include "pat/core/log.hpp"
+#include "pat/mapdata/map_format.hpp"
+#include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/replay.hpp"
 #include "pat/sim/runner.hpp"
@@ -13,6 +16,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <format>
 #include <map>
 #include <optional>
@@ -34,8 +38,14 @@ enum ExitCode : int {
     kBadSave = 4,
 };
 
+enum class ScenarioKind { Demo, M1 };
+
 struct Options {
     demo::Config scenario;
+    ScenarioKind scenario_kind = ScenarioKind::Demo;
+    bool demo_sizes_set = false;
+    std::optional<std::string> data_path;
+    std::optional<std::string> map_path;
     int days = 365;
     std::optional<std::string> speed;  // "1".."5" or "unlimited": run through the threaded runner
     int checkpoint_interval = 30;
@@ -58,11 +68,14 @@ constexpr const char* kUsage = R"(simcli - headless runner for the Patriarch sim
 
 Usage: simcli [options]
 
-Scenario (built-in demo, not game content):
+Scenario:
+  --scenario NAME       demo (default) or m1 (game content)
   --seed N              random seed (default 1)
-  --dynasties N         number of dynasties (default 8)
-  --provinces N         number of provinces (default 80)
-  --characters N        initial characters per dynasty (default 6)
+  --dynasties N         demo: number of dynasties (default 8)
+  --provinces N         demo: number of provinces (default 80)
+  --characters N        demo: initial characters per dynasty (default 6)
+  --data DIR            M1: content directory (default: the project's data directory)
+  --map FILE            M1: read a PMD1 map (default: generate the 20-province M1 map)
 
 Run:
   --days N              number of days to simulate (default 365)
@@ -141,6 +154,18 @@ std::string parse_args(int argc, char** argv, Options& options) {
             options.hash_only = true;
         } else if (arg == "--quiet") {
             options.quiet = true;
+        } else if (takes_value("--scenario", text)) {
+            if (text == "demo") {
+                options.scenario_kind = ScenarioKind::Demo;
+            } else if (text == "m1") {
+                options.scenario_kind = ScenarioKind::M1;
+            } else {
+                return "--scenario must be demo or m1";
+            }
+        } else if (takes_value("--data", text)) {
+            options.data_path = text;
+        } else if (takes_value("--map", text)) {
+            options.map_path = text;
         } else if (const int r = number("--seed"); r != 0) {
             if (r < 0)
                 return "--seed needs a non-negative integer";
@@ -152,14 +177,17 @@ std::string parse_args(int argc, char** argv, Options& options) {
         } else if (const int r3 = number("--dynasties"); r3 != 0) {
             if (r3 < 0)
                 return "--dynasties needs a non-negative integer";
+            options.demo_sizes_set = true;
             options.scenario.dynasties = static_cast<std::uint32_t>(std::min<std::uint64_t>(n, 10'000));
         } else if (const int r4 = number("--provinces"); r4 != 0) {
             if (r4 < 0)
                 return "--provinces needs a non-negative integer";
+            options.demo_sizes_set = true;
             options.scenario.provinces = static_cast<std::uint32_t>(std::min<std::uint64_t>(n, 100'000));
         } else if (const int r5 = number("--characters"); r5 != 0) {
             if (r5 < 0)
                 return "--characters needs a non-negative integer";
+            options.demo_sizes_set = true;
             options.scenario.characters_per_dynasty =
                 static_cast<std::uint32_t>(std::min<std::uint64_t>(n, 1'000));
         } else if (const int r6 = number("--checkpoint"); r6 != 0) {
@@ -194,11 +222,23 @@ std::string parse_args(int argc, char** argv, Options& options) {
                              &options.replay_path,
                              &options.save_path,
                              &options.load_path,
+                             &options.data_path,
+                             &options.map_path,
                              &options.telemetry_json,
                              &options.telemetry_csv}) {
         if (path->has_value() && *path == std::string("<missing>")) {
             return "an option is missing its argument";
         }
+    }
+    if (options.scenario_kind == ScenarioKind::M1 && options.demo_sizes_set) {
+        return "--dynasties, --provinces and --characters are only available for the demo scenario";
+    }
+    if (options.scenario_kind == ScenarioKind::Demo && (options.data_path || options.map_path)) {
+        return "--data and --map require --scenario m1";
+    }
+    if ((options.data_path && options.data_path->empty()) ||
+        (options.map_path && options.map_path->empty())) {
+        return "--data and --map need non-empty paths";
     }
     if (options.speed.has_value()) {
         const std::string& s = *options.speed;
@@ -243,6 +283,69 @@ std::string hash_line(const WorldHash& h) {
 int fail(int code, const std::string& message) {
     std::fprintf(stderr, "simcli: %s\n", message.c_str());
     return code;
+}
+
+struct ScenarioStart {
+    demo::Config demo_config;
+    std::optional<World> m1_world;
+    std::uint64_t replay_id = demo::kScenarioId;
+    std::uint64_t content_hash = 0;
+
+    [[nodiscard]] Simulation make_simulation() const {
+        if (m1_world) {
+            return Simulation(*m1_world);
+        }
+        return demo::make_simulation(demo_config);
+    }
+
+    [[nodiscard]] std::string save_error(const World& world) const {
+        if (!m1_world) {
+            return {};
+        }
+        if (!world.economy_present()) {
+            return "the save has no M1 economy state";
+        }
+        const std::uint64_t saved_hash = world.economy().meta.rules_hash;
+        if (saved_hash != content_hash) {
+            return std::format(
+                "M1 save content hash mismatch: saved {:016x}, loaded {:016x}", saved_hash, content_hash);
+        }
+        return {};
+    }
+};
+
+pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::uint64_t seed) {
+    using Result = pat::core::Result<ScenarioStart>;
+    ScenarioStart start;
+    start.demo_config = options.scenario;
+    start.demo_config.seed = seed;
+    if (options.scenario_kind == ScenarioKind::Demo) {
+        return Result::ok(std::move(start));
+    }
+
+    pat::mapdata::MapData map;
+    if (options.map_path) {
+        auto loaded_map = pat::mapdata::read_map_file(*options.map_path);
+        if (!loaded_map) {
+            return Result::err(
+                {loaded_map.error().code,
+                 std::format("cannot read M1 map {}: {}", *options.map_path, loaded_map.error().message)});
+        }
+        map = std::move(loaded_map).value();
+    } else {
+        map = pat::mapdata::generate_map(pat::content::m1_map_params());
+    }
+
+    const std::filesystem::path root = options.data_path.value_or(PATRIARCH_M1_DATA_DIR);
+    auto loaded = pat::content::load_m1_scenario(root, map, seed);
+    if (!loaded) {
+        return Result::err(
+            {loaded.error().code, std::format("cannot load M1 scenario: {}", loaded.error().message)});
+    }
+    start.m1_world.emplace(std::move(loaded.value().world));
+    start.replay_id = loaded.value().replay_id;
+    start.content_hash = loaded.value().content_hash;
+    return Result::ok(std::move(start));
 }
 
 // ---- measurements ----------------------------------------------------------------------------------
@@ -388,6 +491,9 @@ void run_direct(Simulation& sim, int days, Measurements& m, ReplayRecorder* reco
 
 /// Runs through the threaded runner. Unlimited is exact (step(N)); paced speeds run until at least N days.
 Simulation run_threaded(Simulation sim, int days, const std::string& speed_text, Measurements& m) {
+    if (days == 0) {
+        return sim;
+    }
     SimulationRunner runner(std::move(sim));
     // The target must be fixed BEFORE the thread is released, otherwise a fast thread could already
     // have run some of the days and the target would never be reached.
@@ -447,13 +553,18 @@ int play_replay_file(const Options& options) {
     if (!replay.has_value()) {
         return fail(kUsageOrIoError, std::format("invalid replay: {}", replay.error().message));
     }
-    if (replay.value().scenario_id != demo::kScenarioId) {
-        return fail(kUsageOrIoError, "the replay was recorded with a different scenario");
+    const auto start = prepare_scenario(options, replay.value().seed);
+    if (!start) {
+        return fail(kUsageOrIoError, start.error().message);
+    }
+    if (replay.value().scenario_id != start.value().replay_id) {
+        return fail(kUsageOrIoError,
+                    options.scenario_kind == ScenarioKind::M1
+                        ? "the replay was recorded with a different scenario or M1 content"
+                        : "the replay was recorded with a different scenario");
     }
 
-    demo::Config config = options.scenario;
-    config.seed = replay.value().seed;
-    Simulation sim = demo::make_simulation(config);
+    Simulation sim = start.value().make_simulation();
     if (const int error = enable_telemetry(options, sim); error != kOk)
         return error;
     const auto begin = Clock::now();
@@ -485,7 +596,7 @@ int play_replay_file(const Options& options) {
 }
 
 /// Several independent ways of producing the same simulated history must agree.
-int verify_determinism(const Options& options) {
+int verify_determinism(const Options& options, const ScenarioStart& start) {
     const int days = options.days;
     bool all_ok = true;
     const auto report = [&](const char* what, bool ok) {
@@ -497,34 +608,34 @@ int verify_determinism(const Options& options) {
 
     // A: the reference run, recorded as a replay.
     Measurements m;
-    Simulation a = demo::make_simulation(options.scenario);
+    Simulation a = start.make_simulation();
     if (const int error = enable_telemetry(options, a); error != kOk)
         return error;
     ReplayRecorder recorder(
-        options.scenario.seed, demo::kScenarioId, a.world().today(), options.checkpoint_interval);
+        options.scenario.seed, start.replay_id, a.world().today(), options.checkpoint_interval);
     run_direct(a, days, m, &recorder);
     const WorldHash hash_a = a.world().compute_hash();
     const Replay replay = recorder.finish(a);
 
     // B: the same run again.
-    Simulation b = demo::make_simulation(options.scenario);
+    Simulation b = start.make_simulation();
     Measurements ignored;
     run_direct(b, days, ignored, nullptr);
     report("second direct run gives the same hash", b.world().compute_hash() == hash_a);
 
     // C: through the simulation thread.
-    Simulation c = run_threaded(demo::make_simulation(options.scenario), days, "unlimited", ignored);
+    Simulation c = run_threaded(start.make_simulation(), days, "unlimited", ignored);
     report("threaded run gives the same hash", c.world().compute_hash() == hash_a);
 
     // D: save in the middle, load into a fresh simulation, continue.
     {
-        Simulation first_half = demo::make_simulation(options.scenario);
+        Simulation first_half = start.make_simulation();
         first_half.run_days(days / 2);
         const auto bytes = serialize_save(first_half.world(), first_half.pending_internal());
         auto loaded = deserialize_save(bytes);
-        bool ok = loaded.has_value();
+        bool ok = loaded.has_value() && start.save_error(loaded.value().world).empty();
         if (ok) {
-            Simulation resumed = demo::make_simulation(options.scenario);
+            Simulation resumed = start.make_simulation();
             resumed.restore_state(std::move(loaded.value().world),
                                   std::move(loaded.value().pending_internal));
             resumed.run_days(days - days / 2);
@@ -535,7 +646,7 @@ int verify_determinism(const Options& options) {
 
     // E: replaying the recording.
     {
-        Simulation fresh = demo::make_simulation(options.scenario);
+        Simulation fresh = start.make_simulation();
         const ReplayResult result = play_replay(fresh, replay);
         report("replay reproduces every checkpoint", result.ok);
     }
@@ -551,8 +662,8 @@ int verify_determinism(const Options& options) {
     return output_telemetry(options, a);
 }
 
-int run_session(const Options& options) {
-    Simulation sim = demo::make_simulation(options.scenario);
+int run_session(const Options& options, const ScenarioStart& start) {
+    Simulation sim = start.make_simulation();
     if (options.load_path) {
         const auto bytes = read_file(*options.load_path);
         if (!bytes.has_value()) {
@@ -563,6 +674,15 @@ int run_session(const Options& options) {
         if (!loaded.has_value()) {
             return fail(kBadSave, std::format("invalid save: {}", loaded.error().message));
         }
+        if (options.scenario_kind == ScenarioKind::Demo && options.days > 0 &&
+            loaded.value().world.economy_present()) {
+            return fail(kBadSave,
+                        "demo systems cannot advance an economy save. Use --scenario m1 for an M1 "
+                        "save or --days 0 to inspect it");
+        }
+        if (const std::string error = start.save_error(loaded.value().world); !error.empty()) {
+            return fail(kBadSave, error);
+        }
         sim.restore_state(std::move(loaded.value().world), std::move(loaded.value().pending_internal));
     }
 
@@ -571,7 +691,7 @@ int run_session(const Options& options) {
     std::optional<ReplayRecorder> recorder;
     if (options.record_path) {
         recorder.emplace(
-            options.scenario.seed, demo::kScenarioId, sim.world().today(), options.checkpoint_interval);
+            options.scenario.seed, start.replay_id, sim.world().today(), options.checkpoint_interval);
     }
 
     Measurements m;
@@ -605,11 +725,18 @@ int main(int argc, char** argv) {
         std::fputs(kUsage, stdout);
         return kOk;
     }
+    if (options.scenario_kind == ScenarioKind::M1 && (options.quiet || options.hash_only)) {
+        pat::core::Logger::instance().set_min_level(pat::core::LogLevel::Error);
+    }
     if (options.replay_path) {
         return play_replay_file(options);
     }
-    if (options.verify_determinism) {
-        return verify_determinism(options);
+    const auto start = prepare_scenario(options, options.scenario.seed);
+    if (!start) {
+        return fail(kUsageOrIoError, start.error().message);
     }
-    return run_session(options);
+    if (options.verify_determinism) {
+        return verify_determinism(options, start.value());
+    }
+    return run_session(options, start.value());
 }

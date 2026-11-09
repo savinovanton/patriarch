@@ -634,6 +634,13 @@ EconomyRulesResult build_economy_rules(const data::ContentRegistry& registry) {
     return Builder(registry).build();
 }
 
+std::optional<sim::economy::ProvinceKind> province_kind_from_key(std::string_view key) {
+    if (const auto index = index_in(kProvinceKindNames, key)) {
+        return static_cast<sim::economy::ProvinceKind>(*index);
+    }
+    return std::nullopt;
+}
+
 EconomyContentResult load_economy_content(std::span<const data::ContentSource* const> roots) {
     const data::SchemaSet schemas = data::content_schemas();
     data::LoadResult loaded = data::load_content(roots, schemas);

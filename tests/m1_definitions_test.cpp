@@ -1,5 +1,6 @@
 #include "pat/content/load_errors.hpp"
 #include "pat/content/m1_content.hpp"
+#include "pat/content/m1_scenario.hpp"
 #include "pat/content/province_bindings.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -60,4 +61,27 @@ TEST_CASE("M1 definitions: shipped data is complete, localized and matches a pro
     const auto again = pat::data::load_content(root, pat::data::content_schemas());
     REQUIRE(again.ok());
     CHECK(loaded.registry.content_hash() == again.registry.content_hash());
+}
+
+TEST_CASE("M1 scenario: world ids and Russian labels follow validated map keys") {
+    const auto map = pat::mapdata::generate_map(pat::content::m1_map_params());
+    const auto loaded = pat::content::load_m1_scenario(PATRIARCH_DATA_DIR, map, 7);
+    if (!loaded) {
+        INFO(loaded.error().message);
+        REQUIRE(loaded.has_value());
+    }
+    const auto& scenario = loaded.value();
+    REQUIRE(scenario.map_to_world.size() == 21);
+    REQUIRE(scenario.province_names.size() == 21);
+    CHECK_FALSE(scenario.map_to_world[0].valid());
+    CHECK(scenario.province_names[0].empty());
+    CHECK(scenario.world.dynasties().size() == 4);
+    CHECK(scenario.world.provinces().size() == 20);
+    CHECK(scenario.world.check_invariants().empty());
+    const auto* first = scenario.registry.find("province", "p0001");
+    REQUIRE(first != nullptr);
+    const auto first_id = scenario.map_to_world[1];
+    REQUIRE(scenario.world.exists(first_id));
+    CHECK(scenario.world.provinces().name[first_id.index()] == first->id);
+    CHECK(scenario.province_names[1] == "Тестовая провинция 1");
 }

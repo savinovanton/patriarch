@@ -1,5 +1,6 @@
 add_executable(simcli simcli/main.cpp)
-target_link_libraries(simcli PRIVATE patriarch::sim)
+target_link_libraries(simcli PRIVATE patriarch::sim patriarch::content)
+target_compile_definitions(simcli PRIVATE PATRIARCH_M1_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 patriarch_set_target_options(simcli)
 patriarch_copy_asan_runtime(simcli)
 set_target_properties(simcli PROPERTIES FOLDER "tools")
@@ -38,4 +39,9 @@ if(PATRIARCH_BUILD_TESTS)
     find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
     add_test(NAME simcli_telemetry COMMAND Python3::Interpreter "${PROJECT_SOURCE_DIR}/tests/tools/telemetry_cli_test.py" "$<TARGET_FILE:simcli>")
     set_tests_properties(simcli_telemetry PROPERTIES LABELS telemetry TIMEOUT 60)
+    add_test(NAME simcli_m1 COMMAND Python3::Interpreter
+        "${PROJECT_SOURCE_DIR}/tests/tools/m1_scenario_cli_test.py"
+        "$<TARGET_FILE:simcli>" "$<TARGET_FILE:mapgen>" "${PROJECT_SOURCE_DIR}/data"
+        4b5783bcef109a87 7a17fa660c54867f)
+    set_tests_properties(simcli_m1 PROPERTIES TIMEOUT 90)
 endif()
