@@ -84,6 +84,10 @@ struct Writer {
         out.u32(c.a.value());
         out.u8(static_cast<std::uint8_t>(c.reason));
     }
+    void operator()(const cmd::PlanDeath& c) const {
+        out.u32(c.character.value());
+        out.i32(c.date.days());
+    }
 };
 
 }  // namespace
@@ -204,6 +208,11 @@ bool read_command(core::ByteReader& in, Command& out) {
             }
             c.reason = static_cast<MarriageEnd>(reason);
             out.payload = c;
+            break;
+        }
+        case CommandType::PlanDeath: {
+            const CharacterId character(in.u32());
+            out.payload = cmd::PlanDeath{character, Date::from_days(in.i32())};
             break;
         }
         default:

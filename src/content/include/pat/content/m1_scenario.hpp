@@ -6,6 +6,7 @@
 #include "pat/data/content_source.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
+#include "pat/sim/demography.hpp"
 #include "pat/sim/world.hpp"
 
 #include <cstdint>
@@ -21,6 +22,7 @@ struct M1Definitions {
     // Indexed by raster id. Entry 0 is water.
     std::vector<std::string> province_names;
     loc::Localizer localizer;
+    sim::DemographyRules demography;
 };
 
 struct M1Scenario {
@@ -32,6 +34,7 @@ struct M1Scenario {
     std::vector<std::string> province_names;
     // World name ids refer to this registry's interner.
     data::ContentRegistry registry;
+    sim::DemographyRules demography;
 };
 
 [[nodiscard]] mapdata::GenParams m1_map_params();

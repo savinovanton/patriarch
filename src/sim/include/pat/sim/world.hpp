@@ -285,6 +285,12 @@ struct LifeEvent {
     [[nodiscard]] bool operator==(const LifeEvent&) const = default;
 };
 
+struct DueLifeEvent {
+    Date due;
+    LifeEvent item;
+    [[nodiscard]] bool operator==(const DueLifeEvent&) const = default;
+};
+
 /// Stable numbers of the extended hash parts (ADR-0006 D7). Part `n` lives in `WorldHash::ext[n]`.
 /// A part that has no content is 0 and is not mixed into `total`, so a world that does not use a
 /// feature has the same `total` as before the feature existed.
@@ -555,6 +561,10 @@ public:
     /// The life-event queue (ADR-0006 D4): a derived index over birth and planned-death dates,
     /// empty outside dynasty mode. Not saved and not hashed; rebuilt on load.
     [[nodiscard]] const ScheduledQueue<LifeEvent>& life_queue() const noexcept { return life_queue_; }
+
+    /// Drain due events in (date, kind, character) order, discarding stale entries. Reschedule
+    /// birthdays and keep active death plans indexed until the next boundary applies Die.
+    [[nodiscard]] std::vector<DueLifeEvent> take_due_life_events(Date today);
     /// Rebuilds every derived index (living list, child lists, life-event queue) from the columns. The queue
     /// is rebuilt for a state at a tick boundary: all events up to today are considered processed.
     void rebuild_derived_indexes();

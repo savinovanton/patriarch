@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <format>
+#include <tuple>
 #include <utility>
 
 namespace pat::sim {
@@ -769,13 +770,42 @@ bool World::set_character_planned_death(CharacterId id, Date date) {
     if (!is_alive(id) || !planned_death_is_valid(characters_.birth_date[id.index()], date)) {
         return false;
     }
-    characters_.planned_death[id.index()] = date;
+    auto& planned = characters_.planned_death[id.index()];
+    if (planned == date) {
+        return true;
+    }
+    planned = date;
     if (dynasty_mode() && date != kNoDate) {
         // Older entries for this character stay in the queue; they are recognised as stale (the
         // date no longer matches the column) and dropped when they come due.
         life_queue_.push(date, LifeEvent{LifeEventKind::PlannedDeath, id});
     }
     return true;
+}
+
+std::vector<DueLifeEvent> World::take_due_life_events(Date today) {
+    std::vector<DueLifeEvent> due_events;
+    life_queue_.pop_due(today, [&](Date due, LifeEvent item) {
+        if (is_alive(item.character) && (item.kind != LifeEventKind::PlannedDeath ||
+                                         due == characters_.planned_death[item.character.index()])) {
+            due_events.push_back({due, item});
+        }
+    });
+    std::sort(due_events.begin(), due_events.end(), [](const DueLifeEvent& a, const DueLifeEvent& b) {
+        return std::tie(a.due, a.item.kind, a.item.character) <
+               std::tie(b.due, b.item.kind, b.item.character);
+    });
+    // A plan changed from A to B and back to A can leave two copies of the same valid event.
+    due_events.erase(std::unique(due_events.begin(), due_events.end()), due_events.end());
+    for (const auto& [due, item] : due_events) {
+        if (item.kind == LifeEventKind::Birthday) {
+            const Date birth = characters_.birth_date[item.character.index()];
+            life_queue_.push(next_anniversary_after(birth, today), item);
+        } else {
+            life_queue_.push(due, item);
+        }
+    }
+    return due_events;
 }
 
 // ---- kinship primitives -------------------------------------------------------------------------
@@ -871,7 +901,9 @@ void World::rebuild_derived_indexes() {
     for (const CharacterId id : living_) {
         const Date birth = characters_.birth_date[id.index()];
         if (is_sane_date(birth)) {
-            push_life_events(id, rebuilt_birthday_due(birth, today()));
+            const Date birthday = calendar_.tick_count() == 0 ? first_birthday_due(birth, today())
+                                                              : rebuilt_birthday_due(birth, today());
+            push_life_events(id, birthday);
         }
     }
 }
@@ -1554,7 +1586,7 @@ std::vector<std::string> World::check_invariants() const {
 
     // derived life-event queue. At a tick boundary every living character in dynasty mode has
     // exactly one birthday entry at an anniversary that is not later than the next one after
-    // today (earlier is allowed: nothing consumes the queue yet), and its planned death is queued.
+    // today (earlier is allowed in worlds without a life-event consumer), and its planned death is queued.
     // Planned-death entries whose date was changed are stale and tolerated; the entries of a
     // character who died are dropped by die().
     {
