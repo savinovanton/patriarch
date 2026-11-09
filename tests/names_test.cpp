@@ -156,7 +156,7 @@ TEST_CASE("names: validation names the problem") {
 
 TEST_CASE("names: the same seed gives the same names, a different seed gives different ones") {
     const NamePools pools = make_pools();
-    const NamingContext context{.sex = Sex::Male};
+    const NamingContext context{Sex::Male};
 
     const auto run = [&](std::uint64_t seed) {
         core::RngStreams streams(seed);
@@ -176,8 +176,8 @@ TEST_CASE("names: a name always matches the sex") {
     core::RngStreams streams(3);
     core::Pcg32& rng = streams.stream("demography.names");
     for (int i = 0; i < 500; ++i) {
-        const auto boy = sim::choose_given_name(pools, rng, NamingContext{.sex = Sex::Male});
-        const auto girl = sim::choose_given_name(pools, rng, NamingContext{.sex = Sex::Female});
+        const auto boy = sim::choose_given_name(pools, rng, NamingContext{Sex::Male});
+        const auto girl = sim::choose_given_name(pools, rng, NamingContext{Sex::Female});
         REQUIRE(boy != kNoName);
         REQUIRE(girl != kNoName);
         CHECK(pools.given_names[boy].sex == Sex::Male);
@@ -189,7 +189,7 @@ TEST_CASE("names: frequencies follow the weights") {
     NamePools pools = make_pools();
     pools.rules = {};  // no family effect
     constexpr int kDraws = 60000;
-    const auto counts = frequencies(pools, NamingContext{.sex = Sex::Male}, kDraws);
+    const auto counts = frequencies(pools, NamingContext{Sex::Male}, kDraws);
     // weights 30 : 20 : 10 -> 50 % : 33.3 % : 16.7 %
     CHECK(counts.at("ivan") == doctest::Approx(kDraws * 0.5).epsilon(0.03));
     CHECK(counts.at("petr") == doctest::Approx(kDraws / 3.0).epsilon(0.03));
@@ -199,7 +199,7 @@ TEST_CASE("names: frequencies follow the weights") {
 TEST_CASE("names: living brothers are never repeated") {
     const NamePools pools = make_pools();
     const std::array<std::string_view, 2> brothers{"ivan", "petr"};
-    NamingContext context{.sex = Sex::Male};
+    NamingContext context{Sex::Male};
     context.living_siblings = brothers;
     // The father is called Ivan: the bonus must not bring his name back while a brother has it.
     context.parent_name = "ivan";
@@ -211,13 +211,13 @@ TEST_CASE("names: living brothers are never repeated") {
 TEST_CASE("names: when every name is taken the exclusion is dropped") {
     const NamePools pools = make_pools();
     const std::array<std::string_view, 3> brothers{"ivan", "petr", "fedor"};
-    NamingContext context{.sex = Sex::Male};
+    NamingContext context{Sex::Male};
     context.living_siblings = brothers;
     const auto counts = frequencies(pools, context, 600);
     CHECK(counts.size() == 3);  // still a man's name, repeats allowed
     // Sisters do not take names away from a boy: only the listed ids count, and they are women's.
     const std::array<std::string_view, 1> sisters{"anna"};
-    NamingContext boy{.sex = Sex::Male};
+    NamingContext boy{Sex::Male};
     boy.living_siblings = sisters;
     CHECK(frequencies(pools, boy, 600).size() == 3);
 }
@@ -226,7 +226,7 @@ TEST_CASE("names: the father's and the grandfather's names are favoured") {
     NamePools pools = make_pools();
     constexpr int kDraws = 40000;
 
-    NamingContext plain{.sex = Sex::Male};
+    NamingContext plain{Sex::Male};
     const auto without = frequencies(pools, plain, kDraws);
 
     NamingContext with_father = plain;
@@ -257,7 +257,7 @@ TEST_CASE("names: the father's and the grandfather's names are favoured") {
 
 TEST_CASE("names: a girl takes the names of her mother's line the same way") {
     const NamePools pools = make_pools();
-    NamingContext context{.sex = Sex::Female};
+    NamingContext context{Sex::Female};
     context.parent_name = "fekla";
     context.grandparent_name = "maria";
     constexpr int kDraws = 40000;
@@ -279,20 +279,20 @@ TEST_CASE("names: exactly one draw is used in every branch") {
     const auto after_one_draw = next_after([](core::Pcg32& rng) { (void)rng.next_u32(); });
 
     const std::array<std::string_view, 3> all_taken{"ivan", "petr", "fedor"};
-    NamingContext taken{.sex = Sex::Male};
+    NamingContext taken{Sex::Male};
     taken.living_siblings = all_taken;
-    NamingContext favoured{.sex = Sex::Male};
+    NamingContext favoured{Sex::Male};
     favoured.parent_name = "ivan";
 
     CHECK(next_after([&](core::Pcg32& rng) {
-              (void)sim::choose_given_name(pools, rng, {.sex = Sex::Male});
+              (void)sim::choose_given_name(pools, rng, NamingContext{Sex::Male});
           }) == after_one_draw);
     CHECK(next_after([&](core::Pcg32& rng) { (void)sim::choose_given_name(pools, rng, taken); }) ==
           after_one_draw);
     CHECK(next_after([&](core::Pcg32& rng) { (void)sim::choose_given_name(pools, rng, favoured); }) ==
           after_one_draw);
     CHECK(next_after([&](core::Pcg32& rng) {
-              (void)sim::choose_given_name(empty, rng, {.sex = Sex::Male});
+              (void)sim::choose_given_name(empty, rng, NamingContext{Sex::Male});
           }) == after_one_draw);
 
     for (const Sex sex : {Sex::Male, Sex::Female}) {
@@ -309,13 +309,13 @@ TEST_CASE("names: an empty pool gives no name and no portrait") {
     const NamePools empty;
     core::RngStreams streams(1);
     core::Pcg32& rng = streams.stream("demography.names");
-    CHECK(sim::choose_given_name(empty, rng, {.sex = Sex::Male}) == kNoName);
+    CHECK(sim::choose_given_name(empty, rng, NamingContext{Sex::Male}) == kNoName);
     CHECK(sim::choose_portrait(empty, rng, Sex::Female, LifeStage::Prime) == 0);
 
     NamePools only_men = make_pools();
     only_men.given_names.resize(3);
-    CHECK(sim::choose_given_name(only_men, rng, {.sex = Sex::Female}) == kNoName);
-    CHECK(sim::choose_given_name(only_men, rng, {.sex = Sex::Male}) != kNoName);
+    CHECK(sim::choose_given_name(only_men, rng, NamingContext{Sex::Female}) == kNoName);
+    CHECK(sim::choose_given_name(only_men, rng, NamingContext{Sex::Male}) != kNoName);
 }
 
 // ---- choosing a portrait -------------------------------------------------------------------------

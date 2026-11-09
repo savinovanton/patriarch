@@ -269,7 +269,7 @@ TEST_CASE("names content: the same seed gives the same names, portraits and full
         std::vector<std::string> out;
         for (int i = 0; i < 100; ++i) {
             const Sex sex = (i % 2 == 0) ? Sex::Male : Sex::Female;
-            sim::NamingContext context{.sex = sex};
+            sim::NamingContext context{sex};
             context.parent_name = sex == Sex::Male ? "ivan" : "anna";
             const std::size_t index = sim::choose_given_name(pools, rng, context);
             REQUIRE(index != sim::kNoName);

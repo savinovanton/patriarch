@@ -114,6 +114,10 @@ struct NamesError {
 
 /// Everything the choice of a name depends on besides the pool and the random number.
 struct NamingContext {
+    // Not an aggregate on purpose: GCC and Clang (-Werror) reject a designated initializer that skips
+    // members, and almost every caller sets only the sex and one or two relatives.
+    explicit NamingContext(Sex of_sex = Sex::Male) noexcept : sex(of_sex) {}
+
     Sex sex = Sex::Male;
     /// Given-name id of the parent whose name a family likes to repeat (empty when unknown): the
     /// father for a son, the mother for a daughter [predl.]. Names of the other sex are ignored.
