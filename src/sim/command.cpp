@@ -220,6 +220,25 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::PlanDeath& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may plan a death");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "PlanDeath needs dynasty mode");
+        }
+        if (!world.exists(c.character)) {
+            return reject(Rejection::UnknownEntity, "unknown character");
+        }
+        if (!world.is_alive(c.character)) {
+            return reject(Rejection::InvalidState, "the character is already dead");
+        }
+        if (!planned_death_is_valid(world.characters().birth_date[c.character.index()], c.date)) {
+            return reject(Rejection::InvalidArgument, "invalid planned death date");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -282,6 +301,9 @@ struct Applier {
     void operator()(const cmd::AdjustHonor& c) const { world.add_honor(c.dynasty, c.delta); }
     void operator()(const cmd::CreatePerson& c) const { (void)world.create_character(c.init); }
     void operator()(const cmd::Die& c) const { (void)world.die(c.character, c.cause); }
+    void operator()(const cmd::PlanDeath& c) const {
+        (void)world.set_character_planned_death(c.character, c.date);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -328,6 +350,10 @@ struct CommandTag<cmd::Marry> {
 template <>
 struct CommandTag<cmd::EndMarriage> {
     static constexpr CommandType value = CommandType::EndMarriage;
+};
+template <>
+struct CommandTag<cmd::PlanDeath> {
+    static constexpr CommandType value = CommandType::PlanDeath;
 };
 
 template <class Variant>
@@ -381,6 +407,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "Marry";
         case CommandType::EndMarriage:
             return "EndMarriage";
+        case CommandType::PlanDeath:
+            return "PlanDeath";
     }
     return "?";
 }

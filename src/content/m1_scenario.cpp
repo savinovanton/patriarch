@@ -1,11 +1,13 @@
 #include "pat/content/m1_scenario.hpp"
 
+#include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/load_errors.hpp"
 #include "pat/content/m1_content.hpp"
 #include "pat/content/province_bindings.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/content_schemas.hpp"
+#include "pat/data/demography_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
@@ -67,6 +69,14 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
         return fail_definition(
             "M1 needs a separate crown account until the scenario defines an emperor dynasty");
     }
+    sim::DemographyRules demography = sim::kDefaultDemography;
+    if (const auto* table = loaded.registry.table(data::kDemographyRulesKind); table && !table->empty()) {
+        auto rules = build_demography_rules(loaded.registry);
+        if (!rules) {
+            return fail_definition(format_errors(rules.error()));
+        }
+        demography = std::move(rules).value();
+    }
     auto localized = loc::load_localization(source);
     if (!localized.ok()) {
         std::string messages;
@@ -106,7 +116,8 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
     return DefinitionsResult::ok({std::move(loaded.registry),
                                   std::move(bindings).value(),
                                   std::move(province_names),
-                                  std::move(localized.localizer)});
+                                  std::move(localized.localizer),
+                                  demography});
 }
 
 core::Result<M1Scenario>
@@ -159,7 +170,8 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
                                content_hash,
                                std::move(map_to_world),
                                std::move(definitions.province_names),
-                               std::move(definitions.registry)});
+                               std::move(definitions.registry),
+                               definitions.demography});
 }
 
 }  // namespace pat::content

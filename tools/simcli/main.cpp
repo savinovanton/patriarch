@@ -7,6 +7,7 @@
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
+#include "pat/sim/mortality.hpp"
 #include "pat/sim/replay.hpp"
 #include "pat/sim/runner.hpp"
 #include "pat/sim/save.hpp"
@@ -288,12 +289,15 @@ int fail(int code, const std::string& message) {
 struct ScenarioStart {
     demo::Config demo_config;
     std::optional<World> m1_world;
+    DemographyRules demography = kDefaultDemography;
     std::uint64_t replay_id = demo::kScenarioId;
     std::uint64_t content_hash = 0;
 
     [[nodiscard]] Simulation make_simulation() const {
         if (m1_world) {
-            return Simulation(*m1_world);
+            Simulation simulation(*m1_world);
+            simulation.add_system(make_mortality_system(demography));
+            return simulation;
         }
         return demo::make_simulation(demo_config);
     }
@@ -343,6 +347,7 @@ pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::u
             {loaded.error().code, std::format("cannot load M1 scenario: {}", loaded.error().message)});
     }
     start.m1_world.emplace(std::move(loaded.value().world));
+    start.demography = loaded.value().demography;
     start.replay_id = loaded.value().replay_id;
     start.content_hash = loaded.value().content_hash;
     return Result::ok(std::move(start));

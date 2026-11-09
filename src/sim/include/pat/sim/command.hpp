@@ -29,6 +29,7 @@ enum class CommandType : std::uint8_t {
     Marry = 7,         // E7-T03
     EndMarriage = 8,   // E7-T03
     CreatePerson = 9,  // E7-T02
+    PlanDeath = 16,    // E7-T10
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -88,6 +89,13 @@ struct Die {
     [[nodiscard]] bool operator==(const Die&) const = default;
 };
 
+/// Schedules a death or cancels it with kNoDate. System only, dynasty mode only.
+struct PlanDeath {
+    CharacterId character;
+    Date date = kNoDate;
+    [[nodiscard]] bool operator==(const PlanDeath&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -112,7 +120,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::CreatePerson,
                                     cmd::Die,
                                     cmd::Marry,
-                                    cmd::EndMarriage>;
+                                    cmd::EndMarriage,
+                                    cmd::PlanDeath>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
