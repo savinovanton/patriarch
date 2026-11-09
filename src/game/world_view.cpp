@@ -136,6 +136,37 @@ const char* health_text(core::Fixed32 health) {
     return "тяжёлое";
 }
 
+sim::ProvinceId
+world_province(const sim::World& world, std::size_t map_id, std::span<const sim::ProvinceId> map_to_world) {
+    if (map_id == 0) {
+        return {};
+    }
+    if (map_to_world.empty()) {
+        return map_id <= world.provinces().size() ? sim::ProvinceId(static_cast<std::uint32_t>(map_id - 1))
+                                                  : sim::ProvinceId{};
+    }
+    if (map_id < map_to_world.size() && world.exists(map_to_world[map_id])) {
+        return map_to_world[map_id];
+    }
+    return {};
+}
+
+template <class ColorForProvince>
+std::vector<std::uint32_t> province_palette(const sim::World& world,
+                                            std::size_t map_province_count,
+                                            std::span<const sim::ProvinceId> map_to_world,
+                                            ColorForProvince color_for_province) {
+    std::vector<std::uint32_t> palette(map_province_count + 1, kUnownedColor);
+    const sim::ProvinceTable& provinces = world.provinces();
+    for (std::size_t map_id = 1; map_id < palette.size(); ++map_id) {
+        const sim::ProvinceId province = world_province(world, map_id, map_to_world);
+        if (province.valid()) {
+            palette[map_id] = color_for_province(provinces, province.index());
+        }
+    }
+    return palette;
+}
+
 }  // namespace
 
 std::string format_date_ru(sim::Date date) {
@@ -190,25 +221,23 @@ std::uint32_t dynasty_color(sim::DynastyId dynasty) {
     }
 }
 
-std::vector<std::uint32_t> owner_palette(const sim::World& world, std::size_t map_province_count) {
-    std::vector<std::uint32_t> palette(map_province_count + 1, kUnownedColor);
-    const sim::ProvinceTable& provinces = world.provinces();
-    const std::size_t n = std::min(map_province_count, provinces.size());
-    for (std::size_t i = 0; i < n; ++i) {
-        palette[i + 1] = dynasty_color(provinces.owner[i]);
-    }
-    return palette;
+std::vector<std::uint32_t> owner_palette(const sim::World& world,
+                                         std::size_t map_province_count,
+                                         std::span<const sim::ProvinceId> map_to_world) {
+    return province_palette(
+        world, map_province_count, map_to_world, [](const sim::ProvinceTable& provinces, std::size_t index) {
+            return dynasty_color(provinces.owner[index]);
+        });
 }
 
-std::vector<std::uint32_t> development_palette(const sim::World& world, std::size_t map_province_count) {
-    std::vector<std::uint32_t> palette(map_province_count + 1, kUnownedColor);
-    const sim::ProvinceTable& provinces = world.provinces();
-    const std::size_t n = std::min(map_province_count, provinces.size());
-    for (std::size_t i = 0; i < n; ++i) {
-        const float v = std::clamp(static_cast<float>(provinces.development[i]) / 10.0f, 0.0f, 1.0f);
-        palette[i + 1] = rgba(0.85f - 0.65f * v, 0.25f + 0.55f * v, 0.22f);
-    }
-    return palette;
+std::vector<std::uint32_t> development_palette(const sim::World& world,
+                                               std::size_t map_province_count,
+                                               std::span<const sim::ProvinceId> map_to_world) {
+    return province_palette(
+        world, map_province_count, map_to_world, [](const sim::ProvinceTable& provinces, std::size_t index) {
+            const float v = std::clamp(static_cast<float>(provinces.development[index]) / 10.0f, 0.0f, 1.0f);
+            return rgba(0.85f - 0.65f * v, 0.25f + 0.55f * v, 0.22f);
+        });
 }
 
 int age_in_years(sim::Date born, sim::Date today) {
@@ -296,11 +325,14 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
     return s;
 }
 
-sim::CharacterId head_for_province(const sim::World& world, std::size_t map_province) {
-    if (map_province == 0 || map_province > world.provinces().size()) {
+sim::CharacterId head_for_province(const sim::World& world,
+                                   std::size_t map_province,
+                                   std::span<const sim::ProvinceId> map_to_world) {
+    const sim::ProvinceId province = world_province(world, map_province, map_to_world);
+    if (!province.valid()) {
         return sim::CharacterId{};
     }
-    const sim::DynastyId owner = world.provinces().owner[map_province - 1];
+    const sim::DynastyId owner = world.provinces().owner[province.index()];
     if (!owner.valid() || !world.exists(owner)) {
         return sim::CharacterId{};
     }

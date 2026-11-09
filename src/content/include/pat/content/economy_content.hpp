@@ -8,8 +8,10 @@
 #include "pat/sim/economy/rules.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // Economy content (E9-T18, docs/dev/economy-model.md sections 11 and 15): turns the objects loaded
@@ -38,6 +40,9 @@ struct EconomyContent {
 
 using EconomyRulesResult = core::Result<sim::economy::EconomyRules, std::vector<data::LoadError>>;
 using EconomyContentResult = core::Result<EconomyContent, std::vector<data::LoadError>>;
+
+/// Resolves a content key through the same table used to load province-kind rules.
+[[nodiscard]] std::optional<sim::economy::ProvinceKind> province_kind_from_key(std::string_view key);
 
 /// Builds the rules from an already loaded registry (one economy_rules object, all goods, groups,
 /// province kinds, tax and recruit levels, buildings), checks the cross-object rules and runs

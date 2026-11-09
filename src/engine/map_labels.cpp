@@ -5,6 +5,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <string_view>
 
 namespace pat::engine {
 
@@ -72,6 +73,21 @@ Anchor anchor_pixel(const mapdata::MapData& map, const mapdata::Province& p) {
     return out;
 }
 
+MapLabel make_province_label(const mapdata::Province& province,
+                             const Anchor& anchor,
+                             const HeightfieldPicker& picker,
+                             const SdfAtlas& atlas,
+                             std::string_view name) {
+    MapLabel label;
+    label.id = province.id;
+    label.kind = LabelKind::Province;
+    label.text = utf8_to_utf32(name);
+    label.anchor = {anchor.x, anchor.y, picker.height_at(anchor.x, anchor.y) + 2.0f};
+    label.world_extent = std::sqrt(static_cast<float>(province.area_px));
+    label.width_per_px = measure_text(atlas, label.text, 1.0f);
+    return label;
+}
+
 }  // namespace
 
 MapLabelSet make_test_map_labels(const mapdata::MapData& map,
@@ -93,14 +109,7 @@ MapLabelSet make_test_map_labels(const mapdata::MapData& map,
     // Province labels.
     for (std::size_t i = 0; i < n; ++i) {
         const mapdata::Province& p = map.province_list[i];
-        MapLabel label;
-        label.id = p.id;
-        label.kind = LabelKind::Province;
-        label.text = utf8_to_utf32(province_name(p.id));
-        label.anchor = {anchors[i].x, anchors[i].y, picker.height_at(anchors[i].x, anchors[i].y) + 2.0f};
-        label.world_extent = std::sqrt(static_cast<float>(p.area_px));
-        label.width_per_px = measure_text(atlas, label.text, 1.0f);
-        set.labels.push_back(std::move(label));
+        set.labels.push_back(make_province_label(p, anchors[i], picker, atlas, province_name(p.id)));
     }
     set.province_labels = n;
 
@@ -187,6 +196,22 @@ MapLabelSet make_test_map_labels(const mapdata::MapData& map,
         set.labels.push_back(std::move(label));
         ++set.region_labels;
     }
+    return set;
+}
+
+MapLabelSet make_province_labels(const mapdata::MapData& map,
+                                 const HeightfieldPicker& picker,
+                                 const SdfAtlas& atlas,
+                                 std::span<const std::string> names) {
+    MapLabelSet set;
+    set.labels.reserve(map.province_list.size());
+    for (const mapdata::Province& province : map.province_list) {
+        if (province.id != 0 && province.id < names.size() && !names[province.id].empty()) {
+            set.labels.push_back(make_province_label(
+                province, anchor_pixel(map, province), picker, atlas, names[province.id]));
+        }
+    }
+    set.province_labels = set.labels.size();
     return set;
 }
 

@@ -8,6 +8,7 @@
 // WASD/arrows = move, Q/E = rotate, 1-4 = map mode (terrain / owners / mood / random),
 // V = vsync, F5 = reload shaders, F11 = fullscreen, Esc = quit.
 
+#include "pat/content/m1_scenario.hpp"
 #include "pat/core/log.hpp"
 #include "pat/core/png_writer.hpp"
 #include "pat/engine/camera.hpp"
@@ -24,6 +25,7 @@
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/runner.hpp"
+#include "pat/sim/simulation.hpp"
 #include "pat/ui/character_window.hpp"
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/time_bar.hpp"
@@ -46,7 +48,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
+#include <optional>
+#include <span>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -75,6 +82,9 @@ constexpr int kScancodeRight = 79;
 constexpr int kScancodeLeft = 80;
 constexpr int kScancodeDown = 81;
 constexpr int kScancodeUp = 82;
+constexpr std::uint64_t kSimulationSeed = 1;
+
+enum class ScenarioKind { Demo, M1 };
 
 struct Options {
     std::int64_t max_frames = -1;  // -1: run until closed
@@ -98,7 +108,11 @@ struct Options {
     std::int64_t bench_frames = 900;
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
     float view_fx = 0.5f, view_fy = 0.5f, view_dist = -1.0f, view_yaw = 0.0f;  // --view start camera
+    ScenarioKind scenario = ScenarioKind::Demo;
+    std::filesystem::path data_root = PATRIARCH_M1_DATA_DIR;
     std::string map_file;          // load a PMD1 map instead of generating one
+    bool gen_size_set = false;
+    bool provinces_set = false;
     std::uint32_t gen_width = 8192;
     std::uint32_t gen_height = 4096;
     std::uint32_t provinces = 400;
@@ -162,6 +176,18 @@ bool parse_options(int argc, char** argv, Options& out) {
                 std::fprintf(stderr, "--view expects fx,fy,distance,yaw (e.g. 0.5,0.5,800,0.3)\n");
                 return false;
             }
+        } else if (arg == "--scenario" && i + 1 < argc) {
+            const std::string_view scenario = argv[++i];
+            if (scenario == "demo") {
+                out.scenario = ScenarioKind::Demo;
+            } else if (scenario == "m1") {
+                out.scenario = ScenarioKind::M1;
+            } else {
+                std::fprintf(stderr, "--scenario must be demo or m1\n");
+                return false;
+            }
+        } else if (arg == "--data" && i + 1 < argc) {
+            out.data_root = argv[++i];
         } else if (arg == "--map" && i + 1 < argc) {
             out.map_file = argv[++i];
         } else if (arg == "--gen" && i + 1 < argc) {
@@ -173,14 +199,21 @@ bool parse_options(int argc, char** argv, Options& out) {
             }
             out.gen_width = w;
             out.gen_height = h;
+            out.gen_size_set = true;
         } else if (arg == "--provinces" && i + 1 < argc) {
             out.provinces = static_cast<std::uint32_t>(std::atoi(argv[++i]));
+            out.provinces_set = true;
         } else {
             std::fprintf(stderr,
-                         "usage: patriarch_spike [--map FILE | --gen WxH] [--provinces N] [--frames N] [--hidden]\n"
+                         "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
+                         "                       [--provinces N (demo)] [--frames N] [--hidden]\n"
                          "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
             return false;
         }
+    }
+    if (out.scenario == ScenarioKind::M1 && out.provinces_set) {
+        std::fprintf(stderr, "--provinces is only available for the demo scenario\n");
+        return false;
     }
     return true;
 }
@@ -228,6 +261,13 @@ int main(int argc, char** argv) {
             return 1;
         }
         map = std::move(loaded).value();
+    } else if (opt.scenario == ScenarioKind::M1) {
+        mapdata::GenParams gp = pat::content::m1_map_params();
+        if (opt.gen_size_set) {
+            gp.width = opt.gen_width;
+            gp.height = opt.gen_height;
+        }
+        map = mapdata::generate_map(gp);
     } else {
         mapdata::GenParams gp;
         gp.width = opt.hidden ? std::min<std::uint32_t>(opt.gen_width, 1024) : opt.gen_width;
@@ -235,6 +275,18 @@ int main(int argc, char** argv) {
         gp.province_count = opt.hidden ? std::min<std::uint32_t>(opt.provinces, 120) : opt.provinces;
         map = mapdata::generate_map(gp);
     }
+
+    std::optional<pat::content::M1Scenario> m1;
+    if (opt.scenario == ScenarioKind::M1) {
+        auto loaded = pat::content::load_m1_scenario(opt.data_root, map, kSimulationSeed);
+        if (!loaded) {
+            PAT_LOG_ERROR("spike", "cannot load M1 scenario: {}", loaded.error().message);
+            return 1;
+        }
+        m1.emplace(std::move(loaded).value());
+    }
+    const auto map_to_world =
+        m1 ? std::span<const pat::sim::ProvinceId>(m1->map_to_world) : std::span<const pat::sim::ProvinceId>{};
 
     if (opt.bench && !opt.sim_speed_set) {
         opt.sim_speed = 5;  // benchmark the UI while the simulation runs at speed 5 (US-3.5)
@@ -326,7 +378,8 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "labels: {}", atlas.error().message);
                 break;
             }
-            MapLabelSet set = make_test_map_labels(map, geometry, picker, atlas.value());
+            MapLabelSet set = m1 ? make_province_labels(map, picker, atlas.value(), m1->province_names)
+                                 : make_test_map_labels(map, geometry, picker, atlas.value());
             PAT_LOG_INFO("spike", "labels: {} provinces + {} regions", set.province_labels, set.region_labels);
             auto created_labels = MapLabelRenderer::create(*renderer, std::move(atlas).value(), std::move(set));
             if (created_labels) {
@@ -340,17 +393,23 @@ int main(int argc, char** argv) {
 
     // ---- simulation on its own thread (E1): the UI only ever reads published snapshots
     std::unique_ptr<pat::sim::SimulationRunner> runner;
+    std::shared_ptr<const pat::sim::World> world_snapshot;
     if (!opt.no_sim) {
-        pat::sim::demo::Config sim_config;
-        sim_config.seed = 1;
-        sim_config.dynasties = 14;
-        sim_config.provinces = static_cast<std::uint32_t>(map.province_list.size());
-        sim_config.characters_per_dynasty = 8;
-        runner = std::make_unique<pat::sim::SimulationRunner>(pat::sim::demo::make_simulation(sim_config));
+        if (m1) {
+            runner = std::make_unique<pat::sim::SimulationRunner>(pat::sim::Simulation(std::move(m1->world)));
+        } else {
+            pat::sim::demo::Config sim_config;
+            sim_config.seed = kSimulationSeed;
+            sim_config.dynasties = 14;
+            sim_config.provinces = static_cast<std::uint32_t>(map.province_list.size());
+            sim_config.characters_per_dynasty = 8;
+            runner = std::make_unique<pat::sim::SimulationRunner>(pat::sim::demo::make_simulation(sim_config));
+        }
         runner->start();
         runner->set_speed(static_cast<pat::sim::Speed>(opt.sim_speed));
+    } else if (m1) {
+        world_snapshot = std::make_shared<const pat::sim::World>(std::move(m1->world));
     }
-    std::shared_ptr<const pat::sim::World> world_snapshot;
     std::uint64_t seen_version = ~static_cast<std::uint64_t>(0);
     std::vector<std::uint32_t> last_owner_palette;
     std::vector<std::uint32_t> last_development_palette;
@@ -394,29 +453,38 @@ int main(int argc, char** argv) {
             return 1;
         }
         ui = std::move(ui_result).value();
-        Rml::ElementDocument* doc = ui->load_document(std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "demo.rml");
-        if (doc == nullptr) {
-            PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
-        }
-        populate_demo(doc);
-        if (doc != nullptr) {
-            doc->Hide();  // the plain demo panel is toggled with F2; the character window is the main UI
-        }
+        if (!m1) {
+            const std::filesystem::path ui_dir = PATRIARCH_SPIKE_UI_DIR;
+            Rml::ElementDocument* doc = ui->load_document(ui_dir / "demo.rml");
+            if (doc != nullptr) {
+                populate_demo(doc);
+                doc->Hide();  // the plain demo panel is toggled with F2
+            } else {
+                PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
+            }
 
-        auto window_result = pat::ui::CharacterWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "character.rml");
-        if (window_result) {
-            character = std::move(window_result).value();
-            character->set_snapshot(pat::ui::make_test_character(7));  // replaced by a real character below
-            character->set_command_handler([](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
-        } else {
-            PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+            auto window_result = pat::ui::CharacterWindow::create(*ui, ui_dir / "character.rml");
+            if (window_result) {
+                character = std::move(window_result).value();
+                character->set_snapshot(pat::ui::make_test_character(7));  // replaced by a real character below
+                character->set_command_handler(
+                    [](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
+            } else {
+                PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+            }
         }
         if (!opt.no_hud) {
             auto hud_result = pat::ui::HudWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
                                                          PATRIARCH_SPIKE_OLIVE_DIR);
             if (hud_result) {
                 hud = std::move(hud_result).value();
-                hud->set_snapshot(pat::ui::make_test_hud());  // placeholder numbers until the economy exists
+                if (m1) {
+                    pat::ui::HudSnapshot state;
+                    state.realm_name = "Патриарх";
+                    hud->set_snapshot(state);
+                } else {
+                    hud->set_snapshot(pat::ui::make_test_hud());
+                }
                 pat::ui::HudWindow* h = hud.get();
                 hud->set_menu_handler([h](const std::string& key) {
                     h->set_active_menu(key);
@@ -547,7 +615,8 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
                         character->show(character_visible);
-                    } else if (key->scancode == scancode::f2 && ui != nullptr && ui->context()->GetNumDocuments() > 0) {
+                    } else if (key->scancode == scancode::f2 && !m1 && ui != nullptr &&
+                               ui->context()->GetNumDocuments() > 0) {
                         Rml::ElementDocument* doc = ui->context()->GetDocument(0);
                         if (doc->IsVisible()) {
                             doc->Hide();
@@ -603,13 +672,22 @@ int main(int argc, char** argv) {
                             // A click: select the province under the cursor (clicking water deselects).
                             Vec3 p;
                             selected = ground_at(button->x, button->y, p) ? picker.province_at(p.x, p.y) : 0;
-                            if (world_snapshot && selected != 0) {
+                            if (character && world_snapshot && selected != 0) {
                                 // Show the head of the dynasty that owns the province.
-                                const auto head = pat::game::head_for_province(*world_snapshot, selected);
+                                const auto head =
+                                    pat::game::head_for_province(*world_snapshot, selected, map_to_world);
                                 if (head.valid()) {
                                     shown_character = head;
                                     character_refresh = 1.0e9f;  // refresh the window now
                                 }
+                            }
+                            if (m1 && hud && world_snapshot) {
+                                auto state = hud->snapshot();
+                                const bool has_selection = selected != 0 && selected < map_to_world.size() &&
+                                                           world_snapshot->exists(map_to_world[selected]);
+                                state.realm_subtitle =
+                                    has_selection ? m1->province_names[selected] : std::string{};
+                                hud->set_snapshot(state);
                             }
                         }
                     }
@@ -633,17 +711,21 @@ int main(int argc, char** argv) {
         // One snapshot per frame feeds the map and every window, so they always agree (US-3.5).
         if (runner) {
             world_snapshot = runner->latest_snapshot();
+        }
+        if (world_snapshot) {
             day_of_year = world_snapshot->today().day_of_year();
-            const std::uint64_t version = runner->snapshot_version();
+            const std::uint64_t version = runner ? runner->snapshot_version() : 0;
             if (version != seen_version) {
                 seen_version = version;
                 const std::size_t provinces = map.province_list.size();
-                std::vector<std::uint32_t> owners = pat::game::owner_palette(*world_snapshot, provinces);
+                std::vector<std::uint32_t> owners =
+                    pat::game::owner_palette(*world_snapshot, provinces, map_to_world);
                 if (owners != last_owner_palette) {
                     view->set_palette(MapMode::Owners, owners);
                     last_owner_palette = std::move(owners);
                 }
-                std::vector<std::uint32_t> development = pat::game::development_palette(*world_snapshot, provinces);
+                std::vector<std::uint32_t> development =
+                    pat::game::development_palette(*world_snapshot, provinces, map_to_world);
                 if (development != last_development_palette) {
                     view->set_palette(MapMode::Mood, development);
                     last_development_palette = std::move(development);
@@ -652,7 +734,7 @@ int main(int argc, char** argv) {
                     time_bar->set_date(pat::game::format_date_ru(world_snapshot->today()));
                 }
             }
-            if (time_bar) {
+            if (time_bar && runner) {
                 const pat::sim::Speed sp = runner->speed();
                 time_bar->set_speed(sp == pat::sim::Speed::Unlimited ? 5 : static_cast<int>(sp));
             }
@@ -712,7 +794,7 @@ int main(int argc, char** argv) {
         if (clock.frame_count() % 15 == 0) {
             renderer->reload_shaders_if_changed();
             view->reload_shaders_if_changed();
-            if (ui && ui->reload_if_changed() && ui->context()->GetNumDocuments() > 0) {
+            if (ui && ui->reload_if_changed() && !m1 && ui->context()->GetNumDocuments() > 0) {
                 populate_demo(ui->context()->GetDocument(0));
             }
         }
