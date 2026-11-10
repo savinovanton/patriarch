@@ -823,8 +823,11 @@ TEST_CASE("the shipped Russian table loads and every key formats") {
     CHECK(loc.format("ui.hud.affairs.title") == "ДЕЛА ГОСУДАРСТВА");
     CHECK(loc.format("ui.hud.affairs.council.detail", {Arg("n", 1)}) == "1 вопрос в повестке");
     CHECK(loc.format("ui.hud.affairs.council.detail", {Arg("n", 3)}) == "3 вопроса в повестке");
+    // The age is composed from ui.age.years (with its plural) and passed to the subtitle as text.
+    const std::string age = loc.format("ui.age.years", {Arg("n", 22)});
+    CHECK(age == "22 года");
     CHECK(loc.format("ui.character.subtitle",
-                     {Arg("role", "стольник"), Arg("age", 22), Arg("health", "крепкое")}) ==
+                     {Arg("role", "стольник"), Arg("age", age), Arg("health", "крепкое")}) ==
           "стольник · 22 года · здоровье: крепкое");
 }
 
