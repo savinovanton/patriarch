@@ -1,6 +1,7 @@
 #include "pat/ui/character_window.hpp"
 
 #include "pat/core/log.hpp"
+#include "pat/ui/text.hpp"
 
 #include <RmlUi/Core.h>
 
@@ -12,6 +13,8 @@ namespace pat::ui {
 
 namespace {
 
+using loc::Arg;
+
 constexpr const char* kModelName = "character";
 constexpr int kBufferRows = 4;  // extra rows above and below the visible ones
 
@@ -21,6 +24,21 @@ struct SkillRow {
     int max = kSkillMax;
     Rml::String width;  // CSS width of the bar fill, e.g. "65%"
     Rml::String tip;    // tooltip key of this row, e.g. "skill:0"
+};
+
+/// Captions of the window (one struct so the document reads them as `t.name`).
+struct CharacterTexts {
+    Rml::String tab_overview;
+    Rml::String tab_family;
+    Rml::String tab_relations;
+    Rml::String heading_skills;
+    Rml::String heading_traits;
+    Rml::String heading_actions;
+    Rml::String heading_family;
+    Rml::String heading_relations;
+    Rml::String cmd_marry;
+    Rml::String cmd_appoint;
+    Rml::String cmd_educate;
 };
 
 struct RelationRow {
@@ -55,22 +73,23 @@ std::string dp_string(float dp) {
 
 struct CharacterWindow::Impl {
     engine::UiContext* ui = nullptr;
+    const loc::Localizer* loc = nullptr;
     Rml::DataModelHandle handle;
     std::string source_url;  // identifies the document even after a hot reload replaced it
     CharacterSnapshot snapshot;
     std::function<void(const std::string&)> on_command;
 
     // ---- bound variables (names are used by the document)
+    CharacterTexts t;
     Rml::String full_name;
     Rml::String initials;
-    Rml::String role;
-    Rml::String health;
-    int age = 0;
+    Rml::String subtitle;  // "стольник · 42 года · здоровье: крепкое"
     std::vector<SkillRow> skills;
     std::vector<Rml::String> traits;
     std::vector<Rml::String> family;
     Rml::String tab = "overview";
     Rml::String last_command;
+    std::string last_command_id;  // kept so the status line can be written again in another language
     int relation_total = 0;
     std::vector<RelationRow> relation_rows;  // only the rows around the scroll position
     Rml::String pad_top = "0dp";
@@ -88,16 +107,41 @@ struct CharacterWindow::Impl {
         return nullptr;
     }
 
+    [[nodiscard]] std::string text(std::string_view key, std::initializer_list<Arg> args = {}) const {
+        return loc->format(key, args);
+    }
+
+    void refresh_chrome() {
+        t.tab_overview = text("ui.character.tab.overview");
+        t.tab_family = text("ui.character.tab.family");
+        t.tab_relations = text("ui.character.tab.relations");
+        t.heading_skills = text("ui.character.heading.skills");
+        t.heading_traits = text("ui.character.heading.traits");
+        t.heading_actions = text("ui.character.heading.actions");
+        t.heading_family = text("ui.character.heading.family");
+        t.heading_relations =
+            text("ui.character.heading.relations", {Arg("total", snapshot.relations.size())});
+        t.cmd_marry = text("ui.character.cmd.marry");
+        t.cmd_appoint = text("ui.character.cmd.appoint");
+        t.cmd_educate = text("ui.character.cmd.educate");
+        last_command = last_command_id.empty() ? std::string{}
+                                               : text("ui.character.cmd.stub", {Arg("id", last_command_id)});
+        handle.DirtyVariable("t");
+        handle.DirtyVariable("last_command");
+    }
+
     void refresh_snapshot_variables() {
         full_name = snapshot.full_name();
         initials = first_letter(snapshot.given_name) + first_letter(snapshot.surname);
-        role = snapshot.role;
-        health = snapshot.health;
-        age = snapshot.age;
+        subtitle = text("ui.character.subtitle",
+                        {Arg("role", text(snapshot.role)),
+                         Arg("age", text("ui.age.years", {Arg("n", snapshot.age)})),
+                         Arg("health", text(snapshot.health))});
+        refresh_chrome();
         skills.clear();
         for (std::size_t i = 0; i < kSkillCount; ++i) {
             SkillRow row;
-            row.name = kSkillNames[i];
+            row.name = text(kSkillKeys[i]);
             row.value = snapshot.skills[i];
             row.width = std::to_string(snapshot.skills[i] * 100 / kSkillMax) + "%";
             row.tip = "skill:" + std::to_string(i);
@@ -107,15 +151,8 @@ struct CharacterWindow::Impl {
         family.assign(snapshot.family.begin(), snapshot.family.end());
         relation_total = static_cast<int>(snapshot.relations.size());
         rebuild_rows(first_row, count_wanted(), /*force=*/true);
-        for (const char* name : {"full_name",
-                                 "initials",
-                                 "role",
-                                 "health",
-                                 "age",
-                                 "skills",
-                                 "traits",
-                                 "family",
-                                 "relation_total"}) {
+        for (const char* name :
+             {"full_name", "initials", "subtitle", "skills", "traits", "family", "relation_total"}) {
             handle.DirtyVariable(name);
         }
     }
@@ -163,15 +200,30 @@ CharacterWindow::~CharacterWindow() {
     }
 }
 
-core::Result<std::unique_ptr<CharacterWindow>>
-CharacterWindow::create(engine::UiContext& ui, const std::filesystem::path& document) {
+core::Result<std::unique_ptr<CharacterWindow>> CharacterWindow::create(engine::UiContext& ui,
+                                                                       const std::filesystem::path& document,
+                                                                       const loc::Localizer& loc) {
     using R = core::Result<std::unique_ptr<CharacterWindow>>;
     auto impl = std::make_unique<Impl>();
     impl->ui = &ui;
+    impl->loc = &loc;
 
     Rml::DataModelConstructor ctor = ui.context()->CreateDataModel(kModelName);
     if (!ctor) {
         return R::err(core::Error{90, "cannot create the character data model"});
+    }
+    if (auto texts = ctor.RegisterStruct<CharacterTexts>()) {
+        texts.RegisterMember("tab_overview", &CharacterTexts::tab_overview);
+        texts.RegisterMember("tab_family", &CharacterTexts::tab_family);
+        texts.RegisterMember("tab_relations", &CharacterTexts::tab_relations);
+        texts.RegisterMember("heading_skills", &CharacterTexts::heading_skills);
+        texts.RegisterMember("heading_traits", &CharacterTexts::heading_traits);
+        texts.RegisterMember("heading_actions", &CharacterTexts::heading_actions);
+        texts.RegisterMember("heading_family", &CharacterTexts::heading_family);
+        texts.RegisterMember("heading_relations", &CharacterTexts::heading_relations);
+        texts.RegisterMember("cmd_marry", &CharacterTexts::cmd_marry);
+        texts.RegisterMember("cmd_appoint", &CharacterTexts::cmd_appoint);
+        texts.RegisterMember("cmd_educate", &CharacterTexts::cmd_educate);
     }
     if (auto skill = ctor.RegisterStruct<SkillRow>()) {
         skill.RegisterMember("name", &SkillRow::name);
@@ -189,11 +241,10 @@ CharacterWindow::create(engine::UiContext& ui, const std::filesystem::path& docu
     ctor.RegisterArray<std::vector<Rml::String>>();
 
     Impl* m = impl.get();
+    ctor.Bind("t", &m->t);
     ctor.Bind("full_name", &m->full_name);
     ctor.Bind("initials", &m->initials);
-    ctor.Bind("role", &m->role);
-    ctor.Bind("health", &m->health);
-    ctor.Bind("age", &m->age);
+    ctor.Bind("subtitle", &m->subtitle);
     ctor.Bind("skills", &m->skills);
     ctor.Bind("traits", &m->traits);
     ctor.Bind("family", &m->family);
@@ -216,7 +267,8 @@ CharacterWindow::create(engine::UiContext& ui, const std::filesystem::path& docu
             return;
         }
         const Rml::String id = args[0].Get<Rml::String>();
-        m->last_command = "Команда: " + id + " (заглушка)";
+        m->last_command_id = id;
+        m->last_command = m->text("ui.character.cmd.stub", {Arg("id", id)});
         h.DirtyVariable("last_command");
         if (m->on_command) {
             m->on_command(id);
@@ -230,11 +282,17 @@ CharacterWindow::create(engine::UiContext& ui, const std::filesystem::path& docu
         return R::err(core::Error{91, "cannot load the character document " + document.generic_string()});
     }
     m->source_url = loaded->GetSourceURL();
-    return R::ok(std::unique_ptr<CharacterWindow>(new CharacterWindow(std::move(impl))));
+    auto window = std::unique_ptr<CharacterWindow>(new CharacterWindow(std::move(impl)));
+    window->relocalize();
+    return R::ok(std::move(window));
 }
 
 void CharacterWindow::set_snapshot(const CharacterSnapshot& snapshot) {
     impl_->snapshot = snapshot;
+    impl_->refresh_snapshot_variables();
+}
+
+void CharacterWindow::relocalize() {
     impl_->refresh_snapshot_variables();
 }
 

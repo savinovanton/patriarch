@@ -1,5 +1,7 @@
 #include "pat/ui/hud_window.hpp"
 
+#include "pat/ui/text.hpp"
+
 #include <RmlUi/Core.h>
 
 #include <array>
@@ -11,31 +13,45 @@ namespace {
 
 constexpr const char* kModelName = "hud";
 
+using loc::Arg;
+
+// The display name of an entry is the string ui.menu.<key>; hotkeys are key names, not language text.
 struct MenuEntry {
     const char* key;
-    const char* name;
     const char* hotkey;
 };
 
 constexpr std::array<MenuEntry, HudWindow::kMenuCount> kMenu{{
-    {"world", "Мир", "1"},
-    {"realm", "Держава", "2"},
-    {"holdings", "Владения", "3"},
-    {"army", "Войско", "4"},
-    {"church", "Церковь", "5"},
-    {"economy", "Хозяйство", "6"},
-    {"diplomacy", "Дипломатия", "7"},
-    {"chronicle", "Летопись", "8"},
-    {"system", "Меню", "Esc"},
+    {"world", "1"},
+    {"realm", "2"},
+    {"holdings", "3"},
+    {"army", "4"},
+    {"church", "5"},
+    {"economy", "6"},
+    {"diplomacy", "7"},
+    {"chronicle", "8"},
+    {"system", "Esc"},
 }};
+
+/// Captions of the panels and tabs (one struct so the document reads them as `t.name`).
+struct HudTexts {
+    Rml::String holdings_title;
+    Rml::String armies_title;
+    Rml::String affairs_title;
+    Rml::String chronicle_title;
+    Rml::String tab_cities;
+    Rml::String tab_armies;
+    Rml::String tab_dynasties;
+};
 
 struct ResourceRow {
     Rml::String key;
     Rml::String label;
     Rml::String value;
     Rml::String delta;
-    Rml::String tone;  // "pos", "neg" or "zero"
-    Rml::String icon;  // path of the icon relative to the document
+    Rml::String tone;     // "pos", "neg" or "zero"
+    Rml::String icon;     // path of the icon relative to the document
+    Rml::String tooltip;  // "Казна: 12 480 (+84)"
 };
 
 struct MenuRow {
@@ -68,38 +84,48 @@ constexpr std::size_t kMaxChronicleLines = 4;  // lines of the chronicle box
 
 }  // namespace
 
-HudSnapshot make_test_hud() {
+HudSnapshot make_test_hud(const loc::Localizer& loc) {
+    constexpr HudNumber kThousands = HudNumber::Thousands;
     HudSnapshot hud;
-    hud.realm_name = "Московское царство";
-    hud.realm_subtitle = "Государев двор";
+    hud.realm_name = loc.format("ui.hud.realm.name");
+    hud.realm_subtitle = loc.format("ui.hud.realm.subtitle");
     hud.resources = {
-        {"treasury", "Казна", "12 480", "+84"},
-        {"grain", "Запасы", "3 240", "+62"},
-        {"army", "Войско", "18 600", "+240"},
-        {"faith", "Вера", "72", "+2"},
-        {"influence", "Влияние", "48", "+1"},
+        {"treasury", 12480, 84},
+        {"grain", 3240, 62},
+        {"army", 18600, 240},
+        {"faith", 72, 2},
+        {"influence", 48, 1},
     };
     hud.bell_count = 2;
     hud.charter_count = 3;
     hud.embassy_count = 0;
-    hud.cities = {
-        {"Москва", "94 т"}, {"Тверь", "71 т"}, {"Новгород", "56 т"}, {"Псков", "38 т"}, {"Смоленск", "33 т"}};
-    hud.armies = {{"Большой полк", "4 800"}};
-    hud.dynasties = {{"Шереметевы", "18"}, {"Репнины", "12"}, {"Голицыны", "9"}};
-    hud.affairs = {{"bell", "Собор ожидает решения", "1 вопрос в повестке"},
-                   {"embassy", "Прибыли послы", "Ожидают приёма при дворе"}};
-    hud.chronicle = {{"11:42", "Посольство прибыло в Москву"}, {"11:30", "Завершён сбор податей"}};
+    // Names below are placeholder content until the map and dynasties come from data.
+    hud.cities = {{"Москва", 94, kThousands},
+                  {"Тверь", 71, kThousands},
+                  {"Новгород", 56, kThousands},
+                  {"Псков", 38, kThousands},
+                  {"Смоленск", 33, kThousands}};
+    hud.armies = {{"Большой полк", 4800, HudNumber::Plain}};
+    hud.dynasties = {{"Шереметевы", 18, HudNumber::Plain},
+                     {"Репнины", 12, HudNumber::Plain},
+                     {"Голицыны", 9, HudNumber::Plain}};
+    hud.affairs = {{"bell", "ui.hud.affairs.council.title", "ui.hud.affairs.council.detail", 1},
+                   {"embassy", "ui.hud.affairs.embassy.title", "ui.hud.affairs.embassy.detail", 0}};
+    hud.chronicle = {{"11:42", "ui.hud.chronicle.embassy_arrived", 0},
+                     {"11:30", "ui.hud.chronicle.taxes_collected", 0}};
     return hud;
 }
 
 struct HudWindow::Impl {
     engine::UiContext* ui = nullptr;
+    const loc::Localizer* loc = nullptr;
     Rml::DataModelHandle handle;
     std::string source_url;
     std::string assets_rel;  // olive assets directory relative to the document, '/' separators
     HudSnapshot snapshot;
     std::function<void(const std::string&)> on_menu;
 
+    HudTexts t;
     Rml::String realm_name;
     Rml::String realm_subtitle;
     std::vector<ResourceRow> resources;
@@ -139,18 +165,46 @@ struct HudWindow::Impl {
         return nullptr;
     }
 
+    [[nodiscard]] std::string text(std::string_view key, std::initializer_list<Arg> args = {}) const {
+        return loc->format(key, args);
+    }
+
+    [[nodiscard]] std::string entry_value(const HudEntry& e) const {
+        return e.format == HudNumber::Thousands ? format_thousands(*loc, e.value)
+                                                : format_number(*loc, e.value);
+    }
+
+    // Captions and menu names: everything that does not depend on the snapshot.
+    void refresh_chrome() {
+        t.holdings_title = text("ui.hud.holdings.title");
+        t.armies_title = text("ui.hud.armies.title");
+        t.affairs_title = text("ui.hud.affairs.title");
+        t.chronicle_title = text("ui.hud.chronicle.title");
+        t.tab_cities = text("ui.hud.tab.cities");
+        t.tab_armies = text("ui.hud.tab.armies");
+        t.tab_dynasties = text("ui.hud.tab.dynasties");
+        for (std::size_t i = 0; i < menu.size(); ++i) {
+            menu[i].name = text("ui.menu." + std::string(kMenu[i].key));
+        }
+        handle.DirtyVariable("t");
+        handle.DirtyVariable("menu");
+    }
+
     void refresh() {
+        refresh_chrome();
         realm_name = snapshot.realm_name;
         realm_subtitle = snapshot.realm_subtitle;
         resources.clear();
         for (const HudResource& r : snapshot.resources) {
             ResourceRow row;
             row.key = r.key;
-            row.label = r.label;
-            row.value = r.value;
-            row.delta = r.delta;
-            row.tone = r.delta.empty() || r.delta == "0" ? "zero" : (r.delta.front() == '-' ? "neg" : "pos");
+            row.label = text("ui.res." + r.key);
+            row.value = format_number(*loc, r.value);
+            row.delta = format_delta(*loc, r.delta);
+            row.tone = r.delta == 0 ? "zero" : (r.delta < 0 ? "neg" : "pos");
             row.icon = icon_path("res_" + r.key);
+            row.tooltip =
+                text("ui.res.tooltip", {Arg("label", row.label), Arg("n", r.value), Arg("delta", row.delta)});
             resources.push_back(std::move(row));
         }
         bell = snapshot.bell_count;
@@ -161,12 +215,15 @@ struct HudWindow::Impl {
         affairs_total = static_cast<int>(snapshot.affairs.size());
         for (std::size_t i = 0; i < snapshot.affairs.size() && i < kMaxAffairs; ++i) {
             const HudAffair& a = snapshot.affairs[i];
-            affairs.push_back({a.title, a.subtitle, icon_path("alert_" + a.kind)});
+            affairs.push_back({text(a.title_key, {Arg("n", a.count)}),
+                               text(a.detail_key, {Arg("n", a.count)}),
+                               icon_path("alert_" + a.kind)});
         }
         chronicle.clear();
         chronicle_total = static_cast<int>(snapshot.chronicle.size());
         for (std::size_t i = 0; i < snapshot.chronicle.size() && i < kMaxChronicleLines; ++i) {
-            chronicle.push_back({snapshot.chronicle[i].time, snapshot.chronicle[i].text});
+            const HudChronicleLine& line = snapshot.chronicle[i];
+            chronicle.push_back({line.time, text(line.key, {Arg("n", line.count)})});
         }
         for (const char* name : {"realm_name",
                                  "realm_subtitle",
@@ -182,11 +239,11 @@ struct HudWindow::Impl {
         }
     }
 
-    static void
-    fill_rows(std::vector<EntryRow>& out, const std::vector<HudEntry>& in, const std::string& icon) {
+    void
+    fill_rows(std::vector<EntryRow>& out, const std::vector<HudEntry>& in, const std::string& icon) const {
         out.clear();
         for (std::size_t i = 0; i < in.size() && i < kMaxListRows; ++i) {
-            out.push_back({in[i].name, in[i].value, icon});
+            out.push_back({in[i].name, entry_value(in[i]), icon});
         }
     }
 
@@ -226,10 +283,12 @@ HudWindow::~HudWindow() {
 
 core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui,
                                                            const std::filesystem::path& document,
-                                                           const std::filesystem::path& olive_assets) {
+                                                           const std::filesystem::path& olive_assets,
+                                                           const loc::Localizer& loc) {
     using R = core::Result<std::unique_ptr<HudWindow>>;
     auto impl = std::make_unique<Impl>();
     impl->ui = &ui;
+    impl->loc = &loc;
 
     std::error_code ec;
     const std::filesystem::path rel = std::filesystem::relative(
@@ -247,6 +306,16 @@ core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui
         res.RegisterMember("delta", &ResourceRow::delta);
         res.RegisterMember("tone", &ResourceRow::tone);
         res.RegisterMember("icon", &ResourceRow::icon);
+        res.RegisterMember("tooltip", &ResourceRow::tooltip);
+    }
+    if (auto texts = ctor.RegisterStruct<HudTexts>()) {
+        texts.RegisterMember("holdings_title", &HudTexts::holdings_title);
+        texts.RegisterMember("armies_title", &HudTexts::armies_title);
+        texts.RegisterMember("affairs_title", &HudTexts::affairs_title);
+        texts.RegisterMember("chronicle_title", &HudTexts::chronicle_title);
+        texts.RegisterMember("tab_cities", &HudTexts::tab_cities);
+        texts.RegisterMember("tab_armies", &HudTexts::tab_armies);
+        texts.RegisterMember("tab_dynasties", &HudTexts::tab_dynasties);
     }
     ctor.RegisterArray<std::vector<ResourceRow>>();
     if (auto item = ctor.RegisterStruct<MenuRow>()) {
@@ -276,7 +345,7 @@ core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui
 
     Impl* m = impl.get();
     for (const MenuEntry& e : kMenu) {
-        m->menu.push_back({e.key, e.name, e.hotkey, m->icon_path(std::string("menu_") + e.key)});
+        m->menu.push_back({e.key, {}, e.hotkey, m->icon_path(std::string("menu_") + e.key)});
     }
     m->frame_src = m->assets_rel + "/frame.png";
     m->realm_icon = m->icon_path("menu_realm");
@@ -284,6 +353,7 @@ core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui
     m->charter_icon = m->icon_path("alert_charter");
     m->embassy_icon = m->icon_path("alert_embassy");
 
+    ctor.Bind("t", &m->t);
     ctor.Bind("realm_name", &m->realm_name);
     ctor.Bind("realm_subtitle", &m->realm_subtitle);
     ctor.Bind("resources", &m->resources);
@@ -336,6 +406,10 @@ void HudWindow::set_snapshot(const HudSnapshot& snapshot) {
     impl_->refresh();
 }
 
+void HudWindow::relocalize() {
+    impl_->refresh();
+}
+
 const HudSnapshot& HudWindow::snapshot() const {
     return impl_->snapshot;
 }
@@ -344,9 +418,9 @@ std::string_view HudWindow::menu_key(int index) {
     return index >= 0 && index < kMenuCount ? kMenu[static_cast<std::size_t>(index)].key : std::string_view{};
 }
 
-std::string_view HudWindow::menu_name(int index) {
-    return index >= 0 && index < kMenuCount ? kMenu[static_cast<std::size_t>(index)].name
-                                            : std::string_view{};
+std::string HudWindow::menu_name(int index) const {
+    return index >= 0 && index < kMenuCount ? impl_->menu[static_cast<std::size_t>(index)].name
+                                            : std::string{};
 }
 
 void HudWindow::set_active_menu(std::string_view key) {

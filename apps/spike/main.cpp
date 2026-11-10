@@ -24,6 +24,7 @@
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/game/world_view.hpp"
+#include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/mortality.hpp"
@@ -435,6 +436,15 @@ int main(int argc, char** argv) {
     pat::sim::CharacterId shown_character;
     float character_refresh = 1.0e9f;  // refresh the window on the first frame
 
+    // String tables of the windows (data/loc/<language>/ui.pd). Declared before `ui`, so it outlives the
+    // windows that read it; a reload in --dev mode replaces the object in place.
+    pat::data::DirectorySource ui_loc_source(opt.data_root);
+    pat::loc::LocLoadResult ui_loc_load = pat::loc::load_localization(ui_loc_source);
+    for (const pat::loc::LocError& e : ui_loc_load.errors) {
+        PAT_LOG_WARN("spike", "localisation: {}", e.format());
+    }
+    pat::loc::Localizer& ui_loc = ui_loc_load.localizer;
+
     std::unique_ptr<UiContext> ui;
     bool character_visible = true;
     std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
@@ -482,10 +492,10 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
             }
 
-            auto window_result = pat::ui::CharacterWindow::create(*ui, ui_dir / "character.rml");
+            auto window_result = pat::ui::CharacterWindow::create(*ui, ui_dir / "character.rml", ui_loc);
             if (window_result) {
                 character = std::move(window_result).value();
-                character->set_snapshot(pat::ui::make_test_character(7));  // replaced by a real character below
+                character->set_snapshot(pat::ui::make_test_character(ui_loc, 7));  // replaced by a real character below
                 character->set_command_handler(
                     [](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
             } else {
@@ -494,15 +504,15 @@ int main(int argc, char** argv) {
         }
         if (!opt.no_hud) {
             auto hud_result = pat::ui::HudWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
-                                                         PATRIARCH_SPIKE_OLIVE_DIR);
+                                                         PATRIARCH_SPIKE_OLIVE_DIR, ui_loc);
             if (hud_result) {
                 hud = std::move(hud_result).value();
                 if (m1) {
                     pat::ui::HudSnapshot state;
-                    state.realm_name = "Патриарх";
+                    state.realm_name = ui_loc.format("ui.game.title");
                     hud->set_snapshot(state);
                 } else {
-                    hud->set_snapshot(pat::ui::make_test_hud());
+                    hud->set_snapshot(pat::ui::make_test_hud(ui_loc));
                 }
                 pat::ui::HudWindow* h = hud.get();
                 hud->set_menu_handler([h](const std::string& key) {
@@ -514,7 +524,7 @@ int main(int argc, char** argv) {
             }
         }
         if (runner) {
-            auto bar = pat::ui::TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml");
+            auto bar = pat::ui::TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml", ui_loc);
             if (bar) {
                 time_bar = std::move(bar).value();
                 pat::sim::SimulationRunner* r = runner.get();
@@ -580,6 +590,23 @@ int main(int argc, char** argv) {
         hot_reload->subscribe([&](pat::content::M1HotReload::Snapshot next) {
             const bool names_changed = !std::ranges::equal(m1_province_names(), next->province_names);
             presentation = std::move(next);
+            // The window texts follow the tables on disk too: reload them and redraw every caption.
+            pat::loc::LocLoadResult texts = pat::loc::load_localization(*reload_source);
+            if (texts.ok()) {
+                ui_loc = std::move(texts.localizer);
+                if (hud) {
+                    hud->relocalize();
+                }
+                if (time_bar) {
+                    time_bar->relocalize();
+                }
+                if (character) {
+                    character->relocalize();
+                }
+                seen_version = ~static_cast<std::uint64_t>(0);  // writes the date again
+            } else {
+                PAT_LOG_ERROR("spike", "UI texts reload: {}", texts.errors.front().format());
+            }
             if (labels && names_changed) {
                 labels->replace_labels(make_province_labels(map, picker, labels->atlas(), m1_province_names()));
             }
@@ -788,7 +815,7 @@ int main(int argc, char** argv) {
                     last_development_palette = std::move(development);
                 }
                 if (time_bar) {
-                    time_bar->set_date(pat::game::format_date_ru(world_snapshot->today()));
+                    time_bar->set_date(pat::game::format_date(ui_loc, world_snapshot->today()));
                 }
             }
             if (time_bar && runner) {
@@ -802,7 +829,7 @@ int main(int argc, char** argv) {
                     shown_character = pat::game::pick_character(*world_snapshot, 7);
                 }
                 if (shown_character.valid()) {
-                    pat::ui::CharacterSnapshot next = pat::game::character_snapshot(*world_snapshot, shown_character);
+                    pat::ui::CharacterSnapshot next = pat::game::character_snapshot(ui_loc, *world_snapshot, shown_character);
                     if (!(next == character->snapshot())) {
                         character->set_snapshot(next);
                     }

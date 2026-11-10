@@ -88,20 +88,17 @@ TEST_CASE("contentlint: the good corpus is clean even with --strict") {
 }
 
 TEST_CASE("contentlint: the real data/ is clean with --strict") {
-    // ui.* keys are not referenced by the UI yet (docs/dev/contentlint.md); everything else is checked,
-    // including cross-object rules for the economy, demography and M1 definitions.
-    const CliRun r = run({"--root", PATRIARCH_DATA_DIR, "--strict", "--ignore-unused", "ui."});
+    // Every ui.* key is read by the UI (docs/dev/localization.md), so nothing is exempt from the
+    // unused-key check; cross-object rules for the economy, demography and M1 definitions run too.
+    const CliRun r = run({"--root", PATRIARCH_DATA_DIR, "--strict"});
     INFO(r.out);
     CHECK(r.code == 0);
 }
 
-TEST_CASE("contentlint: the real data/ reports unreferenced ui keys as warnings, errors under --strict") {
+TEST_CASE("contentlint: no key of the real data/ is unreferenced, and --ignore-unused is not needed") {
     const CliRun lenient = run({"--root", PATRIARCH_DATA_DIR});
     CHECK(lenient.code == 0);
-    CHECK(lenient.out.find("warning[CL004]") != std::string::npos);
-    const CliRun strict = run({"--root", PATRIARCH_DATA_DIR, "--strict"});
-    CHECK(strict.code == 1);
-    CHECK(strict.out.find("error[CL004]") != std::string::npos);
+    CHECK(lenient.out.find("CL004") == std::string::npos);
 }
 
 TEST_CASE("contentlint: broken schema file reports every problem with position") {

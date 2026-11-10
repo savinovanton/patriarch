@@ -2,6 +2,7 @@
 
 #include "pat/core/result.hpp"
 #include "pat/engine/ui.hpp"
+#include "pat/loc/localizer.hpp"
 #include "pat/ui/character_snapshot.hpp"
 
 #include <filesystem>
@@ -22,20 +23,28 @@ namespace pat::ui {
 /// The window is bound to a CharacterSnapshot through an RmlUi data model: set_snapshot() replaces the
 /// data and the document updates itself. The relations list can hold thousands of rows because only
 /// the rows around the scroll position exist in the document (fixed row height, spacer elements).
+///
+/// Every caption (tabs, headings, buttons, skill names, the subtitle with role, age and health) comes
+/// from the string table (`ui.*` keys, docs/dev/localization.md); a missing key shows as [[key]].
 class CharacterWindow {
 public:
     /// Row height of the virtual list in dp; the document's CSS must use the same value.
     static constexpr float kRowHeightDp = 24.0f;
 
-    /// Creates the data model and loads `document` into `ui`. Destroy before the UiContext.
+    /// Creates the data model and loads `document` into `ui`. `loc` supplies the texts and must outlive
+    /// the window. Destroy before the UiContext.
     [[nodiscard]] static core::Result<std::unique_ptr<CharacterWindow>>
-    create(engine::UiContext& ui, const std::filesystem::path& document);
+    create(engine::UiContext& ui, const std::filesystem::path& document, const loc::Localizer& loc);
     ~CharacterWindow();
     CharacterWindow(const CharacterWindow&) = delete;
     CharacterWindow& operator=(const CharacterWindow&) = delete;
 
     void set_snapshot(const CharacterSnapshot& snapshot);
     [[nodiscard]] const CharacterSnapshot& snapshot() const;
+
+    /// Re-reads every caption from the Localizer (after a language change). Lines the snapshot carries
+    /// as text (family, relations, breakdowns) keep the language they were built in: rebuild the snapshot.
+    void relocalize();
 
     /// Explanation behind a tooltip key of this window ("skill:0" ...); null for unknown keys. Meant as
     /// the provider of a TooltipManager.

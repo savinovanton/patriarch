@@ -56,9 +56,8 @@ jobs:
           args: --preset linux-gcc -DPATRIARCH_BUILD_TESTS=OFF -DPATRIARCH_BUILD_BENCHMARKS=OFF
       - name: Build contentlint
         run: cmake --build --preset linux-gcc --target contentlint
-      # ui.* keys are not wired to the UI yet; drop --ignore-unused when the UI reads the table.
       - name: Lint data/
-        run: out/linux-gcc/tools/contentlint/contentlint --root data --strict --ignore-unused ui. --format github
+        run: out/linux-gcc/tools/contentlint/contentlint --root data --strict --format github
 
   windows-msvc:
     name: MSVC ${{ matrix.preset }}

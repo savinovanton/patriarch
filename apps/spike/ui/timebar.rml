@@ -7,7 +7,7 @@
 <body data-model="timebar">
 <div id="bar">
     <div id="date">{{ date_text }}</div>
-    <button class="spd" id="spd-0" data-class-active="speed == 0" data-event-click="set_speed(0)">Пауза</button>
+    <button class="spd" id="spd-0" data-class-active="speed == 0" data-event-click="set_speed(0)">{{ pause_text }}</button>
     <button class="spd" id="spd-1" data-class-active="speed == 1" data-event-click="set_speed(1)">1</button>
     <button class="spd" id="spd-2" data-class-active="speed == 2" data-event-click="set_speed(2)">2</button>
     <button class="spd" id="spd-3" data-class-active="speed == 3" data-event-click="set_speed(3)">3</button>

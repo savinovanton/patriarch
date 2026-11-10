@@ -16,10 +16,9 @@ set_target_properties(contentlint PROPERTIES FOLDER "tools")
 if(PATRIARCH_BUILD_TESTS)
     set(CL_CORPUS "${PROJECT_SOURCE_DIR}/tests/data/contentlint")
 
-    # The real game content is clean. Keys of the loc table are not wired to the UI yet (the UI task
-    # replaces the literals), so ui.* is exempt from the unused-key check until then.
+    # The real game content is clean, including unused keys: the UI reads every ui.* key.
     add_test(NAME contentlint_data_clean
-        COMMAND contentlint --root "${PROJECT_SOURCE_DIR}/data" --strict --ignore-unused ui.)
+        COMMAND contentlint --root "${PROJECT_SOURCE_DIR}/data" --strict)
     # A small complete corpus (content, two languages, every key referenced) passes with --strict.
     add_test(NAME contentlint_good_corpus
         COMMAND contentlint --root "${CL_CORPUS}/good" --no-rules --strict)

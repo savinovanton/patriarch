@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <array>
 
+using pat::loc::Arg;
+
 namespace pat::ui {
 
 namespace {
@@ -44,9 +46,14 @@ constexpr std::array<const char*, 10> kSurnames = {"Шереметев",
                                                    "Стрешнев",
                                                    "Матвеев",
                                                    "Бутурлин"};
-constexpr std::array<const char*, 6> kRoles = {
-    "стольник", "боярин", "воевода", "окольничий", "стряпчий", "дьяк"};
-constexpr std::array<const char*, 4> kHealth = {"крепкое", "хорошее", "слабое", "болезненное"};
+constexpr std::array<const char*, 6> kRoles = {"ui.character.role.stolnik",
+                                               "ui.character.role.boyar",
+                                               "ui.character.role.voevoda",
+                                               "ui.character.role.okolnichy",
+                                               "ui.character.role.stryapchy",
+                                               "ui.character.role.dyak"};
+constexpr std::array<const char*, 4> kHealth = {
+    "ui.health.strong", "ui.health.good", "ui.health.weak", "ui.health.sickly"};
 constexpr std::array<const char*, 12> kTraits = {"Честолюбивый",
                                                  "Осторожный",
                                                  "Щедрый",
@@ -59,7 +66,12 @@ constexpr std::array<const char*, 12> kTraits = {"Честолюбивый",
                                                  "Верный",
                                                  "Корыстолюбивый",
                                                  "Тщеславный"};
-constexpr std::array<const char*, 6> kKin = {"отец", "мать", "жена", "сын", "дочь", "брат"};
+constexpr std::array<const char*, 6> kKin = {"ui.character.family.father",
+                                             "ui.character.family.mother",
+                                             "ui.character.family.wife",
+                                             "ui.character.family.son",
+                                             "ui.character.family.daughter",
+                                             "ui.character.family.brother"};
 
 template <class A>
 const char* pick(core::Pcg32& rng, const A& list) {
@@ -67,14 +79,15 @@ const char* pick(core::Pcg32& rng, const A& list) {
 }
 
 /// Builds a three-level breakdown whose terms sum exactly to `total`.
-Explanation make_skill_explanation(core::Pcg32& rng,
+Explanation make_skill_explanation(const loc::Localizer& loc,
+                                   core::Pcg32& rng,
                                    const std::string& name,
                                    int total,
                                    const std::vector<std::string>& traits) {
     Explanation root;
     root.label = name;
     root.value = std::to_string(total);
-    root.note = "Навыки лежат в диапазоне 0–20.";
+    root.note = loc.format("ui.skill.note", {Arg("min", 0), Arg("max", kSkillMax)});
 
     int remaining = total;
     const auto add = [&](Explanation term) {
@@ -83,23 +96,25 @@ Explanation make_skill_explanation(core::Pcg32& rng,
     };
 
     const int base = std::min(total, static_cast<int>(rng.range(2, 6)));
-    add({"Базовое значение", signed_value(base), "", {}});
+    add({loc.format("ui.explain.base"), signed_value(base), "", {}});
 
     // Education, with a mentor (who has a breakdown of their own) and optionally study abroad.
     const int education = std::min(std::max(remaining - 1, 0), static_cast<int>(rng.range(1, 8)));
     if (education > 0) {
-        Explanation edu{"Образование", signed_value(education), "", {}};
+        Explanation edu{loc.format("ui.explain.education"), signed_value(education), "", {}};
         const int abroad = education >= 3 ? 1 : 0;
         const int mentor = education - abroad;
-        Explanation mentor_term{"Наставник", signed_value(mentor), "", {}};
+        Explanation mentor_term{loc.format("ui.explain.mentor"), signed_value(mentor), "", {}};
         const int mentor_skill = mentor / 2;
-        mentor_term.terms.push_back({"Навык наставника", signed_value(mentor_skill), "", {}});
+        mentor_term.terms.push_back(
+            {loc.format("ui.explain.mentor_skill"), signed_value(mentor_skill), "", {}});
         if (mentor - mentor_skill != 0) {
-            mentor_term.terms.push_back({"Усердие ученика", signed_value(mentor - mentor_skill), "", {}});
+            mentor_term.terms.push_back(
+                {loc.format("ui.explain.pupil_effort"), signed_value(mentor - mentor_skill), "", {}});
         }
         edu.terms.push_back(std::move(mentor_term));
         if (abroad > 0) {
-            edu.terms.push_back({"Обучение за границей", signed_value(abroad), "", {}});
+            edu.terms.push_back({loc.format("ui.explain.abroad"), signed_value(abroad), "", {}});
         }
         add(std::move(edu));
     }
@@ -107,14 +122,17 @@ Explanation make_skill_explanation(core::Pcg32& rng,
     // Traits.
     const int trait_value = static_cast<int>(rng.range(0, 4)) - 1;
     if (trait_value != 0 && !traits.empty()) {
-        Explanation tr{"Черты", signed_value(trait_value), "", {}};
-        tr.terms.push_back({"Черта «" + traits.front() + "»", signed_value(trait_value), "", {}});
+        Explanation tr{loc.format("ui.explain.traits"), signed_value(trait_value), "", {}};
+        tr.terms.push_back({loc.format("ui.explain.trait_named", {Arg("name", traits.front())}),
+                            signed_value(trait_value),
+                            "",
+                            {}});
         add(std::move(tr));
     }
 
     // Whatever is left is attributed to age and experience.
     if (remaining != 0) {
-        add({"Возраст и опыт", signed_value(remaining), "", {}});
+        add({loc.format("ui.explain.age_experience"), signed_value(remaining), "", {}});
     }
     return root;
 }
@@ -125,7 +143,8 @@ std::string CharacterSnapshot::full_name() const {
     return given_name + " " + patronymic + " " + surname;
 }
 
-CharacterSnapshot make_test_character(std::uint32_t seed, std::size_t relation_count) {
+CharacterSnapshot
+make_test_character(const loc::Localizer& loc, std::uint32_t seed, std::size_t relation_count) {
     core::Pcg32 rng(seed, 0xC4A5ULL);
     CharacterSnapshot c;
     c.given_name = pick(rng, kGivenNames);
@@ -149,19 +168,24 @@ CharacterSnapshot make_test_character(std::uint32_t seed, std::size_t relation_c
         }
     }
     for (std::size_t i = 0; i < kSkillCount; ++i) {
-        c.skill_explanations[i] = make_skill_explanation(rng, kSkillNames[i], c.skills[i], c.traits);
+        c.skill_explanations[i] =
+            make_skill_explanation(loc, rng, loc.format(kSkillKeys[i]), c.skills[i], c.traits);
     }
     const int kin_count = static_cast<int>(rng.range(3, 6));
     for (int i = 0; i < kin_count; ++i) {
-        c.family.push_back(std::string(pick(rng, kKin)) + ": " + pick(rng, kGivenNames) + " " +
-                           pick(rng, kPatronymics) + " " + c.surname);
+        const char* kin = pick(rng, kKin);
+        const std::string person =
+            std::string(pick(rng, kGivenNames)) + " " + pick(rng, kPatronymics) + " " + c.surname;
+        c.family.push_back(loc.format(kin, {Arg("person", person)}));
     }
     c.relations.reserve(relation_count);
     for (std::size_t i = 0; i < relation_count; ++i) {
         const int opinion = static_cast<int>(rng.range(0, 100)) - 50;
-        c.relations.push_back(std::to_string(i + 1) + ". " + pick(rng, kGivenNames) + " " +
-                              pick(rng, kPatronymics) + " " + pick(rng, kSurnames) + " — мнение " +
-                              (opinion > 0 ? "+" : "") + std::to_string(opinion));
+        const std::string name =
+            std::string(pick(rng, kGivenNames)) + " " + pick(rng, kPatronymics) + " " + pick(rng, kSurnames);
+        c.relations.push_back(
+            loc.format("ui.character.relation.opinion",
+                       {Arg("n", i + 1), Arg("name", name), Arg("opinion", signed_value(opinion))}));
     }
     return c;
 }
