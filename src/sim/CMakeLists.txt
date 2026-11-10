@@ -6,11 +6,13 @@ add_library(patriarch_sim STATIC
     include/pat/sim/demography.hpp
     include/pat/sim/demo_scenario.hpp
     include/pat/sim/economy/breakdown.hpp
+    include/pat/sim/economy/forecast.hpp
     include/pat/sim/economy/ledger.hpp
     include/pat/sim/economy/money.hpp
     include/pat/sim/economy/population.hpp
     include/pat/sim/economy/production.hpp
     include/pat/sim/economy/rules.hpp
+    include/pat/sim/economy/settlement.hpp
     include/pat/sim/economy/systems.hpp
     include/pat/sim/economy/tables.hpp
     include/pat/sim/economy/taxes.hpp
@@ -37,9 +39,11 @@ add_library(patriarch_sim STATIC
     demography.cpp
     demo_scenario.cpp
     economy/breakdown.cpp
+    economy/forecast.cpp
     economy/population.cpp
     economy/production.cpp
     economy/rules.cpp
+    economy/settlement.cpp
     economy/systems.cpp
     economy/taxes.cpp
     kinship.cpp

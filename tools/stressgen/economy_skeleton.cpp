@@ -13,16 +13,23 @@ namespace pat::stress {
 
 namespace {
 
+/// `economy.settlement`: counts the months and then runs the REAL system of E9-T09 (flat expenses,
+/// rotation of the ring of the statement) under the same name, so `system.economy.settlement` measures it.
 class SettlementStub final : public sim::System {
 public:
     explicit SettlementStub(std::shared_ptr<EconomySkeletonCounters> counters)
-        : counters_(std::move(counters)) {}
+        : counters_(std::move(counters)),
+          real_(sim::economy::make_settlement_system(sim::economy::EconomyRules::defaults())) {}
     [[nodiscard]] std::string_view name() const override { return kEconomySettlementName; }
     [[nodiscard]] sim::Cadence cadence() const override { return sim::Cadence::Monthly; }
-    void run(sim::World&, sim::TickContext&) override { ++counters_->settlement_runs; }
+    void run(sim::World& world, sim::TickContext& context) override {
+        ++counters_->settlement_runs;
+        real_->run(world, context);
+    }
 
 private:
     std::shared_ptr<EconomySkeletonCounters> counters_;
+    std::unique_ptr<sim::System> real_;
 };
 
 class ConstructionStub final : public sim::System {
