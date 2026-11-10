@@ -466,8 +466,11 @@ void apply(World& world, const Command& command) {
     std::visit(Applier{world}, command.payload);
 }
 
-ApplyStats
-process_commands(World& world, std::span<const Command> commands, CommandSource source, CommandLog& log) {
+ApplyStats process_commands(World& world,
+                            std::span<const Command> commands,
+                            CommandSource source,
+                            CommandLog& log,
+                            std::vector<DepartedHead>* departed_heads) {
     ApplyStats stats;
     for (const Command& command : commands) {
         const Result<void, CommandError> verdict = validate(world, command);
@@ -476,6 +479,20 @@ process_commands(World& world, std::span<const Command> commands, CommandSource 
         entry.source = source;
         entry.command = command;
         if (verdict.has_value()) {
+            if (departed_heads != nullptr) {
+                if (const auto* death = std::get_if<cmd::Die>(&command.payload)) {
+                    const DynastyId dynasty = world.characters().dynasty[death->character.index()];
+                    if (dynasty.valid() && world.dynasties().head[dynasty.index()] == death->character) {
+                        const auto position =
+                            std::ranges::lower_bound(*departed_heads, dynasty, {}, &DepartedHead::dynasty);
+                        if (position != departed_heads->end() && position->dynasty == dynasty) {
+                            position->predecessor = death->character;
+                        } else {
+                            departed_heads->insert(position, {dynasty, death->character});
+                        }
+                    }
+                }
+            }
             apply(world, command);
             ++stats.applied;
         } else {

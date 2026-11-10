@@ -37,7 +37,7 @@ struct TickReport {
     Date date;
     TickEvents events;
     std::int64_t tick_index = 0;
-    ApplyStats internal_commands;  // emitted by systems during the previous tick
+    ApplyStats internal_commands;  // queued by systems or issued to resolve a vacant head this tick
     ApplyStats external_commands;  // submitted from outside (UI)
     std::uint64_t wu_quota = 0;
     std::uint64_t wu_used = 0;

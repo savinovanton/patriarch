@@ -592,7 +592,7 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
     archive_sum_ += archive_row_hash(i);
     if (retired && dynasty.valid()) {
         append_chronicle(dynasty, {today(), ChronicleKind::Death, id, {}, static_cast<std::int32_t>(cause)});
-        if (members_of(dynasty).empty()) {
+        if (dynasty_extinct(dynasty)) {
             append_chronicle(dynasty, {today(), ChronicleKind::Extinction, id, {}, 0});
         }
     }
@@ -951,6 +951,10 @@ bool World::set_character_godparents(CharacterId id,
 std::span<const CharacterId> World::members_of(DynastyId dynasty) const noexcept {
     return exists(dynasty) ? std::span<const CharacterId>(members_[dynasty.index()])
                            : std::span<const CharacterId>();
+}
+
+bool World::dynasty_extinct(DynastyId dynasty) const noexcept {
+    return dynasty_mode() && exists(dynasty) && members_of(dynasty).empty();
 }
 
 std::span<const ProvinceId> World::provinces_of(DynastyId dynasty) const noexcept {

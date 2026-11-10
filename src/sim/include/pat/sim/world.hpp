@@ -576,6 +576,8 @@ public:
 
     // ---- indexes (maintained incrementally, deterministic order) ----
     [[nodiscard]] std::span<const CharacterId> members_of(DynastyId dynasty) const noexcept;
+    /// True for an existing dynasty in dynasty mode with no living members.
+    [[nodiscard]] bool dynasty_extinct(DynastyId dynasty) const noexcept;
     [[nodiscard]] std::span<const ProvinceId> provinces_of(DynastyId dynasty) const noexcept;
     /// Ids of all living characters in strictly ascending order.
     [[nodiscard]] std::span<const CharacterId> living() const noexcept { return living_; }

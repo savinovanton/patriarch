@@ -47,6 +47,7 @@ add_executable(patriarch_tests
     schema_test.cpp
     sim_smoke.cpp
     simulation_test.cpp
+    succession_test.cpp
     slot_map_test.cpp
     sparse_set_test.cpp
     spsc_queue_test.cpp
