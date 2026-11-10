@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/core/profile.hpp"
+#include "pat/sim/succession.hpp"
 
 #include <algorithm>
 #include <array>
@@ -108,13 +109,16 @@ const TickReport& Simulation::tick() {
     // Fresh per-tick resources.
     scratch_.reset();
     budget_.reset(config_.wu_per_tick);
+    std::vector<DepartedHead> departed_heads;
+    auto* vacancies = world_.dynasty_mode() ? &departed_heads : nullptr;
 
     // 2. commands emitted by systems during the previous tick
     {
         PAT_SCOPED_TIMER(telemetry_.get(), telemetry_metrics_.internal, "sim.commands.internal");
         batch_ = std::move(pending_internal_);
         pending_internal_.clear();
-        report_.internal_commands = process_commands(world_, batch_, CommandSource::Internal, log_);
+        report_.internal_commands =
+            process_commands(world_, batch_, CommandSource::Internal, log_, vacancies);
     }
 
     // 3. commands submitted from outside (bounded by what is queued right now, so a fast producer
@@ -128,7 +132,22 @@ const TickReport& Simulation::tick() {
             batch_.push_back(command);
             --remaining;
         }
-        report_.external_commands = process_commands(world_, batch_, CommandSource::External, log_);
+        report_.external_commands =
+            process_commands(world_, batch_, CommandSource::External, log_, vacancies);
+    }
+
+    // Resolve against the final membership, after deaths and explicit appointments in both batches.
+    for (const auto& [dynasty, predecessor] : departed_heads) {
+        if (world_.dynasties().head[dynasty.index()].valid()) {
+            continue;
+        }
+        const CharacterId successor = fallback_successor(world_, dynasty, predecessor);
+        if (successor.valid()) {
+            const Command appointment{{}, cmd::SetDynastyHead{dynasty, successor}};
+            const auto result = process_commands(world_, {&appointment, 1}, CommandSource::Internal, log_);
+            report_.internal_commands.applied += result.applied;
+            report_.internal_commands.rejected += result.rejected;
+        }
     }
 
     // 4. systems

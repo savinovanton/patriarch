@@ -26,6 +26,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/scheduled_queue.hpp
     include/pat/sim/sim.hpp
     include/pat/sim/simulation.hpp
+    include/pat/sim/succession.hpp
     include/pat/sim/system.hpp
     include/pat/sim/task_executor.hpp
     include/pat/sim/work_budget.hpp
@@ -49,6 +50,7 @@ add_library(patriarch_sim STATIC
     save.cpp
     sim.cpp
     simulation.cpp
+    succession.cpp
     world.cpp
     world_economy.cpp
     world_economy_io.cpp

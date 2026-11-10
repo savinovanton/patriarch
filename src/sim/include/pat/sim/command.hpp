@@ -8,6 +8,7 @@
 #include <span>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 // Commands are the ONLY way UI, AI and scenarios change the simulation state (ADR-0001).
 // A command is validated against the current world and then applied at a tick boundary; both the
@@ -179,8 +180,18 @@ struct ApplyStats {
 
 class CommandLog;
 
+struct DepartedHead {
+    DynastyId dynasty;
+    CharacterId predecessor;
+};
+
 /// Validates and applies the commands in order, recording every command with its outcome.
-ApplyStats
-process_commands(World& world, std::span<const Command> commands, CommandSource source, CommandLog& log);
+/// If supplied, departed_heads receives the last incumbent killed by an accepted Die per dynasty,
+/// sorted by dynasty id.
+ApplyStats process_commands(World& world,
+                            std::span<const Command> commands,
+                            CommandSource source,
+                            CommandLog& log,
+                            std::vector<DepartedHead>* departed_heads = nullptr);
 
 }  // namespace pat::sim
