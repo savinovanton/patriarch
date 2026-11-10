@@ -1,0 +1,28 @@
+<rml>
+<head>
+    <title>Credits</title>
+    <link type="text/rcss" href="olive.rcss"/>
+    <link type="text/rcss" href="credits.rcss"/>
+</head>
+<body data-model="credits">
+<div id="window">
+    <h1 id="title">{{ t.title }}</h1>
+
+    <div id="list">
+        <p id="empty" data-if="is_empty">{{ t.empty }}</p>
+        <div class="section" data-for="section : sections">
+            <h2 class="section-title">{{ section.title }}</h2>
+            <div class="item" data-for="item : section.items">
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-meta" data-if="item.meta != ''">{{ item.meta }}</div>
+                <div class="item-text" data-if="item.text != ''">{{ item.text }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="actions">
+        <button class="btn" id="close" data-event-click="close()">{{ t.close }}</button>
+    </div>
+</div>
+</body>
+</rml>

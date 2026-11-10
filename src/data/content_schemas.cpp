@@ -1,5 +1,6 @@
 #include "pat/data/content_schemas.hpp"
 
+#include "pat/data/credits_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
 #include "pat/data/economy_schemas.hpp"
 #include "pat/data/m1_schemas.hpp"
@@ -17,6 +18,8 @@ SchemaSet content_schemas() {
     add_demography_schemas(set);
     // E7-T09: name and portrait pools (data/names/).
     add_names_schemas(set);
+    // UI-213: the credits screen entries (data/credits/).
+    add_credits_schemas(set);
     return set;
 }
 

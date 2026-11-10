@@ -1,0 +1,35 @@
+format_version = 1
+
+# Титры, записанные вручную (UI-213, docs/dev/credits.md, вид credit). Записи, которые следуют из данных
+# (источники манифеста геоданных с attribution.required и строки реестра ассетов с attribution_required),
+# лежат в generated.pd; их пишет tools/gen_credits.py. Запись с полем source / asset закрывает такой
+# источник сама и показывает его по-своему; проверка tools/gen_credits.py --check следит, чтобы в тексте
+# записи осталась атрибуция из манифеста.
+#
+# Раздел (section): authors — авторы, data — источники данных, assets — ассеты и шрифты.
+# Тексты — в data/loc/ru/credits.pd.
+
+credit "authors" {
+    section = authors
+    order = 10
+    name_key = "credits.authors.name"
+    text_key = "credits.authors.text"
+}
+
+# Владелец проекта: решение от 2026-11-08 (issue 97) — источник подписывается именно так.
+credit "rnb" {
+    section = data
+    order = 10
+    source = "nlr-historical-maps"
+    name_key = "credits.rnb.name"
+    text_key = "credits.rnb.text"
+}
+
+# Natural Earth — общественное достояние, атрибуция не обязательна; благодарность по просьбе авторов набора.
+credit "natural_earth" {
+    section = data
+    order = 20
+    source = "natural-earth-10m-physical"
+    name_key = "credits.natural_earth.name"
+    text_key = "credits.natural_earth.text"
+}

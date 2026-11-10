@@ -35,6 +35,8 @@ jobs:
         run: python3 tools/check_assets.py
       - name: Check the geodata manifest (no downloads)
         run: python3 tools/geo/geo_manifest.py
+      - name: Check the credits cover every source and asset that needs attribution
+        run: python3 tools/gen_credits.py --check
       - name: Test the checker
         run: python3 -m unittest discover -s tests/tools -v
       - name: Check generated tables are up to date

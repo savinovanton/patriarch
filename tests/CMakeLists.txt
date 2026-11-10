@@ -26,6 +26,7 @@ add_executable(patriarch_tests
     fixed_test.cpp
     golden_test.cpp
     ids_test.cpp
+    credits_content_test.cpp
     kinship_test.cpp
     localization_test.cpp
     log_test.cpp
@@ -76,6 +77,7 @@ if(PATRIARCH_BUILD_ENGINE)
     target_sources(patriarch_tests PRIVATE
         camera_terrain_test.cpp
         character_window_test.cpp
+        credits_window_test.cpp
         frame_clock_test.cpp
         game_bridge_test.cpp
         labels_test.cpp

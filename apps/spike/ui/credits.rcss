@@ -1,0 +1,125 @@
+/* Credits window ("Титры") in the Olive Stone theme (tokens in olive.rcss and docs/dev/ui-design.md).
+   Temporary test layout: a centred panel with a scrolling list. */
+
+h1, h2, p {
+    display: block;
+}
+
+body {
+    pointer-events: none;
+}
+
+#window {
+    pointer-events: auto;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-left: -300dp;
+    margin-top: -280dp;
+    width: 600dp;
+    padding: 14dp 16dp;
+    background-color: #282f26f2;
+    border: 1dp #626d50;
+    border-radius: 2dp;
+}
+
+h1 {
+    font-family: "Times New Roman";
+    font-size: 24dp;
+    font-weight: bold;
+    color: #eee8d8;
+    margin-bottom: 8dp;
+}
+
+h2 {
+    font-family: "Times New Roman";
+    font-size: 14dp;
+    font-weight: bold;
+    letter-spacing: 1dp;
+    text-transform: uppercase;
+    color: #a0ad8b;
+    margin: 10dp 0 5dp 0;
+}
+
+#list {
+    height: 460dp;
+    padding: 0 8dp;
+    overflow-y: scroll;
+    background-color: #1c211b;
+    border: 1dp #626d50;
+}
+
+#empty {
+    color: #a0ad8b;
+    margin-top: 10dp;
+}
+
+.item {
+    margin-bottom: 10dp;
+}
+
+.item-name {
+    color: #eee8d8;
+    font-size: 15dp;
+    font-weight: bold;
+}
+
+.item-meta {
+    color: #a0ad8b;
+    font-size: 12dp;
+}
+
+.item-text {
+    color: #c5c7b5;
+    font-size: 13dp;
+    margin-top: 2dp;
+}
+
+#actions {
+    margin-top: 10dp;
+    text-align: right;
+}
+
+.btn {
+    display: inline-block;
+    padding: 5dp 12dp;
+    background-color: #3d4736;
+    border: 1dp #c8af77;
+    border-radius: 2dp;
+    color: #eee8d8;
+    font-size: 13dp;
+}
+
+.btn:hover {
+    background-color: #4d5a44;
+    color: #ffffff;
+}
+
+.btn:active {
+    background-color: #2f3829;
+}
+
+scrollbarvertical {
+    width: 12dp;
+}
+
+scrollbarvertical slidertrack {
+    background-color: #1c211b;
+}
+
+scrollbarvertical sliderbar {
+    width: 12dp;
+    min-height: 24dp;
+    background-color: #626d50;
+    border-radius: 2dp;
+}
+
+scrollbarvertical sliderbar:hover {
+    background-color: #7d8a66;
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc {
+    width: 0;
+    height: 0;
+}

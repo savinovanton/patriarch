@@ -1,5 +1,6 @@
 #include "lint.hpp"
 
+#include "pat/content/credits_content.hpp"
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
@@ -262,6 +263,11 @@ Report lint(std::span<const data::ContentSource* const> roots,
             const content::NamePoolsResult names = content::build_name_pools(loaded.registry);
             if (!names) {
                 for (const data::LoadError& error : names.error())
+                    findings.push_back(from_load_error(error));
+            }
+            const content::CreditEntriesResult credits = content::build_credits(loaded.registry);
+            if (!credits) {
+                for (const data::LoadError& error : credits.error())
                     findings.push_back(from_load_error(error));
             }
             for (const data::LoadError& error : content::validate_m1_definitions(loaded.registry))

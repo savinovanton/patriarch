@@ -162,6 +162,8 @@ pat::loc::FormatResult res = loc.format_to(std::span<char>(fixed), "ui.menu.worl
 - **Нет ключа** — на экране `[[ключ]]`, одно предупреждение в лог, окно не падает (тесты `HUD: a missing key…`).
 - Не переведено сознательно: отладочная панель `apps/spike/ui/demo.rml` (тест шрифтов, F2), строка fps в `main.cpp`, названия клавиш (`Esc`), цифры скоростей, а также временные имена-заглушки (`kGivenNames`, кланы в `world_view.cpp`, города в `make_test_hud`) — они заменятся данными (`names.pd`, карта).
 
+Окно «Титры» (UI-213, [credits.md](credits.md)) читает свои подписи так же (`ui.credits.*`), а записи списка берёт из данных: ключи записей форматирует мост `game::credits_snapshot`, юридические тексты источников остаются как в манифесте.
+
 Тесты: `tests/hud_test.cpp`, `time_bar_test.cpp`, `character_window_test.cpp`, `game_bridge_test.cpp` (общий помощник — `tests/ui_loc_fixture.hpp`: настоящие таблицы, таблица с английским «модом», пустая таблица).
 
 ## 10. Что дальше

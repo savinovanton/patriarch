@@ -1,6 +1,7 @@
 add_library(patriarch_ui STATIC
     include/pat/ui/character_snapshot.hpp
     include/pat/ui/character_window.hpp
+    include/pat/ui/credits_window.hpp
     include/pat/ui/explanation.hpp
     include/pat/ui/hud_snapshot.hpp
     include/pat/ui/hud_window.hpp
@@ -10,6 +11,7 @@ add_library(patriarch_ui STATIC
     include/pat/ui/tooltip_state.hpp
     character_snapshot.cpp
     character_window.cpp
+    credits_window.cpp
     explanation.cpp
     hud_window.cpp
     text.cpp
