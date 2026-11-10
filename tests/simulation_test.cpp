@@ -436,3 +436,29 @@ TEST_CASE("simulation: submit() from another thread is safe and every command is
     }
     CHECK(accepted_in_log == static_cast<std::size_t>(kCommands));
 }
+
+TEST_CASE("simulation: restore_state keeps the hash, and births afterwards match a plain copy") {
+    World original = make_world();
+    for (int i = 0; i < 40; ++i) {
+        CharacterInit init;
+        init.dynasty = DynastyId(static_cast<std::uint32_t>(i % 2));
+        init.birth_date = Date::from_ymd(1680, 1, 1);
+        (void)original.create_character(init);
+    }
+    const auto before = original.compute_hash();
+
+    Simulation sim(make_world());
+    sim.restore_state(original, {});
+    CHECK(sim.world().compute_hash().total == before.total);
+
+    // Reserved capacity is invisible: the same births give the same ids and the same state.
+    World reserved = sim.world();
+    World plain = original;
+    for (int i = 0; i < 200; ++i) {
+        CharacterInit init;
+        init.dynasty = DynastyId(static_cast<std::uint32_t>(i % 2));
+        init.birth_date = Date::from_ymd(1703, 1, 1);
+        CHECK(reserved.create_character(init) == plain.create_character(init));
+    }
+    CHECK(reserved.compute_hash().total == plain.compute_hash().total);
+}
