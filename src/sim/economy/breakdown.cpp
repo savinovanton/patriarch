@@ -20,6 +20,7 @@ constexpr std::array kTermKeys{
     TermKey{term::kTaxLaw, "economy.tax.law"},
     TermKey{term::kTaxLowControl, "economy.tax.low_control"},
     TermKey{term::kTaxAnarchy, "economy.tax.anarchy"},
+    TermKey{term::kTaxTotal, "economy.tax.total"},
     TermKey{term::kTaxLeak, "economy.tax.leak"},
     TermKey{term::kTaxCrownShare, "economy.tax.crown_share"},
 

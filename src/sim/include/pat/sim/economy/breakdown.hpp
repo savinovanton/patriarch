@@ -134,6 +134,7 @@ inline constexpr std::uint16_t kTaxControl = 1004;
 inline constexpr std::uint16_t kTaxLaw = 1005;
 inline constexpr std::uint16_t kTaxLowControl = 1006;
 inline constexpr std::uint16_t kTaxAnarchy = 1007;
+inline constexpr std::uint16_t kTaxTotal = 1008;  // the root of a tax breakdown: what the owner keeps
 inline constexpr std::uint16_t kTaxLeak = 1010;
 inline constexpr std::uint16_t kTaxCrownShare = 1011;
 // 2000: mood of a group (F8)

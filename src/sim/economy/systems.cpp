@@ -5,6 +5,7 @@
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/tables.hpp"
+#include "pat/sim/economy/taxes.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -46,8 +47,11 @@ private:
         // Step 2: growth of the population.
         (void)step_province_population(world, rules_.population, province);
         // Step 3: production and consumption (F2-F5); the grain stock and the wealth are written. Its
-        // result carries the holding income that step 4 (taxes, E9-T08) will post.
-        (void)step_province_production(world, rules_, *prices_, province);
+        // result carries the holding income that step 4 posts.
+        const ProvinceProduction production = step_province_production(world, rules_, *prices_, province);
+        // Step 4: taxes of the groups and the holding income go to the owner (and the crown's share of
+        // a city to the crown) through post_money; `income_last_month` is written (F6, E9-T08).
+        (void)step_province_taxes(world, rules_, province, production.holding_income_kop);
         // Step 8: the slot is done. (The population cache was refreshed by the World with the sizes.)
         PAT_ASSERT(world.economy().provinces.last_slot_date[province.index()] != today,
                    "a province must be processed once per month");

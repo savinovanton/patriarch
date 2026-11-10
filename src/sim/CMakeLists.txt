@@ -13,6 +13,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/rules.hpp
     include/pat/sim/economy/systems.hpp
     include/pat/sim/economy/tables.hpp
+    include/pat/sim/economy/taxes.hpp
     include/pat/sim/economy/types.hpp
     include/pat/sim/entity_ids.hpp
     include/pat/sim/entity_table.hpp
@@ -39,6 +40,7 @@ add_library(patriarch_sim STATIC
     economy/production.cpp
     economy/rules.cpp
     economy/systems.cpp
+    economy/taxes.cpp
     kinship.cpp
     mortality.cpp
     names.cpp

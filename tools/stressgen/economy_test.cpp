@@ -186,7 +186,7 @@ TEST_CASE("stressgen economy: memory per province is counted from the tables and
 }
 
 TEST_CASE(
-    "economy skeleton: the systems register as system.economy.*, count, and only the population moves") {
+    "economy skeleton: the systems register as system.economy.*, count, and only people and money move") {
     auto generated = stress::generate(economy_config("year60", 7));
     REQUIRE(generated);
     const sim::World& world = generated.value().world;
@@ -200,11 +200,12 @@ TEST_CASE(
     sim::Simulation without(world);
     without.run_days(365);
 
-    // The stubs change nothing; the real `economy.provinces` of E9-T06 grows the population (a year of
-    // peace: every group of a province is processed once a month) and touches only people and slots.
+    // The stubs change nothing; the real `economy.provinces` grows the population (E9-T06; a year of
+    // peace: every group of a province is processed once a month) and, since E9-T08, pays the taxes
+    // and the holding income to the accounts of the owners; it touches nothing else.
     CHECK(with.world().compute_hash() != without.world().compute_hash());
     CHECK(with.world().check_invariants().empty());
-    CHECK(with.world().economy().accounts == without.world().economy().accounts);
+    CHECK(with.world().economy().accounts != without.world().economy().accounts);
     CHECK(with.world().economy().provinces.control == without.world().economy().provinces.control);
     CHECK(with.world().economy().groups.mood == without.world().economy().groups.mood);
     for (std::size_t p = 0; p < provinces; ++p) {
