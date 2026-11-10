@@ -23,7 +23,7 @@
 contentlint [--root DIR]... [--lang ru] [--fallback en[,de]] [--strict] [--format text|github]
             [--used-keys FILE]... [--scan DIR]... [--no-scan] [--ignore-unused ПРЕФИКС]...
             [--no-unused] [--no-rules] [--help]
-.\out\win-msvc\tools\contentlint\Debug\contentlint.exe --root data --strict --ignore-unused ui.
+.\out\win-msvc\tools\contentlint\Debug\contentlint.exe --root data --strict
 ```
 
 | Параметр | Смысл |
@@ -94,11 +94,11 @@ contentlint [--root DIR]... [--lang ru] [--fallback en[,de]] [--strict] [--forma
 
 Ссылки на несуществующие ключи эвристика **не находит** (она ищет только известные ключи); их ловит `CL005` по явному списку и, во время работы, `Localizer::requested_missing_keys()` (заполнитель `[[ключ]]`).
 
-**Временное исключение в CI.** Таблица `data/loc/ru/ui.pd` написана заранее, окна UI пока используют зашитые литералы, поэтому на `data/` линтер вызывается с `--ignore-unused ui.`. Когда UI начнёт читать таблицу (подключение к `Localizer`), параметр нужно убрать в `.github/workflows/ci.yml` и в `tools/contentlint/CMakeLists.txt`.
+**Исключений нет.** Окна UI читают таблицу `data/loc/ru/ui.pd` через `Localizer` (#233, [localization.md](localization.md) §9), поэтому CI и ctest запускают линтер на `data/` без `--ignore-unused`. Новый ключ `ui.*` без читателя в `src/`/`apps/` — предупреждение `CL004`, под `--strict` — ошибка; ключ, собираемый на лету (`"ui.menu." + key`), покрывается префиксом.
 
 ## 7. CI и тесты
 
-- **CI**: job `contentlint` в `.github/workflows/ci.yml` — минимальная сборка на Linux (`linux-gcc` без тестов и бенчмарков, цель `contentlint`) и запуск `contentlint --root data --strict --ignore-unused ui. --format github`.
+- **CI**: job `contentlint` в `.github/workflows/ci.yml` — минимальная сборка на Linux (`linux-gcc` без тестов и бенчмарков, цель `contentlint`) и запуск `contentlint --root data --strict --format github`.
 - **ctest**: `contentlint_data_clean` (реальный `data/` зелёный), `contentlint_good_corpus` (маленький полный корпус зелёный при `--strict`), `contentlint_detects_{schema,reference,loc_duplicate,loc_plural}` (корпуса ошибок в `tests/data/contentlint/bad/`; шаблон `WILL_FAIL`, как у `schemadoc_check_detects_diff`: линтер обязан завершиться с ненулевым кодом).
 - **doctest** (`tests/contentlint_test.cpp`): точные коды и позиции на тех же корпусах, формат GitHub, коды выхода 0/1/2, сортировка и детерминизм, мусорные входы, покрытие, неиспользуемые ключи, разбор `--used-keys`.
 

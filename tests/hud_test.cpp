@@ -7,6 +7,8 @@
 
 #include <doctest/doctest.h>
 
+#include "ui_loc_fixture.hpp"
+
 TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
     using namespace pat::engine;
     CHECK(design_ui_scale({1920, 1080}) == 1.0f);
@@ -21,6 +23,7 @@ TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
 
 #include <RmlUi/Core.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -28,9 +31,53 @@ TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
 namespace {
 
 using namespace pat::engine;
-using pat::ui::HudResource;
 using pat::ui::HudSnapshot;
 using pat::ui::HudWindow;
+
+constexpr const char* kNbsp = "\xC2\xA0";  // the group separator of {n:group}
+
+struct HudFixture {
+    static constexpr int kW = 1920;
+    static constexpr int kH = 1080;
+    std::unique_ptr<IRenderer> renderer;
+    std::unique_ptr<UiContext> ui;
+    std::unique_ptr<HudWindow> hud;
+
+    HudFixture(const pat::loc::Localizer& loc, const HudSnapshot& snapshot) {
+        RendererDesc rd;
+        rd.size = {kW, kH};
+        rd.software = true;
+        auto created = create_renderer(rd);
+        REQUIRE(created.has_value());
+        renderer = std::move(created).value();
+        UiDesc ud;
+        ud.size = {kW, kH};
+        ud.ui_scale = design_ui_scale({kW, kH});
+        ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
+        ud.font_files.emplace_back("C:/Windows/Fonts/arialbd.ttf");
+        ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
+        ud.font_files.emplace_back("C:/Windows/Fonts/timesbd.ttf");
+        auto ui_created = UiContext::create(*renderer, nullptr, ud);
+        REQUIRE(ui_created.has_value());
+        ui = std::move(ui_created).value();
+        auto hud_created = HudWindow::create(*ui,
+                                             std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
+                                             std::filesystem::path(PATRIARCH_ASSETS_DIR) / "ui" / "olive",
+                                             loc);
+        REQUIRE(hud_created.has_value());
+        hud = std::move(hud_created).value();
+        hud->set_snapshot(snapshot);
+        ui->update();
+    }
+
+    ~HudFixture() {
+        hud.reset();  // window before ui, ui before renderer
+        ui.reset();
+        renderer.reset();
+    }
+
+    Rml::Element* by_id(const char* id) { return hud->document()->GetElementById(id); }
+};
 
 struct Rgb {
     int r, g, b;
@@ -76,11 +123,12 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
 
     auto hud_created = HudWindow::create(*ui,
                                          std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
-                                         std::filesystem::path(PATRIARCH_ASSETS_DIR) / "ui" / "olive");
+                                         std::filesystem::path(PATRIARCH_ASSETS_DIR) / "ui" / "olive",
+                                         pat::test::ui_localizer());
     REQUIRE(hud_created.has_value());
     std::unique_ptr<HudWindow> hud = std::move(hud_created).value();
 
-    HudSnapshot snap = pat::ui::make_test_hud();
+    HudSnapshot snap = pat::ui::make_test_hud(pat::test::ui_localizer());
     hud->set_snapshot(snap);
     ui->update();
 
@@ -90,7 +138,10 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     Rml::ElementList resources = visible_resources(doc);
     REQUIRE(resources.size() == 5);
     CHECK(resources[0]->GetChild(1)->GetInnerRML() == "Казна");
-    CHECK(resources[0]->GetChild(2)->GetInnerRML() == "12 480");
+    CHECK(resources[0]->GetChild(2)->GetInnerRML() == std::string("12") + kNbsp + "480");
+    CHECK(resources[0]->GetChild(3)->GetInnerRML() == "+84");
+    CHECK(resources[0]->GetAttribute<Rml::String>("title", "") ==
+          std::string("Казна: 12") + kNbsp + "480 (+84)");
 
     // Badges: the bell and the charter have pending items, the embassy has none.
     Rml::Element* bell = doc->GetElementById("alert-bell");
@@ -102,7 +153,7 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
 
     // A negative delta gets the "neg" class; the resource list follows the snapshot.
     snap.resources.resize(2);
-    snap.resources[1].delta = "-12";
+    snap.resources[1].delta = -12;
     hud->set_snapshot(snap);
     ui->update();
     resources = visible_resources(doc);
@@ -132,7 +183,7 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
         }
         return n;
     };
-    snap = pat::ui::make_test_hud();
+    snap = pat::ui::make_test_hud(pat::test::ui_localizer());
     hud->set_snapshot(snap);
     ui->update();
     CHECK(hud->tab() == "cities");
@@ -202,6 +253,93 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
 
     hud.reset();
     ui.reset();
+}
+
+TEST_CASE("HUD: every caption, card and chronicle line comes from the string table") {
+    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
+        MESSAGE("Arial not found, skipping");
+        return;
+    }
+    const pat::loc::Localizer& loc = pat::test::ui_localizer();
+    HudFixture fx(loc, pat::ui::make_test_hud(loc));
+    Rml::ElementDocument* doc = fx.hud->document();
+    REQUIRE(doc != nullptr);
+
+    CHECK(fx.by_id("affairs-title")->GetInnerRML() == "ДЕЛА ГОСУДАРСТВА");
+    CHECK(fx.by_id("tab-cities")->GetInnerRML() == "Города");
+    CHECK(fx.by_id("tab-armies")->GetInnerRML() == "Войска");
+    CHECK(fx.by_id("tab-dynasties")->GetInnerRML() == "Династии");
+    CHECK(fx.hud->menu_name(0) == "Мир");
+    CHECK(fx.hud->menu_name(8) == "Меню");
+    CHECK(fx.hud->menu_name(9).empty());
+    CHECK(fx.by_id("menu-chronicle")->GetAttribute<Rml::String>("title", "") == "Летопись");
+
+    // Cards and chronicle lines use parameters and plural forms: "1 вопрос", not a fixed text.
+    const std::string all = doc->GetInnerRML();
+    CHECK(all.find("1 вопрос в повестке") != std::string::npos);
+    CHECK(all.find("Ожидают приёма при дворе") != std::string::npos);
+    CHECK(all.find("Посольство прибыло в Москву") != std::string::npos);
+    CHECK(all.find("94 т") != std::string::npos);  // thousands format of the city list
+
+    HudSnapshot snap = pat::ui::make_test_hud(loc);
+    snap.affairs[0].count = 5;
+    fx.hud->set_snapshot(snap);
+    fx.ui->update();
+    CHECK(doc->GetInnerRML().find("5 вопросов в повестке") != std::string::npos);
+    snap.affairs[0].count = 2;
+    fx.hud->set_snapshot(snap);
+    fx.ui->update();
+    CHECK(doc->GetInnerRML().find("2 вопроса в повестке") != std::string::npos);
+}
+
+TEST_CASE("HUD: changing the language changes the texts after relocalize()") {
+    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
+        MESSAGE("Arial not found, skipping");
+        return;
+    }
+    pat::loc::Localizer loc = pat::test::load_ui_localizer_with_english();
+    HudFixture fx(loc, pat::ui::make_test_hud(loc));
+    Rml::ElementDocument* doc = fx.hud->document();
+    REQUIRE(doc != nullptr);
+    CHECK(fx.by_id("tab-cities")->GetInnerRML() == "Города");
+
+    const std::string_view english[] = {"en", "ru"};
+    REQUIRE(loc.set_chain(english) == 2);
+    fx.hud->relocalize();
+    fx.ui->update();
+    CHECK(fx.by_id("tab-cities")->GetInnerRML() == "Cities");
+    CHECK(fx.by_id("tab-armies")->GetInnerRML() == "Войска");  // not in the English table: falls back
+    Rml::ElementList resources = visible_resources(doc);
+    REQUIRE(resources.size() == 5);
+    CHECK(resources[0]->GetChild(1)->GetInnerRML() == "Treasury");
+    CHECK(doc->GetInnerRML().find("1 item on the agenda") != std::string::npos);  // English plural
+
+    const std::string_view russian[] = {"ru", "en"};
+    loc.set_chain(russian);
+    fx.hud->relocalize();
+    fx.ui->update();
+    CHECK(fx.by_id("tab-cities")->GetInnerRML() == "Города");
+    CHECK(visible_resources(doc)[0]->GetChild(1)->GetInnerRML() == "Казна");
+}
+
+TEST_CASE("HUD: a missing key shows as [[key]] and does not break the window") {
+    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
+        MESSAGE("Arial not found, skipping");
+        return;
+    }
+    const pat::loc::Localizer empty = pat::test::load_empty_localizer();
+    HudSnapshot snap;
+    snap.resources = {{"treasury", 100, 5}};
+    snap.chronicle = {{"10:00", "ui.no.such.key", 0}};
+    HudFixture fx(empty, snap);
+    Rml::ElementDocument* doc = fx.hud->document();
+    REQUIRE(doc != nullptr);
+    CHECK(fx.by_id("tab-cities")->GetInnerRML() == "[[ui.hud.tab.cities]]");
+    CHECK(fx.hud->menu_name(0) == "[[ui.menu.world]]");
+    CHECK(visible_resources(doc)[0]->GetChild(1)->GetInnerRML() == "[[ui.res.treasury]]");
+    CHECK(doc->GetInnerRML().find("[[ui.no.such.key]]") != std::string::npos);
+    const auto missing = empty.requested_missing_keys();
+    CHECK(std::find(missing.begin(), missing.end(), "ui.no.such.key") != missing.end());
 }
 
 }  // namespace

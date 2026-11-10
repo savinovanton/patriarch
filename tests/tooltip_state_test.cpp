@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include "ui_loc_fixture.hpp"
+
 using namespace pat::ui;
 
 namespace {
@@ -111,10 +113,10 @@ TEST_CASE("explanation: generated markup has a row per term and data-tip only on
 TEST_CASE("test characters: explanation trees add up and go three levels deep") {
     int deepest = 0;
     for (std::uint32_t seed = 1; seed <= 40; ++seed) {
-        const CharacterSnapshot c = make_test_character(seed, 5);
+        const CharacterSnapshot c = make_test_character(pat::test::ui_localizer(), seed, 5);
         for (std::size_t i = 0; i < kSkillCount; ++i) {
             const Explanation& e = c.skill_explanations[i];
-            CHECK(e.label == kSkillNames[i]);
+            CHECK(e.label == pat::test::ui_localizer().format(kSkillKeys[i]));
             CHECK(std::stoi(e.value) == c.skills[i]);
             check_consistent(e);
             deepest = std::max(deepest, depth(e));

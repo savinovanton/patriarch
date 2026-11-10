@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/loc/localizer.hpp"
 #include "pat/sim/date.hpp"
 #include "pat/sim/world.hpp"
 #include "pat/ui/character_snapshot.hpp"
@@ -19,8 +20,9 @@
 
 namespace pat::game {
 
-/// "12 января 1703" - Julian date with Russian month names (the calendar itself is Julian, GDD).
-[[nodiscard]] std::string format_date_ru(sim::Date date);
+/// "12 января 1703" - Julian date (the calendar itself is Julian, GDD) with the month name and the
+/// layout taken from the string table (ui.date.long, ui.month.*).
+[[nodiscard]] std::string format_date(const loc::Localizer& loc, sim::Date date);
 
 /// Placeholder clan name for a dynasty ("Шереметевы") and the male surname form ("Шереметев").
 [[nodiscard]] std::string dynasty_name(sim::DynastyId dynasty);
@@ -43,8 +45,10 @@ development_palette(const sim::World& world,
                     std::size_t map_province_count,
                     std::span<const sim::ProvinceId> map_to_world = {});
 
-/// Window data for a character. The character must be alive.
-[[nodiscard]] ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::CharacterId character);
+/// Window data for a character. The character must be alive. Role, health and the phrases of the
+/// family and relation lines come from `loc` (the lines keep the language they were built in).
+[[nodiscard]] ui::CharacterSnapshot
+character_snapshot(const loc::Localizer& loc, const sim::World& world, sim::CharacterId character);
 
 /// Head of the dynasty that owns map province `map_province` (invalid if unowned or without a head).
 [[nodiscard]] sim::CharacterId head_for_province(const sim::World& world,

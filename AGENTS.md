@@ -31,7 +31,7 @@ src/loc/       локализация (E4-T06): таблицы строк `data/
 src/content/   сборка игровых правил из загруженных данных (data + sim → EconomyRules и т. п.); зависит от data, sim и core (сами `data` и `sim` друг о друге не знают)
 src/mapdata/   данные карты (формат PMD1, загрузчик, генератор тестовой карты, проверка инвариантов); зависит только от core
 src/engine/    движок: окно SDL3, рендерер D3D11 за IRenderer, FrameClock (зависит только от core)
-src/ui/        игровые окна на RmlUi (data model над снапшотами; зависит от engine и core, не от sim)
+src/ui/        игровые окна на RmlUi (data model над снапшотами, тексты из таблиц через loc; зависит от engine, loc и core, не от sim)
 src/game/      мост «снапшот мира → UI» (палитры карты, данные окон, форматирование дат); читает World, не меняет его
 apps/spike/    приложение-спайк E3 (окно + рендер; дальше карта и UI)
 tools/         simcli (headless-раннер), mapgen (генератор/инспектор карт), скрипты: format.ps1, check_assets.py, gen_tables.py

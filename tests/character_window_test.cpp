@@ -8,15 +8,19 @@
 
 #include <doctest/doctest.h>
 
+#include "ui_loc_fixture.hpp"
+
 #ifdef _WIN32
 
 #include <RmlUi/Core.h>
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <thread>
+#include <vector>
 
 namespace {
 
@@ -43,6 +47,7 @@ struct Fixture {
     std::unique_ptr<IRenderer> renderer;
     std::unique_ptr<UiContext> ui;
     std::unique_ptr<CharacterWindow> window;
+    pat::loc::Localizer loc = pat::test::load_ui_localizer_with_english();
 
     explicit Fixture(const char* name, float scale = 1.0f) {
         dir = std::filesystem::temp_directory_path() / name;
@@ -69,7 +74,7 @@ struct Fixture {
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
 
-        auto w = CharacterWindow::create(*ui, dir / "character.rml");
+        auto w = CharacterWindow::create(*ui, dir / "character.rml", loc);
         REQUIRE(w.has_value());
         window = std::move(w).value();
     }
@@ -132,12 +137,12 @@ TEST_CASE("CharacterWindow: snapshot data is bound into the document and updates
         return;
     }
     Fixture fx("patriarch_char_binding");
-    CharacterSnapshot s = pat::ui::make_test_character(3);
+    CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 3);
     fx.window->set_snapshot(s);
     fx.frame();
 
     CHECK(fx.by_id("name")->GetInnerRML() == s.full_name());
-    CHECK(fx.by_id("age")->GetInnerRML() == std::to_string(s.age));
+    CHECK(fx.by_id("subtitle")->GetInnerRML().find(std::to_string(s.age)) != std::string::npos);
     CHECK(fx.count_class("skill") == pat::ui::kSkillCount);
     CHECK(fx.count_class("trait") == s.traits.size());
 
@@ -178,7 +183,7 @@ TEST_CASE("CharacterWindow: snapshot data is bound into the document and updates
     fx.window->set_snapshot(next);
     fx.frame();
     CHECK(fx.by_id("name")->GetInnerRML() == next.full_name());
-    CHECK(fx.by_id("age")->GetInnerRML() == std::to_string(next.age));
+    CHECK(fx.by_id("subtitle")->GetInnerRML().find(std::to_string(next.age)) != std::string::npos);
     CHECK(fx.count_class("trait") == next.traits.size());
     CHECK(fills[0]->GetOffsetWidth() == doctest::Approx(bars[0]->GetClientWidth()).epsilon(0.02));
 }
@@ -188,7 +193,7 @@ TEST_CASE("CharacterWindow: tabs switch the content") {
         return;
     }
     Fixture fx("patriarch_char_tabs");
-    const CharacterSnapshot s = pat::ui::make_test_character(5);
+    const CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 5);
     fx.window->set_snapshot(s);
     fx.frame();
     CHECK(fx.window->tab() == "overview");
@@ -217,7 +222,7 @@ TEST_CASE("CharacterWindow: the 1000-row list is virtual - few DOM rows, full sc
     }
     for (const float scale : {1.0f, 1.5f, 2.0f}) {
         Fixture fx("patriarch_char_list", scale);
-        const CharacterSnapshot s = pat::ui::make_test_character(9, 1000);
+        const CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 9, 1000);
         fx.window->set_snapshot(s);
         fx.window->set_tab("relations");
         fx.frame();
@@ -225,7 +230,7 @@ TEST_CASE("CharacterWindow: the 1000-row list is virtual - few DOM rows, full sc
 
         Rml::Element* list = fx.by_id("rel_list");
         REQUIRE(list != nullptr);
-        CHECK(fx.by_id("rel-total")->GetInnerRML() == "1000");
+        CHECK(fx.by_id("rel-total")->GetInnerRML() == "Знакомые и мнения (всего: 1000)");
 
         const std::size_t rows = fx.window->rows_in_document();
         CHECK(rows > 5);
@@ -272,7 +277,7 @@ TEST_CASE("CharacterWindow: wheel scrolls the list, small and empty lists work")
         return;
     }
     Fixture fx("patriarch_char_wheel");
-    fx.window->set_snapshot(pat::ui::make_test_character(2, 1000));
+    fx.window->set_snapshot(pat::ui::make_test_character(pat::test::ui_localizer(), 2, 1000));
     fx.window->set_tab("relations");
     fx.frame();
     fx.frame();
@@ -292,11 +297,12 @@ TEST_CASE("CharacterWindow: wheel scrolls the list, small and empty lists work")
     CHECK(fx.window->first_row_in_document() > 0);
 
     for (const std::size_t count : {std::size_t{0}, std::size_t{1}, std::size_t{7}}) {
-        fx.window->set_snapshot(pat::ui::make_test_character(4, count));
+        fx.window->set_snapshot(pat::ui::make_test_character(pat::test::ui_localizer(), 4, count));
         fx.frame();
         fx.frame();
         CHECK(fx.window->rows_in_document() == count);
-        CHECK(fx.by_id("rel-total")->GetInnerRML() == std::to_string(count));
+        CHECK(fx.by_id("rel-total")->GetInnerRML() ==
+              "Знакомые и мнения (всего: " + std::to_string(count) + ")");
     }
 }
 
@@ -305,7 +311,7 @@ TEST_CASE("CharacterWindow: command buttons call the handler and show a status")
         return;
     }
     Fixture fx("patriarch_char_commands");
-    fx.window->set_snapshot(pat::ui::make_test_character(6));
+    fx.window->set_snapshot(pat::ui::make_test_character(pat::test::ui_localizer(), 6));
     std::vector<std::string> received;
     fx.window->set_command_handler([&](const std::string& id) { received.push_back(id); });
     fx.frame();
@@ -325,7 +331,7 @@ TEST_CASE("CharacterWindow: survives a hot reload of its document") {
         return;
     }
     Fixture fx("patriarch_char_reload");
-    const CharacterSnapshot s = pat::ui::make_test_character(8);
+    const CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 8);
     fx.window->set_snapshot(s);
     fx.window->set_tab("relations");
     fx.frame();
@@ -352,6 +358,71 @@ TEST_CASE("CharacterWindow: survives a hot reload of its document") {
     CHECK(fx.by_id("name")->GetInnerRML() == s.full_name());  // still bound to the model
     CHECK(fx.shown_by_id("rel_list") != nullptr);             // tab state lives in the model
     CHECK(fx.window->rows_in_document() < 60);
+}
+
+TEST_CASE("CharacterWindow: captions, subtitle and statuses come from the string table") {
+    if (!have_font()) {
+        MESSAGE("Arial not found, skipping");
+        return;
+    }
+    Fixture fx("patriarch_char_loc");
+    CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 4);
+    s.role = "ui.character.role.stolnik";
+    s.health = "ui.health.strong";
+    s.age = 42;
+    fx.window->set_snapshot(s);
+    fx.frame();
+
+    CHECK(fx.by_id("subtitle")->GetInnerRML() == "стольник · 42 года · здоровье: крепкое");
+    CHECK(fx.by_id("tab-overview")->GetInnerRML() == "Обзор");
+    CHECK(fx.by_id("cmd-marry")->GetInnerRML() == "Предложить брак");
+    Rml::ElementList names;
+    fx.window->document()->GetElementsByClassName(names, "skill-name");
+    std::vector<std::string> skill_names;
+    for (Rml::Element* e : names) {
+        if (e->IsVisible(true)) {
+            skill_names.push_back(e->GetInnerRML());
+        }
+    }
+    REQUIRE(skill_names.size() == pat::ui::kSkillCount);
+    CHECK(skill_names[0] == "Хозяйство");
+    CHECK(skill_names[4] == "Учёность");
+
+    // A command press writes the status line with the id as a parameter.
+    fx.click(fx.by_id("cmd-educate"));
+    fx.frame();
+    CHECK(fx.by_id("statusbar")->GetInnerRML() == "Команда: educate (заглушка)");
+
+    // Another language: relocalize() rewrites captions, subtitle (with its plural) and the status line.
+    const std::string_view english[] = {"en", "ru"};
+    REQUIRE(fx.loc.set_chain(english) == 2);
+    fx.window->relocalize();
+    fx.frame();
+    CHECK(fx.by_id("subtitle")->GetInnerRML() == "stolnik - 42 years - health: sturdy");
+    CHECK(fx.by_id("tab-overview")->GetInnerRML() == "Overview");
+    CHECK(fx.by_id("tab-family")->GetInnerRML() == "Семья");  // not in the English table: falls back
+    CHECK(fx.by_id("statusbar")->GetInnerRML() == "Команда: educate (заглушка)");
+    s.age = 1;
+    fx.window->set_snapshot(s);
+    fx.frame();
+    CHECK(fx.by_id("subtitle")->GetInnerRML() == "stolnik - 1 year - health: sturdy");  // English plural
+}
+
+TEST_CASE("CharacterWindow: a missing key shows as [[key]] and does not break the window") {
+    if (!have_font()) {
+        MESSAGE("Arial not found, skipping");
+        return;
+    }
+    Fixture fx("patriarch_char_missing");
+    fx.loc = pat::test::load_empty_localizer();  // same object, so the window keeps reading it
+    CharacterSnapshot s = pat::ui::make_test_character(pat::test::ui_localizer(), 4);
+    fx.window->set_snapshot(s);
+    fx.frame();
+    CHECK(fx.by_id("tab-overview")->GetInnerRML() == "[[ui.character.tab.overview]]");
+    CHECK(fx.by_id("subtitle")->GetInnerRML().find("[[ui.character.subtitle]]") != std::string::npos);
+    CHECK(fx.by_id("name")->GetInnerRML() == s.full_name());
+    const auto missing = fx.loc.requested_missing_keys();
+    CHECK(std::find(missing.begin(), missing.end(), "ui.character.tab.overview") != missing.end());
 }
 
 #endif  // _WIN32

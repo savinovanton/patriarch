@@ -8,18 +8,19 @@ namespace pat::game {
 
 namespace {
 
-constexpr std::array<const char*, 12> kMonthsGenitive = {"января",
-                                                         "февраля",
-                                                         "марта",
-                                                         "апреля",
-                                                         "мая",
-                                                         "июня",
-                                                         "июля",
-                                                         "августа",
-                                                         "сентября",
-                                                         "октября",
-                                                         "ноября",
-                                                         "декабря"};
+// The month names themselves live in the string table as ui.month.<name>.
+constexpr std::array<const char*, 12> kMonthKeys = {"january",
+                                                    "february",
+                                                    "march",
+                                                    "april",
+                                                    "may",
+                                                    "june",
+                                                    "july",
+                                                    "august",
+                                                    "september",
+                                                    "october",
+                                                    "november",
+                                                    "december"};
 
 // Clan names (real Russian families of the period; the people are fictional).
 constexpr std::array<const char*, 24> kClans = {
@@ -122,18 +123,19 @@ std::string person_name(const sim::World& world, sim::CharacterId id) {
            surname;
 }
 
-const char* health_text(core::Fixed32 health) {
+// String-table key of the health word for a health value.
+const char* health_key(core::Fixed32 health) {
     const int v = health.to_int();
     if (v >= 80) {
-        return "крепкое";
+        return "ui.health.strong";
     }
     if (v >= 55) {
-        return "хорошее";
+        return "ui.health.good";
     }
     if (v >= 30) {
-        return "слабое";
+        return "ui.health.weak";
     }
-    return "тяжёлое";
+    return "ui.health.sickly";
 }
 
 sim::ProvinceId
@@ -169,10 +171,12 @@ std::vector<std::uint32_t> province_palette(const sim::World& world,
 
 }  // namespace
 
-std::string format_date_ru(sim::Date date) {
+std::string format_date(const loc::Localizer& loc, sim::Date date) {
     const sim::YearMonthDay v = date.ymd();
-    return std::to_string(v.day) + " " + kMonthsGenitive[static_cast<std::size_t>(v.month - 1)] + " " +
-           std::to_string(v.year);
+    const std::string month =
+        loc.format("ui.month." + std::string(kMonthKeys[static_cast<std::size_t>(v.month - 1)]));
+    return loc.format("ui.date.long",
+                      {loc::Arg("day", v.day), loc::Arg("month", month), loc::Arg("year", v.year)});
 }
 
 std::string dynasty_name(sim::DynastyId dynasty) {
@@ -245,7 +249,8 @@ int age_in_years(sim::Date born, sim::Date today) {
     return std::max(0, static_cast<int>(std::floor(days / 365.25)));
 }
 
-ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::CharacterId character) {
+ui::CharacterSnapshot
+character_snapshot(const loc::Localizer& loc, const sim::World& world, sim::CharacterId character) {
     const sim::CharacterTable& t = world.characters();
     const std::size_t i = character.index();
     const sim::Date today = world.today();
@@ -253,7 +258,7 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
     // Skills, traits and their breakdowns are placeholders (deterministic per character) until the
     // dynasty systems provide real ones.
     ui::CharacterSnapshot s =
-        ui::make_test_character(hash32(static_cast<std::uint32_t>(character.value()) + 101U), 0);
+        ui::make_test_character(loc, hash32(static_cast<std::uint32_t>(character.value()) + 101U), 0);
 
     const std::string full = person_name(world, character);
     // person_name() is "Given Patronymic Surname"; split it for the window.
@@ -264,30 +269,34 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
     s.surname = full.substr(second_space + 1);
 
     s.age = age_in_years(t.birth_date[i], today);
-    s.health = health_text(t.health[i]);
+    s.health = health_key(t.health[i]);
     const sim::DynastyId dynasty = t.dynasty[i];
     const bool is_head = dynasty.valid() && world.dynasties().head[dynasty.index()] == character;
     if (is_head) {
-        s.role = "глава рода";
+        s.role = "ui.character.role.head";
     } else if (s.age < 16) {
-        s.role = t.sex[i] == sim::Sex::Female ? "отроковица" : "отрок";
+        s.role = t.sex[i] == sim::Sex::Female ? "ui.character.role.youth_f" : "ui.character.role.youth_m";
     } else {
-        s.role = t.sex[i] == sim::Sex::Female ? "боярыня" : "стольник";
+        s.role = t.sex[i] == sim::Sex::Female ? "ui.character.role.noblewoman" : "ui.character.role.stolnik";
     }
 
     // Family: parents and children.
     s.family.clear();
     const auto describe = [&](sim::CharacterId other) {
-        return person_name(world, other) + ", " +
-               std::to_string(age_in_years(t.birth_date[other.index()], today)) + " л.";
+        return loc.format("ui.character.person",
+                          {loc::Arg("name", person_name(world, other)),
+                           loc::Arg("age", age_in_years(t.birth_date[other.index()], today))});
+    };
+    const auto kin_line = [&](const char* key, sim::CharacterId other) {
+        return loc.format(key, {loc::Arg("person", describe(other))});
     };
     if (t.father[i].valid() && world.is_alive(t.father[i])) {
-        s.family.push_back("отец: " + describe(t.father[i]));
+        s.family.push_back(kin_line("ui.character.family.father", t.father[i]));
     }
     if (t.mother[i].valid() && world.is_alive(t.mother[i])) {
-        s.family.push_back("мать: " + describe(t.mother[i]));
+        s.family.push_back(kin_line("ui.character.family.mother", t.mother[i]));
     }
-    s.family.push_back("род: " + dynasty_name(dynasty));
+    s.family.push_back(loc.format("ui.character.family.dynasty", {loc::Arg("name", dynasty_name(dynasty))}));
     if (dynasty.valid()) {
         for (const sim::CharacterId member : world.members_of(dynasty)) {
             if (member == character) {
@@ -295,8 +304,9 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
             }
             const std::size_t m = member.index();
             if (t.father[m] == character || t.mother[m] == character) {
-                s.family.push_back(std::string(t.sex[m] == sim::Sex::Female ? "дочь: " : "сын: ") +
-                                   describe(member));
+                s.family.push_back(kin_line(t.sex[m] == sim::Sex::Female ? "ui.character.family.daughter"
+                                                                         : "ui.character.family.son",
+                                            member));
             }
         }
     }
@@ -304,13 +314,16 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
     // Relations: kin first, then everybody else alive (capped to keep the list a reasonable size).
     s.relations.clear();
     int number = 0;
-    const auto add_relation = [&](sim::CharacterId other, const char* kind) {
-        s.relations.push_back(std::to_string(++number) + ". " + person_name(world, other) + " - " + kind);
+    const auto add_relation = [&](sim::CharacterId other, const char* kind_key) {
+        const std::string kind = loc.format(kind_key);
+        s.relations.push_back(loc.format(
+            "ui.character.relation.row",
+            {loc::Arg("n", ++number), loc::Arg("name", person_name(world, other)), loc::Arg("kind", kind)}));
     };
     if (dynasty.valid()) {
         for (const sim::CharacterId member : world.members_of(dynasty)) {
             if (member != character) {
-                add_relation(member, "родич");
+                add_relation(member, "ui.character.relation.kin");
             }
         }
     }
@@ -320,7 +333,7 @@ ui::CharacterSnapshot character_snapshot(const sim::World& world, sim::Character
         if (alive[other] != 1 || id == character || (dynasty.valid() && t.dynasty[other] == dynasty)) {
             continue;
         }
-        add_relation(id, "знакомый");
+        add_relation(id, "ui.character.relation.acquaintance");
     }
     return s;
 }

@@ -12,6 +12,8 @@
 #include <chrono>
 #include <set>
 
+#include "ui_loc_fixture.hpp"
+
 using namespace pat;
 
 namespace {
@@ -27,11 +29,12 @@ sim::World demo_world(std::uint32_t provinces = 100, std::uint32_t dynasties = 1
 
 }  // namespace
 
-TEST_CASE("format_date_ru: Julian dates with Russian month names") {
-    CHECK(game::format_date_ru(sim::Date::from_ymd(1703, 1, 1)) == "1 января 1703");
-    CHECK(game::format_date_ru(sim::Date::from_ymd(1703, 5, 16)) == "16 мая 1703");
-    CHECK(game::format_date_ru(sim::Date::from_ymd(1704, 2, 29)) == "29 февраля 1704");  // Julian leap year
-    CHECK(game::format_date_ru(sim::Date::from_ymd(1725, 12, 31)) == "31 декабря 1725");
+TEST_CASE("format_date: Julian dates with month names and layout from the string table") {
+    const loc::Localizer& loc = test::ui_localizer();
+    CHECK(game::format_date(loc, sim::Date::from_ymd(1703, 1, 1)) == "1 января 1703");
+    CHECK(game::format_date(loc, sim::Date::from_ymd(1703, 5, 16)) == "16 мая 1703");
+    CHECK(game::format_date(loc, sim::Date::from_ymd(1704, 2, 29)) == "29 февраля 1704");  // Julian leap year
+    CHECK(game::format_date(loc, sim::Date::from_ymd(1725, 12, 31)) == "31 декабря 1725");
     static constexpr const char* kExpected[12] = {"января",
                                                   "февраля",
                                                   "марта",
@@ -45,9 +48,15 @@ TEST_CASE("format_date_ru: Julian dates with Russian month names") {
                                                   "ноября",
                                                   "декабря"};
     for (int m = 1; m <= 12; ++m) {
-        const std::string text = game::format_date_ru(sim::Date::from_ymd(1710, m, 15));
+        const std::string text = game::format_date(loc, sim::Date::from_ymd(1710, m, 15));
         CHECK(text == "15 " + std::string(kExpected[m - 1]) + " 1710");
     }
+
+    // Another language changes the month name and the order of the parts.
+    loc::Localizer english = test::load_ui_localizer_with_english();
+    const std::string_view chain[] = {"en", "ru"};
+    REQUIRE(english.set_chain(chain) == 2);
+    CHECK(game::format_date(english, sim::Date::from_ymd(1703, 5, 16)) == "May 16, 1703");
 }
 
 TEST_CASE("dynasty colours are distinct, opaque and stable") {
@@ -109,14 +118,17 @@ TEST_CASE("character snapshots describe real characters of a world") {
             continue;
         }
         const sim::CharacterId id(static_cast<std::uint32_t>(i));
-        const ui::CharacterSnapshot s = game::character_snapshot(world, id);
+        const ui::CharacterSnapshot s = game::character_snapshot(test::ui_localizer(), world, id);
         CHECK_FALSE(s.given_name.empty());
         CHECK_FALSE(s.patronymic.empty());
         CHECK_FALSE(s.surname.empty());
         CHECK(s.age == game::age_in_years(world.characters().birth_date[i], world.today()));
         CHECK(s.age >= 0);
-        CHECK_FALSE(s.health.empty());
+        CHECK(test::ui_localizer().resolves(s.health));  // keys of the string table, not text
+        CHECK(test::ui_localizer().resolves(s.role));
         CHECK_FALSE(s.family.empty());  // at least "род: ..."
+        CHECK(s.family.back().find("[[") == std::string::npos);
+        CHECK(s.relations.front().find("[[") == std::string::npos);
         CHECK(s.relations.size() <= 400);
         CHECK(s.relations.size() >= 5);  // kin and acquaintances
         for (const int v : s.skills) {
@@ -132,11 +144,11 @@ TEST_CASE("character snapshots describe real characters of a world") {
             CHECK(((sn.size() >= 2 && sn.compare(sn.size() - 2, 2, "а") == 0) ||
                    sn.find("ая") != std::string::npos));
         }
-        if (s.role == "глава рода") {
+        if (s.role == "ui.character.role.head") {
             ++heads;
         }
         // Deterministic.
-        CHECK(game::character_snapshot(world, id) == s);
+        CHECK(game::character_snapshot(test::ui_localizer(), world, id) == s);
         ++checked;
     }
     CHECK(checked >= 30);
@@ -214,7 +226,7 @@ TEST_CASE("the UI can read snapshots while the simulation thread runs, and every
             }
             const sim::CharacterId c = game::pick_character(*world, 5);
             if (c.valid()) {
-                const ui::CharacterSnapshot s = game::character_snapshot(*world, c);
+                const ui::CharacterSnapshot s = game::character_snapshot(test::ui_localizer(), *world, c);
                 CHECK(s.age == game::age_in_years(world->characters().birth_date[c.index()], world->today()));
             }
         }

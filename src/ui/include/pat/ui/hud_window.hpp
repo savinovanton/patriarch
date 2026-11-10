@@ -2,6 +2,7 @@
 
 #include "pat/core/result.hpp"
 #include "pat/engine/ui.hpp"
+#include "pat/loc/localizer.hpp"
 #include "pat/ui/hud_snapshot.hpp"
 
 #include <filesystem>
@@ -18,16 +19,18 @@ namespace pat::ui {
 
 /// The heads-up display of the map screen (design "Olive Stone"): realm plaque, resource strip, alert
 /// badges, the left menu and the screen frame. Bound to a HudSnapshot through an RmlUi data model; the
-/// window only shows what it is told and reports menu presses.
+/// window only shows what it is told and reports menu presses. Every visible string comes from the
+/// string table (`ui.*` keys of data/loc, docs/dev/localization.md); a missing key shows as [[key]].
 class HudWindow {
 public:
     /// Creates the data model and loads `document`. `olive_assets` is the directory with the frame and
     /// the icons (assets/ui/olive); it is written into the document as a path relative to `document`.
-    /// Destroy before the UiContext.
+    /// `loc` supplies the texts and must outlive the window. Destroy before the UiContext.
     [[nodiscard]] static core::Result<std::unique_ptr<HudWindow>>
     create(engine::UiContext& ui,
            const std::filesystem::path& document,
-           const std::filesystem::path& olive_assets);
+           const std::filesystem::path& olive_assets,
+           const loc::Localizer& loc);
     ~HudWindow();
     HudWindow(const HudWindow&) = delete;
     HudWindow& operator=(const HudWindow&) = delete;
@@ -35,11 +38,15 @@ public:
     void set_snapshot(const HudSnapshot& snapshot);
     [[nodiscard]] const HudSnapshot& snapshot() const;
 
+    /// Re-reads every text from the Localizer: call after the language chain or the tables changed.
+    void relocalize();
+
     /// Keys of the left menu, top to bottom: world, realm, holdings, army, church, economy, diplomacy,
     /// chronicle, system.
     static constexpr int kMenuCount = 9;
     [[nodiscard]] static std::string_view menu_key(int index);
-    [[nodiscard]] static std::string_view menu_name(int index);  // Russian display name
+    /// Display name of a menu entry in the current language (ui.menu.<key>); empty for a bad index.
+    [[nodiscard]] std::string menu_name(int index) const;
 
     void set_active_menu(std::string_view key);
     [[nodiscard]] std::string_view active_menu() const;

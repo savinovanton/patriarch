@@ -6,6 +6,8 @@
 
 #include <doctest/doctest.h>
 
+#include "ui_loc_fixture.hpp"
+
 #ifdef _WIN32
 
 #include <RmlUi/Core.h>
@@ -38,7 +40,9 @@ TEST_CASE("TimeBar: shows the date, highlights the speed and reports button pres
     REQUIRE(ui_created.has_value());
     std::unique_ptr<UiContext> ui = std::move(ui_created).value();
 
-    auto bar_created = TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml");
+    pat::loc::Localizer loc = pat::test::load_ui_localizer_with_english();
+    auto bar_created =
+        TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml", loc);
     REQUIRE(bar_created.has_value());
     std::unique_ptr<TimeBar> bar = std::move(bar_created).value();
 
@@ -54,6 +58,19 @@ TEST_CASE("TimeBar: shows the date, highlights the speed and reports button pres
     CHECK(doc->GetElementById("spd-3")->IsClassSet("active"));
     CHECK_FALSE(doc->GetElementById("spd-1")->IsClassSet("active"));
     CHECK(bar->speed() == 3);
+
+    // The pause caption comes from the string table and follows the language.
+    CHECK(doc->GetElementById("spd-0")->GetInnerRML() == "Пауза");
+    const std::string_view english[] = {"en", "ru"};
+    REQUIRE(loc.set_chain(english) == 2);
+    bar->relocalize();
+    ui->update();
+    CHECK(doc->GetElementById("spd-0")->GetInnerRML() == "Pause");
+    const std::string_view russian[] = {"ru", "en"};
+    loc.set_chain(russian);
+    bar->relocalize();
+    ui->update();
+    CHECK(doc->GetElementById("spd-0")->GetInnerRML() == "Пауза");
 
     // Changing the model updates the view; setting the same value again is a no-op.
     bar->set_date("1 февраля 1703");

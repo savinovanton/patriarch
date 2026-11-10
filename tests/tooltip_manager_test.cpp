@@ -7,6 +7,8 @@
 
 #include <doctest/doctest.h>
 
+#include "ui_loc_fixture.hpp"
+
 #ifdef _WIN32
 
 #include <RmlUi/Core.h>
@@ -45,7 +47,7 @@ struct Fixture {
 
         // A character with a skill that has a three-level breakdown (skill -> education -> mentor -> ...).
         for (std::uint32_t seed = 1; seed < 200; ++seed) {
-            snapshot = make_test_character(seed, 10);
+            snapshot = make_test_character(pat::test::ui_localizer(), seed, 10);
             for (std::size_t i = 0; i < kSkillCount; ++i) {
                 for (const Explanation& term : snapshot.skill_explanations[i].terms) {
                     if (!term.terms.empty() && !term.terms.front().terms.empty()) {
@@ -73,7 +75,7 @@ struct Fixture {
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
 
-        auto cw = CharacterWindow::create(*ui, dir / "character.rml");
+        auto cw = CharacterWindow::create(*ui, dir / "character.rml", pat::test::ui_localizer());
         REQUIRE(cw.has_value());
         window = std::move(cw).value();
         window->set_snapshot(snapshot);

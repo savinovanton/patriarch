@@ -7,11 +7,13 @@ format_version = 1
 # пробелами между тысячами: {n:group}; форма слова по числу: {n:plural(год|года|лет)}.
 # Литеральные скобки пишутся {{ и }}.
 #
-# Строки соответствуют тому, что сейчас зашито в HUD спайка (apps/spike/ui/hud.rml, timebar.rml,
-# src/ui/hud_window.cpp) и в окне персонажа (character.rml, character_snapshot.*). HUD — временная
-# тестовая раскладка; подключение окон к таблице — отдельная задача.
+# Эти строки читают окна UI через pat::loc::Localizer (src/ui/*, src/game/world_view.cpp,
+# apps/spike/main.cpp): HUD, полоса времени, окно персонажа, подсказки. Зашитых русских литералов
+# в коде окон нет. HUD — временная тестовая раскладка (docs/dev/ui-design.md).
 
 # ---- Общее -------------------------------------------------------------------------------------
+
+ui.game.title = "Патриарх"
 
 ui.age.years = "{n} {n:plural(год|года|лет)}"
 ui.fmt.number = "{n:group}"
@@ -80,7 +82,8 @@ ui.hud.chronicle.taxes_collected = "Завершён сбор податей"
 
 # ---- Окно персонажа ----------------------------------------------------------------------------
 
-ui.character.subtitle = "{role} · {age} {age:plural(год|года|лет)} · здоровье: {health}"
+# {age} — готовый текст возраста (ui.age.years): «42 года».
+ui.character.subtitle = "{role} · {age} · здоровье: {health}"
 
 ui.character.tab.overview = "Обзор"
 ui.character.tab.family = "Семья"
@@ -96,6 +99,31 @@ ui.character.cmd.marry = "Предложить брак"
 ui.character.cmd.appoint = "Назначить на должность"
 ui.character.cmd.educate = "Отправить в науку"
 ui.character.cmd.stub = "Команда: {id} (заглушка)"
+
+ui.character.person = "{name}, {age} л."
+ui.character.family.father = "отец: {person}"
+ui.character.family.mother = "мать: {person}"
+ui.character.family.wife = "жена: {person}"
+ui.character.family.son = "сын: {person}"
+ui.character.family.daughter = "дочь: {person}"
+ui.character.family.brother = "брат: {person}"
+ui.character.family.dynasty = "род: {name}"
+
+ui.character.relation.row = "{n}. {name} - {kind}"
+ui.character.relation.opinion = "{n}. {name} — мнение {opinion}"
+ui.character.relation.kin = "родич"
+ui.character.relation.acquaintance = "знакомый"
+
+ui.character.role.head = "глава рода"
+ui.character.role.youth_m = "отрок"
+ui.character.role.youth_f = "отроковица"
+ui.character.role.noblewoman = "боярыня"
+ui.character.role.stolnik = "стольник"
+ui.character.role.boyar = "боярин"
+ui.character.role.voevoda = "воевода"
+ui.character.role.okolnichy = "окольничий"
+ui.character.role.stryapchy = "стряпчий"
+ui.character.role.dyak = "дьяк"
 
 ui.health.strong = "крепкое"
 ui.health.good = "хорошее"
