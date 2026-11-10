@@ -140,6 +140,27 @@ struct ChronicleEntry {
     [[nodiscard]] bool operator==(const ChronicleEntry&) const = default;
 };
 
+using OpinionReason = std::uint16_t;
+inline constexpr OpinionReason kOtherOpinionReason = 0;
+inline constexpr std::size_t kMaxOpinions = 30;
+inline constexpr std::size_t kMaxOpinionSources = 3;
+inline constexpr auto kOpinionLimit = core::Fixed32::from_int(100);
+
+struct OpinionSource {
+    OpinionReason reason = kOtherOpinionReason;
+    core::Fixed32 value;
+
+    [[nodiscard]] bool operator==(const OpinionSource&) const = default;
+};
+
+struct OpinionEntry {
+    CharacterId target;
+    std::array<OpinionSource, kMaxOpinionSources> sources{};
+
+    [[nodiscard]] core::Fixed32 total() const noexcept;
+    [[nodiscard]] bool operator==(const OpinionEntry&) const = default;
+};
+
 /// Bits of `World::world_flags()`.
 inline constexpr std::uint32_t kWorldFlagDynastyMode = 1U << 0;
 
@@ -448,6 +469,15 @@ public:
     [[nodiscard]] std::vector<ChronicleEntry> query_chronicle(
         DynastyId dynasty, Date from, Date through, std::optional<ChronicleKind> kind = std::nullopt) const;
     bool record_chronicle_note(DynastyId dynasty, CharacterId a, CharacterId b, std::int32_t param);
+
+    /// A directed change for two living dynasty-mode characters. Returns false for invalid endpoints.
+    bool add_opinion(CharacterId from, CharacterId to, core::Fixed32 delta, OpinionReason reason);
+    [[nodiscard]] core::Fixed32 get_opinion(CharacterId from, CharacterId to) const;
+    [[nodiscard]] std::span<const OpinionSource> opinion_sources(CharacterId from, CharacterId to) const;
+    /// Stored rows, sorted by target. A dead target can remain here until this holder's monthly slot.
+    [[nodiscard]] std::span<const OpinionEntry> opinions_from(CharacterId holder) const;
+    /// Process this day's monthly slot and return the number of relations visited for WU accounting.
+    std::size_t decay_opinions(Date date);
     /// Number of rows in the archive.
     [[nodiscard]] std::size_t archived_count() const noexcept { return characters_.ids.retired_count(); }
     /// True when another character can be created now.
@@ -616,7 +646,8 @@ public:
     ///   4  the slot table may hold archived rows (slot state 2), dynasty mode only (E7-T04)
     ///   5  + the economy: sections 32..39 of the extension block (E9-T03); older files have none
     ///   6  + section 5 "chronicle" (E7-T16); older files start with empty chronicles
-    static constexpr std::uint32_t kStateSchema = 6;
+    ///   7  + section 6 "opinion" (E7-T17); older files start without stored opinions
+    static constexpr std::uint32_t kStateSchema = 7;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -626,6 +657,13 @@ public:
     [[nodiscard]] static core::Result<World, core::Error> load_state(core::ByteReader& in);
 
 private:
+    struct OpinionRow {
+        CharacterId holder;
+        std::vector<OpinionEntry> entries;
+    };
+    void erase_opinion_holder(CharacterId holder);
+    [[nodiscard]] std::uint64_t opinion_hash() const;
+    void check_opinion_invariants(std::vector<std::string>& errors) const;
     void append_chronicle(DynastyId dynasty, ChronicleEntry entry);
     // Defaults of the columns added in E7-T02 and helpers that keep them in sync.
     void grow_character_columns();
@@ -692,7 +730,8 @@ private:
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
-    economy::EconomyState economy_;  // E9-T02: empty unless enable_economy() was called
+    std::vector<OpinionRow> opinions_;  // nonempty holders, ascending id
+    economy::EconomyState economy_;     // E9-T02: empty unless enable_economy() was called
 };
 
 }  // namespace pat::sim

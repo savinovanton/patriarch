@@ -41,6 +41,11 @@
 // count, followed by entries in chronological order. An entry is i32 date | u8 kind | u32 a |
 // u32 b | i32 param. Only nonempty rows are stored, by ascending dynasty id. Absence means empty.
 //
+// Schema 7 (E7-T17) adds section 6 "opinion": u32 rows, each with u32 holder id and u8 relation
+// count, followed by u32 target id | u8 source count | sources. A source is u16 reason | i32
+// Fixed32 raw value. Holders, targets, and reasons are stored in ascending order at each level,
+// and only nonempty rows, relations, and sources are stored. Absence means empty.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -57,6 +62,7 @@ R fail(const char* message) {
 using detail::kSectionChronicle;
 using detail::kSectionDynasty;
 using detail::kSectionKin;
+using detail::kSectionOpinion;
 using detail::kSectionPerson;
 using detail::plausible;
 
@@ -67,6 +73,9 @@ constexpr std::size_t kBranchRowBytes = 8;
 constexpr std::size_t kKinRowBytes = 4 + 4 + 1 + 4 * kMaxExSpouses + 4 * kGodparentSlots;
 constexpr std::size_t kChronicleEntryBytes = 17;
 constexpr std::size_t kMinChronicleRowBytes = 6 + kChronicleEntryBytes;
+constexpr std::size_t kOpinionSourceBytes = 2 + 4;
+constexpr std::size_t kMinOpinionRelationBytes = 4 + 1 + kOpinionSourceBytes;
+constexpr std::size_t kMinOpinionRowBytes = 4 + 1 + kMinOpinionRelationBytes;
 
 struct SectionInfo {
     std::uint16_t id;
@@ -78,6 +87,7 @@ constexpr SectionInfo kSections[] = {
     {kSectionDynasty, 1, 2},
     {kSectionKin, 1, 3},
     {kSectionChronicle, 1, 6},
+    {kSectionOpinion, 1, 7},
     {detail::kSectionEconomy, 1, 5},
     {detail::kSectionEconomyDynasty, 1, 5},
     {detail::kSectionEconomyProvince, 1, 5},
@@ -295,6 +305,30 @@ void World::save_state(core::ByteWriter& out) const {
         sections.push_back(std::move(section));
     }
 
+    if (!opinions_.empty()) {
+        Section section{kSectionOpinion, 1, {}};
+        core::ByteWriter& w = section.body;
+        w.u32(static_cast<std::uint32_t>(opinions_.size()));
+        for (const auto& [holder, entries] : opinions_) {
+            w.u32(holder.value());
+            w.u8(static_cast<std::uint8_t>(entries.size()));
+            for (const OpinionEntry& entry : entries) {
+                std::uint8_t source_count = 0;
+                while (source_count < entry.sources.size() && entry.sources[source_count].value.raw() != 0) {
+                    ++source_count;
+                }
+                w.u32(entry.target.value());
+                w.u8(source_count);
+                for (std::uint8_t s = 0; s < source_count; ++s) {
+                    const OpinionSource& source = entry.sources[s];
+                    w.u16(source.reason);
+                    w.i32(source.value.raw());
+                }
+            }
+        }
+        sections.push_back(std::move(section));
+    }
+
     economy_write_sections(sections);  // ids 32..39, after the sections above
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
@@ -456,6 +490,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     // the child lists are derived from the parent columns that schema 1 already had. Parents of a
     // dynasty-mode world are checked by check_invariants(). Schema 5 -> 6 (E7-T16): earlier
     // saves have no chronicle section, so every dynasty starts with an empty chronicle.
+    // Schema 6 -> 7 (E7-T17): earlier saves have no opinion section and start with empty opinions.
     if (schema >= 2) {
         const std::uint32_t flags = in.u32();
         if (!in.ok() || (flags & ~kWorldFlagDynastyMode) != 0) {
@@ -594,6 +629,55 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                         const CharacterId b(sr.u32());
                         const std::int32_t param = sr.i32();
                         entries.push_back({date, kind, a, b, param});
+                    }
+                }
+            } else if (id == kSectionOpinion) {
+                const std::uint32_t rows = sr.u32();
+                if (!world.dynasty_mode() || rows == 0 || rows > chars.ids.alive_count() ||
+                    !plausible(sr, rows, kMinOpinionRowBytes)) {
+                    return fail("invalid opinion section");
+                }
+                world.opinions_.reserve(rows);
+                std::uint32_t previous_holder = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t holder = sr.u32();
+                    const std::uint8_t count = sr.u8();
+                    if (!sr.ok() || holder >= capacity || (r != 0 && holder <= previous_holder)) {
+                        return fail("opinion holders are out of range or out of order");
+                    }
+                    if (count == 0 || count > kMaxOpinions ||
+                        !plausible(sr, count, kMinOpinionRelationBytes)) {
+                        return fail("invalid opinion relation count");
+                    }
+                    previous_holder = holder;
+                    world.opinions_.push_back({CharacterId(holder), {}});
+                    auto& entries = world.opinions_.back().entries;
+                    entries.reserve(count);
+                    std::uint32_t previous_target = 0;
+                    for (std::uint8_t i = 0; i < count; ++i) {
+                        const std::uint32_t target = sr.u32();
+                        const std::uint8_t sources = sr.u8();
+                        if (!sr.ok() || target >= capacity || (i != 0 && target <= previous_target)) {
+                            return fail("opinion targets are out of range or out of order");
+                        }
+                        if (sources == 0 || sources > kMaxOpinionSources ||
+                            !plausible(sr, sources, kOpinionSourceBytes)) {
+                            return fail("invalid opinion source count");
+                        }
+                        previous_target = target;
+                        OpinionEntry entry{};
+                        entry.target = CharacterId(target);
+                        OpinionReason previous_reason = 0;
+                        for (std::uint8_t source_index = 0; source_index < sources; ++source_index) {
+                            const OpinionReason reason = sr.u16();
+                            const std::int32_t value = sr.i32();
+                            if (value == 0 || (source_index != 0 && reason <= previous_reason)) {
+                                return fail("opinion sources are empty or out of order");
+                            }
+                            previous_reason = reason;
+                            entry.sources[source_index] = {reason, core::Fixed32::from_raw(value)};
+                        }
+                        entries.push_back(entry);
                     }
                 }
             } else if (id >= detail::kSectionEconomy) {

@@ -256,6 +256,22 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::AdjustOpinion& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may adjust an opinion");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "opinions need dynasty mode");
+        }
+        if (!world.is_alive(c.from) || !world.is_alive(c.to)) {
+            return reject(Rejection::UnknownEntity, "unknown or dead character");
+        }
+        if (c.from == c.to) {
+            return reject(Rejection::InvalidArgument, "an opinion needs two different characters");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -324,6 +340,9 @@ struct Applier {
     void operator()(const cmd::RecordChronicle& c) const {
         (void)world.record_chronicle_note(c.dynasty, c.a, c.b, c.param);
     }
+    void operator()(const cmd::AdjustOpinion& c) const {
+        (void)world.add_opinion(c.from, c.to, c.delta, c.reason);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -378,6 +397,10 @@ struct CommandTag<cmd::PlanDeath> {
 template <>
 struct CommandTag<cmd::RecordChronicle> {
     static constexpr CommandType value = CommandType::RecordChronicle;
+};
+template <>
+struct CommandTag<cmd::AdjustOpinion> {
+    static constexpr CommandType value = CommandType::AdjustOpinion;
 };
 
 template <class Variant>
@@ -435,6 +458,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "PlanDeath";
         case CommandType::RecordChronicle:
             return "RecordChronicle";
+        case CommandType::AdjustOpinion:
+            return "AdjustOpinion";
     }
     return "?";
 }

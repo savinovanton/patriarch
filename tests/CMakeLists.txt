@@ -35,6 +35,7 @@ add_executable(patriarch_tests
     mortality_test.cpp
     names_content_test.cpp
     names_test.cpp
+    opinion_test.cpp
     province_bindings_test.cpp
     pd_parser_test.cpp
     profile_test.cpp

@@ -27,6 +27,7 @@
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/mortality.hpp"
+#include "pat/sim/opinion.hpp"
 #include "pat/sim/runner.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/ui/character_window.hpp"
@@ -413,6 +414,7 @@ int main(int argc, char** argv) {
         if (m1) {
             pat::sim::Simulation simulation(std::move(m1->world));
             simulation.add_system(pat::sim::make_mortality_system(m1->demography));
+            simulation.add_system(pat::sim::make_opinion_system());
             runner = std::make_unique<pat::sim::SimulationRunner>(std::move(simulation));
         } else {
             pat::sim::demo::Config sim_config;
