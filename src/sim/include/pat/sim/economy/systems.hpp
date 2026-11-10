@@ -2,6 +2,7 @@
 
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/rules.hpp"
+#include "pat/sim/economy/settlement.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/sim/system.hpp"
 
@@ -17,14 +18,24 @@
 // the prices (default: the static prices of the rules; E19 plugs the prices of trade nodes in).
 //
 // Order of registration is the order of execution (spec section 7.1):
-//   1. economy.settlement   Monthly  closing of the month (E9-T09)         - not yet
+//   1. economy.settlement   Monthly  closing of the month (E9-T09)
 //   2. economy.construction Daily    finished buildings (E9-T16)           - not yet
 //   3. economy.provinces    Daily    the monthly pass of a province on its slot day  - E9-T06, T07, T08
-// The later tasks add 1 and 2 IN FRONT of 3 inside install_economy_systems, so callers do not change.
+// E9-T16 adds 2 between the others inside install_economy_systems, so callers do not change.
 
 namespace pat::sim::economy {
 
+inline constexpr std::string_view kSettlementSystemName = "economy.settlement";
 inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
+
+/// The system `economy.settlement` (E9-T09): on the 1st of every month, before anything else of the
+/// day, closes the month that ended (settle_month: flat expenses of the buildings and of the
+/// `expenses` sources, rotation of the ring of the statement). It runs BEFORE `economy.provinces`
+/// (registration order), so the postings of the slots of the 1st go to the new month. Does nothing in
+/// a world without economy. `expenses` are the sources of flat expenses of other epics (none in M1).
+/// No random numbers; the system keeps no state of its own.
+[[nodiscard]] std::unique_ptr<System> make_settlement_system(const EconomyRules& rules,
+                                                             ExpenseSources expenses = {});
 
 /// The system `economy.provinces`: every day it takes the provinces whose slot is today
 /// (`is_monthly_slot(province_index, date)`, index % 28 == day - 1, days 1..28; days 29..31 take
@@ -39,8 +50,10 @@ inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
 make_provinces_system(const EconomyRules& rules, std::shared_ptr<const PriceSource> prices = nullptr);
 
 /// Registers the systems of the economy in the order of the spec. Call before the first tick.
+/// `expenses`: the flat-expense sources of other epics for the settlement (E9-T09; none in M1).
 void install_economy_systems(Simulation& simulation,
                              const EconomyRules& rules,
-                             std::shared_ptr<const PriceSource> prices = nullptr);
+                             std::shared_ptr<const PriceSource> prices = nullptr,
+                             ExpenseSources expenses = {});
 
 }  // namespace pat::sim::economy

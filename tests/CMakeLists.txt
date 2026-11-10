@@ -20,6 +20,7 @@ add_executable(patriarch_tests
     economy_production_test.cpp
     economy_rules_test.cpp
     economy_save_test.cpp
+    economy_settlement_test.cpp
     economy_taxes_test.cpp
     economy_world_test.cpp
     fixed_test.cpp

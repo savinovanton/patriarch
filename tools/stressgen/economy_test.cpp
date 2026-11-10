@@ -256,6 +256,7 @@ TEST_CASE("economy bench: the report of a small world is complete and consistent
                             "\"serialize_ms\":",
                             "\"deserialize_ms\":",
                             "\"cache_rebuild_floor_us\":",
+                            "\"forecast_us\":",
                             "\"system.economy.provinces\"",
                             "\"system.economy.settlement\"",
                             "\"system.economy.construction\"",

@@ -4,6 +4,7 @@
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/settlement.hpp"
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/economy/taxes.hpp"
 
@@ -14,6 +15,27 @@
 namespace pat::sim::economy {
 
 namespace {
+
+class SettlementSystem final : public System {
+public:
+    SettlementSystem(const EconomyRules& rules, ExpenseSources expenses)
+        : rules_(rules), expenses_(std::move(expenses)) {}
+
+    [[nodiscard]] std::string_view name() const override { return kSettlementSystemName; }
+    [[nodiscard]] Cadence cadence() const override { return Cadence::Monthly; }
+
+    void run(World& world, TickContext& context) override {
+        if (!world.economy_present()) {
+            return;
+        }
+        (void)settle_month(
+            world, rules_, expenses_, Date::from_ymd(context.date.year(), context.date.month(), 1));
+    }
+
+private:
+    EconomyRules rules_;
+    ExpenseSources expenses_;
+};
 
 class ProvincesSystem final : public System {
 public:
@@ -64,6 +86,10 @@ private:
 
 }  // namespace
 
+std::unique_ptr<System> make_settlement_system(const EconomyRules& rules, ExpenseSources expenses) {
+    return std::make_unique<SettlementSystem>(rules, std::move(expenses));
+}
+
 std::unique_ptr<System> make_provinces_system(const EconomyRules& rules,
                                               std::shared_ptr<const PriceSource> prices) {
     return std::make_unique<ProvincesSystem>(rules, std::move(prices));
@@ -71,7 +97,10 @@ std::unique_ptr<System> make_provinces_system(const EconomyRules& rules,
 
 void install_economy_systems(Simulation& simulation,
                              const EconomyRules& rules,
-                             std::shared_ptr<const PriceSource> prices) {
+                             std::shared_ptr<const PriceSource> prices,
+                             ExpenseSources expenses) {
+    // The month is closed before the slots of its first day (spec section 7.1).
+    simulation.add_system(make_settlement_system(rules, std::move(expenses)));
     simulation.add_system(make_provinces_system(rules, std::move(prices)));
 }
 

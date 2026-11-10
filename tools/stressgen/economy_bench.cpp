@@ -2,6 +2,9 @@
 
 #include "pat/core/bytes.hpp"
 #include "pat/core/telemetry.hpp"
+#include "pat/sim/economy/forecast.hpp"
+#include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/rules.hpp"
 #include "pat/sim/save.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/stress/economy_generator.hpp"
@@ -352,6 +355,28 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
     if (!deterministic) {
         return R::err({5, "two runs of the economy systems from the same world diverged"});
     }
+    // The forecast of the treasury (E9-T09) on the world after the run: the crown alone, and every
+    // dynasty once (what the window of the treasury asks per frame is one account).
+    const sim::World& final_world = with_stubs.world();
+    const sim::economy::EconomyRules forecast_rules = sim::economy::EconomyRules::defaults();
+    const sim::economy::StaticPriceSource forecast_prices(forecast_rules.production);
+    const Stat forecast_crown_us = summarize(time_us(options.repeats, [&] {
+        sink += static_cast<std::uint64_t>(
+            sim::economy::forecast_treasury(
+                final_world, forecast_rules, forecast_prices, {}, sim::economy::AccountRef::crown())
+                .monthly_net);
+    }));
+    const Stat forecast_all_us = summarize(time_us(options.repeats, [&] {
+        for (std::uint32_t d = 0; d < final_world.dynasties().size(); ++d) {
+            sink += static_cast<std::uint64_t>(
+                sim::economy::forecast_treasury(final_world,
+                                                forecast_rules,
+                                                forecast_prices,
+                                                {},
+                                                sim::economy::AccountRef::of(sim::DynastyId(d)))
+                    .monthly_net);
+        }
+    }));
     const std::uint64_t persons_after = total_persons(with_stubs.world());
     if (!with_stubs.world().check_invariants().empty()) {
         return R::err({5, "the economy systems broke an invariant of the world"});
@@ -407,6 +432,8 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
         json_stat(deserialize_us, 1000.0),
         load_ms);
     out += ",\"cache_rebuild_floor_us\":" + json_stat(sweep_us);
+    out += ",\"forecast_us\":{\"crown\":" + json_stat(forecast_crown_us) +
+           ",\"all_dynasties\":" + json_stat(forecast_all_us) + "}";
     out += std::format(
         ",\"skeleton\":{{\"days\":{},\"settlement_runs\":{},\"construction_runs\":{},\"province_runs\":{},"
         "\"slots_visited\":{},\"deterministic\":{},\"persons_before\":{},\"persons_after\":{},"

@@ -625,8 +625,11 @@ TEST_CASE("economy.provinces: taxes are posted once per province per month, in m
         require_valid(start);
 
         // the model: for every month, for every province, the steps 2, 3 and 4 exactly once
+        // (only the provinces system runs: the month is never closed, so the open lines of the statement
+        // accumulate the postings of the whole run and the model below can be compared with them)
         World model = start;
-        Simulation sim = economy_sim(start);
+        Simulation sim(start);
+        sim.add_system(make_provinces_system(rules()));
         const StaticPriceSource prices(rules().production);
         const int last_year = first_year == 1703 ? 1712 : 1800;
         std::array<int, 32> lengths{};
