@@ -1,4 +1,5 @@
 add_library(patriarch_content STATIC
+    include/pat/content/credits_content.hpp
     include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
     include/pat/content/load_errors.hpp
@@ -7,6 +8,7 @@ add_library(patriarch_content STATIC
     include/pat/content/m1_scenario.hpp
     include/pat/content/names_content.hpp
     include/pat/content/province_bindings.hpp
+    credits_content.cpp
     demography_content.cpp
     economy_content.cpp
     load_errors.cpp

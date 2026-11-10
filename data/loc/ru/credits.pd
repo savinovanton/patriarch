@@ -1,0 +1,29 @@
+format_version = 1
+
+# Тексты экрана «Титры» (UI-213, docs/dev/credits.md): записи data/credits/credits.pd, разделы и подписи
+# окна. Названия и юридические тексты источников из манифеста геоданных и реестра ассетов сюда не входят:
+# они копируются как есть в data/credits/generated.pd (tools/gen_credits.py).
+
+# ---- Записи, написанные вручную ----------------------------------------------------------------
+
+credits.authors.name = "Игра «Патриарх»"
+credits.authors.text = "Автор, разработка и дизайн интерфейса: savinovanton (владелец проекта)."
+
+# Имя источника записано точно так, как просил владелец (issue 97); проверка gen_credits.py следит,
+# чтобы оно совпадало с attribution.text источника nlr-historical-maps в манифесте.
+credits.rnb.name = "Российская национальная библиотека"
+credits.rnb.text = "Исторические карты и сведения, по которым оцифрованы границы и названия."
+
+credits.natural_earth.name = "Natural Earth"
+credits.natural_earth.text = "Береговая линия и контуры суши. Made with Natural Earth: данные общественного достояния."
+
+# ---- Разделы и подписи окна --------------------------------------------------------------------
+
+ui.credits.title = "Титры"
+ui.credits.close = "Закрыть"
+ui.credits.empty = "Список пуст"
+ui.credits.license = "Лицензия: {license}"
+
+ui.credits.section.authors = "Авторы"
+ui.credits.section.data = "Источники данных"
+ui.credits.section.assets = "Ассеты и шрифты"

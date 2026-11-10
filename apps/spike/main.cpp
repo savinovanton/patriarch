@@ -8,6 +8,7 @@
 // WASD/arrows = move, Q/E = rotate, 1-4 = map mode (terrain / owners / mood / random),
 // V = vsync, F5 = reload shaders, F11 = fullscreen, Esc = quit.
 
+#include "pat/content/credits_content.hpp"
 #include "pat/content/m1_hot_reload.hpp"
 #include "pat/content/m1_scenario.hpp"
 #include "pat/core/log.hpp"
@@ -23,6 +24,7 @@
 #include "pat/engine/ui.hpp"
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
+#include "pat/game/credits_view.hpp"
 #include "pat/game/world_view.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
@@ -32,6 +34,7 @@
 #include "pat/sim/runner.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/credits_window.hpp"
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
@@ -451,6 +454,8 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
     std::unique_ptr<pat::ui::TimeBar> time_bar;           // likewise
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
+    std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
+    pat::content::CreditsList credits_list;               // data/credits, read once (and again on a reload)
     bool hud_visible = true;
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
@@ -502,6 +507,24 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
             }
         }
+        {
+            // Credits (UI-213): the entries come from data/credits, the window from credits.rml. The
+            // "system" entry of the HUD menu opens it (a temporary place until the main menu exists).
+            pat::content::CreditsResult loaded_credits = pat::content::load_credits_content(ui_loc_source);
+            if (loaded_credits) {
+                credits_list = std::move(loaded_credits).value();
+            } else {
+                PAT_LOG_WARN("spike", "credits: {}", pat::content::format_errors(loaded_credits.error()));
+            }
+            auto credits_result = pat::ui::CreditsWindow::create(
+                *ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "credits.rml", ui_loc);
+            if (credits_result) {
+                credits = std::move(credits_result).value();
+                credits->set_snapshot(pat::game::credits_snapshot(ui_loc, credits_list));
+            } else {
+                PAT_LOG_WARN("spike", "credits window: {}", credits_result.error().message);
+            }
+        }
         if (!opt.no_hud) {
             auto hud_result = pat::ui::HudWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
                                                          PATRIARCH_SPIKE_OLIVE_DIR, ui_loc);
@@ -515,8 +538,12 @@ int main(int argc, char** argv) {
                     hud->set_snapshot(pat::ui::make_test_hud(ui_loc));
                 }
                 pat::ui::HudWindow* h = hud.get();
-                hud->set_menu_handler([h](const std::string& key) {
+                pat::ui::CreditsWindow* credits_window = credits.get();
+                hud->set_menu_handler([h, credits_window](const std::string& key) {
                     h->set_active_menu(key);
+                    if (key == "system" && credits_window != nullptr) {
+                        credits_window->toggle();
+                    }
                     PAT_LOG_INFO("spike", "menu: {}", key);
                 });
             } else {
@@ -602,6 +629,14 @@ int main(int argc, char** argv) {
                 }
                 if (character) {
                     character->relocalize();
+                }
+                if (credits) {
+                    pat::content::CreditsResult reloaded_credits = pat::content::load_credits_content(*reload_source);
+                    if (reloaded_credits) {
+                        credits_list = std::move(reloaded_credits).value();
+                    }
+                    credits->relocalize();
+                    credits->set_snapshot(pat::game::credits_snapshot(ui_loc, credits_list));
                 }
                 seen_version = ~static_cast<std::uint64_t>(0);  // writes the date again
             } else {
