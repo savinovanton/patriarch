@@ -19,6 +19,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/mortality.hpp
+    include/pat/sim/opinion.hpp
     include/pat/sim/names.hpp
     include/pat/sim/replay.hpp
     include/pat/sim/runner.hpp
@@ -44,6 +45,7 @@ add_library(patriarch_sim STATIC
     economy/taxes.cpp
     kinship.cpp
     mortality.cpp
+    opinion.cpp
     names.cpp
     replay.cpp
     runner.cpp
@@ -54,7 +56,8 @@ add_library(patriarch_sim STATIC
     world.cpp
     world_economy.cpp
     world_economy_io.cpp
-    world_io.cpp)
+    world_io.cpp
+    world_opinion.cpp)
 add_library(patriarch::sim ALIAS patriarch_sim)
 
 target_include_directories(patriarch_sim PUBLIC

@@ -95,6 +95,12 @@ struct Writer {
         out.u32(c.b.value());
         out.i32(c.param);
     }
+    void operator()(const cmd::AdjustOpinion& c) const {
+        out.u32(c.from.value());
+        out.u32(c.to.value());
+        out.i32(c.delta.raw());
+        out.u16(c.reason);
+    }
 };
 
 }  // namespace
@@ -234,6 +240,11 @@ bool read_command(core::ByteReader& in, Command& out) {
             c.b = CharacterId(in.u32());
             c.param = in.i32();
             out.payload = c;
+            break;
+        }
+        case CommandType::AdjustOpinion: {
+            out.payload = cmd::AdjustOpinion{
+                CharacterId(in.u32()), CharacterId(in.u32()), core::Fixed32::from_raw(in.i32()), in.u16()};
             break;
         }
         default:

@@ -8,6 +8,7 @@
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/mortality.hpp"
+#include "pat/sim/opinion.hpp"
 #include "pat/sim/replay.hpp"
 #include "pat/sim/runner.hpp"
 #include "pat/sim/save.hpp"
@@ -297,6 +298,7 @@ struct ScenarioStart {
         if (m1_world) {
             Simulation simulation(*m1_world);
             simulation.add_system(make_mortality_system(demography));
+            simulation.add_system(make_opinion_system());
             return simulation;
         }
         return demo::make_simulation(demo_config);

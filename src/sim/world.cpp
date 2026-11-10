@@ -589,6 +589,7 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
     living_.erase(std::lower_bound(living_.begin(), living_.end(), id));
     const bool retired = characters_.ids.retire(id);
     PAT_ASSERT(retired, "die: retire failed");
+    erase_opinion_holder(id);
     archive_sum_ += archive_row_hash(i);
     if (retired && dynasty.valid()) {
         append_chronicle(dynasty, {today(), ChronicleKind::Death, id, {}, static_cast<std::int32_t>(cause)});
@@ -1173,6 +1174,10 @@ WorldHash World::compute_hash() const {
         out.ext[static_cast<std::size_t>(ExtPart::Chronicle)] = nonzero(h.value());
     }
 
+    if (!opinions_.empty()) {
+        out.ext[static_cast<std::size_t>(ExtPart::Opinion)] = nonzero(opinion_hash());
+    }
+
     if (economy_.meta.present != 0) {
         // The economy: the nine sub-hashes of its tables (economy_hash_parts). Off = part 0.
         core::HashStream h;
@@ -1476,6 +1481,7 @@ void World::check_kinship_invariants(std::vector<std::string>& bad) const {
 std::vector<std::string> World::check_invariants() const {
     std::vector<std::string> bad;
     auto fail = [&](std::string message) { bad.push_back(std::move(message)); };
+    check_opinion_invariants(bad);
 
     for (const auto& [dynasty, entries] : chronicles_) {
         if (!dynasty_mode() || !exists(dynasty) || entries.empty() || entries.size() > kMaxChronicleEntries) {
