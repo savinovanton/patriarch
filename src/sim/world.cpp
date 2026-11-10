@@ -241,6 +241,43 @@ void World::set_province_owner(ProvinceId province, DynastyId owner) {
 
 // ---- characters ---------------------------------------------------------------------------------
 
+void World::reserve_character_headroom(std::size_t extra) {
+    const std::size_t n = std::min<std::size_t>(characters_.ids.capacity() + extra, kMaxCharacterIds);
+    CharacterTable& c = characters_;
+    c.dynasty.reserve(n);
+    c.birth_date.reserve(n);
+    c.sex.reserve(n);
+    c.health.reserve(n);
+    c.father.reserve(n);
+    c.mother.reserve(n);
+    c.name.reserve(n);
+    c.branch.reserve(n);
+    c.portrait.reserve(n);
+    c.legitimacy.reserve(n);
+    c.cause_of_death.reserve(n);
+    c.death_date.reserve(n);
+    c.spouse.reserve(n);
+    c.marriages.reserve(n);
+    c.ex_spouses.reserve(n);
+    c.godparent.reserve(n);
+    c.first_child.reserve(n);
+    c.next_by_father.reserve(n);
+    c.next_by_mother.reserve(n);
+    c.skills.reserve(n);
+    c.fertility.reserve(n);
+    c.stress.reserve(n);
+    c.piety.reserve(n);
+    c.ambition.reserve(n);
+    c.loyalty_head.reserve(n);
+    c.loyalty_emperor.reserve(n);
+    c.traits.reserve(n);
+    c.education_focus.reserve(n);
+    c.education_tutor.reserve(n);
+    c.education_level.reserve(n);
+    c.planned_death.reserve(n);
+    member_pos_.reserve(n);
+}
+
 void World::grow_character_columns() {
     characters_.dynasty.emplace_back();
     characters_.birth_date.emplace_back();

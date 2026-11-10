@@ -80,6 +80,10 @@ void Simulation::set_executor(std::unique_ptr<TaskExecutor> executor) {
 
 void Simulation::restore_state(World world, std::vector<Command> pending_internal) {
     world_ = std::move(world);
+    // A loaded or copied world has exactly-sized columns; leave room so the first births after a
+    // load do not reallocate every character column (E2 benchmark sim.telemetry_tick, #217).
+    const std::size_t characters = world_.characters().ids.capacity();
+    world_.reserve_character_headroom(characters / 8 + 64);
     pending_internal_ = std::move(pending_internal);
     log_.clear();
     report_ = TickReport{};

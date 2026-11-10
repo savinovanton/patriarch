@@ -407,6 +407,10 @@ public:
     /// born before the child; otherwise the reference is cleared. Returns an invalid id when the table
     /// is full (kMaxCharacterIds).
     CharacterId create_character(const CharacterInit& init);
+    /// Reserves room for `extra` more character slots in every column, so that the next births do
+    /// not reallocate each of the ~30 columns (a copied or loaded world has no spare capacity).
+    /// Capacity only: no state, hash or save changes.
+    void reserve_character_headroom(std::size_t extra);
     /// Removes the character from all indexes (and from the head slot of its dynasty). Only
     /// available outside dynasty mode: there the dead stay in the table (see die()).
     bool destroy_character(CharacterId id);
