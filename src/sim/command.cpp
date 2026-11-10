@@ -272,6 +272,40 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::AssignProvinceAdministrator& c) const {
+        if (!world.economy_present()) {
+            return reject(Rejection::InvalidState, "the world has no economy");
+        }
+        if (!world.exists(c.province)) {
+            return reject(Rejection::UnknownEntity, "unknown province");
+        }
+        if (c.administrator.valid()) {
+            if (!world.exists(c.administrator)) {
+                return reject(Rejection::UnknownEntity, "unknown character");
+            }
+            if (!world.is_alive(c.administrator)) {
+                return reject(Rejection::InvalidState, "the character is dead");
+            }
+        }
+        const std::size_t p = c.province.index();
+        if (actor.valid()) {
+            const bool owns = world.economy().provinces.owner_kind[p] ==
+                                  static_cast<std::uint8_t>(economy::OwnerKind::Dynasty) &&
+                              world.provinces().owner[p] == actor;
+            if (!owns) {
+                return reject(Rejection::NotAuthorized, "the actor does not own the province");
+            }
+            if (c.administrator.valid() && world.characters().dynasty[c.administrator.index()] != actor) {
+                return reject(Rejection::NotAuthorized,
+                              "the administrator must belong to the house of the owner");
+            }
+        }
+        if (world.economy().provinces.administrator[p] == c.administrator) {
+            return reject(Rejection::InvalidState, "the province already has this administrator");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -343,6 +377,9 @@ struct Applier {
     void operator()(const cmd::AdjustOpinion& c) const {
         (void)world.add_opinion(c.from, c.to, c.delta, c.reason);
     }
+    void operator()(const cmd::AssignProvinceAdministrator& c) const {
+        (void)world.set_province_administrator(c.province, c.administrator);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -403,6 +440,11 @@ struct CommandTag<cmd::AdjustOpinion> {
     static constexpr CommandType value = CommandType::AdjustOpinion;
 };
 
+template <>
+struct CommandTag<cmd::AssignProvinceAdministrator> {
+    static constexpr CommandType value = CommandType::AssignProvinceAdministrator;
+};
+
 template <class Variant>
 struct TagTable;
 template <class... Alternatives>
@@ -460,6 +502,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "RecordChronicle";
         case CommandType::AdjustOpinion:
             return "AdjustOpinion";
+        case CommandType::AssignProvinceAdministrator:
+            return "AssignProvinceAdministrator";
     }
     return "?";
 }

@@ -48,12 +48,13 @@ economy_rules "main" {
         low_threshold = 40
         anarchy_threshold = 15
         administrator_neutral = 50
-        control_base = 60
-        steward_gain_permille = 400
+        control_base = 70
+        steward_gain_permille = 600
         unrest_penalty_permille = 300
         control_inertia_permille = 150
         corruption_base_permille = 150
         integrity_gain_permille = 3
+        low_control_corruption_permille = 5
         corruption_inertia_permille = 150
     }
 

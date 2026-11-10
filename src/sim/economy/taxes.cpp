@@ -1,6 +1,7 @@
 #include "pat/sim/economy/taxes.hpp"
 
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/ledger.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/world.hpp"
@@ -25,11 +26,6 @@ std::int32_t policy_permille(const TaxRules& tax, std::uint8_t level) noexcept {
     }
     const auto last = static_cast<std::size_t>(tax.level_count - 1);
     return tax.levels[std::min<std::size_t>(level, last)].tax_permille;
-}
-
-/// `points` strictly below `threshold` whole points.
-bool below(Fixed32 points, std::int32_t threshold) noexcept {
-    return static_cast<std::int64_t>(points.raw()) < static_cast<std::int64_t>(threshold) * kOne;
 }
 
 /// One step of the chain: x per-mille, truncated toward zero, never above a posting.
@@ -107,8 +103,10 @@ GroupTax compute_group_tax(const TaxRules& tax,
         return {};
     }
 
-    const bool anarchy = below(input.control, control_rules.anarchy_threshold);
-    const bool low_control = below(input.control, control_rules.low_threshold);
+    // the thresholds are classified in one place (administrator.hpp): both limits are strict
+    const ControlState state = control_state(control_rules, input.control);
+    const bool anarchy = state == ControlState::Anarchy;
+    const bool low_control = state != ControlState::Normal;
 
     struct Step {
         std::uint16_t code;
@@ -172,7 +170,7 @@ GroupTax compute_group_tax(const TaxRules& tax,
 ProvinceIncome
 compute_province_income(const EconomyRules& rules, const TaxInput& input, Kopecks holding_income_kop) {
     ProvinceIncome out;
-    out.anarchy = below(input.control, rules.control.anarchy_threshold);
+    out.anarchy = control_state(rules.control, input.control) == ControlState::Anarchy;
     for (std::size_t g = 0; g < kGroupCount; ++g) {
         out.group[g] = compute_group_tax(rules.tax, rules.control, input, static_cast<Group>(g));
     }

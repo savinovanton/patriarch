@@ -201,12 +201,16 @@ TEST_CASE(
     without.run_days(365);
 
     // The stubs change nothing; the real `economy.provinces` grows the population (E9-T06; a year of
-    // peace: every group of a province is processed once a month) and, since E9-T08, pays the taxes
-    // and the holding income to the accounts of the owners; it touches nothing else.
+    // peace: every group of a province is processed once a month), since E9-T08 pays the taxes and the
+    // holding income to the accounts of the owners and since E9-T10 moves control and corruption; it
+    // touches nothing else.
     CHECK(with.world().compute_hash() != without.world().compute_hash());
     CHECK(with.world().check_invariants().empty());
     CHECK(with.world().economy().accounts != without.world().economy().accounts);
-    CHECK(with.world().economy().provinces.control == without.world().economy().provinces.control);
+    // since E9-T10 control and corruption move toward the targets of the administrators (the stub:
+    // everybody average); the mood is still untouched
+    CHECK(with.world().economy().provinces.control != without.world().economy().provinces.control);
+    CHECK(with.world().economy().provinces.corruption != without.world().economy().provinces.corruption);
     CHECK(with.world().economy().groups.mood == without.world().economy().groups.mood);
     for (std::size_t p = 0; p < provinces; ++p) {
         CHECK(with.world().economy().provinces.last_slot_date[p] != sim::kNoDate);
@@ -277,7 +281,11 @@ TEST_CASE("economy.provinces: fifty years of peace on the 400 provinces of the s
     REQUIRE(generated);
     const sim::World& world = generated.value().world;
     REQUIRE(world.provinces().size() == 400);
-    const auto rules = eco::EconomyRules::defaults();
+    auto rules = eco::EconomyRules::defaults();
+    // the grain of the generated provinces is sized to their starting control (E9-T07), so the
+    // administration is frozen: this test is about peace, not about governors (E9-T10)
+    rules.control.control_inertia_permille = 0;
+    rules.control.corruption_inertia_permille = 0;
 
     sim::Simulation a(world);
     eco::install_economy_systems(a, rules);

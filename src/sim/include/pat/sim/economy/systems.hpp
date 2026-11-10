@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/economy/settlement.hpp"
@@ -40,20 +41,28 @@ inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
 /// The system `economy.provinces`: every day it takes the provinces whose slot is today
 /// (`is_monthly_slot(province_index, date)`, index % 28 == day - 1, days 1..28; days 29..31 take
 /// nobody), so every province is processed exactly once in a month of any length. For each one it
-/// runs the steps of section 7.3 in their fixed order; so far: step 2 (growth of the population, E9-T06),
+/// runs the steps of section 7.3 in their fixed order; so far: step 1 (control and corruption move
+/// toward the targets of the administrator, E9-T10; a province in turmoil gets an `Anarchy` entry in
+/// the incident log with step 4), step 2 (growth of the population, E9-T06),
 /// step 3 (production, consumption, grain stock and wealth, E9-T07), step 4 (taxes and holding income
 /// posted to the owner, E9-T08) and step 8 (`last_slot_date`; the
 /// population cache is refreshed by the World). `prices` (shared, immutable; null = the static prices
-/// of `rules.production`) is asked for the price of every good a province makes.
+/// of `rules.production`) is asked for the price of every good a province makes. `administrators`
+/// (shared, immutable; null = the stub, 50/50 for everybody) gives the profile of the administrator of
+/// a province (E7 plugs its characters in; tests plug their own).
 /// Does nothing in a world without economy. No random numbers.
 [[nodiscard]] std::unique_ptr<System>
-make_provinces_system(const EconomyRules& rules, std::shared_ptr<const PriceSource> prices = nullptr);
+make_provinces_system(const EconomyRules& rules,
+                      std::shared_ptr<const PriceSource> prices = nullptr,
+                      std::shared_ptr<const AdministratorSource> administrators = nullptr);
 
 /// Registers the systems of the economy in the order of the spec. Call before the first tick.
 /// `expenses`: the flat-expense sources of other epics for the settlement (E9-T09; none in M1).
+/// `administrators`: the source of the profiles of administrators (E9-T10; null = the stub).
 void install_economy_systems(Simulation& simulation,
                              const EconomyRules& rules,
                              std::shared_ptr<const PriceSource> prices = nullptr,
-                             ExpenseSources expenses = {});
+                             ExpenseSources expenses = {},
+                             std::shared_ptr<const AdministratorSource> administrators = nullptr);
 
 }  // namespace pat::sim::economy

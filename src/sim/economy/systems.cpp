@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/sim/calendar.hpp"
+#include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/settlement.hpp"
@@ -39,9 +40,13 @@ private:
 
 class ProvincesSystem final : public System {
 public:
-    ProvincesSystem(const EconomyRules& rules, std::shared_ptr<const PriceSource> prices)
+    ProvincesSystem(const EconomyRules& rules,
+                    std::shared_ptr<const PriceSource> prices,
+                    std::shared_ptr<const AdministratorSource> administrators)
         : rules_(rules),
-          prices_(prices ? std::move(prices) : std::make_shared<const StaticPriceSource>(rules.production)) {}
+          prices_(prices ? std::move(prices) : std::make_shared<const StaticPriceSource>(rules.production)),
+          administrators_(administrators ? std::move(administrators)
+                                         : std::make_shared<const StubAdministratorSource>()) {}
 
     [[nodiscard]] std::string_view name() const override { return kProvincesSystemName; }
     [[nodiscard]] Cadence cadence() const override { return Cadence::Daily; }
@@ -66,6 +71,9 @@ public:
 private:
     /// The steps of spec section 7.3 that exist so far, in their fixed order.
     void process_province(World& world, ProvinceId province, Date today) {
+        // Step 1: control and corruption move toward the targets of the administrator (F7, E9-T10);
+        // the rest of the slot, taxes included, sees the new values.
+        (void)step_province_administration(world, rules_, administrators_.get(), province);
         // Step 2: growth of the population.
         (void)step_province_population(world, rules_.population, province);
         // Step 3: production and consumption (F2-F5); the grain stock and the wealth are written. Its
@@ -73,7 +81,10 @@ private:
         const ProvinceProduction production = step_province_production(world, rules_, *prices_, province);
         // Step 4: taxes of the groups and the holding income go to the owner (and the crown's share of
         // a city to the crown) through post_money; `income_last_month` is written (F6, E9-T08).
-        (void)step_province_taxes(world, rules_, province, production.holding_income_kop);
+        const ProvinceIncome income =
+            step_province_taxes(world, rules_, province, production.holding_income_kop);
+        // A province in turmoil pays its owner nothing; the incident log says so (E9-T10).
+        (void)record_anarchy(world, province, income.anarchy);
         // Step 8: the slot is done. (The population cache was refreshed by the World with the sizes.)
         PAT_ASSERT(world.economy().provinces.last_slot_date[province.index()] != today,
                    "a province must be processed once per month");
@@ -82,6 +93,7 @@ private:
 
     EconomyRules rules_;
     std::shared_ptr<const PriceSource> prices_;
+    std::shared_ptr<const AdministratorSource> administrators_;
 };
 
 }  // namespace
@@ -91,17 +103,19 @@ std::unique_ptr<System> make_settlement_system(const EconomyRules& rules, Expens
 }
 
 std::unique_ptr<System> make_provinces_system(const EconomyRules& rules,
-                                              std::shared_ptr<const PriceSource> prices) {
-    return std::make_unique<ProvincesSystem>(rules, std::move(prices));
+                                              std::shared_ptr<const PriceSource> prices,
+                                              std::shared_ptr<const AdministratorSource> administrators) {
+    return std::make_unique<ProvincesSystem>(rules, std::move(prices), std::move(administrators));
 }
 
 void install_economy_systems(Simulation& simulation,
                              const EconomyRules& rules,
                              std::shared_ptr<const PriceSource> prices,
-                             ExpenseSources expenses) {
+                             ExpenseSources expenses,
+                             std::shared_ptr<const AdministratorSource> administrators) {
     // The month is closed before the slots of its first day (spec section 7.1).
     simulation.add_system(make_settlement_system(rules, std::move(expenses)));
-    simulation.add_system(make_provinces_system(rules, std::move(prices)));
+    simulation.add_system(make_provinces_system(rules, std::move(prices), std::move(administrators)));
 }
 
 }  // namespace pat::sim::economy

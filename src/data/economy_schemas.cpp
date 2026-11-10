@@ -108,6 +108,8 @@ ObjectSchema control_block() {
         .describe("Базовая коррупция как доля собранного налога, промилле.")
         .required("integrity_gain_permille", multiplier())
         .describe("Промилле коррупции, снимаемые за пункт честности выше нейтральной.")
+        .required("low_control_corruption_permille", multiplier())
+        .describe("Промилле коррупции, добавляемые за каждый пункт контроля ниже `low_threshold`.")
         .required("corruption_inertia_permille", permille())
         .describe("Доля разрыва до целевой коррупции, закрываемая за месяц, промилле.");
     return s;

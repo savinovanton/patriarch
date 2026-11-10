@@ -137,6 +137,9 @@ struct ControlRules {
     std::int32_t corruption_base_permille = 0;
     /// Corruption per-mille removed per point of integrity above neutral.
     std::int32_t integrity_gain_permille = 0;
+    /// Corruption per-mille added per point of control below `low_threshold` (the weaker the grip, the
+    /// more is stolen; GDD 03 section 3.2).
+    std::int32_t low_control_corruption_permille = 0;
     std::int32_t corruption_inertia_permille = 0;
 };
 
