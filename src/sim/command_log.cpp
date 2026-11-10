@@ -88,6 +88,13 @@ struct Writer {
         out.u32(c.character.value());
         out.i32(c.date.days());
     }
+    void operator()(const cmd::RecordChronicle& c) const {
+        out.u32(c.dynasty.value());
+        out.u8(static_cast<std::uint8_t>(c.kind));
+        out.u32(c.a.value());
+        out.u32(c.b.value());
+        out.i32(c.param);
+    }
 };
 
 }  // namespace
@@ -213,6 +220,20 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::PlanDeath: {
             const CharacterId character(in.u32());
             out.payload = cmd::PlanDeath{character, Date::from_days(in.i32())};
+            break;
+        }
+        case CommandType::RecordChronicle: {
+            cmd::RecordChronicle c;
+            c.dynasty = DynastyId(in.u32());
+            const auto kind = static_cast<ChronicleKind>(in.u8());
+            if (kind < ChronicleKind::Birth || kind > ChronicleKind::Note) {
+                return false;
+            }
+            c.kind = kind;
+            c.a = CharacterId(in.u32());
+            c.b = CharacterId(in.u32());
+            c.param = in.i32();
+            out.payload = c;
             break;
         }
         default:

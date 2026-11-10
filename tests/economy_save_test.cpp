@@ -605,8 +605,7 @@ TEST_CASE("save: a world without economy writes no economy section and has no ec
     const std::vector<std::uint8_t> bytes = state_bytes(world);
     CHECK(section_ids(bytes).empty());
     ByteReader schema(bytes);
-    CHECK(schema.u32() == 5);
-    CHECK(World::kStateSchema == 5);
+    CHECK(schema.u32() == World::kStateSchema);
 
     // The hash of the plain world does not know the economy; with it on, only `total` and ext move.
     World with = world;

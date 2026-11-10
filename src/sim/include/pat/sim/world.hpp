@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
 #include <optional>
 #include <span>
@@ -124,6 +125,20 @@ enum class CauseOfDeath : std::uint8_t {
     Grief,
 };
 inline constexpr std::uint8_t kCauseOfDeathCount = 10;  // values 0..9; Die accepts 1..9
+
+/// Stable tags in the chronicle section and RecordChronicle payload.
+enum class ChronicleKind : std::uint8_t { Birth = 1, Death = 2, HeadChanged = 3, Extinction = 4, Note = 5 };
+inline constexpr std::size_t kMaxChronicleEntries = 256;
+
+struct ChronicleEntry {
+    Date date;
+    ChronicleKind kind = ChronicleKind::Note;
+    CharacterId a;
+    CharacterId b;
+    std::int32_t param = 0;
+
+    [[nodiscard]] bool operator==(const ChronicleEntry&) const = default;
+};
 
 /// Bits of `World::world_flags()`.
 inline constexpr std::uint32_t kWorldFlagDynastyMode = 1U << 0;
@@ -423,6 +438,12 @@ public:
     /// The archived record of a dead character, copied by value; nullopt for anybody who is not in
     /// the archive (alive, unknown, or E1 mode).
     [[nodiscard]] std::optional<ArchivedPerson> archived_person(CharacterId id) const;
+
+    /// Retained facts and notes, oldest first and in insertion order within a day.
+    [[nodiscard]] std::span<const ChronicleEntry> chronicle(DynastyId dynasty) const;
+    [[nodiscard]] std::vector<ChronicleEntry> query_chronicle(
+        DynastyId dynasty, Date from, Date through, std::optional<ChronicleKind> kind = std::nullopt) const;
+    bool record_chronicle_note(DynastyId dynasty, CharacterId a, CharacterId b, std::int32_t param);
     /// Number of rows in the archive.
     [[nodiscard]] std::size_t archived_count() const noexcept { return characters_.ids.retired_count(); }
     /// True when another character can be created now.
@@ -588,7 +609,8 @@ public:
     ///   3  + section 3 "kin": spouses, marriage counters, former spouses, godparents (E7-T03)
     ///   4  the slot table may hold archived rows (slot state 2), dynasty mode only (E7-T04)
     ///   5  + the economy: sections 32..39 of the extension block (E9-T03); older files have none
-    static constexpr std::uint32_t kStateSchema = 5;
+    ///   6  + section 5 "chronicle" (E7-T16); older files start with empty chronicles
+    static constexpr std::uint32_t kStateSchema = 6;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -598,6 +620,7 @@ public:
     [[nodiscard]] static core::Result<World, core::Error> load_state(core::ByteReader& in);
 
 private:
+    void append_chronicle(DynastyId dynasty, ChronicleEntry entry);
     // Defaults of the columns added in E7-T02 and helpers that keep them in sync.
     void grow_character_columns();
     void reset_character_extension(std::size_t index);
@@ -662,6 +685,7 @@ private:
     std::vector<CharacterId> living_;                           // derived, ascending
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
+    std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
     economy::EconomyState economy_;  // E9-T02: empty unless enable_economy() was called
 };
 

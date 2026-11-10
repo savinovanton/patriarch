@@ -25,11 +25,12 @@ enum class CommandType : std::uint8_t {
     KillCharacter = 3,
     SetDynastyHead = 4,
     AdjustHonor = 5,
-    Die = 6,           // E7-T04
-    Marry = 7,         // E7-T03
-    EndMarriage = 8,   // E7-T03
-    CreatePerson = 9,  // E7-T02
-    PlanDeath = 16,    // E7-T10
+    Die = 6,               // E7-T04
+    Marry = 7,             // E7-T03
+    EndMarriage = 8,       // E7-T03
+    CreatePerson = 9,      // E7-T02
+    PlanDeath = 16,        // E7-T10
+    RecordChronicle = 18,  // E7-T16
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -96,6 +97,17 @@ struct PlanDeath {
     [[nodiscard]] bool operator==(const PlanDeath&) const = default;
 };
 
+/// Adds an editorial note to a dynasty's chronicle. Factual entries come from world operations.
+struct RecordChronicle {
+    DynastyId dynasty;
+    ChronicleKind kind = ChronicleKind::Note;
+    CharacterId a;
+    CharacterId b;
+    std::int32_t param = 0;
+
+    [[nodiscard]] bool operator==(const RecordChronicle&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -121,7 +133,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::Die,
                                     cmd::Marry,
                                     cmd::EndMarriage,
-                                    cmd::PlanDeath>;
+                                    cmd::PlanDeath,
+                                    cmd::RecordChronicle>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
