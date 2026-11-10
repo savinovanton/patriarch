@@ -37,6 +37,10 @@
 // when the economy is on, so every world that does not use it saves the same bytes as under schema 4.
 // A file of an older schema has none and migrates to a world without economy.
 //
+// Schema 6 (E7-T16) adds section 5 "chronicle": u32 rows, each with u32 dynasty id and u16 entry
+// count, followed by entries in chronological order. An entry is i32 date | u8 kind | u32 a |
+// u32 b | i32 param. Only nonempty rows are stored, by ascending dynasty id. Absence means empty.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -50,6 +54,7 @@ R fail(const char* message) {
     return R::err(core::Error{10, message});
 }
 
+using detail::kSectionChronicle;
 using detail::kSectionDynasty;
 using detail::kSectionKin;
 using detail::kSectionPerson;
@@ -60,6 +65,8 @@ constexpr std::size_t kPersonRowBytes = 90;
 constexpr std::size_t kDynastyRowBytes = 9;
 constexpr std::size_t kBranchRowBytes = 8;
 constexpr std::size_t kKinRowBytes = 4 + 4 + 1 + 4 * kMaxExSpouses + 4 * kGodparentSlots;
+constexpr std::size_t kChronicleEntryBytes = 17;
+constexpr std::size_t kMinChronicleRowBytes = 6 + kChronicleEntryBytes;
 
 struct SectionInfo {
     std::uint16_t id;
@@ -70,6 +77,7 @@ constexpr SectionInfo kSections[] = {
     {kSectionPerson, 1, 2},
     {kSectionDynasty, 1, 2},
     {kSectionKin, 1, 3},
+    {kSectionChronicle, 1, 6},
     {detail::kSectionEconomy, 1, 5},
     {detail::kSectionEconomyDynasty, 1, 5},
     {detail::kSectionEconomyProvince, 1, 5},
@@ -269,6 +277,24 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
+    if (!chronicles_.empty()) {
+        Section section{kSectionChronicle, 1, {}};
+        core::ByteWriter& w = section.body;
+        w.u32(static_cast<std::uint32_t>(chronicles_.size()));
+        for (const auto& [dynasty, entries] : chronicles_) {
+            w.u32(dynasty.value());
+            w.u16(static_cast<std::uint16_t>(entries.size()));
+            for (const ChronicleEntry& entry : entries) {
+                w.i32(entry.date.days());
+                w.u8(static_cast<std::uint8_t>(entry.kind));
+                w.u32(entry.a.value());
+                w.u32(entry.b.value());
+                w.i32(entry.param);
+            }
+        }
+        sections.push_back(std::move(section));
+    }
+
     economy_write_sections(sections);  // ids 32..39, after the sections above
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
@@ -428,8 +454,8 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     // its default and the derived data is built below. Schema 2 -> 3 (E7-T03): there is no kin
     // section; every spouse, marriage counter, former spouse and godparent stays at its default and
     // the child lists are derived from the parent columns that schema 1 already had. Parents of a
-    // dynasty-mode world are checked by check_invariants(). Later schemas add their own
-    // "if (schema >= N)" block here, in ascending order, so that any old file passes all steps.
+    // dynasty-mode world are checked by check_invariants(). Schema 5 -> 6 (E7-T16): earlier
+    // saves have no chronicle section, so every dynasty starts with an empty chronicle.
     if (schema >= 2) {
         const std::uint32_t flags = in.u32();
         if (!in.ok() || (flags & ~kWorldFlagDynastyMode) != 0) {
@@ -536,6 +562,38 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     }
                     if (chars.marriages[row] > kMaxMarriages) {
                         return fail("invalid marriage counter");
+                    }
+                }
+            } else if (id == kSectionChronicle) {
+                const std::uint32_t rows = sr.u32();
+                if (!world.dynasty_mode() || rows == 0 || rows > dynasty_count ||
+                    !plausible(sr, rows, kMinChronicleRowBytes)) {
+                    return fail("invalid chronicle section");
+                }
+                std::uint32_t previous_row = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t row = sr.u32();
+                    const std::uint16_t count = sr.u16();
+                    if (!sr.ok() || row >= dynasty_count || (r != 0 && row <= previous_row)) {
+                        return fail("chronicle rows are out of range or out of order");
+                    }
+                    if (count == 0 || count > kMaxChronicleEntries ||
+                        !plausible(sr, count, kChronicleEntryBytes)) {
+                        return fail("invalid chronicle entry count");
+                    }
+                    previous_row = row;
+                    auto& entries = world.chronicles_[DynastyId(row)];
+                    entries.reserve(count);
+                    for (std::uint16_t i = 0; i < count; ++i) {
+                        const Date date = Date::from_days(sr.i32());
+                        const auto kind = static_cast<ChronicleKind>(sr.u8());
+                        if (kind < ChronicleKind::Birth || kind > ChronicleKind::Note) {
+                            return fail("invalid chronicle entry kind");
+                        }
+                        const CharacterId a(sr.u32());
+                        const CharacterId b(sr.u32());
+                        const std::int32_t param = sr.i32();
+                        entries.push_back({date, kind, a, b, param});
                     }
                 }
             } else if (id >= detail::kSectionEconomy) {

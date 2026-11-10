@@ -55,6 +55,20 @@ void hash_table_slots(core::HashStream& h, const EntityTable<Id>& ids) {
     return value == 0 ? 1 : value;
 }
 
+[[nodiscard]] int chronicle_priority(ChronicleKind kind) noexcept {
+    switch (kind) {
+        case ChronicleKind::HeadChanged:
+        case ChronicleKind::Extinction:
+            return 2;
+        case ChronicleKind::Birth:
+        case ChronicleKind::Death:
+            return 1;
+        case ChronicleKind::Note:
+            return 0;
+    }
+    return 0;
+}
+
 }  // namespace
 
 std::string ext_part_name(std::size_t number) {
@@ -134,7 +148,11 @@ bool World::set_dynasty_head(DynastyId dynasty, CharacterId head) {
             return false;
         }
     }
+    const CharacterId previous = dynasties_.head[dynasty.index()];
     dynasties_.head[dynasty.index()] = head;
+    if (dynasty_mode() && is_sane_date(today()) && previous != head) {
+        append_chronicle(dynasty, {today(), ChronicleKind::HeadChanged, previous, head, 0});
+    }
     return true;
 }
 
@@ -499,6 +517,9 @@ CharacterId World::create_character(const CharacterInit& init) {
         link_child(id);
         if (is_sane_date(init.birth_date) && is_sane_date(today())) {
             push_life_events(id, first_birthday_due(init.birth_date, today()));
+            if (dynasty.valid() && init.birth_date == today()) {
+                append_chronicle(dynasty, {today(), ChronicleKind::Birth, id, {}, 0});
+            }
         }
     }
     return id;
@@ -569,7 +590,56 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
     const bool retired = characters_.ids.retire(id);
     PAT_ASSERT(retired, "die: retire failed");
     archive_sum_ += archive_row_hash(i);
+    if (retired && dynasty.valid()) {
+        append_chronicle(dynasty, {today(), ChronicleKind::Death, id, {}, static_cast<std::int32_t>(cause)});
+        if (members_of(dynasty).empty()) {
+            append_chronicle(dynasty, {today(), ChronicleKind::Extinction, id, {}, 0});
+        }
+    }
     return retired;
+}
+
+void World::append_chronicle(DynastyId dynasty, ChronicleEntry entry) {
+    auto& entries = chronicles_[dynasty];
+    if (entries.size() == kMaxChronicleEntries) {
+        const auto victim = std::ranges::min_element(
+            entries, {}, [](const ChronicleEntry& item) { return chronicle_priority(item.kind); });
+        if (chronicle_priority(entry.kind) < chronicle_priority(victim->kind)) {
+            return;
+        }
+        // min_element chooses the first match, which is the oldest of that priority.
+        entries.erase(victim);
+    }
+    entries.push_back(entry);
+}
+
+bool World::record_chronicle_note(DynastyId dynasty, CharacterId a, CharacterId b, std::int32_t param) {
+    if (!dynasty_mode() || !is_sane_date(today()) || !exists(dynasty) || (a.valid() && !exists(a)) ||
+        (b.valid() && !exists(b))) {
+        return false;
+    }
+    append_chronicle(dynasty, {today(), ChronicleKind::Note, a, b, param});
+    return true;
+}
+
+std::span<const ChronicleEntry> World::chronicle(DynastyId dynasty) const {
+    const auto row = chronicles_.find(dynasty);
+    return row == chronicles_.end() ? std::span<const ChronicleEntry>{}
+                                    : std::span<const ChronicleEntry>{row->second};
+}
+
+std::vector<ChronicleEntry>
+World::query_chronicle(DynastyId dynasty, Date from, Date through, std::optional<ChronicleKind> kind) const {
+    std::vector<ChronicleEntry> matches;
+    for (const ChronicleEntry& entry : chronicle(dynasty)) {
+        if (entry.date > through) {
+            break;
+        }
+        if (entry.date >= from && (!kind || entry.kind == *kind)) {
+            matches.push_back(entry);
+        }
+    }
+    return matches;
 }
 
 std::optional<ArchivedPerson> World::archived_person(CharacterId id) const {
@@ -1082,6 +1152,23 @@ WorldHash World::compute_hash() const {
         out.ext[static_cast<std::size_t>(ExtPart::Archive)] = nonzero(h.value());
     }
 
+    if (!chronicles_.empty()) {
+        core::HashStream h;
+        h.u64(chronicles_.size());
+        for (const auto& [dynasty, entries] : chronicles_) {
+            h.u32(dynasty.value());
+            h.u64(entries.size());
+            for (const auto& entry : entries) {
+                h.i32(entry.date.days());
+                h.u8(static_cast<std::uint8_t>(entry.kind));
+                h.u32(entry.a.value());
+                h.u32(entry.b.value());
+                h.i32(entry.param);
+            }
+        }
+        out.ext[static_cast<std::size_t>(ExtPart::Chronicle)] = nonzero(h.value());
+    }
+
     if (economy_.meta.present != 0) {
         // The economy: the nine sub-hashes of its tables (economy_hash_parts). Off = part 0.
         core::HashStream h;
@@ -1385,6 +1472,47 @@ void World::check_kinship_invariants(std::vector<std::string>& bad) const {
 std::vector<std::string> World::check_invariants() const {
     std::vector<std::string> bad;
     auto fail = [&](std::string message) { bad.push_back(std::move(message)); };
+
+    for (const auto& [dynasty, entries] : chronicles_) {
+        if (!dynasty_mode() || !exists(dynasty) || entries.empty() || entries.size() > kMaxChronicleEntries) {
+            fail("invalid chronicle row");
+            continue;
+        }
+        if (!std::ranges::is_sorted(entries, {}, &ChronicleEntry::date)) {
+            fail("chronicle dates are out of order");
+        }
+        for (const auto& entry : entries) {
+            if (!is_sane_date(entry.date) || entry.date > today() || (entry.a.valid() && !exists(entry.a)) ||
+                (entry.b.valid() && !exists(entry.b))) {
+                fail("chronicle entry has an invalid date or participant");
+                continue;
+            }
+            switch (entry.kind) {
+                case ChronicleKind::Birth:
+                case ChronicleKind::Extinction:
+                    if (!entry.a.valid() || entry.b.valid() || entry.param != 0) {
+                        fail("invalid birth or extinction chronicle entry");
+                    }
+                    break;
+                case ChronicleKind::Death:
+                    if (!is_archived(entry.a) || entry.b.valid() || entry.param <= 0 ||
+                        entry.param >= kCauseOfDeathCount) {
+                        fail("invalid death chronicle entry");
+                    }
+                    break;
+                case ChronicleKind::HeadChanged:
+                    if (entry.a == entry.b || entry.param != 0) {
+                        fail("invalid head change chronicle entry");
+                    }
+                    break;
+                case ChronicleKind::Note:
+                    break;
+                default:
+                    fail("unknown chronicle entry kind");
+                    break;
+            }
+        }
+    }
 
     const std::size_t capacity = characters_.ids.capacity();
     const CharacterTable& ch = characters_;

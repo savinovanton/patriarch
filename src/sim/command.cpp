@@ -239,6 +239,23 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::RecordChronicle& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may write a chronicle note");
+        }
+        if (!world.dynasty_mode() || !is_sane_date(world.today())) {
+            return reject(Rejection::InvalidState, "RecordChronicle needs dynasty mode and a valid date");
+        }
+        if (c.kind != ChronicleKind::Note) {
+            return reject(Rejection::InvalidArgument, "RecordChronicle accepts editorial notes only");
+        }
+        if (!world.exists(c.dynasty) || (c.a.valid() && !world.exists(c.a)) ||
+            (c.b.valid() && !world.exists(c.b))) {
+            return reject(Rejection::UnknownEntity, "unknown chronicle dynasty or participant");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -304,6 +321,9 @@ struct Applier {
     void operator()(const cmd::PlanDeath& c) const {
         (void)world.set_character_planned_death(c.character, c.date);
     }
+    void operator()(const cmd::RecordChronicle& c) const {
+        (void)world.record_chronicle_note(c.dynasty, c.a, c.b, c.param);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -354,6 +374,10 @@ struct CommandTag<cmd::EndMarriage> {
 template <>
 struct CommandTag<cmd::PlanDeath> {
     static constexpr CommandType value = CommandType::PlanDeath;
+};
+template <>
+struct CommandTag<cmd::RecordChronicle> {
+    static constexpr CommandType value = CommandType::RecordChronicle;
 };
 
 template <class Variant>
@@ -409,6 +433,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "EndMarriage";
         case CommandType::PlanDeath:
             return "PlanDeath";
+        case CommandType::RecordChronicle:
+            return "RecordChronicle";
     }
     return "?";
 }
