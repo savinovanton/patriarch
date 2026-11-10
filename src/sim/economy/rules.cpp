@@ -124,13 +124,17 @@ constexpr EconomyRules kDefaultEconomyRules{
             .anarchy_threshold = 15,
             // economy-model s.9 F7: stewardship and integrity are 0...100 with a neutral 50
             .administrator_neutral = 50,
-            // own placeholders
-            .control_base = 60,
-            .steward_gain_permille = 400,
+            // own placeholders (E9-T10): an average administrator holds a province at 70, the best at 100
+            // (+30 at stewardship 100), the worst at 40 (the low threshold); unrest of 100 costs 30. An
+            // average one steals 15 % of the tax, the best nothing, the worst 30 %; below the low
+            // threshold every missing point of control adds 0.5 %
+            .control_base = 70,
+            .steward_gain_permille = 600,
             .unrest_penalty_permille = 300,
             .control_inertia_permille = 150,
             .corruption_base_permille = 150,
             .integrity_gain_permille = 3,
+            .low_control_corruption_permille = 5,
             .corruption_inertia_permille = 150,
         },
 
@@ -410,6 +414,11 @@ Check check_control(const ControlRules& r) {
         return res;
     }
     if (auto res = range(Code::Control, "integrity_gain_permille", r.integrity_gain_permille, 0, kMaxMult);
+        !res) {
+        return res;
+    }
+    if (auto res = range(
+            Code::Control, "low_control_corruption_permille", r.low_control_corruption_permille, 0, kMaxMult);
         !res) {
         return res;
     }

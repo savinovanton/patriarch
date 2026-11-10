@@ -95,6 +95,10 @@ struct Writer {
         out.u32(c.b.value());
         out.i32(c.param);
     }
+    void operator()(const cmd::AssignProvinceAdministrator& c) const {
+        out.u32(c.province.value());
+        out.u32(c.administrator.value());
+    }
     void operator()(const cmd::AdjustOpinion& c) const {
         out.u32(c.from.value());
         out.u32(c.to.value());
@@ -245,6 +249,11 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::AdjustOpinion: {
             out.payload = cmd::AdjustOpinion{
                 CharacterId(in.u32()), CharacterId(in.u32()), core::Fixed32::from_raw(in.i32()), in.u16()};
+            break;
+        }
+        case CommandType::AssignProvinceAdministrator: {
+            const ProvinceId province(in.u32());
+            out.payload = cmd::AssignProvinceAdministrator{province, CharacterId(in.u32())};
             break;
         }
         default:

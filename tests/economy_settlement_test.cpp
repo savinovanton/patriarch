@@ -36,7 +36,14 @@ namespace {
 constexpr std::uint8_t kMill = 1;  // the building of the default rules: 30 roubles a month
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
+    static const EconomyRules value = [] {
+        EconomyRules r = EconomyRules::defaults();
+        // E9-T10: the administration is frozen here, control and corruption stay as the test sets them
+        // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
+        r.control.control_inertia_permille = 0;
+        r.control.corruption_inertia_permille = 0;
+        return r;
+    }();
     return value;
 }
 
@@ -583,6 +590,9 @@ EconomyRules steady_rules() {
     r.population.birth_ppm_year.fill(0);
     r.population.death_ppm_year.fill(0);
     r.population.wealth_growth_ppm_per_point = 0;
+    // and nobody governs better or worse month by month (E9-T10)
+    r.control.control_inertia_permille = 0;
+    r.control.corruption_inertia_permille = 0;
     return r;
 }
 

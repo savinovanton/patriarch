@@ -26,13 +26,14 @@ enum class CommandType : std::uint8_t {
     KillCharacter = 3,
     SetDynastyHead = 4,
     AdjustHonor = 5,
-    Die = 6,               // E7-T04
-    Marry = 7,             // E7-T03
-    EndMarriage = 8,       // E7-T03
-    CreatePerson = 9,      // E7-T02
-    PlanDeath = 16,        // E7-T10
-    RecordChronicle = 18,  // E7-T16
-    AdjustOpinion = 19,    // E7-T17
+    Die = 6,                           // E7-T04
+    Marry = 7,                         // E7-T03
+    EndMarriage = 8,                   // E7-T03
+    CreatePerson = 9,                  // E7-T02
+    PlanDeath = 16,                    // E7-T10
+    RecordChronicle = 18,              // E7-T16
+    AdjustOpinion = 19,                // E7-T17
+    AssignProvinceAdministrator = 35,  // E9-T10 (the block 32..63 is E9's)
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -120,6 +121,18 @@ struct AdjustOpinion {
     [[nodiscard]] bool operator==(const AdjustOpinion&) const = default;
 };
 
+/// Appoints a character as the administrator of a province, or dismisses the present one when
+/// `administrator` is invalid (E9-T10, GDD 03 section 3.2). Needs an economy. A dynasty may appoint
+/// a living member of its own house to a province it owns; the system (invalid actor) may appoint any
+/// living character to any province ("appointed lawfully": the crown, an office, a grant). Control
+/// and corruption do not jump: they move toward the targets of the new administrator over the next
+/// months (economy.provinces, step 1).
+struct AssignProvinceAdministrator {
+    ProvinceId province;
+    CharacterId administrator;  // invalid = no administrator
+    [[nodiscard]] bool operator==(const AssignProvinceAdministrator&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -147,7 +160,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::EndMarriage,
                                     cmd::PlanDeath,
                                     cmd::RecordChronicle,
-                                    cmd::AdjustOpinion>;
+                                    cmd::AdjustOpinion,
+                                    cmd::AssignProvinceAdministrator>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

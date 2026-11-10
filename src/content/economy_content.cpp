@@ -544,6 +544,7 @@ private:
             c.control_inertia_permille = i32_of(b, "control_inertia_permille");
             c.corruption_base_permille = i32_of(b, "corruption_base_permille");
             c.integrity_gain_permille = i32_of(b, "integrity_gain_permille");
+            c.low_control_corruption_permille = i32_of(b, "low_control_corruption_permille");
             c.corruption_inertia_permille = i32_of(b, "corruption_inertia_permille");
         });
         with_block(object, "mood", [&](const TypedBlock& b) {

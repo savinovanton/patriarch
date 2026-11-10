@@ -32,7 +32,14 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
+    static const EconomyRules value = [] {
+        EconomyRules r = EconomyRules::defaults();
+        // E9-T10: the administration is frozen here, control and corruption stay as the test sets them
+        // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
+        r.control.control_inertia_permille = 0;
+        r.control.corruption_inertia_permille = 0;
+        return r;
+    }();
     return value;
 }
 

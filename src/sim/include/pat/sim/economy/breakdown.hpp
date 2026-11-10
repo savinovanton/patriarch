@@ -185,10 +185,14 @@ inline constexpr std::uint16_t kControlAdministrator = 6001;
 inline constexpr std::uint16_t kControlBuildings = 6002;
 inline constexpr std::uint16_t kControlUnrest = 6003;
 inline constexpr std::uint16_t kControlBase = 6004;
+inline constexpr std::uint16_t kControlTarget = 6005;  // the root of a control breakdown: the target
+inline constexpr std::uint16_t kControlLimit = 6006;   // the clamp to 0..100
 inline constexpr std::uint16_t kCorruptionBase = 6101;
 inline constexpr std::uint16_t kCorruptionIntegrity = 6102;
 inline constexpr std::uint16_t kCorruptionOversight = 6103;
 inline constexpr std::uint16_t kCorruptionLowControl = 6104;
+inline constexpr std::uint16_t kCorruptionTarget = 6105;  // the root of a corruption breakdown: the target
+inline constexpr std::uint16_t kCorruptionLimit = 6106;   // the clamp to 0..1
 // 7000: recruits (F11)
 inline constexpr std::uint16_t kRecruitBase = 7001;
 inline constexpr std::uint16_t kRecruitPolicy = 7002;
