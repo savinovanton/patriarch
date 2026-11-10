@@ -19,7 +19,7 @@
 // Order of registration is the order of execution (spec section 7.1):
 //   1. economy.settlement   Monthly  closing of the month (E9-T09)         - not yet
 //   2. economy.construction Daily    finished buildings (E9-T16)           - not yet
-//   3. economy.provinces    Daily    the monthly pass of a province on its slot day  - E9-T06, T07
+//   3. economy.provinces    Daily    the monthly pass of a province on its slot day  - E9-T06, T07, T08
 // The later tasks add 1 and 2 IN FRONT of 3 inside install_economy_systems, so callers do not change.
 
 namespace pat::sim::economy {
@@ -30,7 +30,8 @@ inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
 /// (`is_monthly_slot(province_index, date)`, index % 28 == day - 1, days 1..28; days 29..31 take
 /// nobody), so every province is processed exactly once in a month of any length. For each one it
 /// runs the steps of section 7.3 in their fixed order; so far: step 2 (growth of the population, E9-T06),
-/// step 3 (production, consumption, grain stock and wealth, E9-T07) and step 8 (`last_slot_date`; the
+/// step 3 (production, consumption, grain stock and wealth, E9-T07), step 4 (taxes and holding income
+/// posted to the owner, E9-T08) and step 8 (`last_slot_date`; the
 /// population cache is refreshed by the World). `prices` (shared, immutable; null = the static prices
 /// of `rules.production`) is asked for the price of every good a province makes.
 /// Does nothing in a world without economy. No random numbers.
