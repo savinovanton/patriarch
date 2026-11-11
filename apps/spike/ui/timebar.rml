@@ -2,17 +2,22 @@
 <head>
     <title>Time bar</title>
     <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
     <link type="text/rcss" href="timebar.rcss"/>
 </head>
 <body data-model="timebar">
-<div id="bar">
+<div id="date-block">
     <div id="date">{{ date_text }}</div>
-    <button class="spd" id="spd-0" data-class-active="speed == 0" data-event-click="set_speed(0)">{{ pause_text }}</button>
-    <button class="spd" id="spd-1" data-class-active="speed == 1" data-event-click="set_speed(1)">1</button>
-    <button class="spd" id="spd-2" data-class-active="speed == 2" data-event-click="set_speed(2)">2</button>
-    <button class="spd" id="spd-3" data-class-active="speed == 3" data-event-click="set_speed(3)">3</button>
-    <button class="spd" id="spd-4" data-class-active="speed == 4" data-event-click="set_speed(4)">4</button>
-    <button class="spd" id="spd-5" data-class-active="speed == 5" data-event-click="set_speed(5)">5</button>
+    <div id="calendar">{{ t.calendar }}</div>
+</div>
+<div id="controls">
+    <div class="badge badge-dark" id="badge-paused" data-if="paused">{{ t.paused }}</div>
+    <div id="pause" class="ctl" data-class-paused="paused" data-attr-title="t.pause_title" data-event-click="toggle_pause()">
+        <svg data-attr-src="icons + '/pause@gold.svg'"/>
+    </div>
+    <div class="spd" data-for="s : speeds" data-attr-id="'spd-' + s.n" data-class-on="s.n &lt;= shown" data-attr-title="s.title"
+         data-event-click="set_speed(s.n)"></div>
+    <div id="hint">{{ t.hint }}</div>
 </div>
 </body>
 </rml>

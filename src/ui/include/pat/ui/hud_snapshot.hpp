@@ -1,70 +1,41 @@
 #pragma once
 
-#include "pat/loc/localizer.hpp"
-
 #include <cstdint>
 #include <string>
 #include <vector>
 
-// Plain data of the heads-up display. The snapshot holds no ready-made interface text: numbers are
-// numbers and phrases are string-table keys with a count (docs/dev/localization.md), so the window
-// formats everything through the Localizer and can switch language without a new snapshot. Only names
-// that come from content (realm, province, city, army, dynasty) are plain text.
+// Plain data of the heads-up display (docs/dev/ui-design.md section 2, board 01). The snapshot holds no
+// ready-made interface text: numbers are numbers and phrases are string-table keys, so the window formats
+// everything through the Localizer and can switch language without a new snapshot. Only names that come
+// from content (the house) are plain text.
 
 namespace pat::ui {
 
-/// One resource counter of the top strip ("Казна 12 480 +84").
+/// What the third line of a resource of the top bar says.
+enum class HudNote : std::uint8_t {
+    Delta,     // the monthly change with a sign: "+42 / мес." (green when positive, red when negative)
+    Capacity,  // the limit: "из 1 600"
+    Caption,   // a fixed caption of the resource: "при дворе" (ui.hud.res.<key>.note)
+};
+
+/// One resource counter of the top bar.
 struct HudResource {
-    std::string key;         // icon and label: treasury, grain, army, faith, influence (ui.res.<key>)
-    std::int64_t value = 0;  // shown with group separators
-    std::int64_t delta = 0;  // change per period; the sign decides the colour
-};
-
-/// How the number of a HudEntry is written.
-enum class HudNumber : std::uint8_t {
-    Plain,      // "4 800" (ui.fmt.number)
-    Thousands,  // "94 т"  (ui.fmt.thousands)
-};
-
-/// A row of the right panel: a city, an army or a dynasty with its number ("Москва", "94 т").
-struct HudEntry {
-    std::string name;  // content name
-    std::int64_t value = 0;
-    HudNumber format = HudNumber::Plain;
-};
-
-/// A card of "Дела государства": something that waits for the player.
-struct HudAffair {
-    std::string kind;        // icon: bell, charter or embassy
-    std::string title_key;   // e.g. "ui.hud.affairs.council.title"
-    std::string detail_key;  // e.g. "ui.hud.affairs.council.detail"
-    std::int64_t count = 0;  // passed to both messages as {n}
-};
-
-/// A line of the chronicle ("11:42", "Посольство прибыло в Москву").
-struct HudChronicleLine {
-    std::string time;
-    std::string key;         // e.g. "ui.hud.chronicle.embassy_arrived"
-    std::int64_t count = 0;  // passed to the message as {n}
+    std::string key;         // icon and label: treasury, prestige, influence, piety, militia (ui.res.<key>)
+    std::int64_t value = 0;  // shown with group separators; the treasury also as roubles (ui.fmt.rouble)
+    std::int64_t delta = 0;  // change per month, for HudNote::Delta
+    std::int64_t capacity = 0;  // for HudNote::Capacity
+    HudNote note = HudNote::Delta;
 };
 
 /// Everything the heads-up display shows: plain data, no pointers into the simulation.
 struct HudSnapshot {
-    std::string realm_name;      // content name, e.g. "Московское царство"
-    std::string realm_subtitle;  // "Государев двор" or the selected province
+    std::string
+        house;  // the player's house in the genitive, as content gives it: "Голицыных" ("РОД ГОЛИЦЫНЫХ")
     std::vector<HudResource> resources;
-    int bell_count = 0;               // pending court events
-    int charter_count = 0;            // pending decrees and letters
-    int embassy_count = 0;            // pending embassies
-    std::vector<HudEntry> cities;     // tab "Города" of the holdings panel
-    std::vector<HudEntry> armies;     // tab "Войска" and the "Войска" block
-    std::vector<HudEntry> dynasties;  // tab "Династии"
-    std::vector<HudAffair> affairs;
-    std::vector<HudChronicleLine> chronicle;  // newest first
 };
 
-/// Placeholder content matching the Figma frame, until the economy and court systems exist. The realm
-/// name and the card/chronicle texts come from `loc`; city and dynasty names stay placeholder content.
-[[nodiscard]] HudSnapshot make_test_hud(const loc::Localizer& loc);
+/// Placeholder content matching the mockup (board 01), until the economy and court bridge exists (E9-T20):
+/// five resources with the numbers of the board and the house of the mockup.
+[[nodiscard]] HudSnapshot make_test_hud();
 
 }  // namespace pat::ui

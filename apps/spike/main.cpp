@@ -90,6 +90,7 @@ constexpr int kScancodeV = 25;
 constexpr int kScancodeL = 15;
 constexpr int kScancodeN = 17;
 constexpr int kScancodeF5 = 62;
+constexpr int kScancodeM = 16;
 constexpr int kScancodeW = 26;
 constexpr int kScancodeA = 4;
 constexpr int kScancodeS = 22;
@@ -562,32 +563,52 @@ int main(int argc, char** argv) {
             }
         }
         if (!opt.no_hud) {
-            auto hud_result = pat::ui::HudWindow::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
-                                                         PATRIARCH_SPIKE_OLIVE_DIR, ui_loc);
+            auto hud_result = pat::ui::HudWindow::create(*ui,
+                                                         std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
+                                                         std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                         ui_loc);
             if (hud_result) {
                 hud = std::move(hud_result).value();
-                if (m1) {
-                    pat::ui::HudSnapshot state;
-                    state.realm_name = ui_loc.format("ui.game.title");
-                    hud->set_snapshot(state);
-                } else {
-                    hud->set_snapshot(pat::ui::make_test_hud(ui_loc));
-                }
+                // Placeholder resources of the mockup until the economy bridge exists (E9-T20, issue 164).
+                hud->set_snapshot(pat::ui::make_test_hud());
                 pat::ui::HudWindow* h = hud.get();
                 pat::ui::CreditsWindow* credits_window = credits.get();
-                hud->set_menu_handler([h, credits_window](const std::string& key) {
-                    h->set_active_menu(key);
+                pat::ui::CharacterWindow* character_window = character.get();
+                // Only the screens that exist are available: the dynasty entry shows the character window (F3), the
+                // gear opens the credits; the others are dimmed with a "soon" hint (docs/dev/ui-design.md 2).
+                h->set_nav_available("dynasty", character_window != nullptr);
+                h->set_nav_available("system", credits_window != nullptr);
+                hud->set_nav_handler([h, credits_window, character_window, &character_visible](const std::string& key) {
                     if (key == "system" && credits_window != nullptr) {
                         credits_window->toggle();
+                        h->set_active_nav(h->active_nav() == "system" ? std::string_view{} : std::string_view("system"));
+                    } else if (key == "dynasty" && character_window != nullptr) {
+                        character_visible = !character_visible;
+                        character_window->show(character_visible);
+                        h->set_active_nav(character_visible ? std::string_view("dynasty") : std::string_view{});
                     }
-                    PAT_LOG_INFO("spike", "menu: {}", key);
+                    PAT_LOG_INFO("spike", "navigation: {}", key);
+                });
+                if (character_window != nullptr) {
+                    h->set_active_nav("dynasty");
+                }
+                IMapView* map_view = view.get();
+                h->set_mode_available("political", true);
+                h->set_mode_available("relief", true);
+                h->set_map_mode(opt.start_mode == static_cast<int>(MapMode::Terrain) ? "relief" : "political");
+                hud->set_mode_handler([h, map_view](const std::string& key) {
+                    map_view->set_mode(key == "relief" ? MapMode::Terrain : MapMode::Owners);
+                    h->set_map_mode(key);
                 });
             } else {
                 PAT_LOG_WARN("spike", "HUD: {}", hud_result.error().message);
             }
         }
         if (runner) {
-            auto bar = pat::ui::TimeBar::create(*ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml", ui_loc);
+            auto bar = pat::ui::TimeBar::create(*ui,
+                                                std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "timebar.rml",
+                                                std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                ui_loc);
             if (bar) {
                 time_bar = std::move(bar).value();
                 pat::sim::SimulationRunner* r = runner.get();
@@ -641,21 +662,6 @@ int main(int argc, char** argv) {
     std::uint16_t selected = 0;
     bool key_w = false, key_a = false, key_s = false, key_d = false, key_q = false, key_e = false;
 
-    const auto update_selected_province = [&] {
-        if (!m1 || !hud || !world_snapshot) {
-            return;
-        }
-        const auto names = m1_province_names();
-        const bool has_selection = selected != 0 && selected < names.size() &&
-                                   selected < map_to_world.size() && world_snapshot->exists(map_to_world[selected]);
-        const std::string_view name = has_selection ? std::string_view(names[selected]) : std::string_view{};
-        if (hud->snapshot().realm_subtitle != name) {
-            auto state = hud->snapshot();
-            state.realm_subtitle = name;
-            hud->set_snapshot(state);
-        }
-    };
-
     std::optional<pat::data::DirectorySource> reload_source;
     std::optional<pat::content::M1HotReload> hot_reload;
     std::optional<std::string> reload_error;
@@ -694,7 +700,6 @@ int main(int argc, char** argv) {
             if (labels && names_changed) {
                 labels->replace_labels(make_province_labels(map, picker, labels->atlas(), m1_province_names()));
             }
-            update_selected_province();
         });
     }
 
@@ -794,6 +799,9 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
                         character->show(character_visible);
+                        if (hud != nullptr) {
+                            hud->set_active_nav(character_visible ? std::string_view("dynasty") : std::string_view{});
+                        }
                     } else if (key->scancode == scancode::f2 && !m1 && ui != nullptr &&
                                ui->context()->GetNumDocuments() > 0) {
                         Rml::ElementDocument* doc = ui->context()->GetDocument(0);
@@ -809,8 +817,17 @@ int main(int argc, char** argv) {
                                 d->Hide();
                             }
                         }
-                    } else if (key->scancode >= kScancode1 && key->scancode < kScancode1 + 4) {
-                        view->set_mode(static_cast<MapMode>(key->scancode - kScancode1));
+                    } else if ((key->mods & event::mod::alt) != 0 && key->scancode >= kScancode1 &&
+                               key->scancode < kScancode1 + pat::ui::HudWindow::kNavCount && hud != nullptr) {
+                        // Alt+1..9: the navigation entries top to bottom (the mockup gives no keys, issue 255).
+                        hud->press_nav(pat::ui::HudWindow::nav_key(key->scancode - kScancode1));
+                    } else if (key->scancode == scancode::space && time_bar != nullptr) {
+                        time_bar->toggle_pause();
+                    } else if (key->scancode >= kScancode1 && key->scancode < kScancode1 + 5 && time_bar != nullptr) {
+                        // 1..5: game speed, as in the mockup; the map mode moved to M.
+                        time_bar->press_speed(key->scancode - kScancode1 + 1);
+                    } else if (key->scancode == kScancodeM && hud != nullptr) {
+                        hud->press_mode(hud->next_mode());
                     }
                 }
             } else if (const auto* resized = std::get_if<event::Resized>(&e)) {
@@ -867,8 +884,7 @@ int main(int argc, char** argv) {
                                     character_refresh = 1.0e9f;  // refresh the window now
                                 }
                             }
-                            update_selected_province();
-                        }
+                                        }
                     }
                 } else if (button->button == 3) {
                     right_down = button->down;

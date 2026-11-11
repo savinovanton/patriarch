@@ -4,6 +4,7 @@
 
 #include <RmlUi/Core.h>
 
+#include <algorithm>
 #include <array>
 #include <system_error>
 
@@ -15,104 +16,92 @@ constexpr const char* kModelName = "hud";
 
 using loc::Arg;
 
-// The display name of an entry is the string ui.menu.<key>; hotkeys are key names, not language text.
-struct MenuEntry {
+// Entries of the left navigation: the key (ui.nav.<key>) and the icon file (assets/ui/patriarch/icons).
+struct NavEntry {
     const char* key;
-    const char* hotkey;
+    const char* icon;
 };
 
-constexpr std::array<MenuEntry, HudWindow::kMenuCount> kMenu{{
-    {"world", "1"},
-    {"realm", "2"},
-    {"holdings", "3"},
-    {"army", "4"},
-    {"church", "5"},
-    {"economy", "6"},
-    {"diplomacy", "7"},
-    {"chronicle", "8"},
-    {"system", "Esc"},
+constexpr std::array<NavEntry, HudWindow::kNavCount + 1> kNav{{
+    {"dynasty", "dynasty"},
+    {"holdings", "castle"},
+    {"court", "crown"},
+    {"treasury", "coin"},
+    {"church", "church"},
+    {"army", "sword"},
+    {"diplomacy", "globe"},
+    {"intrigue", "quill"},
+    {"chronicle", "scroll"},
+    {"system", "gear"},
 }};
 
-/// Captions of the panels and tabs (one struct so the document reads them as `t.name`).
+constexpr std::array<const char*, HudWindow::kModeCount> kModes{"political", "relief", "income", "faith"};
+
+// Resource icons of the top bar by key.
+const char* resource_icon(std::string_view key) {
+    if (key == "treasury") {
+        return "coin";
+    }
+    if (key == "prestige") {
+        return "crown";
+    }
+    if (key == "influence") {
+        return "people";
+    }
+    if (key == "piety") {
+        return "church";
+    }
+    if (key == "militia") {
+        return "sword";
+    }
+    return "diamond";
+}
+
+/// Captions of the frame (one struct so the document reads them as `t.name`).
 struct HudTexts {
-    Rml::String holdings_title;
-    Rml::String armies_title;
-    Rml::String affairs_title;
-    Rml::String chronicle_title;
-    Rml::String tab_cities;
-    Rml::String tab_armies;
-    Rml::String tab_dynasties;
+    Rml::String logo;
+    Rml::String house;
+    Rml::String map_title;
+    Rml::String hints;
 };
 
 struct ResourceRow {
     Rml::String key;
     Rml::String label;
     Rml::String value;
-    Rml::String delta;
-    Rml::String tone;     // "pos", "neg" or "zero"
+    Rml::String note;
+    Rml::String tone;     // "pos", "neg" or "zero": the colour of the note
     Rml::String icon;     // path of the icon relative to the document
-    Rml::String tooltip;  // "Казна: 12 480 (+84)"
+    Rml::String tooltip;  // "Казна: 1 248 ₽ (+42 / мес.)"
 };
 
-struct MenuRow {
+struct NavRow {
     Rml::String key;
     Rml::String name;
-    Rml::String hotkey;
     Rml::String icon;
+    Rml::String hint;  // "Скоро" for an entry without a screen, empty otherwise
+    bool available = false;
 };
 
-struct EntryRow {
+struct ModeRow {
+    Rml::String key;
     Rml::String name;
-    Rml::String value;
-    Rml::String icon;
+    Rml::String hint;
+    bool available = false;
 };
-
-struct AffairRow {
-    Rml::String title;
-    Rml::String subtitle;
-    Rml::String icon;
-};
-
-struct ChronicleRow {
-    Rml::String time;
-    Rml::String text;
-};
-
-constexpr std::size_t kMaxListRows = 6;        // rows of the holdings list that fit the panel
-constexpr std::size_t kMaxAffairs = 3;         // cards of "Дела государства"
-constexpr std::size_t kMaxChronicleLines = 4;  // lines of the chronicle box
 
 }  // namespace
 
-HudSnapshot make_test_hud(const loc::Localizer& loc) {
-    constexpr HudNumber kThousands = HudNumber::Thousands;
+HudSnapshot make_test_hud() {
     HudSnapshot hud;
-    hud.realm_name = loc.format("ui.hud.realm.name");
-    hud.realm_subtitle = loc.format("ui.hud.realm.subtitle");
+    hud.house = "Голицыных";
     hud.resources = {
-        {"treasury", 12480, 84},
-        {"grain", 3240, 62},
-        {"army", 18600, 240},
-        {"faith", 72, 2},
-        {"influence", 48, 1},
+        {"treasury", 1248, 42, 0, HudNote::Delta},
+        {"prestige", 68, 3, 0, HudNote::Delta},
+        {"influence", 64, 0, 0, HudNote::Caption},
+        {"piety", 72, 0, 0, HudNote::Caption},
+        {"militia", 1240, 0, 1600, HudNote::Capacity},
     };
-    hud.bell_count = 2;
-    hud.charter_count = 3;
-    hud.embassy_count = 0;
-    // Names below are placeholder content until the map and dynasties come from data.
-    hud.cities = {{"Москва", 94, kThousands},
-                  {"Тверь", 71, kThousands},
-                  {"Новгород", 56, kThousands},
-                  {"Псков", 38, kThousands},
-                  {"Смоленск", 33, kThousands}};
-    hud.armies = {{"Большой полк", 4800, HudNumber::Plain}};
-    hud.dynasties = {{"Шереметевы", 18, HudNumber::Plain},
-                     {"Репнины", 12, HudNumber::Plain},
-                     {"Голицыны", 9, HudNumber::Plain}};
-    hud.affairs = {{"bell", "ui.hud.affairs.council.title", "ui.hud.affairs.council.detail", 1},
-                   {"embassy", "ui.hud.affairs.embassy.title", "ui.hud.affairs.embassy.detail", 0}};
-    hud.chronicle = {{"11:42", "ui.hud.chronicle.embassy_arrived", 0},
-                     {"11:30", "ui.hud.chronicle.taxes_collected", 0}};
     return hud;
 }
 
@@ -121,37 +110,23 @@ struct HudWindow::Impl {
     const loc::Localizer* loc = nullptr;
     Rml::DataModelHandle handle;
     std::string source_url;
-    std::string assets_rel;  // olive assets directory relative to the document, '/' separators
+    std::string icons_rel;  // icon directory relative to the document, '/' separators
     HudSnapshot snapshot;
-    std::function<void(const std::string&)> on_menu;
+    std::function<void(const std::string&)> on_nav;
+    std::function<void(const std::string&)> on_mode;
 
     HudTexts t;
-    Rml::String realm_name;
-    Rml::String realm_subtitle;
+    Rml::String icons;
+    Rml::String logo_icon;
+    Rml::String active = "";
+    Rml::String mode = "political";
     std::vector<ResourceRow> resources;
-    std::vector<MenuRow> menu;
-    Rml::String active = "world";
-    int bell = 0;
-    int charter = 0;
-    int embassy = 0;
-    Rml::String frame_src;
-    Rml::String realm_icon;
-    Rml::String bell_icon;
-    Rml::String charter_icon;
-    Rml::String embassy_icon;
-    Rml::String tab = "cities";
-    Rml::String list_icon;
-    std::vector<EntryRow> rows;  // the list of the active tab (at most kMaxListRows)
-    int rows_total = 0;
-    std::vector<EntryRow> army_rows;
-    int army_total = 0;
-    std::vector<AffairRow> affairs;
-    int affairs_total = 0;
-    std::vector<ChronicleRow> chronicle;
-    int chronicle_total = 0;
+    std::vector<NavRow> nav;  // the nine entries
+    NavRow system;            // settings
+    std::vector<ModeRow> modes;
 
-    [[nodiscard]] std::string icon_path(const std::string& name) const {
-        return assets_rel + "/icons/" + name + ".svg";
+    [[nodiscard]] std::string icon_path(const std::string& name, const char* colour) const {
+        return icons_rel + "/" + name + "@" + colour + ".svg";
     }
 
     [[nodiscard]] Rml::ElementDocument* find_document() const {
@@ -169,102 +144,83 @@ struct HudWindow::Impl {
         return loc->format(key, args);
     }
 
-    [[nodiscard]] std::string entry_value(const HudEntry& e) const {
-        return e.format == HudNumber::Thousands ? format_thousands(*loc, e.value)
-                                                : format_number(*loc, e.value);
+    NavRow* find_nav(std::string_view key) {
+        if (key == "system") {
+            return &system;
+        }
+        for (NavRow& row : nav) {
+            if (row.key == key) {
+                return &row;
+            }
+        }
+        return nullptr;
     }
 
-    // Captions and menu names: everything that does not depend on the snapshot.
-    void refresh_chrome() {
-        t.holdings_title = text("ui.hud.holdings.title");
-        t.armies_title = text("ui.hud.armies.title");
-        t.affairs_title = text("ui.hud.affairs.title");
-        t.chronicle_title = text("ui.hud.chronicle.title");
-        t.tab_cities = text("ui.hud.tab.cities");
-        t.tab_armies = text("ui.hud.tab.armies");
-        t.tab_dynasties = text("ui.hud.tab.dynasties");
-        for (std::size_t i = 0; i < menu.size(); ++i) {
-            menu[i].name = text("ui.menu." + std::string(kMenu[i].key));
+    ModeRow* find_mode(std::string_view key) {
+        for (ModeRow& row : modes) {
+            if (row.key == key) {
+                return &row;
+            }
         }
-        handle.DirtyVariable("t");
-        handle.DirtyVariable("menu");
+        return nullptr;
+    }
+
+    // Names, icons (gold for the active entry, quiet for the others) and the "soon" hints.
+    void refresh_nav() {
+        const std::string soon = text("ui.nav.soon");
+        const auto fill = [&](NavRow& row, const NavEntry& entry) {
+            row.name = text(std::string("ui.nav.") + entry.key);
+            row.icon = icon_path(entry.icon, row.key == active ? "gold" : "quiet");
+            row.hint = row.available ? std::string() : soon;
+        };
+        for (std::size_t i = 0; i < nav.size(); ++i) {
+            fill(nav[i], kNav[i]);
+        }
+        fill(system, kNav[kNav.size() - 1]);
+        const std::string mode_soon = text("ui.hud.mode.soon");
+        for (ModeRow& row : modes) {
+            row.name = text("ui.hud.mode." + row.key);
+            row.hint = row.available ? std::string() : mode_soon;
+        }
+        handle.DirtyVariable("nav");
+        handle.DirtyVariable("system");
+        handle.DirtyVariable("modes");
     }
 
     void refresh() {
-        refresh_chrome();
-        realm_name = snapshot.realm_name;
-        realm_subtitle = snapshot.realm_subtitle;
+        t.logo = text("ui.hud.logo");
+        t.house = text("ui.hud.house", {Arg("name", upper_text(snapshot.house))});
+        t.map_title = text("ui.hud.map_title");
+        t.hints = text("ui.hud.hints");
+        handle.DirtyVariable("t");
+        refresh_nav();
+
         resources.clear();
         for (const HudResource& r : snapshot.resources) {
             ResourceRow row;
             row.key = r.key;
             row.label = text("ui.res." + r.key);
-            row.value = format_number(*loc, r.value);
-            row.delta = format_delta(*loc, r.delta);
-            row.tone = r.delta == 0 ? "zero" : (r.delta < 0 ? "neg" : "pos");
-            row.icon = icon_path("res_" + r.key);
-            row.tooltip =
-                text("ui.res.tooltip", {Arg("label", row.label), Arg("n", r.value), Arg("delta", row.delta)});
+            row.value = r.key == "treasury" ? text("ui.fmt.rouble", {Arg("n", r.value)})
+                                            : format_number(*loc, r.value);
+            row.tone = "zero";
+            switch (r.note) {
+                case HudNote::Delta:
+                    row.note = text("ui.hud.res.delta", {Arg("delta", format_delta(*loc, r.delta))});
+                    row.tone = r.delta == 0 ? "zero" : (r.delta < 0 ? "neg" : "pos");
+                    break;
+                case HudNote::Capacity:
+                    row.note = text("ui.hud.res.capacity", {Arg("n", r.capacity)});
+                    break;
+                case HudNote::Caption:
+                    row.note = text("ui.hud.res." + r.key + ".note");
+                    break;
+            }
+            row.icon = icon_path(resource_icon(r.key), "gold");
+            row.tooltip = text("ui.res.tooltip",
+                               {Arg("label", row.label), Arg("value", row.value), Arg("note", row.note)});
             resources.push_back(std::move(row));
         }
-        bell = snapshot.bell_count;
-        charter = snapshot.charter_count;
-        embassy = snapshot.embassy_count;
-        refresh_lists();
-        affairs.clear();
-        affairs_total = static_cast<int>(snapshot.affairs.size());
-        for (std::size_t i = 0; i < snapshot.affairs.size() && i < kMaxAffairs; ++i) {
-            const HudAffair& a = snapshot.affairs[i];
-            affairs.push_back({text(a.title_key, {Arg("n", a.count)}),
-                               text(a.detail_key, {Arg("n", a.count)}),
-                               icon_path("alert_" + a.kind)});
-        }
-        chronicle.clear();
-        chronicle_total = static_cast<int>(snapshot.chronicle.size());
-        for (std::size_t i = 0; i < snapshot.chronicle.size() && i < kMaxChronicleLines; ++i) {
-            const HudChronicleLine& line = snapshot.chronicle[i];
-            chronicle.push_back({line.time, text(line.key, {Arg("n", line.count)})});
-        }
-        for (const char* name : {"realm_name",
-                                 "realm_subtitle",
-                                 "resources",
-                                 "bell",
-                                 "charter",
-                                 "embassy",
-                                 "affairs",
-                                 "affairs_total",
-                                 "chronicle",
-                                 "chronicle_total"}) {
-            handle.DirtyVariable(name);
-        }
-    }
-
-    void
-    fill_rows(std::vector<EntryRow>& out, const std::vector<HudEntry>& in, const std::string& icon) const {
-        out.clear();
-        for (std::size_t i = 0; i < in.size() && i < kMaxListRows; ++i) {
-            out.push_back({in[i].name, entry_value(in[i]), icon});
-        }
-    }
-
-    // The holdings list follows the active tab; the "Войска" block always shows the armies.
-    void refresh_lists() {
-        const std::vector<HudEntry>* source = &snapshot.cities;
-        std::string icon = icon_path("menu_holdings");
-        if (tab == "armies") {
-            source = &snapshot.armies;
-            icon = icon_path("menu_army");
-        } else if (tab == "dynasties") {
-            source = &snapshot.dynasties;
-            icon = icon_path("menu_realm");
-        }
-        fill_rows(rows, *source, icon);
-        rows_total = static_cast<int>(source->size());
-        fill_rows(army_rows, snapshot.armies, icon_path("menu_army"));
-        army_total = static_cast<int>(snapshot.armies.size());
-        for (const char* name : {"tab", "rows", "rows_total", "army_rows", "army_total"}) {
-            handle.DirtyVariable(name);
-        }
+        handle.DirtyVariable("resources");
     }
 };
 
@@ -283,7 +239,7 @@ HudWindow::~HudWindow() {
 
 core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui,
                                                            const std::filesystem::path& document,
-                                                           const std::filesystem::path& olive_assets,
+                                                           const std::filesystem::path& icons,
                                                            const loc::Localizer& loc) {
     using R = core::Result<std::unique_ptr<HudWindow>>;
     auto impl = std::make_unique<Impl>();
@@ -292,8 +248,8 @@ core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui
 
     std::error_code ec;
     const std::filesystem::path rel = std::filesystem::relative(
-        std::filesystem::absolute(olive_assets), std::filesystem::absolute(document).parent_path(), ec);
-    impl->assets_rel = ec ? olive_assets.generic_string() : rel.generic_string();
+        std::filesystem::absolute(icons), std::filesystem::absolute(document).parent_path(), ec);
+    impl->icons_rel = ec ? icons.generic_string() : rel.generic_string();
 
     Rml::DataModelConstructor ctor = ui.context()->CreateDataModel(kModelName);
     if (!ctor) {
@@ -303,89 +259,71 @@ core::Result<std::unique_ptr<HudWindow>> HudWindow::create(engine::UiContext& ui
         res.RegisterMember("key", &ResourceRow::key);
         res.RegisterMember("label", &ResourceRow::label);
         res.RegisterMember("value", &ResourceRow::value);
-        res.RegisterMember("delta", &ResourceRow::delta);
+        res.RegisterMember("note", &ResourceRow::note);
         res.RegisterMember("tone", &ResourceRow::tone);
         res.RegisterMember("icon", &ResourceRow::icon);
         res.RegisterMember("tooltip", &ResourceRow::tooltip);
     }
-    if (auto texts = ctor.RegisterStruct<HudTexts>()) {
-        texts.RegisterMember("holdings_title", &HudTexts::holdings_title);
-        texts.RegisterMember("armies_title", &HudTexts::armies_title);
-        texts.RegisterMember("affairs_title", &HudTexts::affairs_title);
-        texts.RegisterMember("chronicle_title", &HudTexts::chronicle_title);
-        texts.RegisterMember("tab_cities", &HudTexts::tab_cities);
-        texts.RegisterMember("tab_armies", &HudTexts::tab_armies);
-        texts.RegisterMember("tab_dynasties", &HudTexts::tab_dynasties);
-    }
     ctor.RegisterArray<std::vector<ResourceRow>>();
-    if (auto item = ctor.RegisterStruct<MenuRow>()) {
-        item.RegisterMember("key", &MenuRow::key);
-        item.RegisterMember("name", &MenuRow::name);
-        item.RegisterMember("hotkey", &MenuRow::hotkey);
-        item.RegisterMember("icon", &MenuRow::icon);
+    if (auto texts = ctor.RegisterStruct<HudTexts>()) {
+        texts.RegisterMember("logo", &HudTexts::logo);
+        texts.RegisterMember("house", &HudTexts::house);
+        texts.RegisterMember("map_title", &HudTexts::map_title);
+        texts.RegisterMember("hints", &HudTexts::hints);
     }
-    ctor.RegisterArray<std::vector<MenuRow>>();
-    if (auto entry = ctor.RegisterStruct<EntryRow>()) {
-        entry.RegisterMember("name", &EntryRow::name);
-        entry.RegisterMember("value", &EntryRow::value);
-        entry.RegisterMember("icon", &EntryRow::icon);
+    if (auto item = ctor.RegisterStruct<NavRow>()) {
+        item.RegisterMember("key", &NavRow::key);
+        item.RegisterMember("name", &NavRow::name);
+        item.RegisterMember("icon", &NavRow::icon);
+        item.RegisterMember("hint", &NavRow::hint);
+        item.RegisterMember("available", &NavRow::available);
     }
-    ctor.RegisterArray<std::vector<EntryRow>>();
-    if (auto affair = ctor.RegisterStruct<AffairRow>()) {
-        affair.RegisterMember("title", &AffairRow::title);
-        affair.RegisterMember("subtitle", &AffairRow::subtitle);
-        affair.RegisterMember("icon", &AffairRow::icon);
+    ctor.RegisterArray<std::vector<NavRow>>();
+    if (auto item = ctor.RegisterStruct<ModeRow>()) {
+        item.RegisterMember("key", &ModeRow::key);
+        item.RegisterMember("name", &ModeRow::name);
+        item.RegisterMember("hint", &ModeRow::hint);
+        item.RegisterMember("available", &ModeRow::available);
     }
-    ctor.RegisterArray<std::vector<AffairRow>>();
-    if (auto line = ctor.RegisterStruct<ChronicleRow>()) {
-        line.RegisterMember("time", &ChronicleRow::time);
-        line.RegisterMember("text", &ChronicleRow::text);
-    }
-    ctor.RegisterArray<std::vector<ChronicleRow>>();
+    ctor.RegisterArray<std::vector<ModeRow>>();
 
     Impl* m = impl.get();
-    for (const MenuEntry& e : kMenu) {
-        m->menu.push_back({e.key, {}, e.hotkey, m->icon_path(std::string("menu_") + e.key)});
+    for (int i = 0; i < kNavCount; ++i) {
+        NavRow row;
+        row.key = kNav[static_cast<std::size_t>(i)].key;
+        m->nav.push_back(std::move(row));
     }
-    m->frame_src = m->assets_rel + "/frame.png";
-    m->realm_icon = m->icon_path("menu_realm");
-    m->bell_icon = m->icon_path("alert_bell");
-    m->charter_icon = m->icon_path("alert_charter");
-    m->embassy_icon = m->icon_path("alert_embassy");
+    m->system.key = "system";
+    for (const char* key : kModes) {
+        ModeRow row;
+        row.key = key;
+        row.available = std::string_view(key) == "political";
+        m->modes.push_back(std::move(row));
+    }
+    m->icons = m->icons_rel;
+    m->logo_icon = m->icon_path("shield", "gold");
 
     ctor.Bind("t", &m->t);
-    ctor.Bind("realm_name", &m->realm_name);
-    ctor.Bind("realm_subtitle", &m->realm_subtitle);
+    ctor.Bind("logo_icon", &m->logo_icon);
     ctor.Bind("resources", &m->resources);
-    ctor.Bind("menu", &m->menu);
+    ctor.Bind("nav", &m->nav);
+    ctor.Bind("system", &m->system);
     ctor.Bind("active", &m->active);
-    ctor.Bind("bell", &m->bell);
-    ctor.Bind("charter", &m->charter);
-    ctor.Bind("embassy", &m->embassy);
-    ctor.Bind("frame_src", &m->frame_src);
-    ctor.Bind("realm_icon", &m->realm_icon);
-    ctor.Bind("bell_icon", &m->bell_icon);
-    ctor.Bind("charter_icon", &m->charter_icon);
-    ctor.Bind("embassy_icon", &m->embassy_icon);
-    ctor.Bind("tab", &m->tab);
-    ctor.Bind("rows", &m->rows);
-    ctor.Bind("rows_total", &m->rows_total);
-    ctor.Bind("army_rows", &m->army_rows);
-    ctor.Bind("army_total", &m->army_total);
-    ctor.Bind("affairs", &m->affairs);
-    ctor.Bind("affairs_total", &m->affairs_total);
-    ctor.Bind("chronicle", &m->chronicle);
-    ctor.Bind("chronicle_total", &m->chronicle_total);
+    ctor.Bind("modes", &m->modes);
+    ctor.Bind("mode", &m->mode);
     m->handle = ctor.GetModelHandle();
-    ctor.BindEventCallback("set_tab", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
-        if (!args.empty()) {
-            m->tab = args[0].Get<Rml::String>();
-            m->refresh_lists();
+    ctor.BindEventCallback("nav", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
+        if (!args.empty() && m->on_nav) {
+            if (NavRow* row = m->find_nav(args[0].Get<Rml::String>()); row != nullptr && row->available) {
+                m->on_nav(row->key);
+            }
         }
     });
-    ctor.BindEventCallback("menu", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
-        if (!args.empty() && m->on_menu) {
-            m->on_menu(args[0].Get<Rml::String>());
+    ctor.BindEventCallback("mode", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
+        if (!args.empty() && m->on_mode) {
+            if (ModeRow* row = m->find_mode(args[0].Get<Rml::String>()); row != nullptr && row->available) {
+                m->on_mode(row->key);
+            }
         }
     });
 
@@ -414,42 +352,106 @@ const HudSnapshot& HudWindow::snapshot() const {
     return impl_->snapshot;
 }
 
-std::string_view HudWindow::menu_key(int index) {
-    return index >= 0 && index < kMenuCount ? kMenu[static_cast<std::size_t>(index)].key : std::string_view{};
+std::string_view HudWindow::nav_key(int index) {
+    return index >= 0 && index <= kNavCount ? kNav[static_cast<std::size_t>(index)].key : std::string_view{};
 }
 
-std::string HudWindow::menu_name(int index) const {
-    return index >= 0 && index < kMenuCount ? impl_->menu[static_cast<std::size_t>(index)].name
-                                            : std::string{};
+std::string HudWindow::nav_name(int index) const {
+    if (index < 0 || index > kNavCount) {
+        return {};
+    }
+    return index == kNavCount ? impl_->system.name : impl_->nav[static_cast<std::size_t>(index)].name;
 }
 
-void HudWindow::set_active_menu(std::string_view key) {
+void HudWindow::set_active_nav(std::string_view key) {
     if (impl_->active != key) {
         impl_->active = std::string(key);
         impl_->handle.DirtyVariable("active");
+        impl_->refresh_nav();
     }
 }
 
-std::string_view HudWindow::active_menu() const {
+std::string_view HudWindow::active_nav() const {
     return impl_->active;
 }
 
-void HudWindow::set_tab(std::string_view tab) {
-    if (tab != "cities" && tab != "armies" && tab != "dynasties") {
-        return;
-    }
-    if (impl_->tab != tab) {
-        impl_->tab = std::string(tab);
-        impl_->refresh_lists();
+void HudWindow::set_nav_available(std::string_view key, bool available) {
+    if (NavRow* row = impl_->find_nav(key); row != nullptr && row->available != available) {
+        row->available = available;
+        impl_->refresh_nav();
     }
 }
 
-std::string_view HudWindow::tab() const {
-    return impl_->tab;
+bool HudWindow::nav_available(std::string_view key) const {
+    const NavRow* row = impl_->find_nav(key);
+    return row != nullptr && row->available;
 }
 
-void HudWindow::set_menu_handler(std::function<void(const std::string&)> handler) {
-    impl_->on_menu = std::move(handler);
+void HudWindow::set_nav_handler(std::function<void(const std::string&)> handler) {
+    impl_->on_nav = std::move(handler);
+}
+
+void HudWindow::press_nav(std::string_view key) {
+    if (const NavRow* row = impl_->find_nav(key); row != nullptr && row->available && impl_->on_nav) {
+        impl_->on_nav(row->key);
+    }
+}
+
+std::string_view HudWindow::mode_key(int index) {
+    return index >= 0 && index < kModeCount ? kModes[static_cast<std::size_t>(index)] : std::string_view{};
+}
+
+void HudWindow::set_map_mode(std::string_view key) {
+    if (impl_->mode != key && impl_->find_mode(key) != nullptr) {
+        impl_->mode = std::string(key);
+        impl_->handle.DirtyVariable("mode");
+    }
+}
+
+std::string_view HudWindow::map_mode() const {
+    return impl_->mode;
+}
+
+void HudWindow::set_mode_available(std::string_view key, bool available) {
+    if (ModeRow* row = impl_->find_mode(key); row != nullptr && row->available != available) {
+        row->available = available;
+        impl_->refresh_nav();
+    }
+}
+
+bool HudWindow::mode_available(std::string_view key) const {
+    for (const ModeRow& row : impl_->modes) {
+        if (row.key == key) {
+            return row.available;
+        }
+    }
+    return false;
+}
+
+std::string_view HudWindow::next_mode() const {
+    std::size_t current = 0;
+    for (std::size_t i = 0; i < impl_->modes.size(); ++i) {
+        if (impl_->modes[i].key == impl_->mode) {
+            current = i;
+        }
+    }
+    for (std::size_t step = 1; step <= impl_->modes.size(); ++step) {
+        const ModeRow& row = impl_->modes[(current + step) % impl_->modes.size()];
+        if (row.available) {
+            return kModes[(current + step) % impl_->modes.size()];
+        }
+    }
+    return impl_->mode;
+}
+
+void HudWindow::set_mode_handler(std::function<void(const std::string&)> handler) {
+    impl_->on_mode = std::move(handler);
+}
+
+void HudWindow::press_mode(std::string_view key) {
+    if (const ModeRow* row = impl_->find_mode(key); row != nullptr && row->available && impl_->on_mode) {
+        impl_->on_mode(row->key);
+    }
 }
 
 Rml::ElementDocument* HudWindow::document() const {

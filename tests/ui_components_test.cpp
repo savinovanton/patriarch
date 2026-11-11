@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "test_fonts.hpp"
+#include "ui_layout_fixture.hpp"
 #include "ui_theme_fixture.hpp"
 
 namespace {
@@ -37,51 +38,6 @@ std::string read_text(const std::filesystem::path& path) {
     std::ostringstream buffer;
     buffer << in.rdbuf();
     return buffer.str();
-}
-
-double number_of(const pat::data::Value& v) {
-    if (v.kind == pat::data::ValueKind::Decimal) {
-        return static_cast<double>(v.integer) / std::pow(10.0, v.scale);
-    }
-    return static_cast<double>(v.integer);
-}
-
-/// The size of the layer `name` in a layout file of data/ui/layout (the first board that has it).
-struct LayerSize {
-    bool found = false;
-    double w = 0;
-    double h = 0;
-};
-
-LayerSize layer_size(const char* file, const std::string& name) {
-    const pat::data::ParseResult parsed =
-        pat::data::parse_pd(read_text(std::filesystem::path(PATRIARCH_DATA_DIR) / "ui" / "layout" / file));
-    REQUIRE(parsed.ok());
-    for (const pat::data::Entry& board : parsed.file.entries) {
-        for (const pat::data::Entry& field : board.value.entries) {
-            if (field.key != "el") {
-                continue;
-            }
-            for (const pat::data::Value& item : field.value.items) {
-                LayerSize out;
-                bool named = false;
-                for (const pat::data::Entry& e : item.entries) {
-                    if (e.key == "n" && e.value.text == name) {
-                        named = true;
-                    } else if (e.key == "w") {
-                        out.w = number_of(e.value);
-                    } else if (e.key == "h") {
-                        out.h = number_of(e.value);
-                    }
-                }
-                if (named) {
-                    out.found = true;
-                    return out;
-                }
-            }
-        }
-    }
-    return {};
 }
 
 struct Fixture {
@@ -170,24 +126,27 @@ TEST_CASE("components: the theme carries the component tokens and they match the
         REQUIRE_MESSAGE(n != nullptr, "no token " << name);
         return n->milli / 1000.0;
     };
-    const LayerSize primary = layer_size("board_00_foundation.pd", "Button / Patriarch / Button / Primary");
+    const auto layer_size = [](const char* file, const std::string& name) {
+        return pat::test::find_layer(file, name);
+    };
+    const auto primary = layer_size("board_00_foundation.pd", "Button / Patriarch / Button / Primary");
     REQUIRE(primary.found);
     CHECK(token("btn_h") == primary.h);
-    const LayerSize action =
+    const auto action =
         layer_size("board_09_action_states.pd", "Button / Patriarch / Action / Send intermediary / Default");
     REQUIRE(action.found);
     CHECK(token("btn_h_action") == action.h);
-    const LayerSize badge = layer_size("board_01_map_province.pd", "Badge / НА ПАУЗЕ");
+    const auto badge = layer_size("board_01_map_province.pd", "Badge / НА ПАУЗЕ");
     REQUIRE(badge.found);
     CHECK(token("badge_h") == badge.h);
     CHECK(token("chip_h") == badge.h);
-    const LayerSize tab = layer_size("board_01_map_province.pd", "Tab / Обзор");
+    const auto tab = layer_size("board_01_map_province.pd", "Tab / Обзор");
     REQUIRE(tab.found);
     CHECK(token("tab_h") == tab.h);
-    const LayerSize field = layer_size("board_04_marriage_search.pd", "Search field / имя или род");
+    const auto field = layer_size("board_04_marriage_search.pd", "Search field / имя или род");
     REQUIRE(field.found);
     CHECK(token("field_h") == field.h);
-    const LayerSize inspector_rule = layer_size("board_01_map_province.pd", "Inspector top rule");
+    const auto inspector_rule = layer_size("board_01_map_province.pd", "Inspector top rule");
     REQUIRE(inspector_rule.found);
     CHECK(token("rule_window") == inspector_rule.h);
     CHECK(token("focus_ring") == 2.0);

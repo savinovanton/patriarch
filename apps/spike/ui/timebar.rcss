@@ -1,48 +1,134 @@
-/* Date and speed controls, top right (dollar-prefixed tokens of data/ui/theme.pd). */
-#bar {
-    pointer-events: auto;
+/* Date, pause and speed in the top bar (UI-D04; board 01: date at x = 1290, the controls end 30 px from the right
+   edge). The top bar itself, drawn by hud.rml, lies below this document. */
+#date-block {
     position: absolute;
-    right: 28dp;
-    top: 28dp;
-    width: 282dp;
-    height: 57dp;
-    padding: 6dp 12dp;
-    background-color: $panel;
-    border: 1dp $rule;
-    border-radius: 2dp;
+    left: 1290dp;
+    top: 0;
+    width: 254dp;
+    height: 96dp;
 }
 
 #date {
-    display: block;
-    font-family: "PT Serif";
-    font-size: 17dp;
-    font-weight: bold;
+    position: absolute;
+    left: 0;
+    top: 14dp;
+    font-family: $serif;
+    font-size: $type_25;
     color: $light;
-    margin-bottom: 5dp;
+    white-space: nowrap;
 }
 
-.spd {
-    display: inline-block;
-    min-width: 26dp;
-    height: 22dp;
-    margin-right: 4dp;
-    padding: 0 4dp;
-    background-color: $raised;
-    border: 1dp $rule;
-    border-radius: 2dp;
-    font-size: 12dp;
-    line-height: 20dp;
-    text-align: center;
+#calendar {
+    position: absolute;
+    left: 2dp;
+    top: 52dp;
+    font-size: $type_11;
+    letter-spacing: 1dp;
     color: $quiet;
+    white-space: nowrap;
+}
+
+/* controls: 338dp wide block, its left edge is x = 1552 of the mockup */
+#controls {
+    position: absolute;
+    right: 30dp;
+    top: 0;
+    width: 338dp;
+    height: 96dp;
+}
+
+#badge-paused {
+    position: absolute;
+    left: 0;
+    top: 18dp;
+    width: 123dp;
+}
+
+#pause {
+    position: absolute;
+    left: 136dp;
+    top: 16dp;
+    width: 44dp;
+    height: 56dp;
+    background-color: $raised;
+}
+
+#pause svg {
+    position: absolute;
+    left: 10dp;
+    top: 15dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+.ctl {
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+#pause:hover {
+    background-color: $rule;
+}
+
+.kbd #pause:focus {
+    background-color: $rule;
+}
+
+/* five segments 17x30, 25 apart, the first at x = 1752: gold up to the speed, raised above it */
+.spd {
+    box-sizing: border-box;
+    position: absolute;
+    top: 27dp;
+    width: 17dp;
+    height: 30dp;
+    background-color: $raised;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.spd.on {
+    background-color: $gold;
 }
 
 .spd:hover {
     background-color: $rule;
-    color: $light;
 }
 
-.spd.active {
-    background-color: $green;
-    border-color: $gold;
-    color: $light;
+.spd.on:hover {
+    background-color: $gold;
+}
+
+.kbd .spd:focus {
+    border: $focus_ring $light;
+}
+
+#spd-1 {
+    left: 200dp;
+}
+
+#spd-2 {
+    left: 225dp;
+}
+
+#spd-3 {
+    left: 250dp;
+}
+
+#spd-4 {
+    left: 275dp;
+}
+
+#spd-5 {
+    left: 300dp;
+}
+
+#hint {
+    position: absolute;
+    left: 0;
+    top: 66dp;
+    font-size: $type_12;
+    color: $quiet;
+    white-space: nowrap;
 }

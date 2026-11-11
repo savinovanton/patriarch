@@ -1,320 +1,300 @@
-/* Heads-up display layout (positions measured on the Figma frame 1920x1080; marked [check] in docs). */
+/* Frame of the map screen: top bar, left navigation, bottom bar (UI-D04; board 01 of the mockup, geometry in
+   data/ui/layout/board_01_map_province.pd at 1920x1080: 1dp = 1 design pixel, the application scales dp).
+   The bars stretch with the window, the navigation keeps its width and the bottom bar its height. */
 
-#frame {
+/* ---- top bar: 96dp of ink with a 2dp gold rule at its bottom edge */
+#topbar {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
-    pointer-events: none;
+    height: 96dp;
+    background-color: $ink;
+    pointer-events: auto;
 }
 
-/* ---- realm plaque (top left) */
-#realm {
+#topbar-rule {
     position: absolute;
-    left: 25dp;
-    top: 20dp;
-    width: 234dp;
-    height: 65dp;
+    left: 0;
+    top: 94dp;
+    width: 100%;
+    height: $rule_panel;
+    background-color: $gold;
 }
 
-#realm svg {
+#logo-icon {
     position: absolute;
-    left: 12dp;
+    left: 24dp;
+    top: 16dp;
+    width: 42dp;
+    height: 48dp;
+}
+
+#logo {
+    position: absolute;
+    left: 100dp;
     top: 13dp;
-    width: 40dp;
-    height: 38dp;
+    font-family: $serif;
+    font-size: $type_28;
+    color: $light;
 }
 
-#realm-name {
+#house {
     position: absolute;
-    left: 64dp;
-    top: 12dp;
-    font-size: 15dp;
-    text-transform: uppercase;
-}
-
-#realm-sub {
-    position: absolute;
-    left: 64dp;
-    top: 34dp;
-    font-size: 12dp;
-}
-
-/* ---- resource strip */
-#strip {
-    position: absolute;
-    left: 277dp;
-    top: 28dp;
-    height: 56dp;
+    left: 102dp;
+    top: 54dp;
+    font-size: $type_13;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $gold;
     white-space: nowrap;
 }
 
+.vdiv {
+    position: absolute;
+    top: 20dp;
+    width: $stroke_hairline;
+    height: 56dp;
+    background-color: $rule;
+}
+
+#divider-house {
+    left: 358dp;
+}
+
+#divider-date {
+    left: 1260dp;
+}
+
+/* resources: five blocks 174dp apart, the first icon at x = 386 */
+#resources {
+    position: absolute;
+    left: 386dp;
+    top: 0;
+    height: 96dp;
+    display: flex;
+    flex-direction: row;
+}
+
 .res {
-    display: inline-block;
     position: relative;
-    width: 142dp;
-    height: 54dp;
-    margin-right: 8dp;
-    vertical-align: top;
+    width: 174dp;
+    height: 96dp;
 }
 
 .res svg {
     position: absolute;
-    left: 10dp;
-    top: 17dp;
-    width: 20dp;
-    height: 20dp;
+    left: 0;
+    top: 21dp;
+    width: $icon_size;
+    height: $icon_size;
 }
 
 .res-label {
     position: absolute;
-    left: 40dp;
-    top: 9dp;
-    font-size: 11dp;
+    left: 35dp;
+    top: 15dp;
+    font-size: $type_13;
+    color: $quiet;
 }
 
 .res-value {
     position: absolute;
-    left: 40dp;
-    top: 24dp;
-    font-size: 17dp;
-    font-weight: bold;
+    left: 35dp;
+    top: 34dp;
+    font-family: $serif;
+    font-size: $type_25;
+    color: $light;
+    white-space: nowrap;
 }
 
-.res-delta {
+.res-note {
     position: absolute;
-    right: 10dp;
-    top: 29dp;
-    font-size: 11dp;
+    left: 35dp;
+    top: 67dp;
+    font-size: $type_12;
     color: $quiet;
+    white-space: nowrap;
 }
 
-.res-delta.neg {
+.res-note.pos {
+    color: $success;
+}
+
+.res-note.neg {
     color: $softred;
 }
 
-/* ---- alert badges */
-#alerts {
+/* ---- left navigation: 96dp wide, nine entries of 80x78 with a 10dp gap, settings at the bottom */
+#nav {
     position: absolute;
-    left: 1057dp;
-    top: 34dp;
-    white-space: nowrap;
-}
-
-.alert {
+    left: 0;
+    top: 96dp;
+    bottom: 44dp;
+    width: 96dp;
+    background-color: $ink;
     pointer-events: auto;
-    display: inline-block;
+}
+
+#nav-list {
+    position: absolute;
+    left: 8dp;
+    top: 24dp;
+    width: 80dp;
+}
+
+.nav-item {
     position: relative;
-    width: 38dp;
-    height: 38dp;
-    margin-right: 6dp;
-}
-
-.alert svg {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 38dp;
-    height: 38dp;
-}
-
-.badge {
-    position: absolute;
-    right: -4dp;
-    top: -5dp;
-    min-width: 14dp;
-    height: 14dp;
-    padding: 0 3dp;
-    border-radius: 7dp;
-    background-color: $gold;
-    color: $panel;
-    font-size: 10dp;
-    font-weight: bold;
-    line-height: 14dp;
-    text-align: center;
-}
-
-/* ---- left menu */
-#menu {
-    position: absolute;
-    left: 33dp;
-    top: 235dp;
-    width: 40dp;
-}
-
-.menu-btn {
+    box-sizing: border-box;
+    width: 80dp;
+    height: 78dp;
+    margin-bottom: 10dp;
+    border: $focus_ring transparent;
+    border-radius: $radius;
     pointer-events: auto;
-    display: block;
-    position: relative;
-    width: 40dp;
-    height: 38dp;
-    margin-bottom: 8dp;
+    tab-index: auto;
+    cursor: pointer;
 }
 
-.menu-btn svg {
+.nav-item svg {
     position: absolute;
-    left: 0;
-    top: 0;
-    width: 40dp;
-    height: 38dp;
-}
-
-.menu-btn .ov {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 40dp;
-    height: 38dp;
-    border-radius: 2dp;
-}
-
-.menu-btn:hover .ov {
-    background-color: $light_a10;
-}
-
-.menu-btn.active .ov {
-    background-color: $gold_a22;
-    border: 1dp $light;
-}
-
-/* ---- right column: holdings, armies, state affairs */
-#right {
-    position: absolute;
-    right: 28dp;
-    top: 117dp;
-    width: 258dp;
-}
-
-.box {
-    padding: 10dp 12dp 8dp 12dp;
-}
-
-.box-title {
-    position: relative;
-    height: 20dp;
-    font-size: 11dp;
-    font-weight: bold;
-    letter-spacing: 1dp;
-}
-
-.box-title .count {
-    position: absolute;
-    right: 0;
-    top: 0;
-    color: $light;
-}
-
-#tabs {
-    height: 24dp;
-    margin-bottom: 6dp;
-    border-bottom: 1dp $rule;
-    white-space: nowrap;
-}
-
-.tab {
-    display: inline-block;
-    height: 23dp;
-    margin-right: 14dp;
-    font-size: 12dp;
-    line-height: 20dp;
-    color: $quiet;
-}
-
-.tab:hover {
-    color: $light;
-}
-
-.tab.active {
-    color: $light;
-    border-bottom: 2dp $gold;
-}
-
-.row {
-    position: relative;
-    height: 26dp;
-    font-size: 13dp;
-}
-
-.row svg {
-    position: absolute;
-    left: 0;
-    top: 2dp;
-    width: 24dp;
-    height: 23dp;
-}
-
-.row-name {
-    position: absolute;
-    left: 34dp;
-    top: 5dp;
-}
-
-.row-value {
-    position: absolute;
-    right: 0;
-    top: 5dp;
-}
-
-.army-title {
-    margin-top: 10dp;
-}
-
-#affairs-title {
-    display: inline-block;
-    padding: 2dp 8dp;
-    background-color: $panel_a80;
-    border-radius: 2dp;
-    margin: 16dp 0 8dp 0;
-    font-size: 11dp;
-    font-weight: bold;
-    letter-spacing: 1dp;
-}
-
-.affair {
-    position: relative;
-    height: 54dp;
-    margin-bottom: 8dp;
-}
-
-.affair svg {
-    position: absolute;
-    left: 10dp;
-    top: 8dp;
-    width: 36dp;
-    height: 36dp;
-}
-
-.affair-title {
-    position: absolute;
-    left: 58dp;
+    left: 25dp;
     top: 10dp;
-    font-size: 13dp;
-    font-weight: bold;
+    width: $icon_size;
+    height: $icon_size;
 }
 
-.affair-sub {
+.nav-label {
     position: absolute;
-    left: 58dp;
-    top: 30dp;
-    font-size: 11dp;
-}
-
-/* ---- chronicle (bottom left) */
-#chronicle {
-    position: absolute;
-    left: 75dp;
-    bottom: 75dp;
-    width: 329dp;
-}
-
-.line {
-    height: 18dp;
-    font-size: 12dp;
+    left: 0;
+    top: 46dp;
+    width: 76dp;
+    font-size: $type_12;
+    text-align: center;
+    color: $quiet;
     white-space: nowrap;
 }
 
-.time {
+.nav-mark {
+    display: none;
+    position: absolute;
+    left: -2dp;
+    top: 8dp;
+    width: 3dp;
+    height: 54dp;
+    background-color: $gold;
+}
+
+.nav-item:hover {
+    background-color: $raised;
+}
+
+.nav-item.active {
+    background-color: $raised;
+}
+
+.nav-item.active .nav-mark {
+    display: block;
+}
+
+.nav-item.active .nav-label {
+    color: $light;
+}
+
+/* an entry without a screen: dimmed, shows its hint, no hover and no tab stop (tab-index comes from is-disabled) */
+.nav-item.is-disabled {
+    opacity: 0.45;
+    cursor: default;
+    tab-index: none;
+}
+
+.nav-item.is-disabled:hover {
+    background-color: transparent;
+}
+
+.nav-system {
+    position: absolute;
+    left: 8dp;
+    bottom: 18dp;
+    height: 60dp;
+    margin-bottom: 0;
+}
+
+.nav-system svg {
+    left: 26dp;
+}
+
+.kbd .nav-item:focus {
+    border-color: $gold;
+}
+
+/* ---- bottom bar: 44dp of ink */
+#statusbar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 44dp;
+    background-color: $ink;
+    pointer-events: auto;
+}
+
+#map-title {
+    position: absolute;
+    left: 120dp;
+    top: 12dp;
+    font-size: $type_14;
+    font-weight: bold;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#modes {
+    position: absolute;
+    left: 344dp;
+    top: 0;
+    height: 44dp;
+    white-space: nowrap;
+}
+
+.mode {
     display: inline-block;
-    width: 44dp;
+    box-sizing: border-box;
+    height: 44dp;
+    margin-right: 28dp;
+    padding-top: 12dp;
+    border-bottom: $focus_ring transparent;
+    font-size: $type_14;
+    color: $quiet;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.mode:hover {
+    color: $light;
+}
+
+.mode.active {
+    color: $light;
+    border-bottom-color: $gold;
+}
+
+.mode.is-disabled {
+    opacity: 0.45;
+    cursor: default;
+    tab-index: none;
+}
+
+.kbd .mode:focus {
+    border-bottom-color: $gold;
+}
+
+#hints {
+    position: absolute;
+    right: 40dp;
+    top: 13dp;
+    font-size: $type_13;
+    color: $quiet;
+    white-space: nowrap;
 }

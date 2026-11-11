@@ -2,63 +2,52 @@
 <head>
     <title>HUD</title>
     <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
     <link type="text/rcss" href="hud.rcss"/>
 </head>
 <body data-model="hud">
-<img id="frame" data-attr-src="frame_src"/>
 
-<div id="realm" class="panel">
-    <svg data-attr-src="realm_icon"/>
-    <div id="realm-name" class="heading">{{ realm_name }}</div>
-    <div id="realm-sub" class="muted">{{ realm_subtitle }}</div>
-</div>
-
-<div id="strip">
-    <div class="res panel" data-for="r : resources" data-attr-data-key="r.key" data-attr-title="r.tooltip">
-        <svg data-attr-src="r.icon"/>
-        <div class="res-label muted">{{ r.label }}</div>
-        <div class="res-value">{{ r.value }}</div>
-        <div class="res-delta" data-class-neg="r.tone == 'neg'">{{ r.delta }}</div>
-    </div>
-</div>
-
-<div id="alerts">
-    <div class="alert" id="alert-bell"><svg data-attr-src="bell_icon"/><div class="badge" data-if="bell > 0">{{ bell }}</div></div>
-    <div class="alert" id="alert-charter"><svg data-attr-src="charter_icon"/><div class="badge" data-if="charter > 0">{{ charter }}</div></div>
-    <div class="alert" id="alert-embassy"><svg data-attr-src="embassy_icon"/><div class="badge" data-if="embassy > 0">{{ embassy }}</div></div>
-</div>
-
-<div id="menu">
-    <div class="menu-btn" data-for="m : menu" data-attr-id="'menu-' + m.key" data-class-active="active == m.key"
-         data-attr-title="m.name" data-event-click="menu(m.key)">
-        <svg data-attr-src="m.icon"/>
-        <div class="ov"></div>
-    </div>
-</div>
-
-<div id="right">
-    <div id="holdings" class="panel box">
-        <div class="box-title"><span class="muted">{{ t.holdings_title }}</span><span class="count">{{ rows_total }}</span></div>
-        <div id="tabs">
-            <div class="tab" id="tab-cities" data-class-active="tab == 'cities'" data-event-click="set_tab('cities')">{{ t.tab_cities }}</div>
-            <div class="tab" id="tab-armies" data-class-active="tab == 'armies'" data-event-click="set_tab('armies')">{{ t.tab_armies }}</div>
-            <div class="tab" id="tab-dynasties" data-class-active="tab == 'dynasties'" data-event-click="set_tab('dynasties')">{{ t.tab_dynasties }}</div>
+<div id="topbar">
+    <div id="topbar-rule"></div>
+    <svg id="logo-icon" data-attr-src="logo_icon"/>
+    <div id="logo">{{ t.logo }}</div>
+    <div id="house">{{ t.house }}</div>
+    <div class="vdiv" id="divider-house"></div>
+    <div id="resources">
+        <div class="res" data-for="r : resources" data-attr-id="'res-' + r.key" data-attr-title="r.tooltip">
+            <svg data-attr-src="r.icon"/>
+            <div class="res-label">{{ r.label }}</div>
+            <div class="res-value">{{ r.value }}</div>
+            <div class="res-note" data-class-pos="r.tone == 'pos'" data-class-neg="r.tone == 'neg'">{{ r.note }}</div>
         </div>
-        <div class="row" data-for="e : rows"><svg data-attr-src="e.icon"/><span class="row-name">{{ e.name }}</span><span class="row-value muted">{{ e.value }}</span></div>
-        <div class="box-title army-title"><span class="muted">{{ t.armies_title }}</span><span class="count">{{ army_total }}</span></div>
-        <div class="row army" data-for="a : army_rows"><svg data-attr-src="a.icon"/><span class="row-name">{{ a.name }}</span><span class="row-value muted">{{ a.value }}</span></div>
     </div>
-    <div id="affairs-title" class="muted">{{ t.affairs_title }}</div>
-    <div class="affair panel" data-for="a : affairs">
-        <svg data-attr-src="a.icon"/>
-        <div class="affair-title">{{ a.title }}</div>
-        <div class="affair-sub muted">{{ a.subtitle }}</div>
+    <div class="vdiv" id="divider-date"></div>
+</div>
+
+<div id="nav">
+    <div id="nav-list">
+        <div class="nav-item" data-for="n : nav" data-attr-id="'nav-' + n.key" data-class-active="active == n.key"
+             data-class-is-disabled="!n.available" data-attr-title="n.hint" data-event-click="nav(n.key)">
+            <div class="nav-mark"></div>
+            <svg data-attr-src="n.icon"/>
+            <div class="nav-label">{{ n.name }}</div>
+        </div>
+    </div>
+    <div class="nav-item nav-system" id="nav-system" data-class-active="active == 'system'"
+         data-class-is-disabled="!system.available" data-attr-title="system.name" data-event-click="nav('system')">
+        <div class="nav-mark"></div>
+        <svg data-attr-src="system.icon"/>
     </div>
 </div>
 
-<div id="chronicle" class="panel box">
-    <div class="box-title"><span class="muted">{{ t.chronicle_title }}</span><span class="count">{{ chronicle_total }}</span></div>
-    <div class="line" data-for="c : chronicle"><span class="time muted">{{ c.time }}</span><span class="text">{{ c.text }}</span></div>
+<div id="statusbar">
+    <div id="map-title">{{ t.map_title }}</div>
+    <div id="modes">
+        <div class="mode" data-for="m : modes" data-attr-id="'mode-' + m.key" data-class-active="mode == m.key"
+             data-class-is-disabled="!m.available" data-attr-title="m.hint" data-event-click="mode(m.key)">{{ m.name }}</div>
+    </div>
+    <div id="hints">{{ t.hints }}</div>
 </div>
+
 </body>
 </rml>

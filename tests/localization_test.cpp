@@ -819,10 +819,9 @@ TEST_CASE("the shipped Russian table loads and every key formats") {
     for (const auto& [n, expected] : ages)
         CHECK(loc.format("ui.age.years", {Arg("n", n)}) == expected);
     CHECK(loc.format("ui.fmt.number", {Arg("n", 12480)}) == "12" + kNbsp + "480");
-    CHECK(loc.format("ui.menu.chronicle") == "Летопись");
-    CHECK(loc.format("ui.hud.affairs.title") == "ДЕЛА ГОСУДАРСТВА");
-    CHECK(loc.format("ui.hud.affairs.council.detail", {Arg("n", 1)}) == "1 вопрос в повестке");
-    CHECK(loc.format("ui.hud.affairs.council.detail", {Arg("n", 3)}) == "3 вопроса в повестке");
+    CHECK(loc.format("ui.nav.chronicle") == "Журнал");
+    CHECK(loc.format("ui.fmt.rouble", {Arg("n", 1248)}) == "1" + kNbsp + "248 ₽");
+    CHECK(loc.format("ui.hud.res.capacity", {Arg("n", 1600)}) == "из 1" + kNbsp + "600");
     // The age is composed from ui.age.years (with its plural) and passed to the subtitle as text.
     const std::string age = loc.format("ui.age.years", {Arg("n", 22)});
     CHECK(age == "22 года");
