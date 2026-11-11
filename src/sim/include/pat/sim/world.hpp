@@ -590,7 +590,8 @@ public:
     void refresh_population_cache(ProvinceId province) noexcept;
     /// The administrator must be alive or invalid. False (nothing changed) otherwise, for an
     /// unknown province or without economy. A character who dies or is destroyed is removed from
-    /// every province (invariant E-P4).
+    /// every province (invariant E-P4). A province that changes hands (set_province_owner,
+    /// set_province_owner_kind) loses its administrator unless he is of the house of the new dynasty owner.
     bool set_province_administrator(ProvinceId province, CharacterId administrator);
     /// Puts a building (0 = empty) into a slot of a province; false when the slot is not below
     /// `slots_total` or the province is unknown.
@@ -743,6 +744,9 @@ private:
     /// people come from its population cache, the owner kind from its owner.
     void economy_add_province_rows(std::size_t index);
     void economy_remove_administrator(CharacterId id) noexcept;
+    /// After the owner (or the kind of ownership) of a province changed: drops the administrator unless he
+    /// belongs to the house of the new dynasty owner (E9 #242; the rule of AssignProvinceAdministrator).
+    void economy_release_foreign_administrator(ProvinceId province) noexcept;
     /// What a posting of `amount` would really change on line `line` of `account` (see post_money).
     [[nodiscard]] economy::Kopecks
     preview_posting(std::size_t account, std::size_t line, economy::Kopecks amount) const noexcept;
