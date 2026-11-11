@@ -45,6 +45,14 @@ struct Writer {
         out.u32(c.dynasty.value());
         out.i32(c.delta);
     }
+    void operator()(const cmd::GrantTrait& c) const {
+        out.u32(c.character.value());
+        out.u16(c.trait);
+    }
+    void operator()(const cmd::RevokeTrait& c) const {
+        out.u32(c.character.value());
+        out.u16(c.trait);
+    }
     void operator()(const cmd::CreatePerson& c) const {
         const CharacterInit& i = c.init;
         out.u32(i.dynasty.value());
@@ -158,6 +166,16 @@ bool read_command(core::ByteReader& in, Command& out) {
             c.father = CharacterId(in.u32());
             c.mother = CharacterId(in.u32());
             out.payload = c;
+            break;
+        }
+        case CommandType::GrantTrait: {
+            const CharacterId character(in.u32());
+            out.payload = cmd::GrantTrait{character, in.u16()};
+            break;
+        }
+        case CommandType::RevokeTrait: {
+            const CharacterId character(in.u32());
+            out.payload = cmd::RevokeTrait{character, in.u16()};
             break;
         }
         case CommandType::KillCharacter: {

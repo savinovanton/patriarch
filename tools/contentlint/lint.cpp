@@ -5,6 +5,7 @@
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
 #include "pat/content/names_content.hpp"
+#include "pat/content/traits_content.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -270,8 +271,16 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 for (const data::LoadError& error : credits.error())
                     findings.push_back(from_load_error(error));
             }
-            for (const data::LoadError& error : content::validate_m1_definitions(loaded.registry))
+            const auto m1_errors = content::validate_m1_definitions(loaded.registry);
+            for (const data::LoadError& error : m1_errors)
                 findings.push_back(from_load_error(error));
+            if (m1_errors.empty()) {
+                const auto traits = content::build_trait_catalog(loaded.registry);
+                if (!traits) {
+                    for (const data::LoadError& error : traits.error())
+                        findings.push_back(from_load_error(error));
+                }
+            }
         } else {
             report.notes.emplace_back("cross-object rules were not checked: fix the load errors first");
         }

@@ -2,6 +2,7 @@
 
 #include "pat/loc/localizer.hpp"
 #include "pat/sim/date.hpp"
+#include "pat/sim/traits.hpp"
 #include "pat/sim/world.hpp"
 #include "pat/ui/character_snapshot.hpp"
 
@@ -9,14 +10,15 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // The bridge between the simulation and the UI (E3-T12, ADR-0001): everything here reads an immutable
 // World snapshot and produces plain data for the UI (palettes, window snapshots, texts). It never
 // changes the world; changes go through commands.
 //
-// Placeholder content: the simulation core has no names or skills yet, so names are derived from ids
-// and skills come from the test generator until the data layer (E4) and the dynasty systems (E7) exist.
+// Demo names are derived from ids. Dynasty skills and traits use the configured simulation catalogue;
+// the spike keeps its generated values when no catalogue is supplied.
 
 namespace pat::game {
 
@@ -47,8 +49,16 @@ development_palette(const sim::World& world,
 
 /// Window data for a character. The character must be alive. Role, health and the phrases of the
 /// family and relation lines come from `loc` (the lines keep the language they were built in).
-[[nodiscard]] ui::CharacterSnapshot
-character_snapshot(const loc::Localizer& loc, const sim::World& world, sim::CharacterId character);
+[[nodiscard]] ui::CharacterSnapshot character_snapshot(const loc::Localizer& loc,
+                                                       const sim::World& world,
+                                                       sim::CharacterId character,
+                                                       const sim::TraitCatalog* traits = nullptr);
+
+/// Localized explanation of a pure simulation query; decimal terms retain the exact Fixed32 value.
+[[nodiscard]] ui::Explanation character_explanation(const loc::Localizer& loc,
+                                                    const sim::TraitCatalog& catalog,
+                                                    const sim::CharacterBreakdown& breakdown,
+                                                    std::string_view label_key);
 
 /// Head of the dynasty that owns map province `map_province` (invalid if unowned or without a head).
 [[nodiscard]] sim::CharacterId head_for_province(const sim::World& world,

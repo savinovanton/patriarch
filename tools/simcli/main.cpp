@@ -13,6 +13,7 @@
 #include "pat/sim/replay.hpp"
 #include "pat/sim/runner.hpp"
 #include "pat/sim/save.hpp"
+#include "pat/sim/traits.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -22,6 +23,7 @@
 #include <filesystem>
 #include <format>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -292,13 +294,16 @@ struct ScenarioStart {
     demo::Config demo_config;
     std::optional<World> m1_world;
     DemographyRules demography = kDefaultDemography;
+    std::shared_ptr<const TraitCatalog> traits;
     std::uint64_t replay_id = demo::kScenarioId;
     std::uint64_t content_hash = 0;
 
     [[nodiscard]] Simulation make_simulation() const {
         if (m1_world) {
-            Simulation simulation(*m1_world);
-            simulation.add_system(make_mortality_system(demography));
+            SimulationConfig config;
+            config.traits = traits;
+            Simulation simulation(*m1_world, std::move(config));
+            simulation.add_system(make_mortality_system(demography, traits));
             simulation.add_system(make_opinion_system());
             simulation.add_system(make_dynasty_standing_system());
             return simulation;
@@ -317,6 +322,13 @@ struct ScenarioStart {
         if (saved_hash != content_hash) {
             return std::format(
                 "M1 save content hash mismatch: saved {:016x}, loaded {:016x}", saved_hash, content_hash);
+        }
+        if (traits) {
+            for (const CharacterId id : world.living()) {
+                if (check_trait_set(*traits, world.characters().traits[id.index()]) != TraitStatus::Ok) {
+                    return std::format("M1 save has an incompatible trait set for character {}", id.value());
+                }
+            }
         }
         return {};
     }
@@ -352,6 +364,7 @@ pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::u
     }
     start.m1_world.emplace(std::move(loaded.value().world));
     start.demography = loaded.value().demography;
+    start.traits = loaded.value().traits;
     start.replay_id = loaded.value().replay_id;
     start.content_hash = loaded.value().content_hash;
     return Result::ok(std::move(start));

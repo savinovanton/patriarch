@@ -142,6 +142,9 @@ ui.skill.note = "Навыки лежат в диапазоне {min}–{max}."
 # ---- Подсказка «откуда число» (окно персонажа) -------------------------------------------------
 
 ui.explain.base = "Базовое значение"
+ui.explain.clamp = "Ограничение диапазона"
+ui.explain.multiplier = "Множитель ×{factor}"
+ui.explain.rounding = "Округление"
 ui.explain.education = "Образование"
 ui.explain.mentor = "Наставник"
 ui.explain.mentor_skill = "Навык наставника"

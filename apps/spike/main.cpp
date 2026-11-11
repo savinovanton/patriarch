@@ -418,8 +418,10 @@ int main(int argc, char** argv) {
     std::shared_ptr<const pat::sim::World> world_snapshot;
     if (!opt.no_sim) {
         if (m1) {
-            pat::sim::Simulation simulation(std::move(m1->world));
-            simulation.add_system(pat::sim::make_mortality_system(m1->demography));
+            pat::sim::SimulationConfig config;
+            config.traits = m1->traits;
+            pat::sim::Simulation simulation(std::move(m1->world), std::move(config));
+            simulation.add_system(pat::sim::make_mortality_system(m1->demography, m1->traits));
             simulation.add_system(pat::sim::make_opinion_system());
             simulation.add_system(pat::sim::make_dynasty_standing_system());
             runner = std::make_unique<pat::sim::SimulationRunner>(std::move(simulation));
@@ -891,7 +893,8 @@ int main(int argc, char** argv) {
                     shown_character = pat::game::pick_character(*world_snapshot, 7);
                 }
                 if (shown_character.valid()) {
-                    pat::ui::CharacterSnapshot next = pat::game::character_snapshot(ui_loc, *world_snapshot, shown_character);
+                    pat::ui::CharacterSnapshot next = pat::game::character_snapshot(
+                        ui_loc, *world_snapshot, shown_character, m1 ? m1->traits.get() : nullptr);
                     if (!(next == character->snapshot())) {
                         character->set_snapshot(next);
                     }

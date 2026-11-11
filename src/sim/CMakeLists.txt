@@ -38,6 +38,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/succession.hpp
     include/pat/sim/system.hpp
     include/pat/sim/task_executor.hpp
+    include/pat/sim/traits.hpp
     include/pat/sim/work_budget.hpp
     include/pat/sim/world.hpp
     command.cpp
@@ -69,6 +70,7 @@ add_library(patriarch_sim STATIC
     sim.cpp
     simulation.cpp
     succession.cpp
+    traits.cpp
     world.cpp
     world_economy.cpp
     world_economy_io.cpp

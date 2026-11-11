@@ -156,6 +156,75 @@ TEST_CASE("character snapshots describe real characters of a world") {
     CHECK(heads <= 6);
 }
 
+TEST_CASE("dynasty character snapshots use trait queries and explain displayed rounded skills") {
+    const loc::Localizer& loc = test::ui_localizer();
+    sim::World world(sim::Date::from_ymd(1703, 1, 1), 7);
+    REQUIRE(world.enable_dynasty_mode());
+    sim::CharacterInit init;
+    init.dynasty = world.create_dynasty(core::StringId(0));
+    init.birth_date = sim::Date::from_ymd(1670, 1, 1);
+    init.health = core::Fixed32::from_int(90);
+    init.skills[0] = core::Fixed32::from_ratio(37, 4);
+    init.skills[1] = core::Fixed32::from_int(18);
+    const sim::CharacterId id = world.create_character(init);
+    REQUIRE(id.valid());
+
+    sim::TraitCatalog catalog;
+    sim::TraitDef trait;
+    trait.id = 1;
+    trait.key = "ambitious";
+    trait.name_key = "trait.ambitious.name";
+    trait.desc_key = "trait.ambitious.desc";
+    trait.skill_modifiers[0] = core::Fixed32::from_ratio(5, 4);
+    trait.skill_modifiers[1] = core::Fixed32::from_int(10);
+    trait.attribute_modifiers[static_cast<std::size_t>(sim::CharacterAttribute::Health)] =
+        core::Fixed32::from_int(-20);
+    trait.health_multiplier_permille = 500;
+    catalog.definitions.push_back(trait);
+    REQUIRE(sim::validate(catalog).has_value());
+    REQUIRE(sim::grant_trait(world, catalog, id, trait.id) == sim::TraitStatus::Ok);
+    const auto hash = world.compute_hash();
+
+    const ui::CharacterSnapshot snapshot = game::character_snapshot(loc, world, id, &catalog);
+    CHECK(snapshot.skills[0] == 11);  // 9.25 base + 1.25 trait, rounded from 10.5.
+    CHECK(snapshot.skills[1] == 20);  // The effective simulation value is clamped.
+    REQUIRE(snapshot.traits.size() == 1);
+    CHECK(snapshot.traits[0] == loc.format(trait.name_key));
+    CHECK(snapshot.health == "ui.health.weak");  // (90 - 20) * 0.5 = 35.
+    REQUIRE(snapshot.skill_explanations[0].terms.size() == 3);
+    CHECK(snapshot.skill_explanations[0].label == loc.format(ui::kSkillKeys[0]));
+    CHECK(snapshot.skill_explanations[0].terms[0].label == loc.format("ui.explain.base"));
+    CHECK(snapshot.skill_explanations[0].terms[0].value == "+9.25");
+    CHECK(snapshot.skill_explanations[0].terms[1].label ==
+          loc.format("ui.explain.trait_named", {loc::Arg("name", loc.format(trait.name_key))}));
+    CHECK(snapshot.skill_explanations[0].terms[1].value == "+1.25");
+    CHECK(snapshot.skill_explanations[0].terms[2].label == loc.format("ui.explain.rounding"));
+    CHECK(snapshot.skill_explanations[0].terms[2].value == "+0.5");
+    CHECK(snapshot.skill_explanations[1].terms.back().label == loc.format("ui.explain.clamp"));
+    for (std::size_t skill = 0; skill < ui::kSkillCount; ++skill) {
+        const ui::Explanation& explanation = snapshot.skill_explanations[skill];
+        CHECK(explanation.value == std::to_string(snapshot.skills[skill]));
+        double sum = 0;
+        for (const ui::Explanation& term : explanation.terms) {
+            sum += std::stod(term.value);
+        }
+        CHECK(sum == doctest::Approx(snapshot.skills[skill]));
+    }
+
+    const ui::Explanation health = game::character_explanation(
+        loc,
+        catalog,
+        sim::attribute_breakdown(world, catalog, id, sim::CharacterAttribute::Health),
+        "ui.health.weak");
+    CHECK(health.value == "35");
+    REQUIRE(health.terms.size() == 3);
+    CHECK(health.terms.back().value == "-35");
+    CHECK(health.terms.back().note == loc.format("ui.explain.multiplier", {loc::Arg("factor", "0.5")}));
+    CHECK(world.compute_hash() == hash);
+    CHECK(world.characters().skills[id.index()][0] == init.skills[0]);
+    CHECK(world.characters().health[id.index()] == init.health);
+}
+
 TEST_CASE("province heads and random characters") {
     const sim::World world = demo_world(60, 6);
     std::size_t with_head = 0;

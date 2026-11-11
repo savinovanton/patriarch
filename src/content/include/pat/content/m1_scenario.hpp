@@ -8,10 +8,12 @@
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demography.hpp"
+#include "pat/sim/traits.hpp"
 #include "pat/sim/world.hpp"
 
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -25,6 +27,7 @@ struct M1Definitions {
     loc::Localizer localizer;
     sim::DemographyRules demography;
     std::vector<HonorRank> honor_ranks;
+    std::shared_ptr<const sim::TraitCatalog> traits;
 };
 
 struct M1Scenario {
@@ -38,6 +41,7 @@ struct M1Scenario {
     data::ContentRegistry registry;
     sim::DemographyRules demography;
     std::vector<HonorRank> honor_ranks;
+    std::shared_ptr<const sim::TraitCatalog> traits;
 };
 
 [[nodiscard]] mapdata::GenParams m1_map_params();

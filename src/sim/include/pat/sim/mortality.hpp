@@ -11,6 +11,7 @@ namespace pat::sim {
 inline constexpr std::string_view kMortalitySystemName = "dynasty.mortality";
 
 /// Processes life events daily. Rules must pass demography validation and are copied into the system.
-[[nodiscard]] std::unique_ptr<System> make_mortality_system(const DemographyRules& rules);
+[[nodiscard]] std::unique_ptr<System> make_mortality_system(const DemographyRules& rules,
+                                                            std::shared_ptr<const TraitCatalog> traits = {});
 
 }  // namespace pat::sim
