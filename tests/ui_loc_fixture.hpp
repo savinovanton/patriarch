@@ -33,12 +33,12 @@ inline loc::Localizer load_ui_localizer_with_english() {
     data::MemorySource english("english");
     english.add("loc/en/ui.pd", R"EN(format_version = 1
 
-ui.timebar.pause = "Pause"
+ui.timebar.paused = "PAUSED"
+ui.timebar.hint_resume = "Space - resume"
 ui.res.treasury = "Treasury"
-ui.res.tooltip = "{label}: {n:group} ({delta})"
-ui.hud.holdings.title = "HOLDINGS"
-ui.hud.tab.cities = "Cities"
-ui.hud.affairs.council.detail = "{n} {n:plural(item|items)} on the agenda"
+ui.res.tooltip = "{label}: {value} ({note})"
+ui.nav.dynasty = "Dynasty"
+ui.hud.map_title = "Realm map"
 ui.character.tab.overview = "Overview"
 ui.age.years = "{n} {n:plural(year|years)}"
 ui.character.subtitle = "{role} - {age} - health: {health}"

@@ -9,11 +9,9 @@ format_version = 1
 #
 # Эти строки читают окна UI через pat::loc::Localizer (src/ui/*, src/game/world_view.cpp,
 # apps/spike/main.cpp): HUD, полоса времени, окно персонажа, подсказки. Зашитых русских литералов
-# в коде окон нет. HUD — временная тестовая раскладка (docs/dev/ui-design.md).
+# в коде окон нет (docs/dev/ui-design.md).
 
 # ---- Общее -------------------------------------------------------------------------------------
-
-ui.game.title = "Патриарх"
 
 ui.age.years = "{n} {n:plural(год|года|лет)}"
 ui.fmt.number = "{n:group}"
@@ -22,6 +20,10 @@ ui.fmt.thousands = "{n} т"
 # ---- Время и дата ------------------------------------------------------------------------------
 
 ui.timebar.pause = "Пауза"
+ui.timebar.paused = "НА ПАУЗЕ"
+ui.timebar.speed = "Скорость {n}"
+ui.timebar.hint_resume = "Пробел — продолжить"
+ui.timebar.hint_pause = "Пробел — пауза"
 ui.date.long = "{day} {month} {year}"
 
 ui.month.january = "января"
@@ -37,48 +39,48 @@ ui.month.october = "октября"
 ui.month.november = "ноября"
 ui.month.december = "декабря"
 
-# ---- Главное меню (нижняя полоса HUD) ----------------------------------------------------------
+# ---- HUD: верхняя полоса, левая навигация, нижняя полоса (UI-D04, доска 01 макета) -------------
 
-ui.menu.world = "Мир"
-ui.menu.realm = "Держава"
-ui.menu.holdings = "Владения"
-ui.menu.army = "Войско"
-ui.menu.church = "Церковь"
-ui.menu.economy = "Хозяйство"
-ui.menu.diplomacy = "Дипломатия"
-ui.menu.chronicle = "Летопись"
-ui.menu.system = "Меню"
+ui.hud.logo = "PATRIARCH"
+ui.hud.house = "РОД {name}"
+ui.hud.calendar = "ЮЛИАНСКИЙ КАЛЕНДАРЬ"
 
-# ---- Верхняя полоса: держава и ресурсы ---------------------------------------------------------
-
-ui.hud.realm.name = "Московское царство"
-ui.hud.realm.subtitle = "Государев двор"
+ui.fmt.rouble = "{n:group} ₽"
 
 ui.res.treasury = "Казна"
-ui.res.grain = "Запасы"
-ui.res.army = "Войско"
-ui.res.faith = "Вера"
+ui.res.prestige = "Престиж"
 ui.res.influence = "Влияние"
-ui.res.tooltip = "{label}: {n:group} ({delta})"
+ui.res.piety = "Благочестие"
+ui.res.militia = "Ополчение"
+ui.res.tooltip = "{label}: {value} ({note})"
 
-# ---- Правая панель -----------------------------------------------------------------------------
+# Третья строка ресурса: прирост в месяц, предел или поясняющая подпись.
+ui.hud.res.delta = "{delta} / мес."
+ui.hud.res.capacity = "из {n:group}"
+ui.hud.res.influence.note = "при дворе"
+ui.hud.res.piety.note = "благосклонность"
 
-ui.hud.holdings.title = "ВЛАДЕНИЯ"
-ui.hud.armies.title = "ВОЙСКА"
-ui.hud.affairs.title = "ДЕЛА ГОСУДАРСТВА"
-ui.hud.chronicle.title = "ЛЕТОПИСЬ"
+# Левая навигация. Пункт без готового экрана показан приглушённым с подсказкой ui.nav.soon.
+ui.nav.dynasty = "Род"
+ui.nav.holdings = "Владения"
+ui.nav.court = "Двор"
+ui.nav.treasury = "Казна"
+ui.nav.church = "Церковь"
+ui.nav.army = "Войско"
+ui.nav.diplomacy = "Дипломатия"
+ui.nav.intrigue = "Интриги"
+ui.nav.chronicle = "Журнал"
+ui.nav.system = "Настройки"
+ui.nav.soon = "Скоро: экран ещё не готов"
 
-ui.hud.tab.cities = "Города"
-ui.hud.tab.armies = "Войска"
-ui.hud.tab.dynasties = "Династии"
-
-ui.hud.affairs.council.title = "Собор ожидает решения"
-ui.hud.affairs.council.detail = "{n} {n:plural(вопрос|вопроса|вопросов)} в повестке"
-ui.hud.affairs.embassy.title = "Прибыли послы"
-ui.hud.affairs.embassy.detail = "Ожидают приёма при дворе"
-
-ui.hud.chronicle.embassy_arrived = "Посольство прибыло в Москву"
-ui.hud.chronicle.taxes_collected = "Завершён сбор податей"
+# Нижняя полоса: название карты, режимы и подсказки мыши.
+ui.hud.map_title = "Карта владений"
+ui.hud.mode.political = "Политическая"
+ui.hud.mode.relief = "Рельеф"
+ui.hud.mode.income = "Доходы"
+ui.hud.mode.faith = "Вера"
+ui.hud.mode.soon = "Скоро: наложение ещё не готово"
+ui.hud.hints = "ЛКМ — выбрать · ПКМ — назад · M — режим карты"
 
 # ---- Окно персонажа ----------------------------------------------------------------------------
 
