@@ -32,7 +32,8 @@
 //   F5 stock    need = sum over groups of size x norm; grain: stock' = clamp(0, cap, stock + output
 //               - need), cap = stock_cap_months x need; shortage = unmet share of the need (per-mille)
 //               wealth target = base - sum over goods of shortage x points; wealth closes
-//               wealth_inertia of the gap to the target each month
+//               wealth_inertia of the gap to the target each month (`approach`: at least one raw
+//               unit, so the target is reached exactly)
 //
 // Quantities of goods are `Quantity`: int64 in the raw units of Fixed32 (Q16.16, 65536 = one unit),
 // so they share the resolution of the stock and capacity columns but are not squeezed into 32 bits

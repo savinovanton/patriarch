@@ -19,7 +19,7 @@
 //
 // Control (points, 0..100) and corruption (a share of the tax, 0..1) both move toward a target a part
 // of the gap per month (the inertia of the rules, truncated toward zero so a column never jumps over
-// its target):
+// its target, but by at least one raw unit so it reaches the target exactly - see `approach`):
 //
 //   control_target    = control_base
 //                     + steward_gain x (stewardship - neutral)             the administrator
@@ -136,8 +136,11 @@ struct Administration {
                                                       const AdministrationInput& input,
                                                       Breakdown* breakdown = nullptr);
 
-/// Moves `current` toward `target` by `inertia_permille` of the gap, truncated toward zero (never
-/// jumps over the target, never leaves 0..100 when both ends are inside it).
+/// Moves `current` toward `target` by `inertia_permille` of the gap, truncated toward zero, but by at
+/// least one raw unit (1/65536) while the gap is not closed - so the column REACHES the target exactly,
+/// from either side, and the thresholds read the same state whichever way it came (docs/dev/economy-model.md
+/// section 17.5). Never jumps over the target, never leaves 0..100 when both ends are inside it. With
+/// inertia 0 the column is frozen by the rules and stays where it is.
 [[nodiscard]] core::Fixed32
 approach(core::Fixed32 current, core::Fixed32 target, std::int32_t inertia_permille) noexcept;
 

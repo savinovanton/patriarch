@@ -136,7 +136,14 @@ compute_corruption_target(const ControlRules& rules, const AdministrationInput& 
 
 Fixed32 approach(Fixed32 current, Fixed32 target, std::int32_t inertia_permille) noexcept {
     const std::int64_t gap = static_cast<std::int64_t>(target.raw()) - current.raw();
-    const std::int64_t step = mul_permille(gap, std::clamp(inertia_permille, 0, kPermilleOne));
+    const std::int32_t inertia = std::clamp(inertia_permille, 0, kPermilleOne);
+    std::int64_t step = mul_permille(gap, inertia);
+    if (step == 0 && gap != 0 && inertia > 0) {
+        // The truncated step vanishes when |gap| x inertia < 1000 raw units; without a floor the column would
+        // stop short of the target on whichever side it came from, and the strict thresholds (40, 15) and the
+        // truncating per-mille readers would see two different values for the same target.
+        step = gap > 0 ? 1 : -1;
+    }
     return Fixed32::from_raw(static_cast<std::int32_t>(current.raw() + step));
 }
 
