@@ -1,5 +1,5 @@
 // Map labels (E3-T05): SDF font atlas and text layout, label placement (zoom LOD, overlap culling),
-// label generation for a map, and the SDF text renderer. Font-dependent tests skip without Times New Roman.
+// label generation for a map, and the SDF text renderer. Font-dependent tests skip without the PT Serif file.
 
 #include "pat/engine/camera.hpp"
 #include "pat/engine/label_layout.hpp"
@@ -14,13 +14,15 @@
 #include <cmath>
 #include <filesystem>
 
+#include "test_fonts.hpp"
+
 using namespace pat::engine;
 namespace mapdata = pat::mapdata;
 
 namespace {
 
 bool have_times() {
-    return std::filesystem::exists("C:/Windows/Fonts/times.ttf");
+    return std::filesystem::exists(pat::test::game_label_font());
 }
 
 /// An atlas without a font file: every glyph is a 24-pixel square tile of a synthetic distance field.
@@ -154,10 +156,10 @@ TEST_CASE("text layout: widths scale with the size and the line is centred") {
 
 TEST_CASE("SDF atlas from a real font: Cyrillic glyphs with sensible distance values") {
     if (!have_times()) {
-        MESSAGE("Times New Roman not found, skipping");
+        MESSAGE("PT Serif not found, skipping");
         return;
     }
-    auto built = build_sdf_atlas("C:/Windows/Fonts/times.ttf");
+    auto built = build_sdf_atlas(pat::test::game_label_font());
     REQUIRE(built.has_value());
     const SdfAtlas& atlas = built.value();
     CHECK(atlas.width == 1024);

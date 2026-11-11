@@ -67,6 +67,9 @@
 #include <variant>
 #include <vector>
 
+#ifndef PATRIARCH_SPIKE_FONT_DIR
+#define PATRIARCH_SPIKE_FONT_DIR ""
+#endif
 #ifndef PATRIARCH_SPIKE_UI_DIR
 #define PATRIARCH_SPIKE_UI_DIR ""
 #endif
@@ -382,16 +385,16 @@ int main(int argc, char** argv) {
     std::int64_t last_title_frame_count = 0;
     std::int64_t last_frame_ns = now_ns();
 
-    // ---- UI overlay (RmlUi). System fonts are used only by this development spike; the game's own fonts
-    // are a separate decision (issue #27) and will live in assets/ with licence records.
-    // ---- map labels: SDF text from a system font (development only; the game font is issue #27)
+    // ---- UI overlay (RmlUi) and map labels use the game fonts from assets/fonts (PT Serif, PT Sans Caption; OFL-1.1).
+    const std::filesystem::path font_dir = PATRIARCH_SPIKE_FONT_DIR;
+    // ---- map labels: SDF text from PT Serif Bold
     std::unique_ptr<MapLabelRenderer> labels;
     bool labels_on = true;
     LabelLayoutStats label_stats;
     std::size_t label_min = ~static_cast<std::size_t>(0);
     std::size_t label_max = 0;
     if (!opt.no_labels) {
-        for (const char* font : {"C:/Windows/Fonts/timesbd.ttf", "C:/Windows/Fonts/times.ttf", "C:/Windows/Fonts/arialbd.ttf"}) {
+        for (const std::filesystem::path font : {font_dir / "pt-serif" / "PT_Serif-Web-Bold.ttf"}) {
             if (!std::filesystem::exists(font)) {
                 continue;
             }
@@ -487,12 +490,11 @@ int main(int argc, char** argv) {
         UiDesc ud;
         ud.size = renderer->size();
         ud.ui_scale = ui_scale;
-        for (const char* font :
-             {"arial.ttf", "arialbd.ttf", "ariali.ttf", "arialbi.ttf", "times.ttf", "timesbd.ttf"}) {
-            const std::filesystem::path path = std::filesystem::path("C:/Windows/Fonts") / font;
-            if (std::filesystem::exists(path)) {
-                ud.font_files.push_back(path);
-            }
+        // The first file is also the fallback face for glyphs a font lacks.
+        for (const char* font : {"pt-serif/PT_Serif-Web-Regular.ttf", "pt-serif/PT_Serif-Web-Bold.ttf",
+                                 "pt-sans-caption/PT_Sans-Caption-Web-Regular.ttf",
+                                 "pt-sans-caption/PT_Sans-Caption-Web-Bold.ttf"}) {
+            ud.font_files.push_back(font_dir / font);
         }
         auto ui_result = UiContext::create(*renderer, opt.hidden ? nullptr : &window, ud);
         if (!ui_result) {

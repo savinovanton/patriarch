@@ -46,3 +46,39 @@ credit "source_hydrosheds_v1_family" {
     license = "LicenseRef-WWF-HydroSHEDS-v1"
     text = "This product [name] incorporates data from the HydroSHEDS version 1 database which is © World Wildlife Fund, Inc. (2006-2022) and has been used herein under license. WWF has not evaluated the data as altered and incorporated within [name] ... (excerpt of appendix B of the licence: the full text, third-party rights list and the Lehner, Verdin, Jarvis (2008) Eos 89(10): 93-94 citation must be taken from the licence if the owner accepts it)"
 }
+
+credit "asset_fonts_pt_serif_pt_serif_web_regular_ttf" {
+    section = assets
+    order = 560
+    asset = "fonts/pt-serif/PT_Serif-Web-Regular.ttf"
+    name = "PT Serif Regular"
+    provider = "ParaType Ltd."
+    license = "OFL-1.1"
+}
+
+credit "asset_fonts_pt_serif_pt_serif_web_bold_ttf" {
+    section = assets
+    order = 570
+    asset = "fonts/pt-serif/PT_Serif-Web-Bold.ttf"
+    name = "PT Serif Bold"
+    provider = "ParaType Ltd."
+    license = "OFL-1.1"
+}
+
+credit "asset_fonts_pt_sans_caption_pt_sans_caption_web_regular_ttf" {
+    section = assets
+    order = 590
+    asset = "fonts/pt-sans-caption/PT_Sans-Caption-Web-Regular.ttf"
+    name = "PT Sans Caption Regular"
+    provider = "ParaType Ltd."
+    license = "OFL-1.1"
+}
+
+credit "asset_fonts_pt_sans_caption_pt_sans_caption_web_bold_ttf" {
+    section = assets
+    order = 600
+    asset = "fonts/pt-sans-caption/PT_Sans-Caption-Web-Bold.ttf"
+    name = "PT Sans Caption Bold"
+    provider = "ParaType Ltd."
+    license = "OFL-1.1"
+}

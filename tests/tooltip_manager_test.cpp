@@ -1,4 +1,4 @@
-// Nested tooltips over RmlUi (E3-T08) on an offscreen WARP target. Needs Arial (skipped without it).
+// Nested tooltips over RmlUi (E3-T08) on an offscreen WARP target. Uses the game fonts from assets/fonts.
 
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/ui.hpp"
@@ -16,13 +16,15 @@
 #include <filesystem>
 #include <string>
 
+#include "test_fonts.hpp"
+
 namespace {
 
 using namespace pat::engine;
 using namespace pat::ui;
 
 bool have_font() {
-    return std::filesystem::exists("C:/Windows/Fonts/arial.ttf");
+    return pat::test::game_fonts_present();
 }
 
 struct Fixture {
@@ -69,8 +71,7 @@ struct Fixture {
         UiDesc ud;
         ud.size = {w, h};
         ud.ui_scale = scale;
-        ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
+        ud.font_files = pat::test::game_font_files();
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
@@ -160,7 +161,7 @@ struct Fixture {
 
 TEST_CASE("TooltipManager: hovering a skill opens a generated tooltip after a delay") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_tip_open");

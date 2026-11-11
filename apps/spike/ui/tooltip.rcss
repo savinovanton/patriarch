@@ -9,7 +9,7 @@ body {
     width: 0;
     height: 0;
     margin: 0;
-    font-family: Arial;
+    font-family: "PT Sans Caption";
     font-size: 14dp;
     color: #eee8d8;
 }
@@ -32,7 +32,7 @@ body {
 }
 
 .tip-title {
-    font-family: "Times New Roman";
+    font-family: "PT Serif";
     font-size: 16dp;
     font-weight: bold;
     color: #eee8d8;

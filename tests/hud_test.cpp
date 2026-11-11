@@ -1,4 +1,5 @@
-// The heads-up display (design Olive Stone) on an offscreen WARP target; needs Arial (skipped without it).
+// The heads-up display (design Olive Stone) on an offscreen WARP target; uses the game fonts from
+// assets/fonts.
 
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/renderer.hpp"
@@ -28,6 +29,8 @@ TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
 #include <string>
 #include <vector>
 
+#include "test_fonts.hpp"
+
 namespace {
 
 using namespace pat::engine;
@@ -53,10 +56,7 @@ struct HudFixture {
         UiDesc ud;
         ud.size = {kW, kH};
         ud.ui_scale = design_ui_scale({kW, kH});
-        ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/arialbd.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/timesbd.ttf");
+        ud.font_files = pat::test::game_font_files();
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
@@ -97,8 +97,8 @@ Rml::ElementList visible_resources(Rml::ElementDocument* doc) {
 }
 
 TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports menu presses") {
-    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
-        MESSAGE("Arial not found, skipping");
+    if (!pat::test::game_fonts_present()) {
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     constexpr int kW = 1920;
@@ -113,10 +113,7 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     UiDesc ud;
     ud.size = {kW, kH};
     ud.ui_scale = design_ui_scale({kW, kH});
-    ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-    ud.font_files.emplace_back("C:/Windows/Fonts/arialbd.ttf");
-    ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
-    ud.font_files.emplace_back("C:/Windows/Fonts/timesbd.ttf");
+    ud.font_files = pat::test::game_font_files();
     auto ui_created = UiContext::create(*renderer, nullptr, ud);
     REQUIRE(ui_created.has_value());
     std::unique_ptr<UiContext> ui = std::move(ui_created).value();
@@ -256,8 +253,8 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
 }
 
 TEST_CASE("HUD: every caption, card and chronicle line comes from the string table") {
-    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
-        MESSAGE("Arial not found, skipping");
+    if (!pat::test::game_fonts_present()) {
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     const pat::loc::Localizer& loc = pat::test::ui_localizer();
@@ -293,8 +290,8 @@ TEST_CASE("HUD: every caption, card and chronicle line comes from the string tab
 }
 
 TEST_CASE("HUD: changing the language changes the texts after relocalize()") {
-    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
-        MESSAGE("Arial not found, skipping");
+    if (!pat::test::game_fonts_present()) {
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     pat::loc::Localizer loc = pat::test::load_ui_localizer_with_english();
@@ -323,8 +320,8 @@ TEST_CASE("HUD: changing the language changes the texts after relocalize()") {
 }
 
 TEST_CASE("HUD: a missing key shows as [[key]] and does not break the window") {
-    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
-        MESSAGE("Arial not found, skipping");
+    if (!pat::test::game_fonts_present()) {
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     const pat::loc::Localizer empty = pat::test::load_empty_localizer();
