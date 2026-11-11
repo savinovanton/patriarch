@@ -6,7 +6,10 @@
 #include "pat/engine/renderer.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace Rml {
@@ -46,6 +49,15 @@ public:
 
     /// Updates the UI surface size (pixels) and scale (1.0 = 100%).
     void resize(PixelSize pixels, float ui_scale);
+
+    /// Content for files RmlUi asks for (stylesheets, images, ...): given the path RmlUi wants, returns the
+    /// text to serve instead of the file, or nullopt to read the file from disk as usual. The UI theme uses
+    /// it to generate `theme.rcss`, expand its tokens in stylesheets and repaint icons
+    /// (pat::ui::install_theme).
+    using FileProvider = std::function<std::optional<std::string>(const std::filesystem::path&)>;
+    void set_file_provider(FileProvider provider);
+    /// Reads a text file the way RmlUi would (through the file provider, then from disk).
+    [[nodiscard]] std::optional<std::string> read_text_file(const std::filesystem::path& path);
 
     /// Loads and shows a document; hot reload watches the document's directory. Returns null on failure.
     [[nodiscard]] Rml::ElementDocument* load_document(const std::filesystem::path& path);

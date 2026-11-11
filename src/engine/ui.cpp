@@ -11,8 +11,10 @@
 #include <chrono>
 #include <cstdio>
 #include <map>
+#include <optional>
 #include <string>
 #include <system_error>
+#include <utility>
 
 namespace pat::engine {
 
@@ -212,25 +214,79 @@ private:
 /// paths on Windows).
 class UiFileInterface final : public Rml::FileInterface {
 public:
+    void set_provider(UiContext::FileProvider provider) { provider_ = std::move(provider); }
+
     Rml::FileHandle Open(const Rml::String& path) override {
         const std::filesystem::path p = from_utf8(path);
+        if (provider_) {
+            if (std::optional<std::string> content = provider_(p)) {
+                auto* handle = new Handle;
+                handle->memory = std::move(*content);
+                handle->in_memory = true;
+                return reinterpret_cast<Rml::FileHandle>(handle);
+            }
+        }
 #ifdef _WIN32
         std::FILE* f = _wfopen(p.c_str(), L"rb");
 #else
         std::FILE* f = std::fopen(p.c_str(), "rb");
 #endif
-        return reinterpret_cast<Rml::FileHandle>(f);
+        if (f == nullptr) {
+            return 0;
+        }
+        auto* handle = new Handle;
+        handle->file = f;
+        return reinterpret_cast<Rml::FileHandle>(handle);
     }
-    void Close(Rml::FileHandle file) override { std::fclose(reinterpret_cast<std::FILE*>(file)); }
+    void Close(Rml::FileHandle file) override {
+        auto* handle = reinterpret_cast<Handle*>(file);
+        if (handle->file != nullptr) {
+            std::fclose(handle->file);
+        }
+        delete handle;
+    }
     size_t Read(void* buffer, size_t size, Rml::FileHandle file) override {
-        return std::fread(buffer, 1, size, reinterpret_cast<std::FILE*>(file));
+        auto* handle = reinterpret_cast<Handle*>(file);
+        if (!handle->in_memory) {
+            return std::fread(buffer, 1, size, handle->file);
+        }
+        const size_t count = std::min(size, handle->memory.size() - handle->position);
+        std::copy_n(handle->memory.data() + handle->position, count, static_cast<char*>(buffer));
+        handle->position += count;
+        return count;
     }
     bool Seek(Rml::FileHandle file, long offset, int origin) override {
-        return std::fseek(reinterpret_cast<std::FILE*>(file), offset, origin) == 0;
+        auto* handle = reinterpret_cast<Handle*>(file);
+        if (!handle->in_memory) {
+            return std::fseek(handle->file, offset, origin) == 0;
+        }
+        long base = 0;
+        if (origin == SEEK_CUR) {
+            base = static_cast<long>(handle->position);
+        } else if (origin == SEEK_END) {
+            base = static_cast<long>(handle->memory.size());
+        }
+        const long target = base + offset;
+        if (target < 0 || target > static_cast<long>(handle->memory.size())) {
+            return false;
+        }
+        handle->position = static_cast<size_t>(target);
+        return true;
     }
     size_t Tell(Rml::FileHandle file) override {
-        return static_cast<size_t>(std::ftell(reinterpret_cast<std::FILE*>(file)));
+        auto* handle = reinterpret_cast<Handle*>(file);
+        return handle->in_memory ? handle->position : static_cast<size_t>(std::ftell(handle->file));
     }
+
+private:
+    /// An open file: a C stdio stream, or text produced by the provider.
+    struct Handle {
+        std::FILE* file = nullptr;
+        bool in_memory = false;
+        std::string memory;
+        size_t position = 0;
+    };
+    UiContext::FileProvider provider_;
 };
 
 /// Documents and the files they depend on (the .rml itself and every .rcss/.rml in its directory).
@@ -284,6 +340,25 @@ struct UiContext::Impl {
 
 UiContext::UiContext(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 UiContext::~UiContext() = default;
+
+std::optional<std::string> UiContext::read_text_file(const std::filesystem::path& path) {
+    const Rml::FileHandle handle = impl_->files.Open(to_utf8(path));
+    if (handle == 0) {
+        return std::nullopt;
+    }
+    std::string text;
+    char buffer[4096];
+    for (size_t count = impl_->files.Read(buffer, sizeof(buffer), handle); count > 0;
+         count = impl_->files.Read(buffer, sizeof(buffer), handle)) {
+        text.append(buffer, count);
+    }
+    impl_->files.Close(handle);
+    return text;
+}
+
+void UiContext::set_file_provider(FileProvider provider) {
+    impl_->files.set_provider(std::move(provider));
+}
 
 core::Result<std::unique_ptr<UiContext>>
 UiContext::create(IRenderer& renderer, Window* window, const UiDesc& desc) {

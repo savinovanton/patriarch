@@ -48,6 +48,21 @@ theme "patriarch-concept-01" {
     type_40 = 40
   }
 
+  # Not Penpot tokens (#255 item 2): sizes that occur on the boards between the seven tokens above. Tokens remain
+  # the main scale; windows use these where the mockup does (type_NN = NN px at 1920x1080). Extend as new boards need.
+  font_size_extra {
+    type_11 = 11
+    type_13 = 13
+    type_15 = 15
+    type_17 = 17
+    type_20 = 20
+    type_22 = 22
+    type_25 = 25
+    type_28 = 28
+    type_38 = 38
+    type_48 = 48
+  }
+
   # Not Penpot tokens: values read from the layers (the file has no library typographies or styles).
   font {
     serif = { family = "PT Serif" weights = [400 700] role = "headings, names, values" }

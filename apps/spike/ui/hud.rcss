@@ -87,11 +87,11 @@
     right: 10dp;
     top: 29dp;
     font-size: 11dp;
-    color: #a0ad8b;
+    color: $quiet;
 }
 
 .res-delta.neg {
-    color: #c9776a;
+    color: $softred;
 }
 
 /* ---- alert badges */
@@ -127,8 +127,8 @@
     height: 14dp;
     padding: 0 3dp;
     border-radius: 7dp;
-    background-color: #c8af77;
-    color: #282f26;
+    background-color: $gold;
+    color: $panel;
     font-size: 10dp;
     font-weight: bold;
     line-height: 14dp;
@@ -170,12 +170,12 @@
 }
 
 .menu-btn:hover .ov {
-    background-color: #ffffff1c;
+    background-color: $light_a10;
 }
 
 .menu-btn.active .ov {
-    background-color: #c8af7738;
-    border: 1dp #eee8d8;
+    background-color: $gold_a22;
+    border: 1dp $light;
 }
 
 /* ---- right column: holdings, armies, state affairs */
@@ -202,13 +202,13 @@
     position: absolute;
     right: 0;
     top: 0;
-    color: #eee8d8;
+    color: $light;
 }
 
 #tabs {
     height: 24dp;
     margin-bottom: 6dp;
-    border-bottom: 1dp #626d50;
+    border-bottom: 1dp $rule;
     white-space: nowrap;
 }
 
@@ -218,16 +218,16 @@
     margin-right: 14dp;
     font-size: 12dp;
     line-height: 20dp;
-    color: #a0ad8b;
+    color: $quiet;
 }
 
 .tab:hover {
-    color: #eee8d8;
+    color: $light;
 }
 
 .tab.active {
-    color: #eee8d8;
-    border-bottom: 2dp #c8af77;
+    color: $light;
+    border-bottom: 2dp $gold;
 }
 
 .row {
@@ -263,7 +263,7 @@
 #affairs-title {
     display: inline-block;
     padding: 2dp 8dp;
-    background-color: #282f26cc;
+    background-color: $panel_a80;
     border-radius: 2dp;
     margin: 16dp 0 8dp 0;
     font-size: 11dp;

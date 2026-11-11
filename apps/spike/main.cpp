@@ -38,6 +38,7 @@
 #include "pat/ui/character_window.hpp"
 #include "pat/ui/credits_window.hpp"
 #include "pat/ui/hud_window.hpp"
+#include "pat/ui/theme.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
 
@@ -504,6 +505,13 @@ int main(int argc, char** argv) {
             return 1;
         }
         ui = std::move(ui_result).value();
+        // The theme "Rodovaya kantselyariya": stylesheets use tokens of data/ui/theme.pd (docs/dev/ui-design.md).
+        auto theme = pat::ui::load_theme(opt.data_root / "ui" / "theme.pd");
+        if (!theme) {
+            PAT_LOG_ERROR("spike", "{}", theme.error().message);
+            return 1;
+        }
+        pat::ui::install_theme(*ui, std::make_shared<const pat::ui::Theme>(std::move(theme).value()));
         if (!m1) {
             const std::filesystem::path ui_dir = PATRIARCH_SPIKE_UI_DIR;
             Rml::ElementDocument* doc = ui->load_document(ui_dir / "demo.rml");

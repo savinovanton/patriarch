@@ -3,7 +3,6 @@
 #include <RmlUi/Core.h>
 
 #include <cstdio>
-#include <fstream>
 #include <iterator>
 #include <variant>
 #include <vector>
@@ -75,8 +74,9 @@ struct TooltipManager::Impl {
     }
 
     [[nodiscard]] std::string read_style() const {
-        std::ifstream in(stylesheet, std::ios::binary);
-        return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+        // Through the UI context, so the theme tokens of the stylesheet are expanded like in linked
+        // stylesheets.
+        return ui->read_text_file(stylesheet).value_or(std::string());
     }
 
     void close_documents_from(std::size_t first) {

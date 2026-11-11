@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "test_fonts.hpp"
+#include "ui_theme_fixture.hpp"
 
 namespace {
 
@@ -40,6 +41,7 @@ TEST_CASE("TimeBar: shows the date, highlights the speed and reports button pres
     auto ui_created = UiContext::create(*renderer, nullptr, ud);
     REQUIRE(ui_created.has_value());
     std::unique_ptr<UiContext> ui = std::move(ui_created).value();
+    pat::test::install_game_theme(*ui);
 
     pat::loc::Localizer loc = pat::test::load_ui_localizer_with_english();
     auto bar_created =

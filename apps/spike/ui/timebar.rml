@@ -1,7 +1,7 @@
 <rml>
 <head>
     <title>Time bar</title>
-    <link type="text/rcss" href="olive.rcss"/>
+    <link type="text/rcss" href="theme.rcss"/>
     <link type="text/rcss" href="timebar.rcss"/>
 </head>
 <body data-model="timebar">

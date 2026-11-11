@@ -1,7 +1,7 @@
 <rml>
 <head>
     <title>Credits</title>
-    <link type="text/rcss" href="olive.rcss"/>
+    <link type="text/rcss" href="theme.rcss"/>
     <link type="text/rcss" href="credits.rcss"/>
 </head>
 <body data-model="credits">

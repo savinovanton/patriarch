@@ -1,5 +1,5 @@
-/* Character window in the Olive Stone theme (tokens in olive.rcss and docs/dev/ui-design.md).
-   Reload-friendly: olive.rcss is linked by the document; the block-level rules live there. */
+/* Character window in the theme "Rodovaya kantselyariya": dollar-prefixed tokens come from data/ui/theme.pd (pat::ui::expand_tokens),
+   the shared rules from the generated theme.rcss linked by the document (docs/dev/ui-design.md). */
 
 h1, h2, p {
     display: block;
@@ -16,8 +16,8 @@ body {
     top: 117dp;
     width: 460dp;
     padding: 14dp 16dp;
-    background-color: #282f26f2;
-    border: 1dp #626d50;
+    background-color: $panel_a95;
+    border: 1dp $rule;
     border-radius: 2dp;
 }
 
@@ -31,8 +31,8 @@ body {
     width: 56dp;
     height: 56dp;
     margin-right: 14dp;
-    background-color: #3d4736;
-    border: 2dp #c8af77;
+    background-color: $raised;
+    border: 2dp $gold;
     border-radius: 28dp;
 }
 
@@ -40,7 +40,7 @@ body {
     font-family: "PT Serif";
     font-size: 24dp;
     font-weight: bold;
-    color: #eee8d8;
+    color: $light;
     text-align: center;
     line-height: 52dp;
 }
@@ -49,7 +49,7 @@ h1 {
     font-family: "PT Serif";
     font-size: 22dp;
     font-weight: bold;
-    color: #eee8d8;
+    color: $light;
     margin-bottom: 2dp;
 }
 
@@ -59,35 +59,35 @@ h2 {
     font-weight: bold;
     letter-spacing: 1dp;
     text-transform: uppercase;
-    color: #a0ad8b;
+    color: $quiet;
     margin: 10dp 0 5dp 0;
 }
 
 .sub {
-    color: #a0ad8b;
+    color: $quiet;
     font-size: 13dp;
 }
 
 #tabs {
     margin-bottom: 8dp;
-    border-bottom: 1dp #626d50;
+    border-bottom: 1dp $rule;
 }
 
 .tab {
     display: inline-block;
     padding: 5dp 12dp 6dp 12dp;
     margin-right: 6dp;
-    color: #a0ad8b;
+    color: $quiet;
     font-size: 13dp;
 }
 
 .tab:hover {
-    color: #eee8d8;
+    color: $light;
 }
 
 .tab.active {
-    color: #eee8d8;
-    border-bottom: 2dp #c8af77;
+    color: $light;
+    border-bottom: 2dp $gold;
 }
 
 .skill {
@@ -96,7 +96,7 @@ h2 {
 }
 
 .skill:hover {
-    background-color: #ffffff12;
+    background-color: $light_a8;
 }
 
 .skill-name {
@@ -109,14 +109,14 @@ h2 {
     width: 220dp;
     height: 8dp;
     margin-top: 6dp;
-    background-color: #1c211b;
-    border: 1dp #626d50;
+    background-color: $ink;
+    border: 1dp $rule;
     border-radius: 2dp;
 }
 
 .fill {
     height: 8dp;
-    background-color: #c8af77;
+    background-color: $gold;
     border-radius: 1dp;
 }
 
@@ -124,15 +124,15 @@ h2 {
     display: inline-block;
     width: 30dp;
     margin-left: 8dp;
-    color: #eee8d8;
+    color: $light;
 }
 
 .trait {
     display: inline-block;
     padding: 2dp 9dp;
     margin: 0 4dp 4dp 0;
-    background-color: #3d4736;
-    border: 1dp #626d50;
+    background-color: $raised;
+    border: 1dp $rule;
     border-radius: 9dp;
     font-size: 13dp;
 }
@@ -141,20 +141,20 @@ h2 {
     display: inline-block;
     padding: 5dp 12dp;
     margin: 0 6dp 6dp 0;
-    background-color: #3d4736;
-    border: 1dp #c8af77;
+    background-color: $raised;
+    border: 1dp $gold;
     border-radius: 2dp;
-    color: #eee8d8;
+    color: $light;
     font-size: 13dp;
 }
 
 .btn:hover {
-    background-color: #4d5a44;
-    color: #ffffff;
+    background-color: $rule;
+    color: $light;
 }
 
 .btn:active {
-    background-color: #2f3829;
+    background-color: $panel;
 }
 
 .line {
@@ -164,8 +164,8 @@ h2 {
 #rel_list {
     height: 280dp;
     overflow-y: scroll;
-    background-color: #1c211b;
-    border: 1dp #626d50;
+    background-color: $ink;
+    border: 1dp $rule;
 }
 
 .pad {
@@ -181,12 +181,12 @@ h2 {
 }
 
 .row:hover {
-    background-color: #ffffff14;
+    background-color: $light_a8;
 }
 
 #statusbar {
     margin-top: 8dp;
-    color: #a0ad8b;
+    color: $quiet;
     font-size: 12dp;
     height: 18dp;
 }
@@ -196,18 +196,18 @@ scrollbarvertical {
 }
 
 scrollbarvertical slidertrack {
-    background-color: #1c211b;
+    background-color: $ink;
 }
 
 scrollbarvertical sliderbar {
     width: 12dp;
     min-height: 24dp;
-    background-color: #626d50;
+    background-color: $rule;
     border-radius: 2dp;
 }
 
 scrollbarvertical sliderbar:hover {
-    background-color: #7d8a66;
+    background-color: $quiet;
 }
 
 scrollbarvertical sliderarrowdec,

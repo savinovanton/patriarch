@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "test_fonts.hpp"
+#include "ui_theme_fixture.hpp"
 
 namespace {
 
@@ -58,7 +59,7 @@ struct Fixture {
         std::filesystem::remove_all(dir);
         std::filesystem::create_directories(dir);
         const std::filesystem::path source(PATRIARCH_SPIKE_UI_DIR);
-        for (const char* file : {"credits.rml", "credits.rcss", "olive.rcss"}) {
+        for (const char* file : {"credits.rml", "credits.rcss"}) {
             std::filesystem::copy_file(source / file, dir / file);
         }
 
@@ -76,6 +77,7 @@ struct Fixture {
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
+        pat::test::install_game_theme(*ui);
 
         auto w = CreditsWindow::create(*ui, dir / "credits.rml", loc);
         REQUIRE(w.has_value());

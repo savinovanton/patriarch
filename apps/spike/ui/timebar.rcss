@@ -1,4 +1,4 @@
-/* Date and speed controls, top right (Olive Stone, see olive.rcss for the tokens). */
+/* Date and speed controls, top right (dollar-prefixed tokens of data/ui/theme.pd). */
 #bar {
     pointer-events: auto;
     position: absolute;
@@ -7,8 +7,8 @@
     width: 282dp;
     height: 57dp;
     padding: 6dp 12dp;
-    background-color: #282f26;
-    border: 1dp #626d50;
+    background-color: $panel;
+    border: 1dp $rule;
     border-radius: 2dp;
 }
 
@@ -17,7 +17,7 @@
     font-family: "PT Serif";
     font-size: 17dp;
     font-weight: bold;
-    color: #eee8d8;
+    color: $light;
     margin-bottom: 5dp;
 }
 
@@ -27,22 +27,22 @@
     height: 22dp;
     margin-right: 4dp;
     padding: 0 4dp;
-    background-color: #3d4736;
-    border: 1dp #626d50;
+    background-color: $raised;
+    border: 1dp $rule;
     border-radius: 2dp;
     font-size: 12dp;
     line-height: 20dp;
     text-align: center;
-    color: #c5c7b5;
+    color: $quiet;
 }
 
 .spd:hover {
-    background-color: #4d5a44;
-    color: #eee8d8;
+    background-color: $rule;
+    color: $light;
 }
 
 .spd.active {
-    background-color: #7b6a3f;
-    border-color: #c8af77;
-    color: #ffffff;
+    background-color: $green;
+    border-color: $gold;
+    color: $light;
 }
