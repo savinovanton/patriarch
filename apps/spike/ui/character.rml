@@ -1,7 +1,7 @@
 <rml>
 <head>
     <title>Character</title>
-    <link type="text/rcss" href="olive.rcss"/>
+    <link type="text/rcss" href="theme.rcss"/>
     <link type="text/rcss" href="character.rcss"/>
 </head>
 <body data-model="character">

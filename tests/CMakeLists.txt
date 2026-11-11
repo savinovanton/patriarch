@@ -97,6 +97,7 @@ if(PATRIARCH_BUILD_ENGINE)
         hud_test.cpp
         sky_test.cpp
         ui_images_test.cpp
+        ui_theme_test.cpp
         tooltip_manager_test.cpp
         tooltip_state_test.cpp
         ui_test.cpp

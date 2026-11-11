@@ -10,12 +10,17 @@
 
 #include "ui_loc_fixture.hpp"
 
-TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
+TEST_CASE("design_ui_scale: min(w/1920, h/1080) times the user setting of 80-150 %") {
     using namespace pat::engine;
     CHECK(design_ui_scale({1920, 1080}) == 1.0f);
     CHECK(design_ui_scale({1280, 720}) == doctest::Approx(0.625f));  // 0.667 snapped to 1/8 steps
     CHECK(design_ui_scale({3840, 2160}) == 2.0f);
     CHECK(design_ui_scale({1920, 1080}, 1.5f) == 1.5f);
+    CHECK(design_ui_scale({2560, 1080}) == 1.0f);                     // ultra-wide: the height decides
+    CHECK(design_ui_scale({1920, 1200}) == 1.0f);                     // 16:10: the width decides
+    CHECK(design_ui_scale({1280, 1080}) == doctest::Approx(0.625f));  // narrow window: the width decides
+    CHECK(design_ui_scale({1920, 1080}, 2.0f) == 1.5f);               // the user setting stops at 150 %
+    CHECK(design_ui_scale({1920, 1080}, 0.5f) == 0.75f);              // ... and at 80 % (snapped to 1/8)
     CHECK(design_ui_scale({100, 50}) == kMinUiScale);
     CHECK(design_ui_scale({8000, 8000}) == kMaxUiScale);
 }
@@ -30,6 +35,7 @@ TEST_CASE("design_ui_scale: follows the surface height relative to 1080p") {
 #include <vector>
 
 #include "test_fonts.hpp"
+#include "ui_theme_fixture.hpp"
 
 namespace {
 
@@ -60,6 +66,7 @@ struct HudFixture {
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
+        pat::test::install_game_theme(*ui);
         auto hud_created = HudWindow::create(*ui,
                                              std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
                                              std::filesystem::path(PATRIARCH_ASSETS_DIR) / "ui" / "olive",
@@ -117,6 +124,7 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     auto ui_created = UiContext::create(*renderer, nullptr, ud);
     REQUIRE(ui_created.has_value());
     std::unique_ptr<UiContext> ui = std::move(ui_created).value();
+    pat::test::install_game_theme(*ui);
 
     auto hud_created = HudWindow::create(*ui,
                                          std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "hud.rml",
@@ -231,7 +239,7 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
     CHECK(doc->GetElementById("menu-realm")->IsClassSet("active"));
     CHECK_FALSE(doc->GetElementById("menu-world")->IsClassSet("active"));
 
-    // The plaque is drawn with the panel colour (#282F26) and the frame with its gold edge.
+    // The plaque is drawn with the panel token (#25312D) and the frame with its gold edge.
     REQUIRE(renderer->begin_frame({0, 0, 0, 1}));
     ui->update();
     ui->render();
@@ -243,9 +251,9 @@ TEST_CASE("HUD: shows the snapshot, hides empty badges, highlights and reports m
         return Rgb{px[i], px[i + 1], px[i + 2]};
     };
     const Rgb plaque = at(240, 70);  // inside the realm plaque, away from text
-    CHECK(plaque.r == doctest::Approx(0x28).epsilon(0.2));
-    CHECK(plaque.g == doctest::Approx(0x2F).epsilon(0.2));
-    CHECK(plaque.b == doctest::Approx(0x26).epsilon(0.2));
+    CHECK(plaque.r == doctest::Approx(0x25).epsilon(0.2));
+    CHECK(plaque.g == doctest::Approx(0x31).epsilon(0.2));
+    CHECK(plaque.b == doctest::Approx(0x2D).epsilon(0.2));
     CHECK(at(900, 3).r > 90);  // top edge of the frame
 
     hud.reset();

@@ -1,4 +1,4 @@
-/* Credits window ("Титры") in the Olive Stone theme (tokens in olive.rcss and docs/dev/ui-design.md).
+/* Credits window ("Титры") in the theme "Rodovaya kantselyariya" (dollar-prefixed tokens of data/ui/theme.pd, docs/dev/ui-design.md).
    Temporary test layout: a centred panel with a scrolling list. */
 
 h1, h2, p {
@@ -18,8 +18,8 @@ body {
     margin-top: -280dp;
     width: 600dp;
     padding: 14dp 16dp;
-    background-color: #282f26f2;
-    border: 1dp #626d50;
+    background-color: $panel_a95;
+    border: 1dp $rule;
     border-radius: 2dp;
 }
 
@@ -27,7 +27,7 @@ h1 {
     font-family: "PT Serif";
     font-size: 24dp;
     font-weight: bold;
-    color: #eee8d8;
+    color: $light;
     margin-bottom: 8dp;
 }
 
@@ -37,7 +37,7 @@ h2 {
     font-weight: bold;
     letter-spacing: 1dp;
     text-transform: uppercase;
-    color: #a0ad8b;
+    color: $quiet;
     margin: 10dp 0 5dp 0;
 }
 
@@ -45,12 +45,12 @@ h2 {
     height: 460dp;
     padding: 0 8dp;
     overflow-y: scroll;
-    background-color: #1c211b;
-    border: 1dp #626d50;
+    background-color: $ink;
+    border: 1dp $rule;
 }
 
 #empty {
-    color: #a0ad8b;
+    color: $quiet;
     margin-top: 10dp;
 }
 
@@ -59,18 +59,18 @@ h2 {
 }
 
 .item-name {
-    color: #eee8d8;
+    color: $light;
     font-size: 15dp;
     font-weight: bold;
 }
 
 .item-meta {
-    color: #a0ad8b;
+    color: $quiet;
     font-size: 12dp;
 }
 
 .item-text {
-    color: #c5c7b5;
+    color: $quiet;
     font-size: 13dp;
     margin-top: 2dp;
 }
@@ -83,20 +83,20 @@ h2 {
 .btn {
     display: inline-block;
     padding: 5dp 12dp;
-    background-color: #3d4736;
-    border: 1dp #c8af77;
+    background-color: $raised;
+    border: 1dp $gold;
     border-radius: 2dp;
-    color: #eee8d8;
+    color: $light;
     font-size: 13dp;
 }
 
 .btn:hover {
-    background-color: #4d5a44;
-    color: #ffffff;
+    background-color: $rule;
+    color: $light;
 }
 
 .btn:active {
-    background-color: #2f3829;
+    background-color: $panel;
 }
 
 scrollbarvertical {
@@ -104,18 +104,18 @@ scrollbarvertical {
 }
 
 scrollbarvertical slidertrack {
-    background-color: #1c211b;
+    background-color: $ink;
 }
 
 scrollbarvertical sliderbar {
     width: 12dp;
     min-height: 24dp;
-    background-color: #626d50;
+    background-color: $rule;
     border-radius: 2dp;
 }
 
 scrollbarvertical sliderbar:hover {
-    background-color: #7d8a66;
+    background-color: $quiet;
 }
 
 scrollbarvertical sliderarrowdec,

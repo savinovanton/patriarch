@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "test_fonts.hpp"
+#include "ui_theme_fixture.hpp"
 
 namespace {
 
@@ -57,7 +58,6 @@ struct Fixture {
         const std::filesystem::path source(PATRIARCH_SPIKE_UI_DIR);
         std::filesystem::copy_file(source / "character.rml", dir / "character.rml");
         std::filesystem::copy_file(source / "character.rcss", dir / "character.rcss");
-        std::filesystem::copy_file(source / "olive.rcss", dir / "olive.rcss");
 
         RendererDesc rd;
         rd.size = {kW, kH};
@@ -73,6 +73,7 @@ struct Fixture {
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
+        pat::test::install_game_theme(*ui);
 
         auto w = CharacterWindow::create(*ui, dir / "character.rml", loc);
         REQUIRE(w.has_value());

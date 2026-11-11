@@ -17,6 +17,7 @@
 #include <string>
 
 #include "test_fonts.hpp"
+#include "ui_theme_fixture.hpp"
 
 namespace {
 
@@ -43,7 +44,7 @@ struct Fixture {
         std::filesystem::remove_all(dir);
         std::filesystem::create_directories(dir);
         const std::filesystem::path source(PATRIARCH_SPIKE_UI_DIR);
-        for (const char* f : {"character.rml", "character.rcss", "olive.rcss", "tooltip.rcss"}) {
+        for (const char* f : {"character.rml", "character.rcss", "tooltip.rcss"}) {
             std::filesystem::copy_file(source / f, dir / f);
         }
 
@@ -75,6 +76,7 @@ struct Fixture {
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
+        pat::test::install_game_theme(*ui);
 
         auto cw = CharacterWindow::create(*ui, dir / "character.rml", pat::test::ui_localizer());
         REQUIRE(cw.has_value());
