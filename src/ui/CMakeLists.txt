@@ -1,8 +1,10 @@
 add_library(patriarch_ui STATIC
     include/pat/ui/character_snapshot.hpp
     include/pat/ui/character_window.hpp
+    include/pat/ui/component_gallery.hpp
     include/pat/ui/credits_window.hpp
     include/pat/ui/explanation.hpp
+    include/pat/ui/focus_visibility.hpp
     include/pat/ui/hud_snapshot.hpp
     include/pat/ui/hud_window.hpp
     include/pat/ui/text.hpp
@@ -12,8 +14,10 @@ add_library(patriarch_ui STATIC
     include/pat/ui/tooltip_state.hpp
     character_snapshot.cpp
     character_window.cpp
+    component_gallery.cpp
     credits_window.cpp
     explanation.cpp
+    focus_visibility.cpp
     hud_window.cpp
     text.cpp
     theme.cpp

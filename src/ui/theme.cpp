@@ -3,6 +3,9 @@
 #include "pat/core/log.hpp"
 #include "pat/data/pd_parser.hpp"
 #include "pat/engine/ui.hpp"
+#include "pat/ui/focus_visibility.hpp"
+
+#include <RmlUi/Core.h>
 
 #include <algorithm>
 #include <cctype>
@@ -276,7 +279,7 @@ R parse_theme(std::string_view pd_text) {
     }
 
     core::Error error;
-    for (const char* group : {"spacing", "font_size", "font_size_extra"}) {
+    for (const char* group : {"spacing", "font_size", "font_size_extra", "component"}) {
         if (!read_numbers(find_entry(body, group), theme.numbers, error)) {
             return R::err(error);
         }
@@ -431,6 +434,9 @@ std::string recolor_svg(std::string_view svg, const ThemeColor& color) {
 }
 
 void install_theme(engine::UiContext& ui, std::shared_ptr<const Theme> theme) {
+    if (Rml::Context* context = ui.context()) {
+        install_focus_visibility(*context);
+    }
     ui.set_file_provider(
         [theme = std::move(theme)](const std::filesystem::path& path) -> std::optional<std::string> {
             const std::string name = path.filename().string();

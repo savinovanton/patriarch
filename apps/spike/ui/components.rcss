@@ -1,0 +1,380 @@
+/* Shared components of the "Rodovaya kantselyariya" design (UI-D02, issue 257; boards 00 and 09 of the mockup).
+   Link after theme.rcss. Every value is a token of data/ui/theme.pd (dollar-prefixed names, expanded when the
+   file loads); geometry comes from data/ui/layout/board_00_foundation.pd and board_09_action_states.pd.
+
+   States (docs/dev/ui-design.md section 5): hover changes only the fill, focus is a gold ring of 2dp that does
+   not move the content (the border grows by one dp, the padding shrinks by one dp), disabled is a muted fill
+   and muted text with the reason written next to the control (class is-disabled; the control is not a tab stop,
+   and the code of a disabled control must ignore its click: the mouse still reaches it so that it never falls
+   through to the map). The ring shows only after the keyboard was used
+   (class kbd on the root element, set by pat::ui::install_focus_visibility), never after a mouse click. The classes is-hover and
+   is-focus force a state for the component gallery. Interactive blocks opt back into the mouse, because the
+   body of a document ignores it. */
+
+/* ---- Button: secondary by default; btn-primary and btn-action are the main action */
+.btn {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: $btn_h;
+    padding: 0 15dp;
+    background-color: $paper;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    font-family: $sans;
+    font-size: $type_17;
+    font-weight: bold;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.btn svg {
+    width: $icon_size;
+    height: $icon_size;
+    margin-right: $space_8;
+}
+
+.btn:hover,
+.btn.is-hover {
+    background-color: $paper2;
+}
+
+.btn-primary,
+.btn-action {
+    justify-content: flex-start;
+    background-color: $green;
+    border-color: $green;
+    color: $light;
+}
+
+.btn-action {
+    height: $btn_h_action;
+}
+
+.btn-primary:hover,
+.btn-primary.is-hover,
+.btn-action:hover,
+.btn-action.is-hover {
+    background-color: $green_hover;
+}
+
+.btn.is-disabled,
+.btn.is-disabled:hover {
+    background-color: $paper2;
+    border-color: $paper2;
+    color: $muted;
+    cursor: default;
+    tab-index: none;
+}
+
+.kbd .btn:focus,
+.btn.is-focus {
+    padding: 0 14dp;
+    border: $focus_ring $gold;
+}
+
+/* ---- Reason next to a disabled control, and small notes */
+.reason {
+    font-family: $serif;
+    font-size: $type_22;
+    color: $red;
+}
+
+.note {
+    font-size: $type_15;
+    color: $muted;
+}
+
+/* Upper-case caption of a block ("INCOME PER MONTH"): green on paper, gold on the dark panels. */
+.label {
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    text-transform: uppercase;
+    color: $green;
+}
+
+.label-dark {
+    color: $gold;
+}
+
+/* ---- Badge: 28dp high; on paper (default), on dark, green and gold accents; red text for a refusal */
+.badge {
+    display: inline-block;
+    box-sizing: border-box;
+    height: $badge_h;
+    padding: 0 8dp;
+    background-color: $paper2;
+    border-radius: $radius;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 28dp;
+    color: $text;
+    white-space: nowrap;
+}
+
+.badge-dark {
+    background-color: $raised;
+    color: $gold;
+}
+
+.badge-green {
+    background-color: $green;
+    color: $light;
+}
+
+.badge-red {
+    color: $red;
+}
+
+/* ---- Tabs: 44dp high, the active one has a 2dp green line over the 1dp divider of the row */
+.tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    box-sizing: border-box;
+    height: 46dp;
+    padding-top: 1dp;
+    border-bottom: $stroke_hairline $line;
+}
+
+.tab {
+    box-sizing: border-box;
+    height: $tab_h;
+    margin-right: 14dp;
+    padding-top: 8dp;
+    border-bottom: $focus_ring transparent;
+    font-size: $type_16;
+    color: $muted;
+    white-space: nowrap;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: $text;
+}
+
+.tab.active {
+    font-weight: bold;
+    color: $green;
+    border-bottom-color: $green;
+}
+
+.kbd .tab:focus {
+    border-bottom: $focus_ring $gold;
+}
+
+.tabs-dark {
+    border-bottom-color: $rule;
+}
+
+.tabs-dark .tab {
+    color: $quiet;
+}
+
+.tabs-dark .tab:hover,
+.tabs-dark .tab.active {
+    color: $light;
+}
+
+.tabs-dark .tab.active {
+    border-bottom-color: $gold;
+}
+
+/* ---- Panels: light (paper) with a gold rule on top, 4dp for a window and 2dp for a panel; dark one is .panel */
+.sheet {
+    box-sizing: border-box;
+    background-color: $paper;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    pointer-events: auto;
+    color: $text;
+}
+
+.sheet-window {
+    border-top: $rule_window $gold;
+}
+
+.sheet-panel {
+    border-top: $rule_panel $gold;
+}
+
+.panel-rule {
+    border-top: $rule_panel $gold;
+}
+
+.divider {
+    height: $stroke_hairline;
+    background-color: $line;
+}
+
+.divider-dark {
+    background-color: $rule;
+}
+
+/* ---- Progress track (order of a province): 5dp, the value in green */
+.track {
+    height: $track_h;
+    background-color: $paper2;
+    border-radius: $radius;
+}
+
+.track-fill {
+    height: $track_h;
+    background-color: $green;
+    border-radius: $radius;
+}
+
+/* ---- Card: paper2 with a line border; the selected one is paper with a 2dp green border (16dp inside either way) */
+.card {
+    box-sizing: border-box;
+    padding: 15dp;
+    background-color: $paper2;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.card.selected {
+    padding: 14dp;
+    background-color: $paper;
+    border: $stroke_window $green;
+}
+
+.card:hover {
+    border-color: $green;
+}
+
+.kbd .card:focus {
+    border: $focus_ring $gold;
+    padding: 14dp;
+}
+
+.card-title {
+    font-family: $serif;
+    font-size: $type_20;
+}
+
+.card-detail {
+    font-size: $type_15;
+    color: $muted;
+}
+
+/* ---- Search field (input with an icon on top) and filter chip */
+.field-wrap {
+    position: relative;
+    width: 210dp;
+    height: $field_h;
+}
+
+input.field {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: $field_h;
+    padding: 0 12dp 0 44dp;
+    background-color: $paper;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    font-family: $sans;
+    font-size: $type_16;
+    line-height: 42dp;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: text;
+}
+
+input.field:focus {
+    padding: 0 11dp 0 43dp;
+    border: $focus_ring $gold;
+}
+
+.field-icon {
+    position: absolute;
+    left: 12dp;
+    top: 10dp;
+    width: $icon_size;
+    height: $icon_size;
+    pointer-events: none;
+}
+
+.field-hint {
+    position: absolute;
+    left: 44dp;
+    top: 0;
+    line-height: $field_h;
+    font-size: $type_16;
+    color: $muted;
+    pointer-events: none;
+}
+
+.chip {
+    display: inline-block;
+    box-sizing: border-box;
+    width: 210dp;
+    height: $chip_h;
+    padding: 0 12dp;
+    background-color: $paper;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 26dp;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.chip:hover {
+    background-color: $paper2;
+}
+
+.chip.active {
+    border-color: $green;
+    color: $green;
+}
+
+.kbd .chip:focus {
+    padding: 0 11dp;
+    border: $focus_ring $gold;
+    line-height: 24dp;
+}
+
+/* ---- Key - value row ("Dary i pismo ... 80"), the total row is serif */
+.kv {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    height: 27dp;
+    font-size: $type_18;
+    color: $text;
+}
+
+.kv-value {
+    font-weight: bold;
+}
+
+.kv-total {
+    height: 36dp;
+    font-family: $serif;
+    font-size: $type_20;
+}
+
+.kv-total .kv-value {
+    font-family: $serif;
+    font-size: $type_24;
+    font-weight: normal;
+    color: $green;
+}

@@ -78,6 +78,23 @@ theme "patriarch-concept-01" {
     shadow = none        # the concept uses no shadows
   }
 
+  # Not Penpot tokens: sizes of the shared components (UI-D02, #257), read from boards 00 and 09: button 48 (action
+  # button 56), badge and filter chip 28, tab 44, search field 44, progress track 5, gold rules 4 (window) and 2
+  # (panel), focus ring 2, icon 24. Window stylesheets use them as $btn_h, $badge_h ... through the same token rules.
+  component {
+    btn_h = 48
+    btn_h_action = 56
+    icon_size = 24
+    badge_h = 28
+    chip_h = 28
+    tab_h = 44
+    field_h = 44
+    track_h = 5
+    rule_window = 4
+    rule_panel = 2
+    focus_ring = 2
+  }
+
   shell {
     top_bar = { x = 0 y = 0 w = 1920 h = 96 fill = ink rule_y = 94 rule_h = 2 rule = gold }
     left_nav = { x = 0 y = 96 w = 96 h = 940 fill = ink item_x = 8 item_w = 80 item_h = 78 item_pitch = 88 first_item_y = 120 icon = 24 }
