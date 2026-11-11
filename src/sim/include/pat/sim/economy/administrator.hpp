@@ -163,6 +163,10 @@ Administration step_province_administration(World& world,
                                             const AdministratorSource* source,
                                             ProvinceId province);
 
+/// The dynasty an entry of the incident log about a province names: the owner of a province held by a
+/// dynasty, invalid for a crown, ownerless, church or free province (and for a world without economy).
+[[nodiscard]] DynastyId incident_dynasty(const World& world, ProvinceId province);
+
 /// The entry of the incident log for a province whose income is withheld by turmoil (kind Anarchy,
 /// `param` = the control in whole points, rounded down): written once per month the province is in
 /// turmoil, on its slot day, and only when somebody would have been paid (a province held by a dynasty

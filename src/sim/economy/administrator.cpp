@@ -204,18 +204,26 @@ Administration step_province_administration(World& world,
     return result;
 }
 
+DynastyId incident_dynasty(const World& world, ProvinceId province) {
+    if (!world.economy_present() || !world.exists(province)) {
+        return DynastyId();
+    }
+    const std::size_t p = province.index();
+    return static_cast<OwnerKind>(world.economy().provinces.owner_kind[p]) == OwnerKind::Dynasty
+               ? world.provinces().owner[p]
+               : DynastyId();
+}
+
 bool record_anarchy(World& world, ProvinceId province, bool anarchy) {
     if (!anarchy || !world.economy_present() || !world.exists(province) ||
         !income_recipient(world, province)) {
         return false;
     }
-    const std::size_t p = province.index();
-    const DynastyId owner =
-        static_cast<OwnerKind>(world.economy().provinces.owner_kind[p]) == OwnerKind::Dynasty
-            ? world.provinces().owner[p]
-            : DynastyId();
-    const auto whole_points = static_cast<std::int32_t>(world.economy().provinces.control[p].to_int());
-    return world.log_incident(IncidentKind::Anarchy, province, owner, whole_points).has_value();
+    const auto whole_points =
+        static_cast<std::int32_t>(world.economy().provinces.control[province.index()].to_int());
+    return world
+        .log_incident(IncidentKind::Anarchy, province, incident_dynasty(world, province), whole_points)
+        .has_value();
 }
 
 // ---- explanations ----------------------------------------------------------------------------------

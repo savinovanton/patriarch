@@ -18,6 +18,7 @@ add_executable(patriarch_tests
     dynasty_standing_test.cpp
     economy_administrator_test.cpp
     economy_invariants_test.cpp
+    economy_mood_test.cpp
     economy_content_test.cpp
     economy_population_test.cpp
     economy_production_test.cpp
@@ -25,6 +26,7 @@ add_executable(patriarch_tests
     economy_save_test.cpp
     economy_settlement_test.cpp
     economy_taxes_test.cpp
+    economy_unrest_test.cpp
     economy_world_test.cpp
     fixed_test.cpp
     golden_test.cpp

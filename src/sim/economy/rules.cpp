@@ -152,9 +152,11 @@ constexpr EconomyRules kDefaultEconomyRules{
     // ---- F9-F10 unrest and riots ------------------------------------------------------------
     .unrest =
         {
-            // own placeholders: unrest follows negative mood one to one; influence per head
+            // own placeholders (E9-T11): 4 unrest points per point of negative mood, so that a province
+            // that pays the "excessive" tax (mood -14) settles in the riot state (about 60), the "high"
+            // one in agitation (about 28) and the usual and low ones stay calm; influence per head
             // (cossacks are the most restless, GDD 03 s.4.1); half a point per missing control point
-            .slope_permille = 1000,
+            .slope_permille = 4000,
             .influence_permille = {{150, 100, 200, 100, 250, 100}},
             .control_slope_permille = 500,
             .inertia_permille = 250,

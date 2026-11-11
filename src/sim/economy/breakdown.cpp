@@ -33,6 +33,8 @@ constexpr std::array kTermKeys{
     TermKey{term::kMoodAdministrator, "economy.mood.administrator"},
     TermKey{term::kMoodEvents, "economy.mood.events"},
     TermKey{term::kMoodStep, "economy.mood.step"},
+    TermKey{term::kMoodTarget, "economy.mood.target"},
+    TermKey{term::kMoodLimit, "economy.mood.limit"},
 
     TermKey{term::kGrowthBirth, "economy.growth.birth"},
     TermKey{term::kGrowthDeath, "economy.growth.death"},
@@ -98,6 +100,8 @@ constexpr std::array kTermKeys{
     TermKey{term::kUnrestGroupFirst + 5, "economy.unrest.natives"},
     TermKey{term::kUnrestControl, "economy.unrest.control"},
     TermKey{term::kUnrestEvents, "economy.unrest.events"},
+    TermKey{term::kUnrestLimit, "economy.unrest.limit"},
+    TermKey{term::kUnrestTarget, "economy.unrest.target"},
 };
 
 }  // namespace

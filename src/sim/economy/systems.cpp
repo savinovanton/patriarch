@@ -3,11 +3,13 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/administrator.hpp"
+#include "pat/sim/economy/mood.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/settlement.hpp"
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/economy/taxes.hpp"
+#include "pat/sim/economy/unrest.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -85,6 +87,13 @@ private:
             step_province_taxes(world, rules_, province, production.holding_income_kop);
         // A province in turmoil pays its owner nothing; the incident log says so (E9-T10).
         (void)record_anarchy(world, province, income.anarchy);
+        // Step 5: the moods of the groups (F8), then the unrest of the province from the new moods (F9);
+        // a change of state goes to the incident log (E9-T11).
+        (void)step_province_mood(world, rules_, province);
+        (void)step_province_unrest(world, rules_, province);
+        // Step 6 (recruits, T13) is not here yet.
+        // Step 7: the one draw of a province in unrest, the loot and the fall of control of a riot (F10).
+        (void)step_province_riot(world, rules_, province);
         // Step 8: the slot is done. (The population cache was refreshed by the World with the sizes.)
         PAT_ASSERT(world.economy().provinces.last_slot_date[province.index()] != today,
                    "a province must be processed once per month");
