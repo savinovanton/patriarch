@@ -9,11 +9,9 @@ format_version = 1
 #
 # Эти строки читают окна UI через pat::loc::Localizer (src/ui/*, src/game/world_view.cpp,
 # apps/spike/main.cpp): HUD, полоса времени, окно персонажа, подсказки. Зашитых русских литералов
-# в коде окон нет. HUD — временная тестовая раскладка (docs/dev/ui-design.md).
+# в коде окон нет (docs/dev/ui-design.md).
 
 # ---- Общее -------------------------------------------------------------------------------------
-
-ui.game.title = "Патриарх"
 
 ui.age.years = "{n} {n:plural(год|года|лет)}"
 ui.fmt.number = "{n:group}"
