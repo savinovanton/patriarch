@@ -588,7 +588,13 @@ TEST_CASE("taxes: an account at its limit takes less and the income is what was 
     CHECK(income.group[kPeasants].gross == 50'000);   // what was computed
     CHECK(world.treasury(owner) == kMaxTreasuryKop);  // what fitted
     CHECK(world.economy().provinces.income_last_month[0] == 10'000);
+    // the saturation is counted, not silent: what the account refused is requested (tax + holding) - applied
+    CHECK(income.refused_kop == 50'000 + 7000 - 10'000);
     require_valid(world);  // the ledger still closes: balance == opening + lines
+
+    // and an account with room refuses nothing
+    World roomy = make_world(1, 12'000, 0);
+    CHECK(step_province_taxes(roomy, rules(), ProvinceId(0), 7000).refused_kop == 0);
 }
 
 TEST_CASE("taxes: postings and the column are a function of the world, run twice the same") {

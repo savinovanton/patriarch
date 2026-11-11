@@ -747,3 +747,30 @@ TEST_CASE("forecast: rates that rise move the forecast the same way the month wo
     const Kopecks heavy = forecast_treasury(world, steady, prices, {}, d0).monthly_net;
     CHECK(heavy > normal);
 }
+
+TEST_CASE("settlement: an expense that an account at its limit cannot take is counted as refused (E9 #243)") {
+    World world = make_world(3);
+    const AccountRef crown = AccountRef::crown();
+    // the crown is almost at the lower bound of an account
+    const Kopecks target = -(kMaxTreasuryKop - 100);
+    while (world.treasury(crown) - kMaxPostingKop >= target) {
+        (void)world.post_money(crown, LedgerCode::Adjustment, -kMaxPostingKop);
+    }
+    (void)world.post_money(crown, LedgerCode::Adjustment, target - world.treasury(crown));
+    REQUIRE(world.treasury(crown) == target);
+
+    auto source = std::make_shared<FixedExpenses>(std::vector<std::pair<std::size_t, ExpenseLine>>{
+        {0, {LedgerCode::ArmyUpkeep, 40'000}}, {1, {LedgerCode::CourtUpkeep, 500}}});
+    const SettlementReport report = settle_month(world, rules(), ExpenseSources{source}, first_of(1703, 1));
+    REQUIRE(report.closed);
+    CHECK(world.treasury(crown) == -kMaxTreasuryKop);  // what fitted
+    CHECK(report.other_expenses == 100 + 500);         // what was really posted
+    CHECK(report.refused_kop == 40'000 - 100);         // what vanished: counted, not silent
+    require_valid(world);
+
+    // without saturation nothing is refused
+    World calm = make_world(3);
+    auto calm_source = std::make_shared<FixedExpenses>(
+        std::vector<std::pair<std::size_t, ExpenseLine>>{{0, {LedgerCode::ArmyUpkeep, 40'000}}});
+    CHECK(settle_month(calm, rules(), ExpenseSources{calm_source}, first_of(1703, 1)).refused_kop == 0);
+}

@@ -131,7 +131,9 @@ settle_month(World& world, const EconomyRules& rules, const ExpenseSources& sour
             PAT_ASSERT(is_expense_source_code(line.code),
                        "an expense source used a code that is not its own");
             if (line.amount_kop > 0 && is_expense_source_code(line.code)) {
-                report.other_expenses -= world.post_money(who, line.code, -line.amount_kop);
+                const Kopecks posted = -world.post_money(who, line.code, -line.amount_kop);
+                report.other_expenses += posted;
+                report.refused_kop = saturating_add(report.refused_kop, line.amount_kop - posted);
             }
         }
     };
@@ -143,7 +145,9 @@ settle_month(World& world, const EconomyRules& rules, const ExpenseSources& sour
             continue;
         }
         if (upkeep[row] > 0) {
-            report.building_upkeep -= world.post_money(who, LedgerCode::BuildingUpkeep, -upkeep[row]);
+            const Kopecks posted = -world.post_money(who, LedgerCode::BuildingUpkeep, -upkeep[row]);
+            report.building_upkeep += posted;
+            report.refused_kop = saturating_add(report.refused_kop, upkeep[row] - posted);
         }
         collect(who);
         if (holder.valid() && row == 1 + holder.index()) {
