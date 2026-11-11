@@ -1,6 +1,5 @@
 // Character window tests (E3-T07): data binding, tabs, the virtualised 1000-row list, commands and hot
-// reload, on an offscreen WARP target. Text needs a font: Arial from the Windows fonts folder (skipped
-// when it is not installed).
+// reload, on an offscreen WARP target. Text uses the game fonts from assets/fonts.
 
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/ui.hpp"
@@ -22,6 +21,8 @@
 #include <thread>
 #include <vector>
 
+#include "test_fonts.hpp"
+
 namespace {
 
 using namespace pat::engine;
@@ -32,7 +33,7 @@ constexpr int kW = 900;
 constexpr int kH = 700;
 
 bool have_font() {
-    return std::filesystem::exists("C:/Windows/Fonts/arial.ttf");
+    return pat::test::game_fonts_present();
 }
 
 void touch_newer(const std::filesystem::path& p) {
@@ -68,8 +69,7 @@ struct Fixture {
         UiDesc ud;
         ud.size = {kW, kH};
         ud.ui_scale = scale;
-        ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
+        ud.font_files = pat::test::game_font_files();
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
@@ -133,7 +133,7 @@ struct Fixture {
 
 TEST_CASE("CharacterWindow: snapshot data is bound into the document and updates live") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_char_binding");
@@ -362,7 +362,7 @@ TEST_CASE("CharacterWindow: survives a hot reload of its document") {
 
 TEST_CASE("CharacterWindow: captions, subtitle and statuses come from the string table") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_char_loc");
@@ -410,7 +410,7 @@ TEST_CASE("CharacterWindow: captions, subtitle and statuses come from the string
 
 TEST_CASE("CharacterWindow: a missing key shows as [[key]] and does not break the window") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_char_missing");

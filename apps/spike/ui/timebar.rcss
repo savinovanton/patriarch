@@ -14,7 +14,7 @@
 
 #date {
     display: block;
-    font-family: "Times New Roman";
+    font-family: "PT Serif";
     font-size: 17dp;
     font-weight: bold;
     color: #eee8d8;

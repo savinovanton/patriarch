@@ -4,7 +4,7 @@ h1, h2, p, div {
 }
 
 body {
-    font-family: Arial;
+    font-family: "PT Sans Caption";
     font-size: 15dp;
     color: #e8e0cc;
 }
@@ -21,7 +21,7 @@ body {
 }
 
 h1 {
-    font-family: "Times New Roman";
+    font-family: "PT Serif";
     font-size: 22dp;
     font-weight: bold;
     color: #f2d98a;

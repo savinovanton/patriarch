@@ -1,4 +1,4 @@
-// The time bar (E3-T12) on an offscreen WARP target; needs Arial (skipped without it).
+// The time bar (E3-T12) on an offscreen WARP target; uses the game fonts from assets/fonts.
 
 #include "pat/engine/renderer.hpp"
 #include "pat/engine/ui.hpp"
@@ -15,14 +15,16 @@
 #include <filesystem>
 #include <vector>
 
+#include "test_fonts.hpp"
+
 namespace {
 
 using namespace pat::engine;
 using pat::ui::TimeBar;
 
 TEST_CASE("TimeBar: shows the date, highlights the speed and reports button presses") {
-    if (!std::filesystem::exists("C:/Windows/Fonts/arial.ttf")) {
-        MESSAGE("Arial not found, skipping");
+    if (!pat::test::game_fonts_present()) {
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     RendererDesc rd;
@@ -34,8 +36,7 @@ TEST_CASE("TimeBar: shows the date, highlights the speed and reports button pres
 
     UiDesc ud;
     ud.size = {1000, 300};
-    ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-    ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
+    ud.font_files = pat::test::game_font_files();
     auto ui_created = UiContext::create(*renderer, nullptr, ud);
     REQUIRE(ui_created.has_value());
     std::unique_ptr<UiContext> ui = std::move(ui_created).value();

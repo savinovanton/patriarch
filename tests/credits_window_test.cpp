@@ -1,6 +1,6 @@
 // Credits window tests (UI-213): the snapshot built from data/credits (game::credits_snapshot), the window
 // bound to it, the close button, the captions from the string table and a language change, on an offscreen
-// WARP target. Text needs a font: Arial from the Windows fonts folder (skipped when it is not installed).
+// WARP target. Text needs a font: the game fonts from assets/fonts.
 
 #include "pat/content/credits_content.hpp"
 #include "pat/data/content_source.hpp"
@@ -23,6 +23,8 @@
 #include <string_view>
 #include <vector>
 
+#include "test_fonts.hpp"
+
 namespace {
 
 using namespace pat::engine;
@@ -33,7 +35,7 @@ constexpr int kW = 900;
 constexpr int kH = 700;
 
 bool have_font() {
-    return std::filesystem::exists("C:/Windows/Fonts/arial.ttf");
+    return pat::test::game_fonts_present();
 }
 
 pat::content::CreditsList shipped_credits() {
@@ -70,8 +72,7 @@ struct Fixture {
         UiDesc ud;
         ud.size = {kW, kH};
         ud.ui_scale = 1.0f;
-        ud.font_files.emplace_back("C:/Windows/Fonts/arial.ttf");
-        ud.font_files.emplace_back("C:/Windows/Fonts/times.ttf");
+        ud.font_files = pat::test::game_font_files();
         auto ui_created = UiContext::create(*renderer, nullptr, ud);
         REQUIRE(ui_created.has_value());
         ui = std::move(ui_created).value();
@@ -172,7 +173,7 @@ TEST_CASE("credits snapshot: an empty list gives no sections") {
 
 TEST_CASE("CreditsWindow: starts hidden, show and toggle open it, the close button hides it") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_credits_visibility");
@@ -205,7 +206,7 @@ TEST_CASE("CreditsWindow: starts hidden, show and toggle open it, the close butt
 
 TEST_CASE("CreditsWindow: the shipped credits are listed, with the National Library of Russia") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_credits_content");
@@ -226,7 +227,7 @@ TEST_CASE("CreditsWindow: the shipped credits are listed, with the National Libr
 
 TEST_CASE("CreditsWindow: an empty list shows the empty note; a snapshot replaces it live") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     Fixture fx("patriarch_credits_empty");
@@ -248,7 +249,7 @@ TEST_CASE("CreditsWindow: an empty list shows the empty note; a snapshot replace
 
 TEST_CASE("CreditsWindow: captions follow the language chain, a missing key shows as [[key]]") {
     if (!have_font()) {
-        MESSAGE("Arial not found, skipping");
+        MESSAGE("Game fonts not found, skipping");
         return;
     }
     pat::data::DirectorySource base(PATRIARCH_DATA_DIR);
