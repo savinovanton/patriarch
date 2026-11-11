@@ -36,6 +36,7 @@
 #include "pat/sim/runner.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/component_gallery.hpp"
 #include "pat/ui/credits_window.hpp"
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/theme.hpp"
@@ -70,6 +71,9 @@
 
 #ifndef PATRIARCH_SPIKE_FONT_DIR
 #define PATRIARCH_SPIKE_FONT_DIR ""
+#endif
+#ifndef PATRIARCH_SPIKE_ICONS_DIR
+#define PATRIARCH_SPIKE_ICONS_DIR ""
 #endif
 #ifndef PATRIARCH_SPIKE_UI_DIR
 #define PATRIARCH_SPIKE_UI_DIR ""
@@ -112,6 +116,7 @@ struct Options {
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
     float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
     float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
+    bool gallery = false;          // --gallery: the page of the shared UI components over everything
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
@@ -173,6 +178,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
         } else if (arg == "--haze" && i + 1 < argc) {
             out.light.haze = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--gallery") {
+            out.gallery = true;
         } else if (arg == "--no-hud") {
             out.no_hud = true;
         } else if (arg == "--no-labels") {
@@ -225,7 +232,7 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]]\n");
+                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n");
             return false;
         }
     }
@@ -464,6 +471,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::TimeBar> time_bar;           // likewise
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
+    std::unique_ptr<pat::ui::ComponentGallery> gallery;   // likewise: the page of the shared components (--gallery)
     pat::content::CreditsList credits_list;               // data/credits, read once (and again on a reload)
     bool hud_visible = true;
     // The map readout of the demo panel (demo_fps.rml); looked up by element id, as a hot reload recreates documents.
@@ -600,6 +608,19 @@ int main(int argc, char** argv) {
                 tooltips->set_provider([window_ptr](std::string_view key) { return window_ptr->explanation(key); });
             } else {
                 PAT_LOG_WARN("spike", "tooltips: {}", tooltip_result.error().message);
+            }
+        }
+        if (opt.gallery) {
+            // Loaded last so that it covers the other documents.
+            auto gallery_result =
+                pat::ui::ComponentGallery::create(*ui,
+                                                  std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "gallery.rml",
+                                                  std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                  ui_loc);
+            if (gallery_result) {
+                gallery = std::move(gallery_result).value();
+            } else {
+                PAT_LOG_WARN("spike", "component gallery: {}", gallery_result.error().message);
             }
         }
     }

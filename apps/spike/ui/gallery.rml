@@ -1,0 +1,100 @@
+<rml>
+<head>
+    <title>Components</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="gallery.rcss"/>
+</head>
+<body data-model="gallery">
+<div id="page">
+    <div id="head">
+        <div class="label">{{ t.eyebrow }}</div>
+        <div id="title">{{ t.title }}</div>
+        <div class="note">{{ t.subtitle }}</div>
+    </div>
+    <div class="divider" id="head-rule"></div>
+
+    <div class="col" id="col-a">
+        <div class="label">{{ t.section_buttons }}</div>
+        <button class="btn btn-primary" id="btn-primary" data-event-click="press()"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.btn_primary }}</span></button>
+        <button class="btn" id="btn-secondary" data-event-click="press()"><span>{{ t.btn_secondary }}</span></button>
+        <button class="btn is-disabled" id="btn-disabled"><span>{{ t.btn_disabled }}</span></button>
+
+        <div class="label" id="states-head">{{ t.section_states }}</div>
+        <div class="state-cell">
+            <div class="label">{{ t.state_default }}</div>
+            <button class="btn btn-action" id="act-default" data-event-click="press()"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.action }}</span></button>
+        </div>
+        <div class="state-cell">
+            <div class="label">{{ t.state_hover }}</div>
+            <button class="btn btn-action is-hover" id="act-hover"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.action }}</span></button>
+        </div>
+        <div class="state-cell">
+            <div class="label">{{ t.state_focus }}</div>
+            <button class="btn btn-action is-focus" id="act-focus"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.action }}</span></button>
+        </div>
+        <div class="state-cell">
+            <div class="label">{{ t.state_disabled }}</div>
+            <button class="btn btn-action is-disabled" id="act-disabled"><svg data-attr-src="icons + '/quill@green.svg'"/><span>{{ t.action }}</span></button>
+            <div class="reason" id="reason">{{ t.reason }}</div>
+        </div>
+    </div>
+
+    <div class="col" id="col-b">
+        <div class="label">{{ t.section_badges }}</div>
+        <div id="badges">
+            <span class="badge" id="badge-light">{{ t.badge_light }}</span>
+            <span class="badge badge-green" id="badge-green">{{ t.badge_head }}</span>
+            <span class="badge badge-red" id="badge-red">{{ t.badge_unavailable }}</span>
+            <span class="badge badge-dark" id="badge-dark">{{ t.badge_pause }}</span>
+        </div>
+
+        <div class="label">{{ t.section_tabs }}</div>
+        <div class="tabs" id="tabs">
+            <div class="tab" id="tab-overview" data-class-active="tab == 'overview'" data-event-click="set_tab('overview')">{{ t.tab_overview }}</div>
+            <div class="tab" id="tab-income" data-class-active="tab == 'income'" data-event-click="set_tab('income')">{{ t.tab_income }}</div>
+            <div class="tab" id="tab-buildings" data-class-active="tab == 'buildings'" data-event-click="set_tab('buildings')">{{ t.tab_buildings }}</div>
+        </div>
+
+        <div class="label">{{ t.section_cards }}</div>
+        <div class="card" id="card-1" data-class-selected="card == 1" data-event-click="select_card(1)">
+            <div class="card-title">{{ t.card_one_title }}</div>
+            <div class="card-detail">{{ t.card_one_detail }}</div>
+        </div>
+        <div class="card" id="card-2" data-class-selected="card == 2" data-event-click="select_card(2)">
+            <div class="card-title">{{ t.card_two_title }}</div>
+            <div class="card-detail">{{ t.card_two_detail }}</div>
+        </div>
+
+        <div class="label">{{ t.section_progress }}</div>
+        <div class="kv"><span>{{ t.order }}</span><span class="kv-value">{{ t.order_value }}</span></div>
+        <div class="track"><div class="track-fill" id="track-fill" data-style-width="order_percent + '%'"></div></div>
+        <div class="kv"><span>{{ t.row_gifts }}</span><span class="kv-value">{{ t.row_gifts_value }}</span></div>
+        <div class="kv"><span>{{ t.row_road }}</span><span class="kv-value">{{ t.row_road_value }}</span></div>
+        <div class="divider"></div>
+        <div class="kv kv-total"><span>{{ t.row_total }}</span><span class="kv-value">{{ t.row_total_value }}</span></div>
+    </div>
+
+    <div class="col" id="col-c">
+        <div class="label">{{ t.section_fields }}</div>
+        <div class="field-wrap" id="field-wrap">
+            <input type="text" class="field" id="search" data-value="search"/>
+            <svg class="field-icon" data-attr-src="icons + '/search@muted.svg'"/>
+            <div class="field-hint" id="search-hint" data-if="search == ''">{{ t.search_hint }}</div>
+        </div>
+        <div id="chips">
+            <button class="chip" id="chip-availability" data-class-active="chip == 1" data-event-click="toggle_chip(1)">{{ t.chip_availability }}</button>
+            <button class="chip" id="chip-faith" data-class-active="chip == 2" data-event-click="toggle_chip(2)">{{ t.chip_faith }}</button>
+        </div>
+
+        <div class="label">{{ t.section_panels }}</div>
+        <div class="sheet sheet-window" id="sheet-window"><div class="sheet-text">{{ t.panel_window }}</div></div>
+        <div class="sheet sheet-panel" id="sheet-panel"><div class="sheet-text">{{ t.panel_light }}</div></div>
+        <div class="panel panel-rule" id="panel-dark">
+            <div class="label label-dark">{{ t.panel_dark_label }}</div>
+            <div class="dark-text">{{ t.panel_dark }}</div>
+        </div>
+    </div>
+</div>
+</body>
+</rml>

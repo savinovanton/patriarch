@@ -153,3 +153,62 @@ ui.explain.abroad = "Обучение за границей"
 ui.explain.traits = "Черты"
 ui.explain.trait_named = "Черта «{name}»"
 ui.explain.age_experience = "Возраст и опыт"
+
+# ---- Страница общих компонентов (UI-D02, #257: доски 00 и 09 макета «Родовая канцелярия») ------
+# Образец в спайке (--gallery): все состояния кнопок, бейджи, вкладки, карточки, поля. Числа и имена
+# демонстрационные, как в макете.
+
+ui.gallery.eyebrow = "PATRIARCH / КОМПОНЕНТЫ"
+ui.gallery.title = "Условия ясны до решения"
+ui.gallery.subtitle = "Кнопки, бейджи, вкладки, панели, карточки, поля и строки в теме «Родовая канцелярия»"
+
+ui.gallery.section_buttons = "КНОПКИ"
+ui.gallery.section_states = "СОСТОЯНИЯ ДЕЙСТВИЯ"
+ui.gallery.section_badges = "БЕЙДЖИ"
+ui.gallery.section_tabs = "ВКЛАДКИ"
+ui.gallery.section_cards = "КАРТОЧКИ"
+ui.gallery.section_progress = "ДОРОЖКА И СТРОКИ"
+ui.gallery.section_fields = "ПОЛЕ И ФИЛЬТРЫ"
+ui.gallery.section_panels = "ПАНЕЛИ"
+
+ui.gallery.btn_primary = "Начать переговоры"
+ui.gallery.btn_secondary = "Узнать больше"
+ui.gallery.btn_disabled = "Недоступно: недостаточно средств"
+ui.gallery.action = "Отправить посредника · 120 ₽"
+ui.gallery.state_default = "ОБЫЧНОЕ"
+ui.gallery.state_hover = "НАВЕДЕНИЕ"
+ui.gallery.state_focus = "ФОКУС С КЛАВИАТУРЫ"
+ui.gallery.state_disabled = "НЕДОСТУПНОЕ ДЕЙСТВИЕ"
+ui.gallery.reason = "Не хватает 40 ₽"
+
+ui.gallery.badge_light = "Зимний простой"
+ui.gallery.badge_head = "ГЛАВА РОДА"
+ui.gallery.badge_unavailable = "Недоступна"
+ui.gallery.badge_pause = "НА ПАУЗЕ"
+
+ui.gallery.tab_overview = "Обзор"
+ui.gallery.tab_income = "Доходы"
+ui.gallery.tab_buildings = "Постройки"
+
+ui.gallery.card_one_title = "Анна Нарышкина"
+ui.gallery.card_one_detail = "Родовитая невеста, 17 лет"
+ui.gallery.card_two_title = "Мария Шереметева"
+ui.gallery.card_two_detail = "Приданое согласуется отдельно"
+
+ui.gallery.order = "Порядок"
+ui.gallery.order_value = "72 из 100"
+ui.gallery.row_gifts = "Дары и письмо"
+ui.gallery.row_gifts_value = "80 ₽"
+ui.gallery.row_road = "Дорога посредника"
+ui.gallery.row_road_value = "40 ₽"
+ui.gallery.row_total = "Списать сейчас"
+ui.gallery.row_total_value = "120 ₽"
+
+ui.gallery.search_hint = "Все роды"
+ui.gallery.chip_availability = "Доступность"
+ui.gallery.chip_faith = "Вероисповедание"
+
+ui.gallery.panel_window = "Окно: золотая линия сверху 4 px"
+ui.gallery.panel_light = "Светлая панель: золотая линия сверху 2 px"
+ui.gallery.panel_dark_label = "ДЕЛА РОДА"
+ui.gallery.panel_dark = "Тёмная панель: карточки дел, мини-карта, подсказки"

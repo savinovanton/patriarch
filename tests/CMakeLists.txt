@@ -94,6 +94,7 @@ if(PATRIARCH_BUILD_ENGINE)
         labels_test.cpp
         renderer_test.cpp
         time_bar_test.cpp
+        ui_components_test.cpp
         hud_test.cpp
         sky_test.cpp
         ui_images_test.cpp

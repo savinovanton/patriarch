@@ -1,0 +1,124 @@
+/* Page of the shared components (UI-D02): three columns of the board 00 / 09 grid on a paper page. */
+body {
+    background-color: $paper;
+    pointer-events: auto;
+}
+
+#page {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#head {
+    position: absolute;
+    left: 40dp;
+    top: 28dp;
+    width: 1840dp;
+}
+
+#title {
+    font-family: $serif;
+    font-size: $type_48;
+    color: $text;
+}
+
+#head-rule {
+    position: absolute;
+    left: 40dp;
+    top: 176dp;
+    width: 1840dp;
+}
+
+.col {
+    position: absolute;
+    top: 208dp;
+    width: 560dp;
+}
+
+#col-a {
+    left: 40dp;
+}
+
+#col-b {
+    left: 670dp;
+}
+
+#col-c {
+    left: 1300dp;
+    width: 580dp;
+}
+
+.col > .label {
+    margin: 0 0 12dp 0;
+}
+
+.col .btn {
+    margin-bottom: 12dp;
+}
+
+#states-head {
+    margin-top: 28dp;
+}
+
+.state-cell {
+    margin-bottom: 12dp;
+}
+
+.state-cell .label {
+    margin-bottom: 8dp;
+}
+
+#reason {
+    margin-top: 4dp;
+    font-size: $type_20;
+}
+
+#badges {
+    margin-bottom: 20dp;
+    white-space: nowrap;
+}
+
+#badges .badge {
+    margin-right: 8dp;
+}
+
+#tabs {
+    margin-bottom: 20dp;
+}
+
+.card {
+    margin-bottom: 12dp;
+}
+
+.track {
+    margin: 4dp 0 12dp 0;
+}
+
+#chips {
+    margin: 12dp 0 24dp 0;
+}
+
+#chips .chip {
+    width: 180dp;
+    margin-right: 8dp;
+}
+
+.sheet {
+    margin-bottom: 12dp;
+    padding: 16dp;
+}
+
+.sheet-text {
+    font-size: $type_16;
+}
+
+#panel-dark {
+    padding: 16dp;
+}
+
+.dark-text {
+    margin-top: 8dp;
+    font-size: $type_16;
+    color: $quiet;
+}

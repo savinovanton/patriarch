@@ -9,6 +9,7 @@ target_compile_definitions(patriarch_spike PRIVATE
     PATRIARCH_SPIKE_SHADER_DIR="${PATRIARCH_ENGINE_SHADER_DIR}"
     PATRIARCH_SPIKE_UI_DIR="${CMAKE_CURRENT_SOURCE_DIR}/ui"
     PATRIARCH_SPIKE_OLIVE_DIR="${CMAKE_SOURCE_DIR}/assets/ui/olive"
+    PATRIARCH_SPIKE_ICONS_DIR="${CMAKE_SOURCE_DIR}/assets/ui/patriarch/icons"
     PATRIARCH_SPIKE_FONT_DIR="${CMAKE_SOURCE_DIR}/assets/fonts")
 patriarch_set_target_options(patriarch_spike)
 patriarch_copy_asan_runtime(patriarch_spike)
