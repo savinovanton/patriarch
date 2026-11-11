@@ -136,7 +136,10 @@ compute_corruption_target(const ControlRules& rules, const AdministrationInput& 
 
 Fixed32 approach(Fixed32 current, Fixed32 target, std::int32_t inertia_permille) noexcept {
     const std::int64_t gap = static_cast<std::int64_t>(target.raw()) - current.raw();
-    const std::int64_t step = mul_permille(gap, std::clamp(inertia_permille, 0, kPermilleOne));
+    std::int64_t step = mul_permille(gap, std::clamp(inertia_permille, 0, kPermilleOne));
+    if (step == 0 && gap != 0 && inertia_permille > 0) {
+        step = gap > 0 ? 1 : -1;
+    }
     return Fixed32::from_raw(static_cast<std::int32_t>(current.raw() + step));
 }
 

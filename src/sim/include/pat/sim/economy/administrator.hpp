@@ -136,8 +136,9 @@ struct Administration {
                                                       const AdministrationInput& input,
                                                       Breakdown* breakdown = nullptr);
 
-/// Moves `current` toward `target` by `inertia_permille` of the gap, truncated toward zero (never
-/// jumps over the target, never leaves 0..100 when both ends are inside it).
+/// Moves `current` toward `target` by `inertia_permille` of the gap, truncated toward zero.
+/// Positive inertia moves at least one raw unit until the target is reached, without crossing it.
+/// Zero inertia freezes the value; inertia is clamped to 0..1000.
 [[nodiscard]] core::Fixed32
 approach(core::Fixed32 current, core::Fixed32 target, std::int32_t inertia_permille) noexcept;
 

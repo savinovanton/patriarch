@@ -1012,12 +1012,7 @@ TEST_CASE("model: the generator is a pure function of the seed") {
     CHECK(build_world(12).compute_hash() != world.compute_hash());
 }
 
-// ---- known defects (expected failures) ----------------------------------------------------------
-// Each case states the CORRECT behaviour and is expected to fail until its issue is fixed; when it
-// starts to pass, doctest reports it: remove the decorator then.
-
-TEST_CASE("known defect #241: control at its target must not depend on the side it came from" *
-          doctest::should_fail()) {
+TEST_CASE("regression #241: control at its target must not depend on the side it came from") {
     const eco::ControlRules& control = rules().control;
     const auto settle = [&](eco::AdministratorProfile profile, int start) {
         eco::AdministrationInput in;
@@ -1038,6 +1033,10 @@ TEST_CASE("known defect #241: control at its target must not depend on the side 
     const eco::AdministrationInput fresh = settle(eco::AdministratorProfile{50, 50}, 100);
     CHECK(eco::corruption_permille(fresh.corruption) == control.corruption_base_permille);
 }
+
+// ---- known defects (expected failures) ----------------------------------------------------------
+// Each case states the CORRECT behaviour and is expected to fail until its issue is fixed; when it
+// starts to pass, doctest reports it: remove the decorator then.
 
 TEST_CASE(
     "known defect #242: a province that changes hands must not keep the administrator of the old house" *
