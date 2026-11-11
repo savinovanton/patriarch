@@ -154,14 +154,19 @@ ContentRegistry ContentRegistry::build(std::vector<std::string> root_names,
         registry.tables_[table].objects_.push_back(std::move(o));
     }
 
+    registry.content_hash_ = registry.compute_hash(nullptr);
+    return registry;
+}
+
+std::uint64_t ContentRegistry::compute_hash(const ContentTable* excluded) const {
     core::HashStream h;
     h.u32(kHashMagic);
     std::uint64_t non_empty = 0;
-    for (const ContentTable& t : registry.tables_)
-        non_empty += t.empty() ? 0U : 1U;
+    for (const ContentTable& t : tables_)
+        non_empty += t.empty() || &t == excluded ? 0U : 1U;
     h.u64(non_empty);
-    for (const ContentTable& t : registry.tables_) {
-        if (t.empty())
+    for (const ContentTable& t : tables_) {
+        if (t.empty() || &t == excluded)
             continue;
         feed_string(h, t.kind_);
         h.u64(t.objects_.size());
@@ -170,8 +175,12 @@ ContentRegistry ContentRegistry::build(std::vector<std::string> root_names,
             feed_fields(h, o.object.body.fields);
         }
     }
-    registry.content_hash_ = h.value();
-    return registry;
+    return h.value();
+}
+
+std::uint64_t ContentRegistry::content_hash_excluding(std::string_view kind) const {
+    const ContentTable* excluded = table(kind);
+    return excluded != nullptr && !excluded->empty() ? compute_hash(excluded) : content_hash_;
 }
 
 const ContentTable* ContentRegistry::table(std::string_view kind) const noexcept {

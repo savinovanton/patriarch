@@ -1,5 +1,7 @@
 #include "pat/data/m1_schemas.hpp"
 
+#include <string>
+
 namespace pat::data {
 
 namespace {
@@ -84,6 +86,18 @@ ObjectSchema trait_schema() {
     return schema;
 }
 
+ObjectSchema honor_rank_schema() {
+    ObjectSchema schema{std::string(kHonorRankKind)};
+    schema.describe_kind(
+        "Ранг чести рода (E7-T14). Действует от своего порога включительно до следующего порога. "
+        "Пороги уникальны, нижний порог равен −1000. В M1 ранг используется для отображения.");
+    schema.required("min_honor", Type::integer(-1000, 10000))
+        .describe("Минимальная честь для ранга, включительно.")
+        .required("name_key", Type::string())
+        .describe("Ключ строки локализации с названием ранга.");
+    return schema;
+}
+
 }  // namespace
 
 void add_m1_schemas(SchemaSet& schemas) {
@@ -91,6 +105,7 @@ void add_m1_schemas(SchemaSet& schemas) {
     schemas.add(dynasty_schema());
     schemas.add(trait_schema());
     schemas.add(skill_schema());
+    schemas.add(honor_rank_schema());
 }
 
 }  // namespace pat::data

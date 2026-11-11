@@ -2,9 +2,14 @@
 
 #include "pat/data/schema.hpp"
 
+#include <string_view>
+
 namespace pat::data {
 
-/// Adds the M1 definition kinds: province, dynasty, trait and skill (E4-T05).
+/// Sorts after simulation definition kinds so rank ids do not shift the M1 world name ids.
+inline constexpr std::string_view kHonorRankKind = "ui_honor_rank";
+
+/// Adds the M1 definition kinds and the presentation-only honor ranks.
 /// Cross-object constraints and map correspondence are checked by the content layer.
 void add_m1_schemas(SchemaSet& schemas);
 

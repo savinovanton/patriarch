@@ -1,0 +1,9 @@
+format_version = 1
+
+# Proposed M1 thresholds (GDD 01 section 8.1). Rank names and thresholds only affect presentation.
+
+ui_honor_rank "impoverished" { min_honor = -1000 name_key = "honor_rank.impoverished.name" }
+ui_honor_rank "service" { min_honor = 0 name_key = "honor_rank.service.name" }
+ui_honor_rank "noble" { min_honor = 100 name_key = "honor_rank.noble.name" }
+ui_honor_rank "great" { min_honor = 500 name_key = "honor_rank.great.name" }
+ui_honor_rank "foremost" { min_honor = 1000 name_key = "honor_rank.foremost.name" }

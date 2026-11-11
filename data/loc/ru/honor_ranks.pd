@@ -1,0 +1,7 @@
+format_version = 1
+
+honor_rank.impoverished.name = "Захудалый"
+honor_rank.service.name = "Служилый"
+honor_rank.noble.name = "Знатный"
+honor_rank.great.name = "Великий"
+honor_rank.foremost.name = "Первейший"

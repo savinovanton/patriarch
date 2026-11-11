@@ -8,9 +8,11 @@
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
+#include "pat/data/m1_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
+#include <array>
 #include <format>
 #include <map>
 #include <string_view>
@@ -85,7 +87,9 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
         }
         return fail_definition(std::move(messages));
     }
-    for (const std::string_view kind : {"province", "dynasty", "skill", "trait"}) {
+    constexpr std::array<std::string_view, 5> localized_kinds{
+        "province", "dynasty", "skill", "trait", data::kHonorRankKind};
+    for (const std::string_view kind : localized_kinds) {
         for (const auto& object : loaded.registry.table(kind)->objects()) {
             for (const std::string_view field : {"name_key", "desc_key"}) {
                 if (const auto* value = object.object.body.find(field)) {
@@ -96,6 +100,13 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
                                                            value->pos.line,
                                                            value->pos.column,
                                                            key));
+                    }
+                    if (kind == data::kHonorRankKind) {
+                        std::string name;
+                        if (!localized.localizer.format_to(name, key).ok() || name.empty()) {
+                            return fail_definition(std::format(
+                                "honor rank name '{}' must be a nonempty text without arguments", key));
+                        }
                     }
                 }
             }
@@ -113,11 +124,13 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
                 std::format("province name '{}' must be a nonempty text without arguments", name_key));
         }
     }
+    auto honor_ranks = build_honor_ranks(loaded.registry);
     return DefinitionsResult::ok({std::move(loaded.registry),
                                   std::move(bindings).value(),
                                   std::move(province_names),
                                   std::move(localized.localizer),
-                                  demography});
+                                  demography,
+                                  std::move(honor_ranks)});
 }
 
 core::Result<M1Scenario>
@@ -136,7 +149,7 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     if (!world.enable_dynasty_mode() || !world.enable_economy()) {
         return fail("cannot initialize M1 world modes");
     }
-    const std::uint64_t content_hash = definitions.registry.content_hash();
+    const std::uint64_t content_hash = definitions.registry.content_hash_excluding(data::kHonorRankKind);
     world.set_economy_rules_hash(content_hash);
 
     std::map<std::string_view, sim::DynastyId, std::less<>> dynasties;
@@ -171,7 +184,8 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
                                std::move(map_to_world),
                                std::move(definitions.province_names),
                                std::move(definitions.registry),
-                               definitions.demography});
+                               definitions.demography,
+                               std::move(definitions.honor_ranks)});
 }
 
 }  // namespace pat::content

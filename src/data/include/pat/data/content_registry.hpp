@@ -84,8 +84,12 @@ public:
     /// with other content is detected by comparing it). Computed also when loading reported errors,
     /// but only meaningful for an error-free load.
     [[nodiscard]] std::uint64_t content_hash() const noexcept { return content_hash_; }
+    /// Same canonical hash with one non-simulation kind omitted.
+    [[nodiscard]] std::uint64_t content_hash_excluding(std::string_view kind) const;
 
 private:
+    [[nodiscard]] std::uint64_t compute_hash(const ContentTable* excluded) const;
+
     std::vector<std::string> root_names_;
     std::vector<ContentTable> tables_;  // sorted by kind
     core::StringInterner ids_;

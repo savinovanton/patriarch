@@ -77,6 +77,11 @@ TEST_CASE("M1 scenario: world ids and Russian labels follow validated map keys")
     CHECK(scenario.province_names[0].empty());
     CHECK(scenario.world.dynasties().size() == 4);
     CHECK(scenario.world.provinces().size() == 20);
+    REQUIRE(scenario.honor_ranks.size() == 5);
+    const auto* rank =
+        pat::content::honor_rank(scenario.honor_ranks, scenario.world.dynasties().honor.front());
+    REQUIRE(rank != nullptr);
+    CHECK(rank->name_key == "honor_rank.service.name");
     CHECK(scenario.world.check_invariants().empty());
     const auto* first = scenario.registry.find("province", "p0001");
     REQUIRE(first != nullptr);

@@ -105,6 +105,18 @@ struct Writer {
         out.i32(c.delta.raw());
         out.u16(c.reason);
     }
+    void standing_change(DynastyId dynasty, std::int32_t delta, StandingReason reason) const {
+        out.u32(dynasty.value());
+        out.i32(delta);
+        out.u16(reason);
+    }
+    void operator()(const cmd::AdjustUnity& c) const { standing_change(c.dynasty, c.delta.raw(), c.reason); }
+    void operator()(const cmd::AdjustPrestige& c) const {
+        standing_change(c.dynasty, c.delta.raw(), c.reason);
+    }
+    void operator()(const cmd::AdjustHonorWithReason& c) const {
+        standing_change(c.dynasty, c.delta, c.reason);
+    }
 };
 
 }  // namespace
@@ -256,6 +268,16 @@ bool read_command(core::ByteReader& in, Command& out) {
             out.payload = cmd::AssignProvinceAdministrator{province, CharacterId(in.u32())};
             break;
         }
+        case CommandType::AdjustUnity:
+            out.payload = cmd::AdjustUnity{DynastyId(in.u32()), core::Fixed32::from_raw(in.i32()), in.u16()};
+            break;
+        case CommandType::AdjustPrestige:
+            out.payload =
+                cmd::AdjustPrestige{DynastyId(in.u32()), core::Fixed32::from_raw(in.i32()), in.u16()};
+            break;
+        case CommandType::AdjustHonorWithReason:
+            out.payload = cmd::AdjustHonorWithReason{DynastyId(in.u32()), in.i32(), in.u16()};
+            break;
         default:
             return false;  // unknown tag
     }

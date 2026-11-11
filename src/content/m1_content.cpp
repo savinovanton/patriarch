@@ -1,5 +1,6 @@
 #include "pat/content/m1_content.hpp"
 
+#include "pat/data/m1_schemas.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
@@ -58,6 +59,7 @@ public:
         check_keys();
         check_skills();
         check_traits();
+        check_honor_ranks();
         std::stable_sort(errors_.begin(), errors_.end(), [](const LoadError& a, const LoadError& b) {
             return std::tie(a.root, a.file, a.diagnostic.pos, a.diagnostic.code, a.diagnostic.message) <
                    std::tie(b.root, b.file, b.diagnostic.pos, b.diagnostic.code, b.diagnostic.message);
@@ -78,7 +80,9 @@ private:
     }
 
     void check_keys() {
-        for (const std::string_view kind : {"province", "dynasty", "trait", "skill"}) {
+        constexpr std::array<std::string_view, 5> kinds{
+            "province", "dynasty", "trait", "skill", data::kHonorRankKind};
+        for (const std::string_view kind : kinds) {
             const data::ContentTable* table = registry_.table(kind);
             if (table == nullptr) {
                 continue;
@@ -180,12 +184,58 @@ private:
             }
         }
     }
+
+    void check_honor_ranks() {
+        const data::ContentTable* table = registry_.table(data::kHonorRankKind);
+        if (table == nullptr || table->empty()) {
+            return;
+        }
+        std::map<std::int64_t, const ContentObject*> thresholds;
+        for (const ContentObject& object : table->objects()) {
+            const auto threshold = *field_value<std::int64_t>(object, "min_honor");
+            const auto [previous, inserted] = thresholds.emplace(threshold, &object);
+            if (!inserted) {
+                fail(object,
+                     field_pos(object, "min_honor"),
+                     std::format("honor rank threshold {} is already used by '{}'",
+                                 threshold,
+                                 previous->second->object.id));
+            }
+        }
+        const auto& [minimum, object] = *thresholds.begin();
+        if (minimum != sim::kMinHonor) {
+            fail(*object,
+                 field_pos(*object, "min_honor"),
+                 std::format("the lowest honor rank threshold must be {}", sim::kMinHonor));
+        }
+    }
 };
 
 }  // namespace
 
 std::vector<data::LoadError> validate_m1_definitions(const data::ContentRegistry& registry) {
     return Validator(registry).validate();
+}
+
+std::vector<HonorRank> build_honor_ranks(const data::ContentRegistry& registry) {
+    const auto* table = registry.table(data::kHonorRankKind);
+    if (table == nullptr) {
+        return {};
+    }
+    std::vector<HonorRank> ranks;
+    ranks.reserve(table->size());
+    for (const auto& object : table->objects()) {
+        ranks.push_back({object.object.id,
+                         static_cast<std::int32_t>(*field_value<std::int64_t>(object, "min_honor")),
+                         *field_value<std::string>(object, "name_key")});
+    }
+    std::ranges::sort(ranks, {}, &HonorRank::min_honor);
+    return ranks;
+}
+
+const HonorRank* honor_rank(std::span<const HonorRank> ranks, std::int32_t honor) {
+    const auto next = std::ranges::upper_bound(ranks, honor, {}, &HonorRank::min_honor);
+    return next == ranks.begin() ? nullptr : &*(next - 1);
 }
 
 }  // namespace pat::content

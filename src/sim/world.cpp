@@ -130,6 +130,7 @@ DynastyId World::create_dynasty(core::StringId name) {
     dynasties_.head.emplace_back();
     dynasties_.honor.push_back(0);
     dynasties_.unity.push_back(kDefaultUnity);
+    dynasties_.prestige.push_back(kDefaultPrestige);
     dynasties_.succession_law.push_back(SuccessionLaw::Majorat);
     members_.emplace_back();
     owned_provinces_.emplace_back();
@@ -156,20 +157,30 @@ bool World::set_dynasty_head(DynastyId dynasty, CharacterId head) {
     return true;
 }
 
-void World::add_honor(DynastyId dynasty, std::int32_t delta) {
+void World::add_honor(DynastyId dynasty, std::int32_t delta, StandingReason reason) {
     PAT_ASSERT(exists(dynasty), "add_honor: unknown dynasty");
     if (!exists(dynasty)) {
         return;
     }
-    const std::int64_t value = static_cast<std::int64_t>(dynasties_.honor[dynasty.index()]) + delta;
-    dynasties_.honor[dynasty.index()] =
-        static_cast<std::int32_t>(std::clamp<std::int64_t>(value, kMinHonor, kMaxHonor));
+    auto& honor = dynasties_.honor[dynasty.index()];
+    const auto previous = honor;
+    const std::int64_t value = static_cast<std::int64_t>(previous) + delta;
+    honor = static_cast<std::int32_t>(std::clamp<std::int64_t>(value, kMinHonor, kMaxHonor));
+    if (dynasty_mode()) {
+        append_standing_change(
+            dynasty, StandingMetric::Honor, reason, core::Fixed32::from_int(honor - previous));
+    }
 }
 
-void World::set_dynasty_unity(DynastyId dynasty, core::Fixed32 unity) {
+void World::set_dynasty_unity(DynastyId dynasty, core::Fixed32 unity, StandingReason reason) {
     PAT_ASSERT(exists(dynasty), "set_dynasty_unity: unknown dynasty");
     if (exists(dynasty)) {
-        dynasties_.unity[dynasty.index()] = clamp_scale(unity);
+        auto& current = dynasties_.unity[dynasty.index()];
+        const auto previous = current;
+        current = clamp_scale(unity);
+        if (dynasty_mode()) {
+            append_standing_change(dynasty, StandingMetric::Unity, reason, current - previous);
+        }
     }
 }
 
@@ -1154,6 +1165,12 @@ WorldHash World::compute_hash() const {
             h.id(branches_.name[b]);
             h.id(branches_.dynasty[b]);
         }
+        if (dynasty_mode()) {
+            if (const auto standing = standing_hash(); standing != 0) {
+                any = true;
+                h.u64(standing);
+            }
+        }
         if (any) {
             out.ext[static_cast<std::size_t>(ExtPart::DynastyExt)] = nonzero(h.value());
         }
@@ -1519,6 +1536,7 @@ std::vector<std::string> World::check_invariants() const {
     std::vector<std::string> bad;
     auto fail = [&](std::string message) { bad.push_back(std::move(message)); };
     check_opinion_invariants(bad);
+    check_standing_invariants(bad);
 
     for (const auto& [dynasty, entries] : chronicles_) {
         if (!dynasty_mode() || !exists(dynasty) || entries.empty() || entries.size() > kMaxChronicleEntries) {
@@ -1581,7 +1599,7 @@ std::vector<std::string> World::check_invariants() const {
         return bad;  // everything below indexes the columns
     }
     if (dynasties_.head.size() != dynasties_.size() || dynasties_.honor.size() != dynasties_.size() ||
-        dynasties_.unity.size() != dynasties_.size() ||
+        dynasties_.unity.size() != dynasties_.size() || dynasties_.prestige.size() != dynasties_.size() ||
         dynasties_.succession_law.size() != dynasties_.size() || members_.size() != dynasties_.size() ||
         owned_provinces_.size() != dynasties_.size()) {
         fail("dynasty columns or indexes differ in size");
@@ -1672,6 +1690,10 @@ std::vector<std::string> World::check_invariants() const {
         }
         if (!in_range(dynasties_.unity[d], kZero, kScaleMax)) {
             fail(std::format("dynasty {} unity {} out of range", d, dynasties_.unity[d].raw()));
+        }
+        if (!in_range(dynasties_.prestige[d], kZero, kScaleMax) ||
+            (!dynasty_mode() && dynasties_.prestige[d] != kDefaultPrestige)) {
+            fail(std::format("dynasty {} prestige {} is invalid", d, dynasties_.prestige[d].raw()));
         }
         if (static_cast<std::uint8_t>(dynasties_.succession_law[d]) >= kSuccessionLawCount) {
             fail(std::format("dynasty {} has an unknown succession law", d));

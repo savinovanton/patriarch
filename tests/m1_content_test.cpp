@@ -2,6 +2,7 @@
 #include "pat/content/m1_content.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
+#include "pat/data/m1_schemas.hpp"
 
 #include <doctest/doctest.h>
 
@@ -54,6 +55,8 @@ trait "cautious" {
     opposite = trait:reckless
     skills = { stewardship = 1  intrigue = -1 }
 }
+
+
 trait "reckless" {
     name_key = "trait.reckless"
     desc_key = "trait.reckless.desc"
@@ -169,4 +172,38 @@ dynasty "b" { name_key = "" desc_key = "" }
         return std::tie(a.root, a.file, a.diagnostic.pos, a.diagnostic.code, a.diagnostic.message) <
                std::tie(b.root, b.file, b.diagnostic.pos, b.diagnostic.code, b.diagnostic.message);
     }));
+}
+
+TEST_CASE("m1_content: honor ranks are inclusive and leave simulation compatibility intact") {
+    const std::string base = R"PD(dynasty "golitsyn" { name_key = "dynasty.golitsyn" })PD";
+    const auto plain = load_definitions(base);
+    const auto ranked = load_definitions(base + R"PD(
+ui_honor_rank "first" { min_honor = 100 name_key = "rank.first" }
+ui_honor_rank "last" { min_honor = -1000 name_key = "rank.last" }
+)PD");
+    REQUIRE(pat::content::validate_m1_definitions(ranked.registry).empty());
+    const auto ranks = pat::content::build_honor_ranks(ranked.registry);
+    REQUIRE(ranks.size() == 2);
+    CHECK(ranks.front().min_honor == -1000);
+    CHECK(pat::content::honor_rank(ranks, -1001) == nullptr);
+    CHECK(pat::content::honor_rank(ranks, -1000) == &ranks.front());
+    CHECK(pat::content::honor_rank(ranks, 99) == &ranks.front());
+    CHECK(pat::content::honor_rank(ranks, 100) == &ranks.back());
+    CHECK(pat::content::honor_rank(ranks, 10000) == &ranks.back());
+    CHECK(pat::content::honor_rank({}, 0) == nullptr);
+    CHECK(ranked.registry.content_hash() != plain.registry.content_hash());
+    CHECK(ranked.registry.content_hash_excluding(pat::data::kHonorRankKind) == plain.registry.content_hash());
+    const auto* plain_dynasty = plain.registry.find("dynasty", "golitsyn");
+    const auto* ranked_dynasty = ranked.registry.find("dynasty", "golitsyn");
+    REQUIRE(plain_dynasty != nullptr);
+    REQUIRE(ranked_dynasty != nullptr);
+    CHECK(ranked_dynasty->id == plain_dynasty->id);
+
+    const auto invalid = load_definitions(R"PD(
+ui_honor_rank "first" { min_honor = 0 name_key = "rank.first" }
+ui_honor_rank "last" { min_honor = 0 name_key = "rank.last" }
+)PD");
+    const auto errors = pat::content::validate_m1_definitions(invalid.registry);
+    CHECK(has_message(errors, "threshold 0 is already used"));
+    CHECK(has_message(errors, "lowest honor rank threshold must be -1000"));
 }

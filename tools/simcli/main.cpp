@@ -7,6 +7,7 @@
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
+#include "pat/sim/dynasty_standing.hpp"
 #include "pat/sim/mortality.hpp"
 #include "pat/sim/opinion.hpp"
 #include "pat/sim/replay.hpp"
@@ -299,6 +300,7 @@ struct ScenarioStart {
             Simulation simulation(*m1_world);
             simulation.add_system(make_mortality_system(demography));
             simulation.add_system(make_opinion_system());
+            simulation.add_system(make_dynasty_standing_system());
             return simulation;
         }
         return demo::make_simulation(demo_config);
