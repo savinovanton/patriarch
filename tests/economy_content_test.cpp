@@ -191,13 +191,14 @@ TEST_CASE("economy content: building keys outlive the load result") {
         REQUIRE(result.has_value());
         rules = result.value().rules;
     }
-    REQUIRE(rules.buildings.count == 1);
+    REQUIRE(rules.buildings.count == 8);
     CHECK(rules.buildings.defs[0].key == "building.mill");
+    CHECK(rules.buildings.defs[7].key == "building.granary");
 }
 
 TEST_CASE("economy content: the mill is defined as in economy-model 11.1") {
     const EconomyRules rules = rules_of(shipped_files());
-    REQUIRE(rules.buildings.count == 1);
+    REQUIRE(rules.buildings.count == 8);  // GDD 03 section 15; E9-T16 added the other seven
     const BuildingDef& mill = rules.buildings.defs[0];
     CHECK(mill.slot == 1);
     CHECK(mill.cost_kop == 400'000);
@@ -461,7 +462,7 @@ TEST_CASE("economy content: a mod root replaces only the objects it defines") {
         MemorySource mod("mods/windmills");
         mod.add("b.pd",
                 "format_version = 1\n"
-                "building \"windmill\" {\n    slot = 2\n    name_key = \"building.windmill\"\n"
+                "building \"windmill\" {\n    slot = 9\n    name_key = \"building.windmill\"\n"
                 "    cost_kop = 600000\n    build_days = 150\n    upkeep_kop_month = 4000\n"
                 "    output_permille = { grain = 1300 }\n}\n");
         const ContentSource* roots[] = {&base, &mod};
@@ -469,11 +470,11 @@ TEST_CASE("economy content: a mod root replaces only the objects it defines") {
         INFO((result.has_value() ? std::string() : content::format_errors(result.error())));
         REQUIRE(result.has_value());
         const EconomyRules& rules = result.value().rules;
-        REQUIRE(rules.buildings.count == 2);
+        REQUIRE(rules.buildings.count == 9);
         CHECK(rules.buildings.defs[0].slot == 1);  // ordered by slot
-        CHECK(rules.buildings.defs[1].slot == 2);
-        CHECK(rules.buildings.defs[1].key == "building.windmill");
-        CHECK(rules.buildings.defs[1].output_permille[0] == 1300);
+        CHECK(rules.buildings.defs[8].slot == 9);
+        CHECK(rules.buildings.defs[8].key == "building.windmill");
+        CHECK(rules.buildings.defs[8].output_permille[0] == 1300);
 
         MemorySource bad("mods/bad");
         bad.add("b.pd",
@@ -614,6 +615,7 @@ TEST_CASE("economy content: unknown names of groups, kinds and goods are errors 
     SUBCASE("a province kind") {
         Files files = shipped_files();
         edit(files, "groups.pd", "province_kind \"port\"", "province_kind \"harbour\"");
+        edit(files, "buildings.pd", "allowed_kinds = [ port ]", "allowed_kinds = [ harbour ]");
         const auto result = load(files);
         REQUIRE_FALSE(result.has_value());
         const std::string text = content::format_errors(result.error());
@@ -630,6 +632,57 @@ TEST_CASE("economy content: unknown names of groups, kinds and goods are errors 
         CHECK(error->diagnostic.message.find("did you mean 'grain'") != std::string::npos);
         CHECK(error->diagnostic.pos == locate(files["buildings.pd"], "gran"));
     }
+    SUBCASE("a kind that is not a province kind, in the requirements of a building") {
+        Files files = shipped_files();
+        edit(files, "buildings.pd", "allowed_kinds = [ port ]", "allowed_kinds = [ harbour ]");
+        const auto result = load(files);
+        REQUIRE_FALSE(result.has_value());
+        const std::string text = content::format_errors(result.error());
+        CHECK(text.find("harbour") != std::string::npos);
+        CHECK(text.find("buildings.pd") != std::string::npos);
+    }
+}
+
+TEST_CASE("economy content: the requirements of a building come from its object (E9-T16)") {
+    const EconomyRules rules = rules_of(shipped_files());
+    REQUIRE(rules.buildings.count == 8);
+    // no requirement at all: the mill, the tract, the church, the granary (1 per province by default)
+    for (const std::size_t i : {std::size_t{0}, std::size_t{3}, std::size_t{6}, std::size_t{7}}) {
+        CHECK(rules.buildings.defs[i].min_development == 0);
+        CHECK(rules.buildings.defs[i].allowed_kinds == 0);
+        CHECK(rules.buildings.defs[i].max_per_province == 1);
+    }
+    // a list of kinds is a mask of ProvinceKind bits, whatever the order in the file
+    CHECK(rules.buildings.defs[1].min_development == 3);
+    CHECK(rules.buildings.defs[1].allowed_kinds == ((1U << 1) | (1U << 3)));  // city, industrial
+    CHECK(rules.buildings.defs[5].allowed_kinds == ((1U << 2) | (1U << 5) | (1U << 6)));
+    Files files = shipped_files();
+    edit(files,
+         "buildings.pd",
+         "allowed_kinds = [ city, industrial ]",
+         "allowed_kinds = [ industrial, city, city ]");
+    CHECK(rules_of(files).buildings.defs[1].allowed_kinds == ((1U << 1) | (1U << 3)));
+    // an explicit number per province
+    edit(files,
+         "buildings.pd",
+         "name_key = \"building.granary\"",
+         "name_key = \"building.granary\"\n    max_per_province = 3");
+    CHECK(rules_of(files).buildings.defs[7].max_per_province == 3);
+    // out of the corridor: an error at the value, found by the schema
+    Files bad = shipped_files();
+    edit(bad,
+         "buildings.pd",
+         "min_development = 3\n    allowed_kinds = [ city",
+         "min_development = 11\n    allowed_kinds = [ city");
+    const auto result = load(bad);
+    const LoadError* error = first_error(result);
+    CHECK(error->file == "buildings.pd");
+    Files seven = shipped_files();
+    edit(seven,
+         "buildings.pd",
+         "building \"granary\" {\n    slot = 8",
+         "building \"granary\" {\n    slot = 8\n    max_per_province = 7");
+    CHECK_FALSE(load(seven).has_value());
 }
 
 TEST_CASE("economy content: rules that span fields are checked with the block's position") {

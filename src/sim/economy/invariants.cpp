@@ -1,5 +1,6 @@
 #include "pat/sim/economy/invariants.hpp"
 
+#include "pat/sim/economy/construction.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -125,6 +126,61 @@ std::vector<std::string> check_rules_invariants(const World& world, const Econom
                 std::format("construction entry {} builds the building {}, which the rules do not define",
                             i,
                             static_cast<unsigned>(q.building[i])));
+            continue;
+        }
+        // E9-T16: an entry is what StartConstruction made of the rules: the time and the price of the type.
+        const BuildingDef* def = find_building(rules.buildings, q.building[i]);
+        if (def != nullptr && q.finish_date[i] - q.start_date[i] != def->build_days) {
+            bad.push_back(std::format("construction entry {} takes {} days, the rules give {} to building {}",
+                                      i,
+                                      q.finish_date[i] - q.start_date[i],
+                                      def->build_days,
+                                      static_cast<unsigned>(q.building[i])));
+        }
+        if (def != nullptr && q.paid_kop[i] != def->cost_kop) {
+            bad.push_back(
+                std::format("construction entry {} was paid {} kopecks, the rules price building {} at {}",
+                            i,
+                            q.paid_kop[i],
+                            static_cast<unsigned>(q.building[i]),
+                            def->cost_kop));
+        }
+    }
+    // E9-T16: per province no type exceeds `max_per_province` (finished and queued together) and every
+    // type stands only in the kinds it allows.
+    for (std::size_t p = 0; p < provinces; ++p) {
+        const ProvinceId province(static_cast<std::uint32_t>(p));
+        std::array<std::int32_t, 256> count{};
+        for (std::size_t slot = 0; slot < std::min<std::size_t>(pe.slots_total[p], kMaxSlots); ++slot) {
+            ++count[pe.slot_building[p * kMaxSlots + slot]];
+        }
+        for (std::size_t i = 0; i < q.size(); ++i) {
+            if (q.province[i] == province) {
+                ++count[q.building[i]];
+            }
+        }
+        for (std::size_t b = 1; b < count.size(); ++b) {
+            const BuildingDef* def =
+                count[b] != 0 ? find_building(rules.buildings, static_cast<std::uint8_t>(b)) : nullptr;
+            if (def == nullptr) {
+                continue;  // an unknown type is reported above (slots) and in the queue
+            }
+            if (count[b] > def->max_per_province) {
+                bad.push_back(std::format("province {} holds {} of building {}, the rules allow {}",
+                                          p,
+                                          count[b],
+                                          b,
+                                          def->max_per_province));
+            }
+            const std::uint8_t kind = pe.kind[p];
+            if (def->allowed_kinds != 0 &&
+                (kind >= kProvinceKindCount || ((def->allowed_kinds >> kind) & 1U) == 0)) {
+                bad.push_back(std::format("province {} of kind {} holds building {}, which the rules do not "
+                                          "allow in such a province",
+                                          p,
+                                          static_cast<unsigned>(kind),
+                                          b));
+            }
         }
     }
 

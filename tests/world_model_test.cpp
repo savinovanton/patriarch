@@ -134,6 +134,16 @@ World build_world(std::uint64_t seed, bool with_economy = true) {
         columns.recruit_pool[p] = static_cast<std::uint32_t>(rng.range(0, 800));  // people to conscript (T13)
     }
     columns.kind[1] = static_cast<std::uint8_t>(eco::ProvinceKind::City);
+    // building sites (E9-T16): different kinds, developments and slot counts, so that the requirements of
+    // the building types are met in some provinces and not in others
+    for (std::uint32_t p = 0; p < kProvinces; ++p) {
+        if (p != 1) {
+            columns.kind[p] =
+                static_cast<std::uint8_t>(rng.bounded(5));  // rural, city, border, industrial, port
+        }
+        columns.slots_total[p] = static_cast<std::uint8_t>(rng.range(0, 4));
+        world.set_province_development(ProvinceId(p), static_cast<std::uint8_t>(rng.range(1, 6)));
+    }
     REQUIRE(world.set_province_owner_kind(ProvinceId(4), eco::OwnerKind::Crown));
     (void)world.post_money(eco::AccountRef::crown(), eco::LedgerCode::Adjustment, 5'000'000);
     for (std::uint32_t d = 0; d < kDynasties; ++d) {
@@ -193,7 +203,7 @@ DynastyId random_actor(Pcg32& rng, const World& world, std::int32_t house_permil
 /// One random command, valid or not. Reads the world only to pick ids that mean something.
 Command random_command(Pcg32& rng, const World& world) {
     const Date today = world.today();
-    const std::uint32_t roll = rng.bounded(100);
+    const std::uint32_t roll = rng.bounded(106);
     if (roll < 22) {
         CharacterInit init;
         init.dynasty = random_dynasty(rng, world);
@@ -302,7 +312,34 @@ Command random_command(Pcg32& rng, const World& world) {
                                           Fixed32::from_int(rng.range(-20, 20)),
                                           kOtherOpinionReason}};
     }
-    return Command{DynastyId(), cmd::KillCharacter{random_person(rng, world)}};  // never in dynasty mode
+    if (roll < 100) {
+        return Command{DynastyId(), cmd::KillCharacter{random_person(rng, world)}};  // never in dynasty mode
+    }
+    // construction (E9-T16): the types of the rules (1...8) plus 0 and 9, which are not types
+    const ProvinceId province = random_province(rng, world);
+    DynastyId actor = random_actor(rng, world, 300);
+    if (world.exists(province) && rng.chance_permille(450)) {
+        actor = world.provinces().owner[province.index()];
+    }
+    if (rng.chance_permille(600)) {
+        const std::uint32_t pick = rng.bounded(100);
+        return Command{actor,
+                       cmd::StartConstruction{
+                           province, static_cast<std::uint8_t>(pick < 4 ? 9 * (pick % 2) : 1 + pick % 8)}};
+    }
+    // cancel: mostly a slot that is being built (any of the six when nothing is)
+    std::uint8_t slot = static_cast<std::uint8_t>(rng.bounded(7));
+    const eco::ConstructionQueue& queue = world.economy().construction;
+    for (std::size_t i = 0; i < queue.size() && rng.chance_permille(800); ++i) {
+        if (queue.province[i] == province) {
+            slot = queue.slot[i];
+            if (rng.chance_permille(700)) {
+                actor = queue.payer[i];
+            }
+            break;
+        }
+    }
+    return Command{actor, cmd::CancelConstruction{province, slot}};
 }
 
 // ---- independent checks of the structure ---------------------------------------------------------
@@ -592,6 +629,15 @@ public:
             administrator_ = world.economy().provinces.administrator;
             tax_policy_ = world.economy().dynasties.tax_policy;
             recruit_policy_ = world.economy().dynasties.recruit_policy;
+            slots_total_ = world.economy().provinces.slots_total;
+            kind_ = world.economy().provinces.kind;
+            for (std::size_t p = 0; p < owner_.size(); ++p) {
+                development_.push_back(world.provinces().development[p]);
+            }
+            for (std::size_t d = 0; d < head_.size(); ++d) {
+                money_.push_back(
+                    world.treasury(eco::AccountRef::of(DynastyId(static_cast<std::uint32_t>(d)))));
+            }
         }
     }
 
@@ -658,6 +704,9 @@ public:
             }
             if (world.economy().dynasties.manpower_reserve != reserve_) {
                 return "the manpower reserves differ from the model";
+            }
+            if (const std::string problem = construction_difference(world); !problem.empty()) {
+                return problem;
             }
             for (std::size_t p = 0; p < size_.size(); ++p) {
                 std::uint64_t persons = 0;
@@ -855,6 +904,93 @@ private:
         reserve_[owner.index()] += c.count;
         return true;
     }
+    /// The type of the rules with that number (the test reads the table of the rules, not the code that
+    /// uses it), or null.
+    [[nodiscard]] static const eco::BuildingDef* type_of_building(std::uint8_t number) {
+        for (std::int32_t i = 0; i < rules().buildings.count && number != 0; ++i) {
+            if (rules().buildings.defs[static_cast<std::size_t>(i)].slot == number) {
+                return &rules().buildings.defs[static_cast<std::size_t>(i)];
+            }
+        }
+        return nullptr;
+    }
+    [[nodiscard]] bool reserved(std::size_t province, std::size_t slot) const {
+        return std::ranges::any_of(
+            queue_, [&](const ModelSite& s) { return s.province == province && s.slot == slot; });
+    }
+    /// StartConstruction (E9-T16): only in a province the actor owns (the system: in one a house holds);
+    /// the building fits the kind and the development of the province and is not there yet in the
+    /// allowed number; the lowest slot without a construction; the payer has the money. The model starts
+    /// with no finished building: no days pass in a command sequence.
+    bool apply(DynastyId actor, const cmd::StartConstruction& c) {
+        const eco::BuildingDef* type = type_of_building(c.building);
+        if (!economy_ || !known(c.province) || type == nullptr) {
+            return false;
+        }
+        const std::size_t p = c.province.index();
+        const DynastyId owner = owner_[p];
+        if (!owner.valid() || (actor.valid() && actor != owner)) {
+            return false;
+        }
+        const bool kind_ok = type->allowed_kinds == 0 || ((type->allowed_kinds >> kind_[p]) & 1U) != 0;
+        std::int32_t same = 0;
+        for (const ModelSite& site : queue_) {
+            same += site.province == p && site.building == c.building ? 1 : 0;
+        }
+        if (!kind_ok || development_[p] < type->min_development || same >= type->max_per_province) {
+            return false;
+        }
+        std::size_t slot = 0;
+        while (slot < slots_total_[p] && reserved(p, slot)) {
+            ++slot;
+        }
+        if (slot >= slots_total_[p] || money_[owner.index()] < type->cost_kop) {
+            return false;
+        }
+        money_[owner.index()] -= type->cost_kop;
+        queue_.push_back(ModelSite{p, slot, c.building, owner, type->cost_kop});
+        return true;
+    }
+    /// CancelConstruction: an entry in that slot, the payer or the system; 80 % of the price comes back.
+    bool apply(DynastyId actor, const cmd::CancelConstruction& c) {
+        if (!economy_ || !known(c.province)) {
+            return false;
+        }
+        const auto site = std::ranges::find_if(
+            queue_, [&](const ModelSite& s) { return s.province == c.province.index() && s.slot == c.slot; });
+        if (site == queue_.end() || (actor.valid() && actor != site->payer)) {
+            return false;
+        }
+        money_[site->payer.index()] += site->paid * 800 / 1000;
+        queue_.erase(site);
+        return true;
+    }
+    [[nodiscard]] std::string construction_difference(const World& world) const {
+        const eco::ConstructionQueue& q = world.economy().construction;
+        if (q.size() != queue_.size()) {
+            return std::format("the world has {} constructions, the model {}", q.size(), queue_.size());
+        }
+        for (const ModelSite& site : queue_) {
+            bool found = false;
+            for (std::size_t i = 0; i < q.size() && !found; ++i) {
+                found = q.province[i].index() == site.province && q.slot[i] == site.slot &&
+                        q.building[i] == site.building && q.payer[i] == site.payer &&
+                        q.paid_kop[i] == site.paid;
+            }
+            if (!found) {
+                return std::format("the construction of {} in slot {} of province {} differs from the model",
+                                   static_cast<unsigned>(site.building),
+                                   site.slot,
+                                   site.province);
+            }
+        }
+        for (std::size_t d = 0; d < money_.size(); ++d) {
+            if (world.treasury(eco::AccountRef::of(DynastyId(static_cast<std::uint32_t>(d)))) != money_[d]) {
+                return std::format("the treasury of dynasty {} differs from the model", d);
+            }
+        }
+        return {};
+    }
     bool apply(DynastyId actor, const cmd::AssignProvinceAdministrator& c) {
         if (!economy_ || !known(c.province) || (c.administrator.valid() && !alive(c.administrator))) {
             return false;
@@ -885,6 +1021,19 @@ private:
     std::vector<std::uint32_t> pool_;                                // recruit pool per province (T13)
     std::vector<std::array<std::uint32_t, eco::kGroupCount>> size_;  // people per group per province
     std::vector<std::uint32_t> reserve_;                             // manpower reserve per dynasty
+    // construction (E9-T16)
+    struct ModelSite {
+        std::size_t province = 0;
+        std::size_t slot = 0;
+        std::uint8_t building = 0;
+        DynastyId payer;
+        eco::Kopecks paid = 0;
+    };
+    std::vector<ModelSite> queue_;
+    std::vector<std::uint8_t> slots_total_;
+    std::vector<std::uint8_t> kind_;
+    std::vector<std::uint8_t> development_;
+    std::vector<eco::Kopecks> money_;  // treasury per dynasty: only the two commands move it here
 };
 
 // ---- runs ---------------------------------------------------------------------------------------
@@ -950,9 +1099,12 @@ bool run_command_sequence(std::uint64_t seed, Coverage* coverage = nullptr) {
             const Books before = books_of(world);
             log.clear();
             const bool applied =
-                process_commands(world, {&command, 1}, CommandSource::External, log).applied == 1;
+                process_commands(
+                    world, {&command, 1}, CommandSource::External, log, nullptr, nullptr, &rules())
+                    .applied == 1;
             if (uninterrupted) {
-                (void)process_commands(*uninterrupted, {&command, 1}, CommandSource::External, log);
+                (void)process_commands(
+                    *uninterrupted, {&command, 1}, CommandSource::External, log, nullptr, nullptr, &rules());
             }
             const bool predicted = model.apply(command);
             if (coverage != nullptr) {

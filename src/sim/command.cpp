@@ -1,6 +1,7 @@
 #include "pat/sim/command.hpp"
 
 #include "pat/sim/command_log.hpp"
+#include "pat/sim/economy/construction.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/traits.hpp"
@@ -57,6 +58,7 @@ struct Validator {
     const World& world;
     DynastyId actor;
     const TraitCatalog* traits;
+    const economy::EconomyRules* economy;
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
         if (!world.exists(c.province)) {
@@ -421,6 +423,49 @@ struct Validator {
         return accept();
     }
 
+    /// The verdict of the construction rules as a rejection (the refusal texts are static strings).
+    static Result<void, CommandError> construction_verdict(economy::ConstructionRefusal refusal) {
+        using economy::ConstructionRefusal;
+        const char* text = economy::refusal_text(refusal);
+        switch (refusal) {
+            case ConstructionRefusal::None:
+                return accept();
+            case ConstructionRefusal::UnknownProvince:
+            case ConstructionRefusal::NoConstruction:
+                return reject(Rejection::UnknownEntity, text);
+            case ConstructionRefusal::UnknownBuilding:
+                return reject(Rejection::InvalidArgument, text);
+            case ConstructionRefusal::NotOwner:
+            case ConstructionRefusal::NotPayer:
+                return reject(Rejection::NotAuthorized, text);
+            case ConstructionRefusal::NoEconomy:
+            case ConstructionRefusal::NoRules:
+            case ConstructionRefusal::NotHeld:
+            case ConstructionRefusal::WrongKind:
+            case ConstructionRefusal::TooLittleDevelopment:
+            case ConstructionRefusal::TooMany:
+            case ConstructionRefusal::NoFreeSlot:
+            case ConstructionRefusal::NoMoney:
+                return reject(Rejection::InvalidState, text);
+        }
+        return reject(Rejection::InvalidState, text);
+    }
+
+    Result<void, CommandError> operator()(const cmd::StartConstruction& c) const {
+        if (!world.economy_present()) {
+            return construction_verdict(economy::ConstructionRefusal::NoEconomy);
+        }
+        if (economy == nullptr) {
+            return construction_verdict(economy::ConstructionRefusal::NoRules);
+        }
+        return construction_verdict(
+            economy::check_start_construction(world, *economy, actor, c.province, c.building).refusal);
+    }
+
+    Result<void, CommandError> operator()(const cmd::CancelConstruction& c) const {
+        return construction_verdict(economy::check_cancel_construction(world, actor, c.province, c.slot));
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -488,7 +533,9 @@ struct Validator {
 
 struct Applier {
     World& world;
+    DynastyId actor;
     const TraitCatalog* traits;
+    const economy::EconomyRules* economy;
 
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {
@@ -543,6 +590,16 @@ struct Applier {
     }
     void operator()(const cmd::ConscriptRecruits& c) const {
         (void)world.conscript_recruits(c.province, c.count);
+    }
+    void operator()(const cmd::StartConstruction& c) const {
+        if (economy != nullptr) {
+            (void)economy::start_construction(world, *economy, actor, c.province, c.building);
+        }
+    }
+    void operator()(const cmd::CancelConstruction& c) const {
+        if (economy != nullptr) {
+            (void)economy::cancel_construction(world, *economy, actor, c.province, c.slot);
+        }
     }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
@@ -641,6 +698,14 @@ template <>
 struct CommandTag<cmd::ConscriptRecruits> {
     static constexpr CommandType value = CommandType::ConscriptRecruits;
 };
+template <>
+struct CommandTag<cmd::StartConstruction> {
+    static constexpr CommandType value = CommandType::StartConstruction;
+};
+template <>
+struct CommandTag<cmd::CancelConstruction> {
+    static constexpr CommandType value = CommandType::CancelConstruction;
+};
 
 template <class Variant>
 struct TagTable;
@@ -711,6 +776,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "SetRecruitPolicy";
         case CommandType::ConscriptRecruits:
             return "ConscriptRecruits";
+        case CommandType::StartConstruction:
+            return "StartConstruction";
+        case CommandType::CancelConstruction:
+            return "CancelConstruction";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:
@@ -737,15 +806,21 @@ std::string_view to_string(Rejection reason) noexcept {
     return "?";
 }
 
-Result<void, CommandError> validate(const World& world, const Command& command, const TraitCatalog* traits) {
+Result<void, CommandError> validate(const World& world,
+                                    const Command& command,
+                                    const TraitCatalog* traits,
+                                    const economy::EconomyRules* economy) {
     if (command.actor.valid() && !world.exists(command.actor)) {
         return reject(Rejection::UnknownEntity, "unknown actor");
     }
-    return std::visit(Validator{world, command.actor, traits}, command.payload);
+    return std::visit(Validator{world, command.actor, traits, economy}, command.payload);
 }
 
-void apply(World& world, const Command& command, const TraitCatalog* traits) {
-    std::visit(Applier{world, traits}, command.payload);
+void apply(World& world,
+           const Command& command,
+           const TraitCatalog* traits,
+           const economy::EconomyRules* economy) {
+    std::visit(Applier{world, command.actor, traits, economy}, command.payload);
 }
 
 ApplyStats process_commands(World& world,
@@ -753,10 +828,11 @@ ApplyStats process_commands(World& world,
                             CommandSource source,
                             CommandLog& log,
                             std::vector<DepartedHead>* departed_heads,
-                            const TraitCatalog* traits) {
+                            const TraitCatalog* traits,
+                            const economy::EconomyRules* economy) {
     ApplyStats stats;
     for (const Command& command : commands) {
-        const Result<void, CommandError> verdict = validate(world, command, traits);
+        const Result<void, CommandError> verdict = validate(world, command, traits, economy);
         LoggedCommand entry;
         entry.date = world.today();
         entry.source = source;
@@ -776,7 +852,7 @@ ApplyStats process_commands(World& world,
                     }
                 }
             }
-            apply(world, command, traits);
+            apply(world, command, traits, economy);
             ++stats.applied;
         } else {
             entry.outcome = verdict.error().reason;

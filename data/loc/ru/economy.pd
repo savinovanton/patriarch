@@ -1,0 +1,13 @@
+format_version = 1
+
+# Русские названия объектов экономики (E9-T16). Ключи — поле name_key типов зданий из
+# data/economy/buildings.pd. Таблица локализации, а не определения контента (docs/dev/localization.md).
+
+building.mill = "Мельница"
+building.manufactory = "Суконная мануфактура"
+building.works = "Железоделательный завод"
+building.tract = "Тракт"
+building.wharf = "Пристань"
+building.ostrog = "Острог"
+building.church = "Церковь"
+building.granary = "Амбар"

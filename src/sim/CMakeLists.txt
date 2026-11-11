@@ -8,6 +8,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/dynasty_standing.hpp
     include/pat/sim/economy/administrator.hpp
     include/pat/sim/economy/breakdown.hpp
+    include/pat/sim/economy/construction.hpp
     include/pat/sim/economy/forecast.hpp
     include/pat/sim/economy/invariants.hpp
     include/pat/sim/economy/ledger.hpp
@@ -50,6 +51,7 @@ add_library(patriarch_sim STATIC
     dynasty_standing.cpp
     economy/administrator.cpp
     economy/breakdown.cpp
+    economy/construction.cpp
     economy/forecast.cpp
     economy/invariants.cpp
     economy/mood.cpp

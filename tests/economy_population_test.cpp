@@ -452,12 +452,15 @@ TEST_CASE("economy.provinces: the stagger visits a province on day index % 28 + 
 
 TEST_CASE("economy.provinces: the system registers as the third economy system and needs an economy") {
     Simulation sim = economy_sim(peaceful_world(3));
-    REQUIRE(sim.system_count() == 2);  // settlement (E9-T09) in front of the provinces
+    REQUIRE(sim.system_count() ==
+            3);  // settlement (E9-T09) and construction (E9-T16) in front of the provinces
     (void)sim.tick();
     CHECK(sim.last_report().systems[0].name == kSettlementSystemName);
     CHECK(sim.last_report().systems[0].cadence == Cadence::Monthly);
-    CHECK(sim.last_report().systems[1].name == kProvincesSystemName);
+    CHECK(sim.last_report().systems[1].name == kConstructionSystemName);
     CHECK(sim.last_report().systems[1].cadence == Cadence::Daily);
+    CHECK(sim.last_report().systems[2].name == kProvincesSystemName);
+    CHECK(sim.last_report().systems[2].cadence == Cadence::Daily);
     CHECK(sim.last_report().systems[1].ran);
 
     // with the economy off the system does nothing, however long it runs

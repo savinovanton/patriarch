@@ -15,15 +15,23 @@
 #include <memory>
 #include <span>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace pat::sim {
+
+namespace economy {
+struct EconomyRules;
+}
 
 struct SimulationConfig {
     std::uint64_t wu_per_tick = 1'000'000;
     std::size_t external_queue_capacity = 4096;
     std::size_t scratch_block_bytes = 64 * 1024;
     std::shared_ptr<const TraitCatalog> traits = {};
+    /// The rules that the commands of the economy are validated and applied by (the building types
+    /// of StartConstruction, E9-T16). install_economy_systems sets it; null = such commands are refused.
+    std::shared_ptr<const economy::EconomyRules> economy_rules = {};
 };
 
 struct SystemRun {
@@ -72,6 +80,11 @@ public:
     /// Registers a system; call before the first tick. Names must be unique.
     void add_system(std::unique_ptr<System> system);
     void set_executor(std::unique_ptr<TaskExecutor> executor);
+    /// Gives the economy commands their rules (see SimulationConfig::economy_rules); call before the
+    /// first tick. Content, not state: it is not saved and does not enter the hash.
+    void set_economy_rules(std::shared_ptr<const economy::EconomyRules> rules) {
+        config_.economy_rules = std::move(rules);
+    }
 
     /// Diagnostic observer, independent of World/save/replay. Enable after registering systems;
     /// add_system() disables it, restore_state() clears its window. Simulation thread, between ticks.

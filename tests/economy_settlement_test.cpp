@@ -325,13 +325,14 @@ TEST_CASE("settlement: in the one-treasury mode the holder is asked as itself an
 TEST_CASE("settlement: the system is registered in front of the provinces and runs on the 1st") {
     Simulation sim(make_world(3));
     install_economy_systems(sim, rules());
-    REQUIRE(sim.system_count() == 2);
+    REQUIRE(sim.system_count() == 3);
     (void)sim.tick();  // 1 January 1703
-    REQUIRE(sim.last_report().systems.size() == 2);
+    REQUIRE(sim.last_report().systems.size() == 3);
     CHECK(sim.last_report().systems[0].name == kSettlementSystemName);
     CHECK(sim.last_report().systems[0].cadence == Cadence::Monthly);
     CHECK(sim.last_report().systems[0].ran);
-    CHECK(sim.last_report().systems[1].name == kProvincesSystemName);
+    CHECK(sim.last_report().systems[1].name == kConstructionSystemName);
+    CHECK(sim.last_report().systems[2].name == kProvincesSystemName);
     CHECK(sim.world().economy().meta.closed_months == 1);
     (void)sim.tick();  // 2 January: the monthly system does not run
     CHECK_FALSE(sim.last_report().systems[0].ran);

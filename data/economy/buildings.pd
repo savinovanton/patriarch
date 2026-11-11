@@ -1,9 +1,16 @@
 format_version = 1
 
-# Типы зданий (GDD 03 §8). slot — стабильный индекс 1...255, записывается в сейвы. GDD не даёт цен;
-# economy-model §11.1 даёт один пример — мельницу. Остальные здания M1 (GDD 03 §15) добавляются
-# сюда же (E9-T17). output_permille — множитель выпуска по id товаров из goods.pd; не названные
-# товары — 1000 (без эффекта).
+# Типы зданий M1 (GDD 03 §8, §15). slot — стабильный индекс 1...255, записывается в сейвы. GDD не
+# даёт цен; economy-model §11.1 даёт один пример — мельницу. Остальные семь зданий — собственные
+# значения [предл.] того же порядка; они продублированы в EconomyRules::defaults(), тест следит за
+# совпадением. output_permille — множитель выпуска по id товаров из goods.pd; не названные товары —
+# 1000 (без эффекта). Прочие эффекты зданий (контроль, коррупция, рекруты, защита от голода) и кэш
+# модификаторов — E9-T17.
+#
+# Требования к месту (E9-T16, StartConstruction): min_development — наименьшее развитие провинции;
+# allowed_kinds — виды провинции, в которых можно строить (пропуск — в любых); max_per_province —
+# сколько зданий типа вместе с строящимися (по умолчанию 1). Мест в провинции — slots в её данных.
+# Названия — ключи data/loc/<язык>/economy.pd.
 
 building "mill" {
     slot = 1
@@ -12,4 +19,69 @@ building "mill" {
     build_days = 120
     upkeep_kop_month = 3000          # 30 руб. в месяц
     output_permille = { grain = 1150 }
+}
+
+building "manufactory" {
+    slot = 2
+    name_key = "building.manufactory"
+    cost_kop = 1200000               # 12000 руб. [предл.]
+    build_days = 240
+    upkeep_kop_month = 10000         # 100 руб. в месяц
+    output_permille = { cloth = 1200 }
+    min_development = 3
+    allowed_kinds = [ city, industrial ]
+}
+
+building "works" {
+    slot = 3
+    name_key = "building.works"
+    cost_kop = 2000000               # 20000 руб. [предл.]
+    build_days = 360
+    upkeep_kop_month = 15000         # 150 руб. в месяц
+    output_permille = { iron = 1300 }
+    min_development = 3
+    allowed_kinds = [ industrial ]
+}
+
+building "tract" {
+    slot = 4
+    name_key = "building.tract"
+    cost_kop = 600000                # 6000 руб. [предл.]
+    build_days = 180
+    upkeep_kop_month = 4000          # 40 руб. в месяц
+}
+
+building "wharf" {
+    slot = 5
+    name_key = "building.wharf"
+    cost_kop = 800000                # 8000 руб. [предл.]
+    build_days = 150
+    upkeep_kop_month = 6000          # 60 руб. в месяц
+    output_permille = { fish = 1100 }
+    allowed_kinds = [ port ]
+}
+
+building "ostrog" {
+    slot = 6
+    name_key = "building.ostrog"
+    cost_kop = 1000000               # 10000 руб. [предл.]
+    build_days = 240
+    upkeep_kop_month = 12000         # 120 руб. в месяц
+    allowed_kinds = [ border, steppe, northern ]
+}
+
+building "church" {
+    slot = 7
+    name_key = "building.church"
+    cost_kop = 500000                # 5000 руб. [предл.]
+    build_days = 300
+    upkeep_kop_month = 2000          # 20 руб. в месяц
+}
+
+building "granary" {
+    slot = 8
+    name_key = "building.granary"
+    cost_kop = 300000                # 3000 руб. [предл.]
+    build_days = 90
+    upkeep_kop_month = 2000          # 20 руб. в месяц
 }

@@ -613,6 +613,33 @@ public:
     /// Puts a building (0 = empty) into a slot of a province; false when the slot is not below
     /// `slots_total` or the province is unknown.
     bool set_slot_building(ProvinceId province, std::size_t slot, std::uint8_t building);
+    /// Construction (E9-T16, economy-model sections 4.6 and 9 F15; the effects of StartConstruction,
+    /// CancelConstruction and of the system `economy.construction`). The rules of WHO may build WHAT
+    /// WHERE live in economy/construction.hpp; these three only keep the tables consistent.
+    ///
+    /// Starts building `building` (a type number, not 0) in the lowest slot below `slots_total` that
+    /// holds no building and no other construction: puts an entry into the queue (kept in the order
+    /// `(finish_date, seq)`, `finish_date = today + build_days`, `seq` from `next_construction_seq`),
+    /// and posts `-cost_kop` to the account of `payer` as ONE posting of the code Construction. Returns
+    /// the slot. nullopt (nothing changed) without economy, for an unknown province or payer, a zero
+    /// `building`, `build_days < 1` or a cost outside 0...kMaxPostingKop, when no slot is free, or when
+    /// the payer holds less than `cost_kop` (a balance in debt affords nothing that costs).
+    std::optional<std::uint8_t> begin_construction(ProvinceId province,
+                                                   std::uint8_t building,
+                                                   DynastyId payer,
+                                                   economy::Kopecks cost_kop,
+                                                   std::int32_t build_days);
+    /// Cancels the construction that occupies `slot` of a province: removes the entry, frees the slot
+    /// and posts `refund_permille` of the paid cost (kopecks truncated toward zero) back to the payer
+    /// as a positive posting of the code Construction. Returns the refund; nullopt (nothing changed)
+    /// when there is no such entry, the permille is outside 0...1000 or without economy.
+    std::optional<economy::Kopecks>
+    abort_construction(ProvinceId province, std::uint8_t slot, std::int32_t refund_permille);
+    /// Finishes every construction whose `finish_date` is not after today (they stand at the head of
+    /// the queue): the building goes into its slot, the entry leaves the queue, and the incident log
+    /// gets BuildingCompleted (province, payer, `param` = the type). Returns how many were finished;
+    /// O(1) when the queue is empty or nothing is due.
+    std::size_t finish_due_constructions();
 
     /// Row of an account in the account table: the crown is row 0 (or the row of the crown dynasty
     /// in the "one treasury" mode), dynasty `d` is row `1 + d`. nullopt without economy or for an

@@ -14,6 +14,32 @@ constexpr Fixed32 pts(std::int32_t whole) {
     return Fixed32::from_raw(whole * Fixed32::one_raw);
 }
 
+/// One default building (E9-T16): every field is written, the output multiplier is 1000 for every good
+/// but `good` (-1 = none). See the table of the default rules for the meaning of the arguments.
+constexpr BuildingDef default_building(std::uint8_t slot,
+                                       std::string_view key,
+                                       Kopecks cost_kop,
+                                       std::int32_t build_days,
+                                       Kopecks upkeep_kop_month,
+                                       int good,
+                                       std::int32_t permille,
+                                       std::int32_t min_development,
+                                       std::uint32_t allowed_kinds) {
+    BuildingDef def;
+    def.slot = slot;
+    def.key = key;
+    def.cost_kop = cost_kop;
+    def.build_days = build_days;
+    def.upkeep_kop_month = upkeep_kop_month;
+    for (std::size_t g = 0; g < kMaxGoods; ++g) {
+        def.output_permille[g] = static_cast<int>(g) == good ? permille : kPermilleOne;
+    }
+    def.min_development = min_development;
+    def.allowed_kinds = allowed_kinds;
+    def.max_per_province = 1;
+    return def;
+}
+
 // ==================================================================================================
 // THE TABLE OF DEFAULT VALUES
 //
@@ -213,18 +239,23 @@ constexpr EconomyRules kDefaultEconomyRules{
 
     // ---- F15-F16 buildings ------------------------------------------------------------------
     // The GDD gives no costs; economy-model s.11.1 gives one example, the mill: 4000 roubles,
-    // 120 days, 30 roubles a month, grain output x1.15. The other M1 buildings (GDD 03 s.15) come
-    // with the data files (E9-T17/T18).
+    // 120 days, 30 roubles a month, grain output x1.15. The other seven buildings of GDD 03 s.15 are
+    // own placeholders [predl.] of the same scale (E9-T16); data/economy/buildings.pd carries the
+    // same table (a test compares them). Arguments of default_building: slot, key, cost, build days,
+    // upkeep per month, the good the building improves and its multiplier (-1 = none), minimal
+    // development, allowed kinds (a bit per ProvinceKind: city 1, border 2, industrial 3, port 4,
+    // steppe 5, northern 6; 0 = any). At most one of a type per province.
     .buildings =
         {
-            .defs = {{BuildingDef{.slot = 1,
-                                  .key = "building.mill",
-                                  .cost_kop = 400'000,
-                                  .build_days = 120,
-                                  .upkeep_kop_month = 3'000,
-                                  .output_permille =
-                                      {{1150, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000}}}}},
-            .count = 1,
+            .defs = {{default_building(1, "building.mill", 400'000, 120, 3'000, 0, 1150, 0, 0),
+                      default_building(2, "building.manufactory", 1'200'000, 240, 10'000, 7, 1200, 3, 0x0A),
+                      default_building(3, "building.works", 2'000'000, 360, 15'000, 5, 1300, 3, 0x08),
+                      default_building(4, "building.tract", 600'000, 180, 4'000, -1, 1000, 0, 0),
+                      default_building(5, "building.wharf", 800'000, 150, 6'000, 8, 1100, 0, 0x10),
+                      default_building(6, "building.ostrog", 1'000'000, 240, 12'000, -1, 1000, 0, 0x64),
+                      default_building(7, "building.church", 500'000, 300, 2'000, -1, 1000, 0, 0),
+                      default_building(8, "building.granary", 300'000, 90, 2'000, -1, 1000, 0, 0)}},
+            .count = 8,
             // own placeholder: 80 % of the paid cost comes back when a construction is cancelled
             .refund_permille = 800,
         },
@@ -580,6 +611,29 @@ Check check_buildings(const BuildingRules& r) {
             return res;
         }
         if (auto res = range_all(Code::Buildings, "output_permille", def.output_permille, 0, kMaxMult);
+            !res) {
+            return res;
+        }
+        if (auto res =
+                range_at(Code::Buildings, "min_development", i, def.min_development, 0, kMaxDevelopment);
+            !res) {
+            return res;
+        }
+        if (auto res = range_at(Code::Buildings,
+                                "allowed_kinds",
+                                i,
+                                def.allowed_kinds,
+                                0,
+                                (std::int64_t{1} << kProvinceKindCount) - 1);
+            !res) {
+            return res;
+        }
+        if (auto res = range_at(Code::Buildings,
+                                "max_per_province",
+                                i,
+                                def.max_per_province,
+                                1,
+                                static_cast<std::int64_t>(kMaxSlots));
             !res) {
             return res;
         }
