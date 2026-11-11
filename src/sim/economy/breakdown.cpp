@@ -87,6 +87,8 @@ constexpr std::array kTermKeys{
     TermKey{term::kRecruitControl, "economy.recruit.control"},
     TermKey{term::kRecruitQuota, "economy.recruit.quota"},
     TermKey{term::kRecruitRegen, "economy.recruit.regen"},
+    TermKey{term::kRecruitCap, "economy.recruit.cap"},
+    TermKey{term::kRecruitAnarchy, "economy.recruit.anarchy"},
 
     TermKey{term::kLoanBase, "economy.loan.base"},
     TermKey{term::kLoanHonor, "economy.loan.honor"},

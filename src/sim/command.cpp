@@ -1,10 +1,12 @@
 #include "pat/sim/command.hpp"
 
 #include "pat/sim/command_log.hpp"
+#include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 
 #include <algorithm>
 #include <array>
+#include <limits>
 
 namespace pat::sim {
 
@@ -331,6 +333,44 @@ struct Validator {
         return policy(c.dynasty, c.level, world.economy().meta.recruit_levels);
     }
 
+    Result<void, CommandError> operator()(const cmd::ConscriptRecruits& c) const {
+        if (!world.economy_present()) {
+            return reject(Rejection::InvalidState, "the world has no economy");
+        }
+        if (!world.exists(c.province)) {
+            return reject(Rejection::UnknownEntity, "unknown province");
+        }
+        const std::size_t p = c.province.index();
+        const bool held = world.economy().provinces.owner_kind[p] ==
+                              static_cast<std::uint8_t>(economy::OwnerKind::Dynasty) &&
+                          world.provinces().owner[p].valid();
+        if (actor.valid() && !(held && world.provinces().owner[p] == actor)) {
+            return reject(Rejection::NotAuthorized, "the actor does not own the province");
+        }
+        if (!held) {
+            return reject(Rejection::InvalidState, "no dynasty holds the province");
+        }
+        if (c.count == 0) {
+            return reject(Rejection::InvalidArgument, "nobody to conscript");
+        }
+        if (c.count > world.economy().provinces.recruit_pool[p]) {
+            return reject(Rejection::InvalidState, "more than the recruit pool of the province");
+        }
+        std::array<std::uint32_t, economy::kGroupCount> size{};
+        for (std::size_t g = 0; g < economy::kGroupCount; ++g) {
+            size[g] = world.economy().groups.size[p * economy::kGroupCount + g];
+        }
+        if (c.count > economy::recruit_population(size)) {
+            return reject(Rejection::InvalidState, "fewer people in the recruit groups than asked for");
+        }
+        const std::uint32_t reserve =
+            world.economy().dynasties.manpower_reserve[world.provinces().owner[p].index()];
+        if (c.count > std::numeric_limits<std::uint32_t>::max() - reserve) {
+            return reject(Rejection::InvalidState, "the manpower reserve cannot hold that many");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -439,6 +479,9 @@ struct Applier {
     void operator()(const cmd::SetRecruitPolicy& c) const {
         (void)world.set_dynasty_recruit_policy(c.dynasty, c.level);
     }
+    void operator()(const cmd::ConscriptRecruits& c) const {
+        (void)world.conscript_recruits(c.province, c.count);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -524,6 +567,10 @@ template <>
 struct CommandTag<cmd::SetRecruitPolicy> {
     static constexpr CommandType value = CommandType::SetRecruitPolicy;
 };
+template <>
+struct CommandTag<cmd::ConscriptRecruits> {
+    static constexpr CommandType value = CommandType::ConscriptRecruits;
+};
 
 template <class Variant>
 struct TagTable;
@@ -588,6 +635,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "SetTaxPolicy";
         case CommandType::SetRecruitPolicy:
             return "SetRecruitPolicy";
+        case CommandType::ConscriptRecruits:
+            return "ConscriptRecruits";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

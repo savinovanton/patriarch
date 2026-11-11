@@ -107,6 +107,10 @@ struct Writer {
         out.u32(c.dynasty.value());
         out.u8(c.level);
     }
+    void operator()(const cmd::ConscriptRecruits& c) const {
+        out.u32(c.province.value());
+        out.u32(c.count);
+    }
     void operator()(const cmd::AdjustOpinion& c) const {
         out.u32(c.from.value());
         out.u32(c.to.value());
@@ -284,6 +288,11 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::SetRecruitPolicy: {
             const DynastyId dynasty(in.u32());
             out.payload = cmd::SetRecruitPolicy{dynasty, in.u8()};
+            break;
+        }
+        case CommandType::ConscriptRecruits: {
+            const ProvinceId province(in.u32());
+            out.payload = cmd::ConscriptRecruits{province, in.u32()};
             break;
         }
         case CommandType::AdjustUnity:

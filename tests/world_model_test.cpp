@@ -4,6 +4,7 @@
 #include "pat/sim/demography.hpp"
 #include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/economy/systems.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -22,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <optional>
 #include <span>
 #include <string>
@@ -128,7 +130,8 @@ World build_world(std::uint64_t seed, bool with_economy = true) {
         columns.tax_policy[p] = static_cast<std::uint8_t>(rng.bounded(4));
         columns.labour_base[p] = peasants + townsfolk;
         columns.capacity[p * eco::kMaxGoods + eco::kGrainGood] = Fixed32::from_int(rng.range(100, 2'000));
-        columns.control[p] = Fixed32::from_int(rng.range(5, 100));  // some start in turmoil
+        columns.control[p] = Fixed32::from_int(rng.range(5, 100));                // some start in turmoil
+        columns.recruit_pool[p] = static_cast<std::uint32_t>(rng.range(0, 800));  // people to conscript (T13)
     }
     columns.kind[1] = static_cast<std::uint8_t>(eco::ProvinceKind::City);
     REQUIRE(world.set_province_owner_kind(ProvinceId(4), eco::OwnerKind::Crown));
@@ -270,6 +273,23 @@ Command random_command(Pcg32& rng, const World& world) {
             actor = world.provinces().owner[province.index()];
         }
         return Command{actor, cmd::AssignProvinceAdministrator{province, who}};
+    }
+    if (roll < 96) {
+        // conscription (E9-T13): mostly of a pool that exists, sometimes of one more than there is
+        const ProvinceId province = random_province(rng, world);
+        DynastyId actor = random_actor(rng, world, 200);
+        std::uint32_t count = rng.bounded(3) == 0 ? 0 : 1 + rng.bounded(1'000);
+        if (world.exists(province) && world.economy_present()) {
+            const std::size_t p = province.index();
+            if (rng.chance_permille(400)) {
+                actor = world.provinces().owner[p];
+            }
+            const std::uint32_t pool = world.economy().provinces.recruit_pool[p];
+            if (rng.chance_permille(700)) {
+                count = 1 + rng.bounded(pool + 1);  // up to one more than the pool
+            }
+        }
+        return Command{actor, cmd::ConscriptRecruits{province, count}};
     }
     if (roll < 97) {
         const Date planned = rng.chance_permille(200) ? kNoDate : today + rng.range(-30, 120);
@@ -558,7 +578,17 @@ public:
         administrator_.assign(owner_.size(), CharacterId());
         tax_policy_.assign(head_.size(), eco::kPolicyDefault);
         recruit_policy_.assign(head_.size(), eco::kPolicyDefault);
+        pool_.assign(owner_.size(), 0);
+        size_.assign(owner_.size(), {});
+        reserve_.assign(head_.size(), 0);
         if (economy_) {
+            pool_ = world.economy().provinces.recruit_pool;
+            reserve_ = world.economy().dynasties.manpower_reserve;
+            for (std::size_t p = 0; p < owner_.size(); ++p) {
+                for (std::size_t g = 0; g < eco::kGroupCount; ++g) {
+                    size_[p][g] = world.economy().groups.size[p * eco::kGroupCount + g];
+                }
+            }
             administrator_ = world.economy().provinces.administrator;
             tax_policy_ = world.economy().dynasties.tax_policy;
             recruit_policy_ = world.economy().dynasties.recruit_policy;
@@ -621,6 +651,27 @@ public:
         }
         if (economy_ && world.economy().dynasties.recruit_policy != recruit_policy_) {
             return "the recruit policies of the dynasties differ from the model";
+        }
+        if (economy_) {
+            if (world.economy().provinces.recruit_pool != pool_) {
+                return "the recruit pools differ from the model";
+            }
+            if (world.economy().dynasties.manpower_reserve != reserve_) {
+                return "the manpower reserves differ from the model";
+            }
+            for (std::size_t p = 0; p < size_.size(); ++p) {
+                std::uint64_t persons = 0;
+                for (std::size_t g = 0; g < eco::kGroupCount; ++g) {
+                    if (world.economy().groups.size[p * eco::kGroupCount + g] != size_[p][g]) {
+                        return std::format(
+                            "the people of group {} of province {} differ from the model", g, p);
+                    }
+                    persons += size_[p][g];
+                }
+                if (world.population_persons(ProvinceId(static_cast<std::uint32_t>(p))) != persons) {
+                    return std::format("the population of province {} is not the sum of its groups", p);
+                }
+            }
         }
         return {};
     }
@@ -780,6 +831,27 @@ private:
     bool apply(DynastyId actor, const cmd::SetRecruitPolicy& c) {
         return set_policy(recruit_policy_, 3, actor, c.dynasty, c.level);
     }
+    /// Conscription (E9-T13): a province held by a dynasty, owned by the actor or the system, 1 or more
+    /// people, no more than the pool, the people of the recruit groups and the room in the reserve.
+    bool apply(DynastyId actor, const cmd::ConscriptRecruits& c) {
+        if (!economy_ || !known(c.province)) {
+            return false;
+        }
+        const std::size_t p = c.province.index();
+        const DynastyId owner = owner_[p];
+        if ((actor.valid() && actor != owner) || !owner.valid() || c.count == 0 || c.count > pool_[p] ||
+            c.count > eco::recruit_population(size_[p]) ||
+            c.count > std::numeric_limits<std::uint32_t>::max() - reserve_[owner.index()]) {
+            return false;
+        }
+        const auto take = eco::split_conscription(size_[p], c.count);
+        for (std::size_t g = 0; g < eco::kGroupCount; ++g) {
+            size_[p][g] -= take[g];
+        }
+        pool_[p] -= c.count;
+        reserve_[owner.index()] += c.count;
+        return true;
+    }
     bool apply(DynastyId actor, const cmd::AssignProvinceAdministrator& c) {
         if (!economy_ || !known(c.province) || (c.administrator.valid() && !alive(c.administrator))) {
             return false;
@@ -807,6 +879,9 @@ private:
     std::vector<CharacterId> administrator_;
     std::vector<std::uint8_t> tax_policy_;
     std::vector<std::uint8_t> recruit_policy_;
+    std::vector<std::uint32_t> pool_;                                // recruit pool per province (T13)
+    std::vector<std::array<std::uint32_t, eco::kGroupCount>> size_;  // people per group per province
+    std::vector<std::uint32_t> reserve_;                             // manpower reserve per dynasty
 };
 
 // ---- runs ---------------------------------------------------------------------------------------

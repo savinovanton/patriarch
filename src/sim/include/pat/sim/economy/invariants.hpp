@@ -23,8 +23,12 @@
 //         grain_stock <= stock_cap_months x the need of its people (the cap the slot applies).
 //         The cap is not checked for a province that was never processed (a scenario sets its stock) and
 //         may be exceeded between a direct write of the group sizes and the next slot: call the check after
-//         a tick, not in the middle of hand edits. `recruit_pool <= cap` joins this list with F11 (the cap
-//         has no formula yet; the column is 0).
+//         a tick, not in the middle of hand edits; for the same provinces (E9-T13, F11):
+//         recruit_pool <= recruit_ceiling, the potential the people give under the heaviest recruit
+//         policy and full control, with no quota. The cap of the policy of the day is exact only right
+//         after a slot (the slot cuts the pool to it); a command or a fall of control between two slots
+//         can lower it below the pool for a few days, so the invariant uses the bound that no command
+//         can break.
 //   E-L1  (rules part) no dynasty holds more loans than loans.max_loans_per_dynasty.
 //
 // E-R2 (the postings of a province's tax add up to the lines of the statement) is a TEST (ECO-A1), not a

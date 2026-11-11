@@ -7,6 +7,7 @@
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/settlement.hpp"
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/economy/taxes.hpp"
@@ -93,7 +94,8 @@ private:
         // a change of state goes to the incident log (E9-T11).
         (void)step_province_mood(world, rules_, province);
         (void)step_province_unrest(world, rules_, province);
-        // Step 6 (recruits, T13) is not here yet.
+        // Step 6: the recruit pool regenerates toward the potential (F11, E9-T13).
+        (void)step_province_recruits(world, rules_, province);
         // Step 7: the one draw of a province in unrest, the loot and the fall of control of a riot (F10).
         (void)step_province_riot(world, rules_, province);
         // Step 8: the slot is done. (The population cache was refreshed by the World with the sizes.)

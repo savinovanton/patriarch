@@ -38,6 +38,7 @@ enum class CommandType : std::uint8_t {
     AdjustHonorWithReason = 21,        // E7-T14
     SetTaxPolicy = 32,                 // E9-T12
     SetRecruitPolicy = 33,             // E9-T12
+    ConscriptRecruits = 34,            // E9-T13
     AssignProvinceAdministrator = 35,  // E9-T10
 };
 
@@ -179,6 +180,19 @@ struct SetRecruitPolicy {
     [[nodiscard]] bool operator==(const SetRecruitPolicy&) const = default;
 };
 
+/// Conscription (E9-T13, GDD 03 section 10): takes `count` people out of the recruit pool of a province
+/// and out of its peasants, cossacks and townsfolk (proportionally to their sizes); the manpower reserve
+/// of the owner dynasty grows by exactly `count` (the reserve is spent by E16). Needs an economy. The
+/// province must be held by a dynasty: that dynasty (`actor`) or the system (invalid actor) may do it
+/// (NotAuthorized for anyone else); `count` is 1 or more and not above the pool (and the people of
+/// the recruit groups), so a conscription never takes more than the potential. The sizes fall at
+/// once, so output and potential fall with them; the mood answers through the recruit policy (F8).
+struct ConscriptRecruits {
+    ProvinceId province;
+    std::uint32_t count = 0;
+    [[nodiscard]] bool operator==(const ConscriptRecruits&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -212,7 +226,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::AdjustHonorWithReason,
                                     cmd::AssignProvinceAdministrator,
                                     cmd::SetTaxPolicy,
-                                    cmd::SetRecruitPolicy>;
+                                    cmd::SetRecruitPolicy,
+                                    cmd::ConscriptRecruits>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
