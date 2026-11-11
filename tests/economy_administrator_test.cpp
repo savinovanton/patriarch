@@ -594,6 +594,76 @@ TEST_CASE("AssignProvinceAdministrator: the system appoints lawfully, a dead per
     require_valid(w.world);
 }
 
+TEST_CASE(
+    "a province that changes hands keeps no administrator the new owner could not have appointed (E9 #242)") {
+    const auto administrator = [](const World& world, std::size_t province) {
+        return world.economy().provinces.administrator[province];
+    };
+
+    SUBCASE("the house of the old owner is dismissed when the province goes to another house") {
+        CommandWorld w;
+        REQUIRE(w.world.set_province_administrator(ProvinceId(0), w.a));
+        // through the command, as the game does it
+        const Command give{DynastyId(0), cmd::SetProvinceOwner{ProvinceId(0), DynastyId(1)}};
+        REQUIRE(validate(w.world, give).has_value());
+        apply(w.world, give);
+        CHECK(w.world.provinces().owner[0] == DynastyId(1));
+        CHECK_FALSE(administrator(w.world, 0).valid());
+        // what the command forbids to create is not left by the transfer
+        CHECK(verdict(w.world, assign(DynastyId(1), ProvinceId(0), w.a)) == Rejection::NotAuthorized);
+        require_valid(w.world);
+    }
+
+    SUBCASE("a person of the new owner's house stays: the owner could have appointed him") {
+        CommandWorld w;
+        REQUIRE(w.world.set_province_administrator(ProvinceId(1), w.a));  // the system appointed a foreigner
+        REQUIRE(w.world.set_province_administrator(ProvinceId(0), w.b));  // and here too
+        w.world.set_province_owner(ProvinceId(1), DynastyId(0));
+        CHECK(administrator(w.world, 1) == w.a);
+        w.world.set_province_owner(ProvinceId(0), DynastyId(1));
+        CHECK(administrator(w.world, 0) == w.b);
+        require_valid(w.world);
+    }
+
+    SUBCASE("a foreigner appointed by the system does not outlive the change of owner") {
+        CommandWorld w;
+        REQUIRE(w.world.set_province_administrator(ProvinceId(1), w.a));  // house 1 holds it, a is of house 0
+        w.world.set_province_owner(ProvinceId(1), DynastyId(1));          // the same owner: nothing happens
+        CHECK(administrator(w.world, 1) == w.a);
+        w.world.set_province_owner(ProvinceId(1), DynastyId(0));  // to a's own house: he may stay
+        CHECK(administrator(w.world, 1) == w.a);
+        w.world.set_province_owner(ProvinceId(1), DynastyId(1));  // and away from it again: he may not
+        CHECK_FALSE(administrator(w.world, 1).valid());
+        require_valid(w.world);
+    }
+
+    SUBCASE("to the crown, the Church or nobody: the post is vacant") {
+        for (const OwnerKind kind : {OwnerKind::Crown, OwnerKind::Church, OwnerKind::Unowned}) {
+            CommandWorld w;
+            REQUIRE(w.world.set_province_administrator(ProvinceId(0), w.a));
+            REQUIRE(w.world.set_province_owner_kind(ProvinceId(0), kind));
+            CHECK_FALSE(administrator(w.world, 0).valid());
+            require_valid(w.world);
+        }
+    }
+
+    SUBCASE("the crown's province passes to the Church or to a house: the system appoints again") {
+        CommandWorld w;
+        REQUIRE(w.world.set_province_administrator(ProvinceId(2), w.a));
+        REQUIRE(w.world.set_province_owner_kind(ProvinceId(2), OwnerKind::Church));
+        CHECK_FALSE(administrator(w.world, 2).valid());
+
+        REQUIRE(w.world.set_province_administrator(ProvinceId(2), w.b));
+        w.world.set_province_owner(ProvinceId(2), DynastyId(0));  // b is of house 1
+        CHECK_FALSE(administrator(w.world, 2).valid());
+
+        REQUIRE(w.world.set_province_administrator(ProvinceId(3), w.a));              // nobody's province
+        REQUIRE(w.world.set_province_owner_kind(ProvinceId(3), OwnerKind::Unowned));  // no change at all
+        CHECK(administrator(w.world, 3) == w.a);
+        require_valid(w.world);
+    }
+}
+
 TEST_CASE("AssignProvinceAdministrator: tag 35, the command log round-trips, a replay gives the same state") {
     CommandWorld w;
     const Command command = assign(DynastyId(0), ProvinceId(0), w.a);

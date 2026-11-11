@@ -623,7 +623,13 @@ private:
         if ((actor.valid() && actor != current) || current == c.new_owner) {
             return false;
         }
-        current = c.new_owner;  // the administrator stays: that is issue #242, mirrored here on purpose
+        current = c.new_owner;
+        // an administrator stays only if he is of the house of the new owner (E9 #242)
+        CharacterId& administrator = administrator_[c.province.index()];
+        if (administrator.valid() &&
+            (!c.new_owner.valid() || people_[administrator.index()].dynasty != c.new_owner)) {
+            administrator = CharacterId();
+        }
         return true;
     }
     bool apply(DynastyId /*actor*/, const cmd::CreateCharacter& /*c*/) { return false; }  // not generated
@@ -1034,13 +1040,9 @@ TEST_CASE("regression #241: control at its target must not depend on the side it
     CHECK(eco::corruption_permille(fresh.corruption) == control.corruption_base_permille);
 }
 
-// ---- known defects (expected failures) ----------------------------------------------------------
-// Each case states the CORRECT behaviour and is expected to fail until its issue is fixed; when it
-// starts to pass, doctest reports it: remove the decorator then.
+// ---- regressions of defects found by the audit of the economy ----------------------------------
 
-TEST_CASE(
-    "known defect #242: a province that changes hands must not keep the administrator of the old house" *
-    doctest::should_fail()) {
+TEST_CASE("regression #242: a province that changes hands does not keep the administrator of the old house") {
     World world = build_world(3);
     const ProvinceId province(0);
     const DynastyId old_owner = world.provinces().owner[province.index()];
