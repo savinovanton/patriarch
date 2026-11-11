@@ -225,6 +225,13 @@ struct BuildingDef {
     Kopecks upkeep_kop_month = 0;
     /// Output multiplier per good, per-mille (1000 = no effect).
     std::array<std::int32_t, kMaxGoods> output_permille{};
+    /// Requirements of the site (E9-T16, GDD 03 section 8.2; checked by StartConstruction):
+    /// the province must have at least this development (1...10; 0 = no demand),
+    std::int32_t min_development = 0;
+    /// may be of these kinds only: bit `k` stands for ProvinceKind `k` (0 = any kind),
+    std::uint32_t allowed_kinds = 0;
+    /// and may hold at most this many buildings of the type, finished and under construction together.
+    std::int32_t max_per_province = 1;
 
     [[nodiscard]] bool operator==(const BuildingDef&) const = default;
 };

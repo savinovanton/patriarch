@@ -23,12 +23,10 @@ struct EconomySkeletonCounters {
 };
 
 /// The skeleton of the economy tick of E9-T05: three systems with the names, cadences and order of
-/// the spec (settlement monthly, then construction and provinces daily). Construction is still an empty
-/// stub that only counts; `economy.settlement` and `economy.provinces` count and then run the real
-/// systems (E9-T09: closing of the month; E9-T06..T08: growth, production, taxes; all with
-/// EconomyRules::defaults()). E9-T16 replaces the construction stub with the real system under the
-/// same name; the telemetry metrics (`system.economy.*`) carry over,
-/// and the same loaded world is the workload.
+/// the spec (settlement monthly, then construction and provinces daily). All three count their runs and
+/// then run the real systems under the same names (E9-T09: closing of the month; E9-T16: finishing of the
+/// buildings; E9-T06..T13: the steps of the slot of a province; all with EconomyRules::defaults()), so
+/// the telemetry metrics (`system.economy.*`) measure them, and the same loaded world is the workload.
 ///
 /// Registers the systems (this disables telemetry, as every add_system does: enable it afterwards)
 /// and returns the counters they update.

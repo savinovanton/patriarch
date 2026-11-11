@@ -32,16 +32,22 @@ private:
     std::unique_ptr<sim::System> real_;
 };
 
+/// `economy.construction`: counts the runs and then runs the REAL system of E9-T16 (finishing the
+/// buildings whose date has come) under the same name, so `system.economy.construction` measures it.
 class ConstructionStub final : public sim::System {
 public:
     explicit ConstructionStub(std::shared_ptr<EconomySkeletonCounters> counters)
-        : counters_(std::move(counters)) {}
+        : counters_(std::move(counters)), real_(sim::economy::make_construction_system()) {}
     [[nodiscard]] std::string_view name() const override { return kEconomyConstructionName; }
     [[nodiscard]] sim::Cadence cadence() const override { return sim::Cadence::Daily; }
-    void run(sim::World&, sim::TickContext&) override { ++counters_->construction_runs; }
+    void run(sim::World& world, sim::TickContext& context) override {
+        ++counters_->construction_runs;
+        real_->run(world, context);
+    }
 
 private:
     std::shared_ptr<EconomySkeletonCounters> counters_;
+    std::unique_ptr<sim::System> real_;
 };
 
 /// `economy.provinces`: counts the slots of the day (the same stagger iteration as the real system, so

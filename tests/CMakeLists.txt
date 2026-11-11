@@ -21,6 +21,7 @@ add_executable(patriarch_tests
     economy_recruits_test.cpp
     economy_invariants_test.cpp
     economy_mood_test.cpp
+    economy_construction_test.cpp
     economy_content_test.cpp
     economy_population_test.cpp
     economy_production_test.cpp

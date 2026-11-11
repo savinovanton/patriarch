@@ -119,6 +119,14 @@ struct Writer {
         out.u32(c.province.value());
         out.u32(c.count);
     }
+    void operator()(const cmd::StartConstruction& c) const {
+        out.u32(c.province.value());
+        out.u8(c.building);
+    }
+    void operator()(const cmd::CancelConstruction& c) const {
+        out.u32(c.province.value());
+        out.u8(c.slot);
+    }
     void operator()(const cmd::AdjustOpinion& c) const {
         out.u32(c.from.value());
         out.u32(c.to.value());
@@ -311,6 +319,16 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::ConscriptRecruits: {
             const ProvinceId province(in.u32());
             out.payload = cmd::ConscriptRecruits{province, in.u32()};
+            break;
+        }
+        case CommandType::StartConstruction: {
+            const ProvinceId province(in.u32());
+            out.payload = cmd::StartConstruction{province, in.u8()};
+            break;
+        }
+        case CommandType::CancelConstruction: {
+            const ProvinceId province(in.u32());
+            out.payload = cmd::CancelConstruction{province, in.u8()};
             break;
         }
         case CommandType::AdjustUnity:

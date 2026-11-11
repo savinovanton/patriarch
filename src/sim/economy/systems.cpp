@@ -42,6 +42,18 @@ private:
     ExpenseSources expenses_;
 };
 
+class ConstructionSystem final : public System {
+public:
+    [[nodiscard]] std::string_view name() const override { return kConstructionSystemName; }
+    [[nodiscard]] Cadence cadence() const override { return Cadence::Daily; }
+
+    void run(World& world, TickContext& /*context*/) override {
+        if (world.economy_present()) {
+            (void)world.finish_due_constructions();
+        }
+    }
+};
+
 class ProvincesSystem final : public System {
 public:
     ProvincesSystem(const EconomyRules& rules,
@@ -115,6 +127,10 @@ std::unique_ptr<System> make_settlement_system(const EconomyRules& rules, Expens
     return std::make_unique<SettlementSystem>(rules, std::move(expenses));
 }
 
+std::unique_ptr<System> make_construction_system() {
+    return std::make_unique<ConstructionSystem>();
+}
+
 std::unique_ptr<System> make_provinces_system(const EconomyRules& rules,
                                               std::shared_ptr<const PriceSource> prices,
                                               std::shared_ptr<const AdministratorSource> administrators) {
@@ -126,8 +142,12 @@ void install_economy_systems(Simulation& simulation,
                              std::shared_ptr<const PriceSource> prices,
                              ExpenseSources expenses,
                              std::shared_ptr<const AdministratorSource> administrators) {
+    // The commands of the economy are validated by these rules (StartConstruction needs the types).
+    simulation.set_economy_rules(std::make_shared<const EconomyRules>(rules));
     // The month is closed before the slots of its first day (spec section 7.1).
     simulation.add_system(make_settlement_system(rules, std::move(expenses)));
+    // Buildings finish after the settlement and before the slots of the provinces (spec section 7.1).
+    simulation.add_system(make_construction_system());
     simulation.add_system(make_provinces_system(rules, std::move(prices), std::move(administrators)));
 }
 

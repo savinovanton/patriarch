@@ -20,13 +20,13 @@
 //
 // Order of registration is the order of execution (spec section 7.1):
 //   1. economy.settlement   Monthly  closing of the month (E9-T09)
-//   2. economy.construction Daily    finished buildings (E9-T16)           - not yet
+//   2. economy.construction Daily    finished buildings (E9-T16)
 //   3. economy.provinces    Daily    the monthly pass of a province on its slot day  - E9-T06, T07, T08
-// E9-T16 adds 2 between the others inside install_economy_systems, so callers do not change.
 
 namespace pat::sim::economy {
 
 inline constexpr std::string_view kSettlementSystemName = "economy.settlement";
+inline constexpr std::string_view kConstructionSystemName = "economy.construction";
 inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
 
 /// The system `economy.settlement` (E9-T09): on the 1st of every month, before anything else of the
@@ -37,6 +37,14 @@ inline constexpr std::string_view kProvincesSystemName = "economy.provinces";
 /// No random numbers; the system keeps no state of its own.
 [[nodiscard]] std::unique_ptr<System> make_settlement_system(const EconomyRules& rules,
                                                              ExpenseSources expenses = {});
+
+/// The system `economy.construction` (E9-T16): every day finishes the constructions whose date has come
+/// (World::finish_due_constructions): the building enters its slot and the incident log gets
+/// BuildingCompleted. With an empty queue it costs one comparison. It runs after the settlement of the
+/// month and before the slots of the provinces, so a building finished on the 1st is charged upkeep
+/// for the first time at the settlement of the next 1st. Does nothing in a world without economy; no
+/// random numbers; no state of its own.
+[[nodiscard]] std::unique_ptr<System> make_construction_system();
 
 /// The system `economy.provinces`: every day it takes the provinces whose slot is today
 /// (`is_monthly_slot(province_index, date)`, index % 28 == day - 1, days 1..28; days 29..31 take
@@ -56,7 +64,9 @@ make_provinces_system(const EconomyRules& rules,
                       std::shared_ptr<const PriceSource> prices = nullptr,
                       std::shared_ptr<const AdministratorSource> administrators = nullptr);
 
-/// Registers the systems of the economy in the order of the spec. Call before the first tick.
+/// Registers the systems of the economy in the order of the spec and gives the simulation the rules
+/// that the commands of the economy are validated by (Simulation::set_economy_rules: StartConstruction
+/// needs the building types). Call before the first tick.
 /// `expenses`: the flat-expense sources of other epics for the settlement (E9-T09; none in M1).
 /// `administrators`: the source of the profiles of administrators (E9-T10; null = the stub).
 void install_economy_systems(Simulation& simulation,

@@ -446,6 +446,26 @@ private:
                     }
                 }
             }
+            def.min_development = i32_of(body, "min_development");
+            def.max_per_province =
+                body.find("max_per_province") != nullptr ? i32_of(body, "max_per_province") : 1;
+            if (const TypedValue* kinds = body.find("allowed_kinds")) {
+                if (const auto* list = kinds->get_if<data::TypedList>()) {
+                    for (const TypedValue& item : *list) {
+                        const auto* ref = item.get_if<data::RefValue>();
+                        const auto kind =
+                            ref != nullptr ? index_in(kProvinceKindNames, ref->id) : std::nullopt;
+                        if (!kind) {
+                            fail(*object,
+                                 item.pos,
+                                 unknown_name_text(
+                                     "province kind", ref != nullptr ? ref->id : "", kProvinceKindNames));
+                            continue;
+                        }
+                        def.allowed_kinds |= 1U << *kind;
+                    }
+                }
+            }
             rules_.buildings.defs[static_cast<std::size_t>(count)] = def;
             ++count;
         }

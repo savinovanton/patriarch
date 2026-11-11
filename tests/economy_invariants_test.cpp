@@ -123,8 +123,8 @@ TEST_CASE("rules invariants E-R1: the construction queue builds only known build
     q.building.push_back(rules().buildings.defs[0].slot);
     q.payer.push_back(DynastyId(1));
     q.start_date.push_back(Date::from_ymd(1703, 1, 1));
-    q.finish_date.push_back(Date::from_ymd(1703, 6, 1));
-    q.paid_kop.push_back(4'000);
+    q.finish_date.push_back(Date::from_ymd(1703, 1, 1) + rules().buildings.defs[0].build_days);
+    q.paid_kop.push_back(rules().buildings.defs[0].cost_kop);
     q.seq.push_back(0);
     CHECK(world.check_invariants().empty());
     CHECK(check_rules_invariants(world, rules()).empty());

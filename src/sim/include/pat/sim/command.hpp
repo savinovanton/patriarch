@@ -17,6 +17,9 @@
 namespace pat::sim {
 
 struct TraitCatalog;
+namespace economy {
+struct EconomyRules;
+}
 
 /// Stable numeric tags: these values are written to replay files and must never change. They are
 /// NOT the position of the command in CommandPayload: the table in command.cpp maps each payload
@@ -44,6 +47,8 @@ enum class CommandType : std::uint8_t {
     SetRecruitPolicy = 33,             // E9-T12
     ConscriptRecruits = 34,            // E9-T13
     AssignProvinceAdministrator = 35,  // E9-T10
+    StartConstruction = 36,            // E9-T16
+    CancelConstruction = 37,           // E9-T16
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -209,6 +214,31 @@ struct ConscriptRecruits {
     [[nodiscard]] bool operator==(const ConscriptRecruits&) const = default;
 };
 
+/// Starts building `building` (a type number of the rules, 1...255) in a province (E9-T16, GDD 03
+/// section 8, economy-model sections 8.2 and 9 F15). The slot is not chosen: the lowest free one is
+/// taken (World::begin_construction). Needs an economy AND the economy rules of the simulation
+/// (install_economy_systems; without them: InvalidState). Who may build where is the decision of open
+/// question Q4 (#139): the actor must own the province (NotAuthorized otherwise), the system may build in
+/// any province a dynasty holds; the rule `build_foreign_allowed` lifts the demand. Refused when the type
+/// is unknown (InvalidArgument), the province is unknown (UnknownEntity), the type does not fit the
+/// province (kind, development, number: InvalidState), there is no free slot (InvalidState) or the payer
+/// cannot afford the cost (InvalidState). The cost is charged at once in ONE posting.
+struct StartConstruction {
+    ProvinceId province;
+    std::uint8_t building = 0;
+    [[nodiscard]] bool operator==(const StartConstruction&) const = default;
+};
+
+/// Cancels the construction in `slot` of a province (E9-T16): the entry leaves the queue, the slot is
+/// free again and the payer gets `refund_permille` of the rules of the paid cost back. The actor must
+/// be the payer of the entry (NotAuthorized), the system may cancel any; nothing in the slot is
+/// UnknownEntity. A finished building cannot be cancelled.
+struct CancelConstruction {
+    ProvinceId province;
+    std::uint8_t slot = 0;
+    [[nodiscard]] bool operator==(const CancelConstruction&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -245,7 +275,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::SetRecruitPolicy,
                                     cmd::GrantTrait,
                                     cmd::RevokeTrait,
-                                    cmd::ConscriptRecruits>;
+                                    cmd::ConscriptRecruits,
+                                    cmd::StartConstruction,
+                                    cmd::CancelConstruction>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
@@ -278,11 +310,18 @@ struct CommandError {
 [[nodiscard]] std::string_view to_string(Rejection reason) noexcept;
 
 /// Checks the command against the world without changing it.
-[[nodiscard]] core::Result<void, CommandError>
-validate(const World& world, const Command& command, const TraitCatalog* traits = nullptr);
+/// `traits` and `economy` are the content the command needs besides the world (the trait catalogue of
+/// E7; the economy rules of E9, for StartConstruction); null where the command needs none.
+[[nodiscard]] core::Result<void, CommandError> validate(const World& world,
+                                                        const Command& command,
+                                                        const TraitCatalog* traits = nullptr,
+                                                        const economy::EconomyRules* economy = nullptr);
 
 /// Applies a command that passed validate() against the same world state.
-void apply(World& world, const Command& command, const TraitCatalog* traits = nullptr);
+void apply(World& world,
+           const Command& command,
+           const TraitCatalog* traits = nullptr,
+           const economy::EconomyRules* economy = nullptr);
 
 struct ApplyStats {
     std::size_t applied = 0;
@@ -304,6 +343,7 @@ ApplyStats process_commands(World& world,
                             CommandSource source,
                             CommandLog& log,
                             std::vector<DepartedHead>* departed_heads = nullptr,
-                            const TraitCatalog* traits = nullptr);
+                            const TraitCatalog* traits = nullptr,
+                            const economy::EconomyRules* economy = nullptr);
 
 }  // namespace pat::sim

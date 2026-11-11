@@ -315,7 +315,16 @@ ObjectSchema building_schema() {
         .describe("Содержание в месяц, копеек.")
         .optional("output_permille", Type::map(Type::integer(0, kMaxMultiplier)))
         .describe("Множитель выпуска по товарам, промилле: `товар = число` (id объекта `good`); пропущенные "
-                  "товары — 1000, то есть без эффекта.");
+                  "товары — 1000, то есть без эффекта.")
+        .optional("min_development", Type::integer(0, 10))
+        .describe("Требование: развитие провинции не ниже этого (1...10); 0 или пропуск — без требования.")
+        .optional("allowed_kinds", Type::list(Type::reference(std::string(kProvinceKindKind))))
+        .describe("Требование: строить можно только в провинциях этих видов (id объектов `province_kind`: "
+                  "`rural`, `city`, `border`, `industrial`, `port`, `steppe`, `northern`, `simplified`); "
+                  "пропуск — в любых.")
+        .optional("max_per_province", Type::integer(1, 6))
+        .describe("Требование: не больше стольких зданий этого типа в провинции (готовых и строящихся "
+                  "вместе); по умолчанию 1.");
     return s;
 }
 

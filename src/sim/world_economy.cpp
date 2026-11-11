@@ -339,6 +339,125 @@ bool World::set_slot_building(ProvinceId province, std::size_t slot, std::uint8_
     return true;
 }
 
+// ---- construction (E9-T16) ----------------------------------------------------------------------
+
+std::optional<std::uint8_t> World::begin_construction(
+    ProvinceId province, std::uint8_t building, DynastyId payer, Kopecks cost_kop, std::int32_t build_days) {
+    if (economy_.meta.present == 0 || !exists(province) || !exists(payer) || building == 0 ||
+        build_days < 1 || cost_kop < 0 || cost_kop > economy::kMaxPostingKop) {
+        return std::nullopt;
+    }
+    const auto account = economy::AccountRef::of(payer);
+    const auto row = resolve_account(account);
+    if (!row || (cost_kop > 0 && economy_.accounts.treasury(*row) < cost_kop)) {
+        return std::nullopt;
+    }
+    economy::ConstructionQueue& q = economy_.construction;
+    const std::size_t p = province.index();
+    std::optional<std::uint8_t> free_slot;
+    for (std::size_t s = 0; s < std::min<std::size_t>(economy_.provinces.slots_total[p], economy::kMaxSlots);
+         ++s) {
+        if (economy_.provinces.slot_building[p * economy::kMaxSlots + s] != 0) {
+            continue;
+        }
+        bool reserved = false;
+        for (std::size_t i = 0; i < q.size() && !reserved; ++i) {
+            reserved = q.province[i] == province && q.slot[i] == s;
+        }
+        if (!reserved) {
+            free_slot = static_cast<std::uint8_t>(s);
+            break;
+        }
+    }
+    if (!free_slot) {
+        return std::nullopt;
+    }
+    // The queue is ordered by (finish_date, seq); seq grows, so a new entry goes after every entry that
+    // finishes no later than it does.
+    const Date finish = today() + build_days;
+    std::size_t at = q.size();
+    while (at > 0 && q.finish_date[at - 1] > finish) {
+        --at;
+    }
+    const auto place = [at](auto& column, const auto& value) {
+        column.insert(column.begin() + static_cast<std::ptrdiff_t>(at), value);
+    };
+    place(q.province, province);
+    place(q.slot, *free_slot);
+    place(q.building, building);
+    place(q.payer, payer);
+    place(q.start_date, today());
+    place(q.finish_date, finish);
+    place(q.paid_kop, cost_kop);
+    place(q.seq, economy_.meta.next_construction_seq++);
+    (void)post_money(account, economy::LedgerCode::Construction, -cost_kop);
+    return free_slot;
+}
+
+std::optional<Kopecks>
+World::abort_construction(ProvinceId province, std::uint8_t slot, std::int32_t refund_permille) {
+    if (economy_.meta.present == 0 || refund_permille < 0 || refund_permille > economy::kPermilleOne) {
+        return std::nullopt;
+    }
+    economy::ConstructionQueue& q = economy_.construction;
+    std::size_t at = q.size();
+    for (std::size_t i = 0; i < q.size(); ++i) {
+        if (q.province[i] == province && q.slot[i] == slot) {
+            at = i;
+            break;
+        }
+    }
+    if (at == q.size()) {
+        return std::nullopt;
+    }
+    const Kopecks refund = economy::mul_permille(q.paid_kop[at], refund_permille);
+    const DynastyId payer = q.payer[at];
+    const auto erase = [at](auto& column) { column.erase(column.begin() + static_cast<std::ptrdiff_t>(at)); };
+    erase(q.province);
+    erase(q.slot);
+    erase(q.building);
+    erase(q.payer);
+    erase(q.start_date);
+    erase(q.finish_date);
+    erase(q.paid_kop);
+    erase(q.seq);
+    if (refund > 0) {
+        (void)post_money(economy::AccountRef::of(payer), economy::LedgerCode::Construction, refund);
+    }
+    return refund;
+}
+
+std::size_t World::finish_due_constructions() {
+    economy::ConstructionQueue& q = economy_.construction;
+    if (economy_.meta.present == 0 || q.size() == 0 || q.finish_date[0] > today()) {
+        return 0;
+    }
+    std::size_t due = 0;
+    while (due < q.size() && q.finish_date[due] <= today()) {
+        ++due;
+    }
+    for (std::size_t i = 0; i < due; ++i) {
+        const bool placed = set_slot_building(q.province[i], q.slot[i], q.building[i]);
+        PAT_ASSERT(placed, "a construction entry always stands on a slot of its province");
+        if (placed) {
+            (void)log_incident(
+                economy::IncidentKind::BuildingCompleted, q.province[i], q.payer[i], q.building[i]);
+        }
+    }
+    const auto drop = [due](auto& column) {
+        column.erase(column.begin(), column.begin() + static_cast<std::ptrdiff_t>(due));
+    };
+    drop(q.province);
+    drop(q.slot);
+    drop(q.building);
+    drop(q.payer);
+    drop(q.start_date);
+    drop(q.finish_date);
+    drop(q.paid_kop);
+    drop(q.seq);
+    return due;
+}
+
 // ---- money --------------------------------------------------------------------------------------
 
 std::optional<std::size_t> World::resolve_account(economy::AccountRef account) const noexcept {
