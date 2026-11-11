@@ -1,0 +1,63 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "00 / Основа варианта и компоненты" {
+  w = 1920 h = 770
+  el = [
+    { n = "00 / Основа варианта и компоненты" t = board x = 0 y = 0 w = 1920 h = 770 f = ["#eee5d2"] }
+    { t = text x = 40 y = 30 w = 1800 h = 19.5 f = ["#365847"] txt = "PATRIARCH / КОНЦЕПТ 01" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 3 }
+    { t = text x = 38 y = 65 w = 1800 h = 72 f = ["#242e29"] txt = "Родовая канцелярия" ff = "PT Serif" fs = 48 fw = 400 }
+    { n = "Редактируемый UX / UI-эскиз · 1920 × 1080 · 11 ноября 2026" t = text x = 40 y = 139 w = 1700 h = 25.5 f = ["#626658"] txt = "Редактируемый UX/UI-эскиз · 1920 × 1080 · 11 ноября 2026" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 40 y = 185 w = 1840 h = 1 f = ["#c3b695"] }
+    { t = text x = 40 y = 214 w = 570 h = 19.5 f = ["#365847"] txt = "01  ПАЛИТРА" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { n = "Swatch / ink" t = rectangle x = 40 y = 255 w = 83 h = 69 f = ["#1b2523"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 40 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Чернила" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 40 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#1B2523" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Swatch / panel" t = rectangle x = 139 y = 255 w = 83 h = 69 f = ["#25312d"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 139 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Панель" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 139 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#25312D" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Swatch / paper" t = rectangle x = 238 y = 255 w = 83 h = 69 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 238 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Пергамент" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 238 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#EEE5D2" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Swatch / gold" t = rectangle x = 337 y = 255 w = 83 h = 69 f = ["#d2b77d"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 337 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Латунь" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 337 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#D2B77D" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Swatch / green" t = rectangle x = 436 y = 255 w = 83 h = 69 f = ["#365847"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 436 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Владение" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 436 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#365847" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Swatch / red" t = rectangle x = 535 y = 255 w = 83 h = 69 f = ["#8d4235"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 535 y = 336 w = 95 h = 18 f = ["#242e29"] txt = "Внимание" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 535 y = 360 w = 95 h = 16.5 f = ["#626658"] txt = "#8D4235" ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { t = text x = 686 y = 214 w = 535 h = 19.5 f = ["#365847"] txt = "02  ТИПОГРАФИКА" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { t = text x = 684 y = 251 w = 606 h = 49.5 f = ["#242e29"] txt = "Судьба рода в ваших руках" ff = "PT Serif" fs = 33 fw = 400 }
+    { t = text x = 686 y = 309 w = 600 h = 22.5 f = ["#626658"] txt = "PT Serif · заголовки, имена, значения" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 686 y = 354 w = 590 h = 33 f = ["#242e29"] txt = "Наследование · 1 248 ₽ · 1703" ff = "PT Sans Caption" fs = 22 fw = 400 }
+    { t = text x = 686 y = 394 w = 600 h = 22.5 f = ["#626658"] txt = "PT Sans Caption · подписи и плотные данные" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1350 y = 214 w = 530 h = 19.5 f = ["#365847"] txt = "03  СОСТОЯНИЯ КНОПОК" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { n = "Button / Patriarch / Button / Primary" t = board x = 1350 y = 254 w = 530 h = 48 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 inst = "Primary" }
+    { n = "Icon / quill" t = group x = 1366 y = 267 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1398 y = 265.5 w = 468 h = 25.5 f = ["#f3ead6"] txt = "Начать переговоры" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Button / Patriarch / Button / Secondary" t = board x = 1350 y = 318 w = 530 h = 48 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 inst = "Secondary" }
+    { t = text x = 1362 y = 329.5 w = 506 h = 25.5 f = ["#242e29"] txt = "Узнать больше" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Button / Patriarch / Button / Disabled" t = board x = 1350 y = 382 w = 530 h = 48 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 op = 0.55 inst = "Disabled" }
+    { t = text x = 1362 y = 393.5 w = 506 h = 25.5 f = ["#242e29"] txt = "Недоступно: недостаточно средств" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 40 y = 461 w = 1840 h = 1 f = ["#c3b695"] }
+    { t = text x = 40 y = 490 w = 600 h = 19.5 f = ["#365847"] txt = "04  ПОДРОБНОСТИ ПО ЗАПРОСУ" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { n = "Tooltip / Patriarch / Tooltip / Income breakdown" t = board x = 40 y = 532 w = 560 h = 182 f = ["#25312d"] inst = "Income breakdown" }
+    { t = text x = 60 y = 548 w = 522 h = 31.5 f = ["#f3ead6"] txt = "Доход рода: +42 ₽ / месяц" ff = "PT Serif" fs = 21 fw = 400 }
+    { n = "Divider" t = rectangle x = 60 y = 589 w = 520 h = 1 f = ["#6e7158"] }
+    { t = text x = 60 y = 604 w = 350 h = 24 f = ["#bac1b1"] txt = "Владения\nСодержание двора\nИтого" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 424 y = 604 w = 156 h = 24 f = ["#f3ead6"] txt = "+68 ₽\n−26 ₽\n+42 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { t = text x = 686 y = 492 w = 580 h = 19.5 f = ["#365847"] txt = "ПРИНЦИПЫ ВАРИАНТА" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { t = text x = 686 y = 536 w = 612 h = 27 f = ["#242e29"] txt = "Карта — основное рабочее пространство.\nПодробности — в контекстной панели.\nРиски отмечены текстом и цветом.\nПоследствия показаны до принятия решения." ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 1350 y = 492 w = 530 h = 19.5 f = ["#365847"] txt = "ДЛЯ ОБСУЖДЕНИЯ" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { t = text x = 1350 y = 536 w = 530 h = 24 f = ["#626658"] txt = "Шрифты — предложение для решения #27.\nПерсонажи вымышлены, числа демонстрационные.\nКарта и портрет — сгенерированный концепт-арт.\nПереходы: карта → род → событие → карта." ff = "PT Sans Caption" fs = 16 fw = 400 }
+  ]
+}

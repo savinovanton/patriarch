@@ -1,0 +1,216 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "05 / Условия брачных переговоров" {
+  w = 1920 h = 1080
+  el = [
+    { n = "05 / Условия брачных переговоров" t = board x = 0 y = 0 w = 1920 h = 1080 f = ["#1b2523"] }
+    { n = "Illustrative winter terrain / AI concept" t = rectangle x = 96 y = 96 w = 1824 h = 940 f = ["img:Patriarch v1 map"] }
+    { n = "Top resource bar" t = rectangle x = 0 y = 0 w = 1920 h = 96 f = ["#1b2523"] }
+    { n = "Brass top rule" t = rectangle x = 0 y = 94 w = 1920 h = 2 f = ["#d2b77d"] }
+    { n = "Icon / shield" t = group x = 24 y = 16 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 2 }
+    { t = text x = 100 y = 13 w = 240 h = 42 f = ["#f3ead6"] txt = "PATRIARCH" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 102 y = 54 w = 220 h = 19.5 f = ["#d2b77d"] txt = "РОД ГОЛИЦЫНЫХ" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { n = "Header divider" t = rectangle x = 358 y = 20 w = 1 h = 56 f = ["#6e7158"] }
+    { n = "Icon / coin" t = group x = 386 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 421 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Казна" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 421 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "1 248 ₽" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 421 y = 67 w = 140 h = 18 f = ["#b5c9a0"] txt = "+42 / мес." ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / crown" t = group x = 560 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 595 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Престиж" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "186" t = text x = 595 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "68" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 595 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "+3 / мес." ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / people" t = group x = 734 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 769 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Влияние" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 769 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "64" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 769 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "при дворе" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / church" t = group x = 908 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 943 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Благочестие" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 943 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "72" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 943 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "благосклонность" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / sword" t = group x = 1082 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1117 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Ополчение" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 1117 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "1 240" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 1117 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "из 1 600" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Date divider" t = rectangle x = 1260 y = 20 w = 1 h = 56 f = ["#6e7158"] }
+    { t = text x = 1290 y = 14 w = 254 h = 37.5 f = ["#f3ead6"] txt = "1 января 1703" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 1292 y = 52 w = 240 h = 16.5 f = ["#bac1b1"] txt = "ЮЛИАНСКИЙ КАЛЕНДАРЬ" ff = "PT Sans Caption" fs = 11 fw = 400 ls = 1 }
+    { n = "Badge / НА ПАУЗЕ" t = rectangle x = 1552 y = 18 w = 123 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 1560 y = 22 w = 107 h = 19.5 f = ["#d2b77d"] txt = "НА ПАУЗЕ" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Pause / Space" t = board x = 1688 y = 16 w = 44 h = 56 f = ["#34423b"] }
+    { n = "Icon / pause" t = group x = 1698 y = 31 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { n = "Speed 1" t = rectangle x = 1752 y = 27 w = 17 h = 30 f = ["#d2b77d"] }
+    { n = "Speed 2" t = rectangle x = 1777 y = 27 w = 17 h = 30 f = ["#d2b77d"] }
+    { n = "Speed 3" t = rectangle x = 1802 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { n = "Speed 4" t = rectangle x = 1827 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { n = "Speed 5" t = rectangle x = 1852 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { t = text x = 1552 y = 66 w = 338 h = 18 f = ["#bac1b1"] txt = "Пробел — продолжить" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "System navigation" t = rectangle x = 0 y = 96 w = 96 h = 940 f = ["#1b2523"] }
+    { n = "Nav / Род" t = board x = 8 y = 120 w = 80 h = 78 f = ["#34423b"] }
+    { n = "Active indicator" t = rectangle x = 8 y = 130 w = 3 h = 54 f = ["#d2b77d"] }
+    { n = "Icon / dynasty" t = group x = 35 y = 132 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 168 w = 76 h = 18 f = ["#f3ead6"] txt = "Род" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Владения" t = board x = 8 y = 208 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / castle" t = group x = 35 y = 220 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 256 w = 76 h = 18 f = ["#bac1b1"] txt = "Владения" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Двор" t = board x = 8 y = 296 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / crown" t = group x = 35 y = 308 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 344 w = 76 h = 18 f = ["#bac1b1"] txt = "Двор" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Казна" t = board x = 8 y = 384 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / coin" t = group x = 35 y = 396 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 432 w = 76 h = 18 f = ["#bac1b1"] txt = "Казна" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Церковь" t = board x = 8 y = 472 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / church" t = group x = 35 y = 484 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 520 w = 76 h = 18 f = ["#bac1b1"] txt = "Церковь" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Войско" t = board x = 8 y = 560 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / sword" t = group x = 35 y = 572 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 608 w = 76 h = 18 f = ["#bac1b1"] txt = "Войско" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Дипломатия" t = board x = 8 y = 648 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / globe" t = group x = 35 y = 660 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 696 w = 76 h = 18 f = ["#bac1b1"] txt = "Дипломатия" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Интриги" t = board x = 8 y = 736 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / quill" t = group x = 35 y = 748 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 784 w = 76 h = 18 f = ["#bac1b1"] txt = "Интриги" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Журнал" t = board x = 8 y = 824 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / scroll" t = group x = 35 y = 836 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 872 w = 76 h = 18 f = ["#bac1b1"] txt = "Журнал" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / gear" t = group x = 36 y = 970 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Map status bar" t = rectangle x = 0 y = 1036 w = 1920 h = 44 f = ["#1b2523"] }
+    { t = text x = 120 y = 1048 w = 210 h = 21 f = ["#d2b77d"] txt = "Карта владений" ff = "PT Sans Caption" fs = 14 fw = 700 }
+    { t = text x = 344 y = 1048 w = 640 h = 21 f = ["#bac1b1"] txt = "Политическая     Рельеф     Доходы     Вера" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 1090 y = 1049 w = 790 h = 19.5 f = ["#bac1b1"] txt = "ЛКМ — выбрать    ·    ПКМ — назад    ·    M — режим карты" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Marriage candidate search" t = board x = 124 y = 136 w = 1764 h = 866 f = ["#eee5d2"] }
+    { n = "Brass keyline" t = rectangle x = 124 y = 136 w = 1764 h = 4 f = ["#d2b77d"] }
+    { t = text x = 154 y = 159 w = 1300 h = 18 f = ["#365847"] txt = "РОД / ИВАН ГОЛИЦЫН" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 2 }
+    { t = text x = 152 y = 186 w = 1400 h = 57 f = ["#242e29"] txt = "Брачная партия для наследника" ff = "PT Serif" fs = 38 fw = 400 }
+    { t = text x = 154 y = 259 w = 238 h = 24 f = ["#365847"] txt = "1  Выбор партии" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { t = text x = 419 y = 259 w = 340 h = 24 f = ["#626658"] txt = "2  Условия переговоров" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 782 y = 259 w = 400 h = 24 f = ["#626658"] txt = "3  Отправка посредника" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Button / К древу рода" t = board x = 1652 y = 172 w = 206 h = 44 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 1664 y = 181.5 w = 182 h = 25.5 f = ["#242e29"] txt = "К древу рода" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 154 y = 314 w = 1704 h = 1 f = ["#c3b695"] }
+    { n = "Marriage search filters" t = board x = 152 y = 352 w = 250 h = 622 f = ["#e1d6bf"] }
+    { t = text x = 172 y = 374 w = 210 h = 18 f = ["#365847"] txt = "ПОИСК ПАРТИИ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 172 y = 420 w = 210 h = 21 f = ["#626658"] txt = "Имя или род" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Search field / имя или род" t = board x = 172 y = 448 w = 210 h = 44 f = ["#eee5d2"] }
+    { n = "Icon / search" t = group x = 184 y = 460 w = 24 h = 24 s = [{ c = "#626658" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 217 y = 459 w = 150 h = 22.5 f = ["#626658"] txt = "Все роды" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 172 y = 522 w = 210 h = 21 f = ["#626658"] txt = "Доступность" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Badge / Свободна для брака" t = rectangle x = 172 y = 554 w = 210 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 180 y = 558 w = 194 h = 19.5 f = ["#242e29"] txt = "Свободна для брака" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 172 y = 609 w = 210 h = 21 f = ["#626658"] txt = "Вероисповедание" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Badge / Православие" t = rectangle x = 172 y = 641 w = 210 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 180 y = 645 w = 194 h = 19.5 f = ["#242e29"] txt = "Православие" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 172 y = 698 w = 210 h = 21 f = ["#626658"] txt = "Упорядочить" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Badge / По отношениям родов" t = rectangle x = 172 y = 730 w = 210 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 180 y = 734 w = 194 h = 19.5 f = ["#242e29"] txt = "По отношениям родов" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Divider" t = rectangle x = 172 y = 794 w = 210 h = 1 f = ["#c3b695"] }
+    { t = text x = 172 y = 818 w = 210 h = 30 f = ["#242e29"] txt = "3 доступные партии" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 172 y = 863 w = 210 h = 22.5 f = ["#626658"] txt = "Показаны сведения,\nизвестные вашему роду." ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 172 y = 918 w = 210 h = 19.5 f = ["#626658"] txt = "Недоступная партия\nсохранена для сравнения." ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Candidate / Софья Долгорукова" t = board x = 426 y = 352 w = 824 h = 136 f = ["#eee5d2"] s = [{ c = "#365847" w = 2 a = inner }] }
+    { n = "Portrait / Софья" t = rectangle x = 442 y = 369 w = 80 h = 100 f = ["img:Fictional portrait / Sofya Dolgorukova"] }
+    { n = "Selected party indicator" t = rectangle x = 426 y = 353 w = 4 h = 134 f = ["#365847"] }
+    { t = text x = 540 y = 370 w = 485 h = 33 f = ["#242e29"] txt = "Софья Долгорукова" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 540 y = 410 w = 667 h = 22.5 f = ["#626658"] txt = "22 года · Православие · Свободна" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 540 y = 448 w = 664 h = 19.5 f = ["#626658"] txt = "Связи при дворе · Род Долгоруковых" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Badge / Выбрана" t = rectangle x = 1050 y = 370 w = 182 h = 28 f = ["#365847"] r = 2 }
+    { t = text x = 1058 y = 374 w = 166 h = 19.5 f = ["#f3ead6"] txt = "Выбрана" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Candidate / Мария Шереметева" t = board x = 426 y = 505 w = 824 h = 136 f = ["#e1d6bf"] s = [{ c = "#c3b695" w = 1 a = inner }] }
+    { n = "Portrait monogram" t = rectangle x = 442 y = 522 w = 80 h = 100 f = ["#eee5d2"] }
+    { t = text x = 448 y = 554 w = 68 h = 42 f = ["#626658"] txt = "МШ" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 540 y = 523 w = 485 h = 33 f = ["#242e29"] txt = "Мария Шереметева" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 540 y = 563 w = 667 h = 22.5 f = ["#626658"] txt = "23 года · Православие · Свободна" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 540 y = 601 w = 664 h = 19.5 f = ["#626658"] txt = "Поместья и служба · Род Шереметевых" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Badge / Отношения +10" t = rectangle x = 1050 y = 523 w = 182 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 1058 y = 527 w = 166 h = 19.5 f = ["#626658"] txt = "Отношения +10" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Candidate / Екатерина Трубецкая" t = board x = 426 y = 658 w = 824 h = 136 f = ["#e1d6bf"] s = [{ c = "#c3b695" w = 1 a = inner }] }
+    { n = "Portrait monogram" t = rectangle x = 442 y = 675 w = 80 h = 100 f = ["#eee5d2"] }
+    { t = text x = 448 y = 707 w = 68 h = 42 f = ["#626658"] txt = "ЕТ" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 540 y = 676 w = 485 h = 33 f = ["#242e29"] txt = "Екатерина Трубецкая" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 540 y = 716 w = 667 h = 22.5 f = ["#626658"] txt = "20 лет · Православие · Свободна" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 540 y = 754 w = 664 h = 19.5 f = ["#626658"] txt = "Знатность рода · Род Трубецких" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Badge / Отношения −8" t = rectangle x = 1050 y = 676 w = 182 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 1058 y = 680 w = 166 h = 19.5 f = ["#626658"] txt = "Отношения −8" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Candidate / Анна Нарышкина" t = board x = 426 y = 811 w = 824 h = 136 f = ["#e1d6bf"] s = [{ c = "#c3b695" w = 1 a = inner }] }
+    { n = "Portrait monogram" t = rectangle x = 442 y = 828 w = 80 h = 100 f = ["#eee5d2"] }
+    { t = text x = 448 y = 860 w = 68 h = 42 f = ["#626658"] txt = "АН" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 540 y = 829 w = 485 h = 33 f = ["#626658"] txt = "Анна Нарышкина" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 540 y = 869 w = 667 h = 22.5 f = ["#626658"] txt = "21 год · Православие · Обручена" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 540 y = 907 w = 664 h = 19.5 f = ["#8d4235"] txt = "Состоит в помолвке с другим персонажем" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Badge / Недоступна" t = rectangle x = 1050 y = 829 w = 182 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 1058 y = 833 w = 166 h = 19.5 f = ["#8d4235"] txt = "Недоступна" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Selected party / Софья" t = board x = 1278 y = 352 w = 582 h = 622 f = ["#e1d6bf"] }
+    { n = "Portrait / Софья Долгорукова" t = rectangle x = 1302 y = 376 w = 168 h = 210 f = ["img:Fictional portrait / Sofya Dolgorukova"] }
+    { t = text x = 1496 y = 379 w = 340 h = 40.5 f = ["#242e29"] txt = "Софья Андреевна\nДолгорукова" ff = "PT Serif" fs = 27 fw = 400 }
+    { t = text x = 1498 y = 473 w = 334 h = 25.5 f = ["#626658"] txt = "Княжна · 22 года" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Badge / Отношения родов +24" t = rectangle x = 1498 y = 520 w = 338 h = 28 f = ["#eee5d2"] r = 2 }
+    { t = text x = 1506 y = 524 w = 322 h = 19.5 f = ["#365847"] txt = "Отношения родов +24" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Divider" t = rectangle x = 1302 y = 612 w = 534 h = 1 f = ["#c3b695"] }
+    { t = text x = 1302 y = 636 w = 260 h = 22.5 f = ["#626658"] txt = "Вероисповедание" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1564 y = 636 w = 272 h = 22.5 f = ["#242e29"] txt = "Православие" ff = "PT Sans Caption" fs = 15 fw = 700 }
+    { t = text x = 1302 y = 682 w = 260 h = 22.5 f = ["#626658"] txt = "Семейное положение" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1564 y = 682 w = 272 h = 22.5 f = ["#242e29"] txt = "Свободна" ff = "PT Sans Caption" fs = 15 fw = 700 }
+    { t = text x = 1302 y = 728 w = 260 h = 22.5 f = ["#626658"] txt = "Близкое родство" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1564 y = 728 w = 272 h = 22.5 f = ["#242e29"] txt = "Не выявлено" ff = "PT Sans Caption" fs = 15 fw = 700 }
+    { t = text x = 1302 y = 774 w = 260 h = 22.5 f = ["#626658"] txt = "Приданое" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1564 y = 774 w = 272 h = 22.5 f = ["#242e29"] txt = "При обсуждении сговора" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1302 y = 832 w = 534 h = 22.5 f = ["#626658"] txt = "Союз и приданое будут согласованы\nпосле ответа главы рода." ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { n = "Button / Обсудить условия" t = board x = 1302 y = 898 w = 534 h = 50 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 }
+    { n = "Icon / quill" t = group x = 1318 y = 912 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1350 y = 910.5 w = 472 h = 25.5 f = ["#f3ead6"] txt = "Обсудить условия" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { t = text x = 1302 y = 956 w = 534 h = 16.5 f = ["#626658"] txt = "Выбор партии ещё не изменяет казну." ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Confirmation backdrop" t = rectangle x = 96 y = 96 w = 1824 h = 940 f = ["#1b2523"] op = 0.74 }
+    { n = "Marriage negotiations / confirmation" t = board x = 448 y = 140 w = 1080 h = 800 f = ["#eee5d2"] s = [{ c = "#d2b77d" w = 2 a = inner }] }
+    { n = "Modal top keyline" t = rectangle x = 448 y = 140 w = 1080 h = 6 f = ["#365847"] }
+    { t = text x = 482 y = 167 w = 680 h = 18 f = ["#365847"] txt = "БРАЧНЫЕ ПЕРЕГОВОРЫ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 2 }
+    { n = "Badge / 2 / 3 · УСЛОВИЯ" t = rectangle x = 1286 y = 163 w = 208 h = 28 f = ["#e1d6bf"] r = 2 }
+    { t = text x = 1294 y = 167 w = 192 h = 19.5 f = ["#365847"] txt = "2 / 3 · УСЛОВИЯ" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 480 y = 207 w = 1012 h = 60 f = ["#242e29"] txt = "Послать посредника" ff = "PT Serif" fs = 40 fw = 400 }
+    { t = text x = 482 y = 271 w = 1000 h = 31.5 f = ["#626658"] txt = "Иван Голицын → Софья Долгорукова" ff = "PT Serif" fs = 21 fw = 400 }
+    { n = "Divider" t = rectangle x = 482 y = 321 w = 1012 h = 1 f = ["#c3b695"] }
+    { t = text x = 482 y = 347 w = 630 h = 18 f = ["#365847"] txt = "НАМЕЧЕННАЯ ПАРТИЯ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { n = "Portrait / Софья" t = rectangle x = 482 y = 384 w = 144 h = 180 f = ["img:Fictional portrait / Sofya Dolgorukova"] }
+    { t = text x = 650 y = 387 w = 470 h = 40.5 f = ["#242e29"] txt = "Софья Андреевна\nДолгорукова" ff = "PT Serif" fs = 27 fw = 400 }
+    { t = text x = 652 y = 481 w = 468 h = 24 f = ["#626658"] txt = "Княжна · 22 года · Православие" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Badge / Род Долгоруковых" t = rectangle x = 652 y = 523 w = 466 h = 28 f = ["#e1d6bf"] r = 2 }
+    { t = text x = 660 y = 527 w = 450 h = 19.5 f = ["#365847"] txt = "Род Долгоруковых" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Divider" t = rectangle x = 482 y = 594 w = 638 h = 1 f = ["#c3b695"] }
+    { n = "Icon / check" t = group x = 482 y = 625 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 516 y = 624 w = 596 h = 24 f = ["#242e29"] txt = "Участники свободны для брака" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / check" t = group x = 482 y = 667 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 516 y = 666 w = 596 h = 24 f = ["#242e29"] txt = "Близкого родства не выявлено" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 482 y = 724 w = 638 h = 25.5 f = ["#626658"] txt = "Посредник обсудит согласие семьи, приданое\nи возможность союза. Брак будет заключён\nпосле отдельного согласования условий." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Treasury before and after" t = board x = 1156 y = 347 w = 338 h = 436 f = ["#e1d6bf"] }
+    { t = text x = 1178 y = 369 w = 294 h = 18 f = ["#365847"] txt = "РАСХОД СЕЙЧАС" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 1176 y = 404 w = 294 h = 72 f = ["#242e29"] txt = "120 ₽" ff = "PT Serif" fs = 48 fw = 400 }
+    { t = text x = 1178 y = 490 w = 208 h = 22.5 f = ["#626658"] txt = "Дары и письмо" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1387 y = 490 w = 85 h = 24 f = ["#242e29"] txt = "80 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { t = text x = 1178 y = 534 w = 223 h = 22.5 f = ["#626658"] txt = "Дорога посредника" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1402 y = 534 w = 70 h = 24 f = ["#242e29"] txt = "40 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { n = "Divider" t = rectangle x = 1178 y = 581 w = 294 h = 1 f = ["#c3b695"] }
+    { t = text x = 1178 y = 608 w = 294 h = 21 f = ["#626658"] txt = "Сейчас в казне" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 1178 y = 637 w = 294 h = 37.5 f = ["#242e29"] txt = "1 248 ₽" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 1178 y = 690 w = 294 h = 21 f = ["#626658"] txt = "Останется" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 1178 y = 718 w = 294 h = 45 f = ["#365847"] txt = "1 128 ₽" ff = "PT Serif" fs = 30 fw = 400 }
+    { n = "Info / expense breakdown" t = board x = 1437 y = 363 w = 34 h = 34 f = ["#eee5d2"] }
+    { t = text x = 1445 y = 367 w = 18 h = 30 f = ["#365847"] txt = "i" ff = "PT Serif" fs = 20 fw = 700 }
+    { n = "Divider" t = rectangle x = 482 y = 820 w = 1012 h = 1 f = ["#c3b695"] }
+    { n = "Button / Вернуться к выбору" t = board x = 482 y = 848 w = 304 h = 54 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] r = 2 }
+    { t = text x = 494 y = 862.5 w = 280 h = 25.5 f = ["#242e29"] txt = "Вернуться к выбору" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Button / Отправить посредника · 120 ₽" t = board x = 1090 y = 848 w = 404 h = 54 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 }
+    { n = "Icon / quill" t = group x = 1106 y = 864 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1138 y = 862.5 w = 342 h = 25.5 f = ["#f3ead6"] txt = "Отправить посредника · 120 ₽" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Engraved corner / lower left" t = group x = 458 y = 906 w = 28 h = 28 }
+    { n = "svg-path" t = path x = 459 y = 907 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] }
+    { n = "Engraved corner / lower right" t = group x = 1490 y = 906 w = 28 h = 28 }
+    { n = "svg-path" t = path x = 1493 y = 907 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] }
+  ]
+}

@@ -60,6 +60,7 @@ add_executable(patriarch_tests
     sparse_set_test.cpp
     spsc_queue_test.cpp
     static_vec_test.cpp
+    ui_data_test.cpp
     string_interner_test.cpp
     world_model_test.cpp
     world_test.cpp)

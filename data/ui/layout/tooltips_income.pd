@@ -1,0 +1,73 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "Подсказка / расходы на посредника" {
+  w = 366 h = 276
+  el = [
+    { n = "Подсказка / расходы на посредника" t = board x = 0 y = 0 w = 366 h = 276 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 18 w = 326 h = 34.5 f = ["#f3ead6"] txt = "Расходы на переговоры" ff = "PT Serif" fs = 23 fw = 400 }
+    { t = text x = 20 y = 59 w = 326 h = 21 f = ["#bac1b1"] txt = "Списываются при отправке" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 326 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 119 w = 243 h = 24 f = ["#bac1b1"] txt = "Дары и письмо\nДорога посредника" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 259 y = 119 w = 87 h = 24 f = ["#f3ead6"] txt = "80 ₽\n40 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 181 w = 326 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 200 w = 220 h = 28.5 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 19 fw = 400 }
+    { t = text x = 241 y = 200 w = 105 h = 31.5 f = ["#d2b77d"] txt = "120 ₽" ff = "PT Serif" fs = 21 fw = 400 }
+    { t = text x = 20 y = 244 w = 326 h = 16.5 f = ["#bac1b1"] txt = "Приданое будет согласовано отдельно." ff = "PT Sans Caption" fs = 11 fw = 400 }
+    { n = "Close tooltip" t = board x = 332 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 337 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Подсказка / казна до отправки" {
+  w = 366 h = 280
+  el = [
+    { n = "Подсказка / казна до отправки" t = board x = 0 y = 0 w = 366 h = 280 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 18 w = 326 h = 34.5 f = ["#f3ead6"] txt = "Казна рода" ff = "PT Serif" fs = 23 fw = 400 }
+    { t = text x = 20 y = 59 w = 326 h = 48 f = ["#d2b77d"] txt = "1 248 ₽" ff = "PT Serif" fs = 32 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 116 w = 326 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 137 w = 243 h = 24 f = ["#bac1b1"] txt = "Доходы владений\nСодержание двора" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 259 y = 137 w = 87 h = 24 f = ["#f3ead6"] txt = "+68 ₽\n−26 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 200 w = 326 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 220 w = 220 h = 27 f = ["#f3ead6"] txt = "В месяц" ff = "PT Serif" fs = 18 fw = 400 }
+    { t = text x = 241 y = 220 w = 105 h = 31.5 f = ["#b5c9a0"] txt = "+42 ₽" ff = "PT Serif" fs = 21 fw = 400 }
+    { n = "Close tooltip" t = board x = 332 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 337 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Подсказка / казна после отправки" {
+  w = 366 h = 280
+  el = [
+    { n = "Подсказка / казна после отправки" t = board x = 0 y = 0 w = 366 h = 280 f = ["#FFFFFF"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 18 w = 326 h = 34.5 f = ["#000000"] txt = "Казна рода" ff = "PT Serif" fs = 23 fw = 400 }
+    { n = "1 248 ₽" t = text x = 20 y = 59 w = 326 h = 48 f = ["#000000"] txt = "1 128 ₽" ff = "PT Serif" fs = 32 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 116 w = 326 h = 1 f = ["#B1B2B5"] }
+    { t = text x = 20 y = 137 w = 243 h = 24 f = ["#000000"] txt = "Доходы владений\nСодержание двора" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 259 y = 137 w = 87 h = 24 f = ["#000000"] txt = "+68 ₽\n−26 ₽" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 200 w = 326 h = 1 f = ["#B1B2B5"] }
+    { t = text x = 20 y = 220 w = 220 h = 27 f = ["#000000"] txt = "В месяц" ff = "PT Serif" fs = 18 fw = 400 }
+    { t = text x = 241 y = 220 w = 105 h = 31.5 f = ["#000000"] txt = "+42 ₽" ff = "PT Serif" fs = 21 fw = 400 }
+    { n = "Close tooltip" t = board x = 332 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 337 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Подсказка / партия недоступна" {
+  w = 366 h = 238
+  el = [
+    { n = "Подсказка / партия недоступна" t = board x = 0 y = 0 w = 366 h = 238 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 18 w = 326 h = 34.5 f = ["#f3ead6"] txt = "Партия недоступна" ff = "PT Serif" fs = 23 fw = 400 }
+    { t = text x = 20 y = 72 w = 326 h = 25.5 f = ["#bac1b1"] txt = "Анна Нарышкина уже обручена.\nДля новых переговоров требуется\nсвободный персонаж." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { t = text x = 20 y = 191 w = 326 h = 19.5 f = ["#d2b77d"] txt = "Причина показана до выбора." ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Close tooltip" t = board x = 332 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 337 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}

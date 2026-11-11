@@ -1,0 +1,78 @@
+format_version = 1
+
+# Design tokens of the UX/UI concept "Родовая канцелярия" (Patriarch Design UX/UI, token set "patriarch-concept-01").
+# Single source of truth for the RmlUi theme (issue #252). Values are exactly the Penpot tokens; the Penpot token name
+# is `patriarch.<group>.<key>` (colors: patriarch.ink, ...; spacing: patriarch.space.4 = space_4; font sizes:
+# patriarch.type.12 = type_12). Not a content kind: the content loader skips data/ui/ (see docs/dev/ui-design.md, section 12).
+# Snapshot 2026-11-11. Roles and the metrics below come from the board layers, not from Penpot tokens.
+
+theme "patriarch-concept-01" {
+  reference = { width = 1920 height = 1080 }
+
+  color {
+    ink         = "#1B2523"   # top bar, left navigation, status bar, map label, darkest surface
+    panel       = "#25312D"   # dark panels (priority agenda, minimap, tooltips)
+    raised      = "#34423B"   # raised dark controls (active nav, pause button, badges on dark)
+    paper       = "#EEE5D2"   # main light surface (windows, inspector)
+    paper2      = "#E1D6BF"   # nested light surface (cards, badges, tracks, disabled button)
+    text        = "#242E29"   # text on paper
+    muted       = "#626658"   # secondary text on paper
+    light       = "#F3EAD6"   # text on dark
+    quiet       = "#BAC1B1"   # secondary text and icons on dark
+    gold        = "#D2B77D"   # brass accents: rules, focus, active marks, headers on dark
+    rule        = "#6E7158"   # dividers on dark
+    line        = "#C3B695"   # dividers and card borders on paper
+    green       = "#365847"   # primary action, active tab, progress
+    green_hover = "#436B56"   # primary action on hover
+    success     = "#B5C9A0"   # positive deltas on dark
+    red         = "#8D4235"   # attention, unavailable reason on paper
+    softred     = "#E6B59F"   # attention on dark
+  }
+
+  spacing {
+    space_4  = 4
+    space_8  = 8
+    space_16 = 16
+    space_24 = 24
+    space_32 = 32
+    space_48 = 48
+  }
+
+  font_size {
+    type_12 = 12
+    type_14 = 14
+    type_16 = 16
+    type_18 = 18
+    type_24 = 24
+    type_32 = 32
+    type_40 = 40
+  }
+
+  # Not Penpot tokens: values read from the layers (the file has no library typographies or styles).
+  font {
+    serif = { family = "PT Serif" weights = [400 700] role = "headings, names, values" }
+    sans  = { family = "PT Sans Caption" weights = [400 700] role = "labels, dense data, buttons" }
+    line_height = 1.35
+  }
+
+  shape {
+    radius = 2           # every card, badge, button and input (one rectangle uses 3)
+    stroke_hairline = 1  # card and divider strokes, inner alignment
+    stroke_icon = 1.5    # icon line weight
+    stroke_window = 2    # selected card, modal frame (gold) and focus ring
+    shadow = none        # the concept uses no shadows
+  }
+
+  shell {
+    top_bar = { x = 0 y = 0 w = 1920 h = 96 fill = ink rule_y = 94 rule_h = 2 rule = gold }
+    left_nav = { x = 0 y = 96 w = 96 h = 940 fill = ink item_x = 8 item_w = 80 item_h = 78 item_pitch = 88 first_item_y = 120 icon = 24 }
+    status_bar = { x = 0 y = 1036 w = 1920 h = 44 fill = ink }
+    map_area = { x = 96 y = 96 w = 1824 h = 940 }
+    inspector = { x = 124 y = 160 w = 376 h = 822 top_rule = 4 }
+    agenda = { x = 1536 y = 136 w = 352 h = 486 top_rule = 2 }
+    minimap = { x = 1628 y = 800 w = 260 h = 212 }
+    window = { x = 124 y = 136 w = 1764 h = 866 top_rule = 4 }
+    modal_event = { x = 484 y = 154 w = 1032 h = 794 stroke = 2 }
+    modal_terms = { x = 448 y = 140 w = 1080 h = 800 }
+  }
+}
