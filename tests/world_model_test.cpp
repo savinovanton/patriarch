@@ -52,7 +52,7 @@
 // the command sequences and the simulation runs take them) and run
 //   patriarch_tests -tc="model: regression seeds*"
 //
-// BUDGET (one core): the whole file within 20 s in Debug, 60 s under ASan and 3 s in RelWithDebInfo.
+// BUDGET (one core): the whole file within 20 s in Debug, 100 s under ASan and 3 s in RelWithDebInfo.
 // World::check_invariants() after every step is about half of it. The sizes below are the knobs; the
 // times measured on the development machine are in the pull request of E7-T05.
 
@@ -74,7 +74,6 @@ constexpr int kSimulationDays = 150;  // five month closings, 28/29/30/31-day mo
 constexpr std::uint64_t kBaseSeed = 0x0E7'0005'0000ULL;
 constexpr std::uint64_t kGeneratorStream = 0x6D6F64656CULL;  // "model"
 constexpr int kMaxReportedFailures = 5;
-constexpr std::size_t kKillCharacterKind = 2;  // index of cmd::KillCharacter in CommandPayload
 
 /// Seeds that once failed (or are worth keeping). Add the seed of a failure message here.
 constexpr std::array<std::uint64_t, 3> kRegressionSeeds{1, 170, 0x0E7'0005'0000ULL + 4242};
@@ -220,8 +219,23 @@ Command random_command(Pcg32& rng, const World& world) {
         return Command{random_actor(rng, world, 400), cmd::SetDynastyHead{random_dynasty(rng, world), head}};
     }
     if (roll < 76) {
-        return Command{random_actor(rng, world, 40),
-                       cmd::AdjustHonor{random_dynasty(rng, world), rng.range(-4'000, 4'000)}};
+        const DynastyId actor = random_actor(rng, world, 40);
+        const DynastyId dynasty = random_dynasty(rng, world);
+        const std::int32_t delta = rng.range(-4'000, 4'000);
+        switch (rng.bounded(6)) {
+            case 0:
+                return Command{actor, cmd::AdjustHonorWithReason{dynasty, delta, kStandingReasonUnspecified}};
+            case 1:
+                return Command{
+                    actor,
+                    cmd::AdjustUnity{dynasty, Fixed32::from_int(delta / 100), kStandingReasonUnspecified}};
+            case 2:
+                return Command{
+                    actor,
+                    cmd::AdjustPrestige{dynasty, Fixed32::from_int(delta / 100), kStandingReasonUnspecified}};
+            default:
+                return Command{actor, cmd::AdjustHonor{dynasty, delta}};
+        }
     }
     if (roll < 86) {
         const ProvinceId province = random_province(rng, world);
@@ -633,6 +647,12 @@ private:
             static_cast<std::int32_t>(std::clamp<std::int64_t>(value, kMinHonor, kMaxHonor));
         return true;
     }
+    bool apply(DynastyId actor, const cmd::AdjustHonorWithReason& c) {
+        return apply(actor, cmd::AdjustHonor{c.dynasty, c.delta});
+    }
+    // unity and prestige are not modelled: only the outcome of the command is predicted
+    bool apply(DynastyId actor, const cmd::AdjustUnity& c) { return !actor.valid() && known(c.dynasty); }
+    bool apply(DynastyId actor, const cmd::AdjustPrestige& c) { return !actor.valid() && known(c.dynasty); }
     bool apply(DynastyId actor, const cmd::CreatePerson& c) {
         const CharacterInit& init = c.init;
         if (actor.valid() || !known(init.dynasty) || init.birth_date > today_) {
@@ -958,7 +978,8 @@ TEST_CASE("model: 10 000 random command sequences keep every invariant and agree
         }
         CAPTURE(kind);
         CHECK(coverage.applied[kind] < coverage.generated[kind]);
-        if (kind != kKillCharacterKind) {  // KillCharacter is always refused in dynasty mode
+        if (kind != CommandPayload(cmd::KillCharacter{})
+                        .index()) {  // KillCharacter is always refused in dynasty mode
             CHECK(coverage.applied[kind] > 0);
         }
     }
