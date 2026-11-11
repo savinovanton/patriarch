@@ -456,10 +456,15 @@ TEST_CASE("production: a missing good lowers the wealth target by the points of 
     all[7] = 0;
     CHECK(compute_wealth(custom.consumption, Group::Clergy, Fixed32::from_int(100), all).target ==
           Fixed32::from_int(10));
-    // a gap closes by truncation toward zero: the wealth never overshoots
-    const WealthResult tiny =
-        compute_wealth(r, Group::Peasants, Fixed32::from_raw(Fixed32::one_raw * 100 + 3), none);
-    CHECK(tiny.next.raw() == Fixed32::one_raw * 100 + 3);  // 3 x 0.2 truncates to 0: no overshoot
+    // a tiny gap: 3 x 0.2 truncates to 0, but the step is at least one raw unit (E9 #241), so the wealth
+    // keeps closing it and reaches the target exactly, without overshoot
+    Fixed32 tiny = Fixed32::from_raw(Fixed32::one_raw * 100 + 3);
+    tiny = compute_wealth(r, Group::Peasants, tiny, none).next;
+    CHECK(tiny.raw() == Fixed32::one_raw * 100 + 2);
+    tiny = compute_wealth(r, Group::Peasants, tiny, none).next;
+    tiny = compute_wealth(r, Group::Peasants, tiny, none).next;
+    CHECK(tiny == Fixed32::from_int(100));
+    CHECK(compute_wealth(r, Group::Peasants, tiny, none).next == Fixed32::from_int(100));
 }
 
 TEST_CASE("production: the wealth breakdown adds up and the wealth stays in its range") {
