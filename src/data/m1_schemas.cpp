@@ -73,8 +73,14 @@ ObjectSchema trait_schema() {
                   "контента.")
         .optional("modifiers",
                   Type::map(Type::fixed32(core::Fixed64::from_int(-100), core::Fixed64::from_int(100))))
-        .describe("Изменения шкал в пунктах; значения Fixed32. Применение модификаторов реализуют "
-                  "игровые системы.")
+        .describe("Изменения шкал в пунктах; значения Fixed32. Ключи: health, fertility, stress, piety, "
+                  "ambition, loyalty_head, loyalty_emperor.")
+        .optional("health_multiplier_permille", Type::integer(0, 10000))
+        .describe("Множитель эффективного здоровья в промилле; при отсутствии 1000.")
+        .optional("fertility_multiplier_permille", Type::integer(0, 10000))
+        .describe("Множитель эффективной фертильности в промилле; при отсутствии 1000.")
+        .optional("mortality_multiplier_permille", Type::integer(0, 10000))
+        .describe("Множитель риска смерти в промилле; при отсутствии 1000.")
         .optional("ai_hint", Type::map(Type::integer(-100, 100)))
         .describe("Целочисленные веса поведенческих подсказок ИИ; это данные, а не исполняемые "
                   "условия или команды.")

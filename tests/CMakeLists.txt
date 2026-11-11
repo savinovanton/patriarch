@@ -63,6 +63,8 @@ add_executable(patriarch_tests
     static_vec_test.cpp
     ui_data_test.cpp
     string_interner_test.cpp
+    traits_content_test.cpp
+    traits_test.cpp
     world_model_test.cpp
     world_test.cpp)
 

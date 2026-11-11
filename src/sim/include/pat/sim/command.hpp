@@ -16,6 +16,8 @@
 
 namespace pat::sim {
 
+struct TraitCatalog;
+
 /// Stable numeric tags: these values are written to replay files and must never change. They are
 /// NOT the position of the command in CommandPayload: the table in command.cpp maps each payload
 /// type to its tag, so that epics can reserve blocks (ADR-0006 D5):
@@ -30,6 +32,8 @@ enum class CommandType : std::uint8_t {
     Marry = 7,                         // E7-T03
     EndMarriage = 8,                   // E7-T03
     CreatePerson = 9,                  // E7-T02
+    GrantTrait = 14,                   // E7-T08
+    RevokeTrait = 15,                  // E7-T08
     PlanDeath = 16,                    // E7-T10
     AdjustUnity = 17,                  // E7-T14
     RecordChronicle = 18,              // E7-T16
@@ -46,6 +50,18 @@ enum class MarriageEnd : std::uint8_t { Annulment, Tonsure };
 inline constexpr std::uint8_t kMarriageEndCount = 2;
 
 namespace cmd {
+
+struct GrantTrait {
+    CharacterId character;
+    std::uint16_t trait = 0;
+    [[nodiscard]] bool operator==(const GrantTrait&) const = default;
+};
+
+struct RevokeTrait {
+    CharacterId character;
+    std::uint16_t trait = 0;
+    [[nodiscard]] bool operator==(const RevokeTrait&) const = default;
+};
 
 struct SetProvinceOwner {
     ProvinceId province;
@@ -212,7 +228,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::AdjustHonorWithReason,
                                     cmd::AssignProvinceAdministrator,
                                     cmd::SetTaxPolicy,
-                                    cmd::SetRecruitPolicy>;
+                                    cmd::SetRecruitPolicy,
+                                    cmd::GrantTrait,
+                                    cmd::RevokeTrait>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
@@ -245,10 +263,11 @@ struct CommandError {
 [[nodiscard]] std::string_view to_string(Rejection reason) noexcept;
 
 /// Checks the command against the world without changing it.
-[[nodiscard]] core::Result<void, CommandError> validate(const World& world, const Command& command);
+[[nodiscard]] core::Result<void, CommandError>
+validate(const World& world, const Command& command, const TraitCatalog* traits = nullptr);
 
 /// Applies a command that passed validate() against the same world state.
-void apply(World& world, const Command& command);
+void apply(World& world, const Command& command, const TraitCatalog* traits = nullptr);
 
 struct ApplyStats {
     std::size_t applied = 0;
@@ -269,6 +288,7 @@ ApplyStats process_commands(World& world,
                             std::span<const Command> commands,
                             CommandSource source,
                             CommandLog& log,
-                            std::vector<DepartedHead>* departed_heads = nullptr);
+                            std::vector<DepartedHead>* departed_heads = nullptr,
+                            const TraitCatalog* traits = nullptr);
 
 }  // namespace pat::sim

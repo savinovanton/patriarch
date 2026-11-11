@@ -23,6 +23,7 @@ struct SimulationConfig {
     std::uint64_t wu_per_tick = 1'000'000;
     std::size_t external_queue_capacity = 4096;
     std::size_t scratch_block_bytes = 64 * 1024;
+    std::shared_ptr<const TraitCatalog> traits = {};
 };
 
 struct SystemRun {

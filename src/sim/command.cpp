@@ -2,6 +2,7 @@
 
 #include "pat/sim/command_log.hpp"
 #include "pat/sim/economy/rules.hpp"
+#include "pat/sim/traits.hpp"
 
 #include <algorithm>
 #include <array>
@@ -21,6 +22,30 @@ constexpr core::Fixed32 kZeroFixed = core::Fixed32::zero();
     return Result<void, CommandError>::ok();
 }
 
+Result<void, CommandError> trait_verdict(TraitStatus status) {
+    switch (status) {
+        case TraitStatus::Ok:
+            return accept();
+        case TraitStatus::NotAlive:
+            return reject(Rejection::UnknownEntity, "unknown or dead character");
+        case TraitStatus::Unknown:
+            return reject(Rejection::UnknownEntity, "unknown trait");
+        case TraitStatus::AlreadyPresent:
+            return reject(Rejection::InvalidState, "the character already has this trait");
+        case TraitStatus::Missing:
+            return reject(Rejection::InvalidState, "the character does not have this trait");
+        case TraitStatus::SlotsFull:
+            return reject(Rejection::InvalidState, "the character has no free trait slot");
+        case TraitStatus::Opposite:
+            return reject(Rejection::InvalidArgument, "the character has the opposite trait");
+        case TraitStatus::CongenitalLimit:
+            return reject(Rejection::InvalidArgument, "the congenital trait limit is three");
+        case TraitStatus::InvalidSet:
+            return reject(Rejection::InvalidArgument, "the trait set is not valid");
+    }
+    return reject(Rejection::InvalidArgument, "unknown trait status");
+}
+
 /// The system (invalid actor) may do anything that is otherwise valid; a dynasty may act only for itself.
 [[nodiscard]] bool may_act_for(DynastyId actor, DynastyId owner) noexcept {
     return !actor.valid() || actor == owner;
@@ -29,6 +54,7 @@ constexpr core::Fixed32 kZeroFixed = core::Fixed32::zero();
 struct Validator {
     const World& world;
     DynastyId actor;
+    const TraitCatalog* traits;
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
         if (!world.exists(c.province)) {
@@ -137,6 +163,12 @@ struct Validator {
         if (!traits_are_canonical(init.traits)) {
             return reject(Rejection::InvalidArgument, "traits must be sorted, unique and packed");
         }
+        if (traits != nullptr) {
+            const auto verdict = trait_verdict(check_trait_set(*traits, init.traits));
+            if (!verdict) {
+                return verdict;
+            }
+        }
         if (init.education.focus > kEducationFocusCount || init.education.level > kMaxEducationLevel) {
             return reject(Rejection::InvalidArgument, "education focus or level out of range");
         }
@@ -151,6 +183,24 @@ struct Validator {
             return reject(Rejection::InvalidArgument, "planned death lies outside the lifetime");
         }
         return check_parents(init.father, init.mother, init.birth_date);
+    }
+
+    Result<void, CommandError> trait_command() const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may change traits directly");
+        }
+        if (!world.dynasty_mode() || traits == nullptr) {
+            return reject(Rejection::InvalidState, "trait commands need dynasty mode and a trait catalogue");
+        }
+        return accept();
+    }
+    Result<void, CommandError> operator()(const cmd::GrantTrait& c) const {
+        const auto allowed = trait_command();
+        return allowed ? trait_verdict(check_grant_trait(world, *traits, c.character, c.trait)) : allowed;
+    }
+    Result<void, CommandError> operator()(const cmd::RevokeTrait& c) const {
+        const auto allowed = trait_command();
+        return allowed ? trait_verdict(check_revoke_trait(world, *traits, c.character, c.trait)) : allowed;
     }
 
     Result<void, CommandError> operator()(const cmd::Marry& c) const {
@@ -398,6 +448,18 @@ struct Validator {
 
 struct Applier {
     World& world;
+    const TraitCatalog* traits;
+
+    void operator()(const cmd::GrantTrait& c) const {
+        if (traits != nullptr) {
+            (void)grant_trait(world, *traits, c.character, c.trait);
+        }
+    }
+    void operator()(const cmd::RevokeTrait& c) const {
+        if (traits != nullptr) {
+            (void)revoke_trait(world, *traits, c.character, c.trait);
+        }
+    }
 
     void operator()(const cmd::SetProvinceOwner& c) const {
         world.set_province_owner(c.province, c.new_owner);
@@ -473,6 +535,14 @@ struct CommandTag<cmd::AdjustHonor> {
 template <>
 struct CommandTag<cmd::CreatePerson> {
     static constexpr CommandType value = CommandType::CreatePerson;
+};
+template <>
+struct CommandTag<cmd::GrantTrait> {
+    static constexpr CommandType value = CommandType::GrantTrait;
+};
+template <>
+struct CommandTag<cmd::RevokeTrait> {
+    static constexpr CommandType value = CommandType::RevokeTrait;
 };
 template <>
 struct CommandTag<cmd::Die> {
@@ -570,6 +640,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustHonor";
         case CommandType::CreatePerson:
             return "CreatePerson";
+        case CommandType::GrantTrait:
+            return "GrantTrait";
+        case CommandType::RevokeTrait:
+            return "RevokeTrait";
         case CommandType::Die:
             return "Die";
         case CommandType::Marry:
@@ -614,25 +688,26 @@ std::string_view to_string(Rejection reason) noexcept {
     return "?";
 }
 
-Result<void, CommandError> validate(const World& world, const Command& command) {
+Result<void, CommandError> validate(const World& world, const Command& command, const TraitCatalog* traits) {
     if (command.actor.valid() && !world.exists(command.actor)) {
         return reject(Rejection::UnknownEntity, "unknown actor");
     }
-    return std::visit(Validator{world, command.actor}, command.payload);
+    return std::visit(Validator{world, command.actor, traits}, command.payload);
 }
 
-void apply(World& world, const Command& command) {
-    std::visit(Applier{world}, command.payload);
+void apply(World& world, const Command& command, const TraitCatalog* traits) {
+    std::visit(Applier{world, traits}, command.payload);
 }
 
 ApplyStats process_commands(World& world,
                             std::span<const Command> commands,
                             CommandSource source,
                             CommandLog& log,
-                            std::vector<DepartedHead>* departed_heads) {
+                            std::vector<DepartedHead>* departed_heads,
+                            const TraitCatalog* traits) {
     ApplyStats stats;
     for (const Command& command : commands) {
-        const Result<void, CommandError> verdict = validate(world, command);
+        const Result<void, CommandError> verdict = validate(world, command, traits);
         LoggedCommand entry;
         entry.date = world.today();
         entry.source = source;
@@ -652,7 +727,7 @@ ApplyStats process_commands(World& world,
                     }
                 }
             }
-            apply(world, command);
+            apply(world, command, traits);
             ++stats.applied;
         } else {
             entry.outcome = verdict.error().reason;

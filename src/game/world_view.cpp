@@ -138,6 +138,33 @@ const char* health_key(core::Fixed32 health) {
     return "ui.health.sickly";
 }
 
+// The denominators used here (Fixed32::one_raw and 1000) both have finite decimal expansions.
+// Keeping them exact makes the displayed additive terms agree with the displayed root.
+std::string decimal_value(std::int64_t numerator, std::int64_t denominator, bool signed_value) {
+    std::string text;
+    if (numerator < 0) {
+        text = "-";
+        numerator = -numerator;
+    } else if (signed_value && numerator > 0) {
+        text = "+";
+    }
+    text += std::to_string(numerator / denominator);
+    std::int64_t remainder = numerator % denominator;
+    if (remainder != 0) {
+        text += '.';
+        while (remainder != 0) {
+            remainder *= 10;
+            text += static_cast<char>('0' + remainder / denominator);
+            remainder %= denominator;
+        }
+    }
+    return text;
+}
+
+std::string point_value(core::Fixed32 value, bool signed_value = false) {
+    return decimal_value(value.raw(), core::Fixed32::one_raw, signed_value);
+}
+
 sim::ProvinceId
 world_province(const sim::World& world, std::size_t map_id, std::span<const sim::ProvinceId> map_to_world) {
     if (map_id == 0) {
@@ -249,14 +276,52 @@ int age_in_years(sim::Date born, sim::Date today) {
     return std::max(0, static_cast<int>(std::floor(days / 365.25)));
 }
 
-ui::CharacterSnapshot
-character_snapshot(const loc::Localizer& loc, const sim::World& world, sim::CharacterId character) {
+ui::Explanation character_explanation(const loc::Localizer& loc,
+                                      const sim::TraitCatalog& catalog,
+                                      const sim::CharacterBreakdown& breakdown,
+                                      std::string_view label_key) {
+    ui::Explanation root;
+    root.label = loc.format(label_key);
+    root.value = point_value(breakdown.total);
+    for (const sim::CharacterTerm& source : breakdown.terms) {
+        ui::Explanation term;
+        term.value = point_value(source.value, true);
+        switch (source.kind) {
+            case sim::CharacterTermKind::Base:
+                term.label = loc.format("ui.explain.base");
+                break;
+            case sim::CharacterTermKind::Trait:
+            case sim::CharacterTermKind::Multiplier:
+                if (const sim::TraitDef* trait = catalog.find(source.trait)) {
+                    term.label =
+                        loc.format("ui.explain.trait_named", {loc::Arg("name", loc.format(trait->name_key))});
+                } else {
+                    term.label = loc.format("ui.explain.traits");
+                }
+                if (source.kind == sim::CharacterTermKind::Multiplier) {
+                    term.note =
+                        loc.format("ui.explain.multiplier",
+                                   {loc::Arg("factor", decimal_value(source.factor_permille, 1000, false))});
+                }
+                break;
+            case sim::CharacterTermKind::Clamp:
+                term.label = loc.format("ui.explain.clamp");
+                break;
+        }
+        root.terms.push_back(std::move(term));
+    }
+    return root;
+}
+
+ui::CharacterSnapshot character_snapshot(const loc::Localizer& loc,
+                                         const sim::World& world,
+                                         sim::CharacterId character,
+                                         const sim::TraitCatalog* traits) {
     const sim::CharacterTable& t = world.characters();
     const std::size_t i = character.index();
     const sim::Date today = world.today();
 
-    // Skills, traits and their breakdowns are placeholders (deterministic per character) until the
-    // dynasty systems provide real ones.
+    // The spike keeps its deterministic placeholders; configured dynasty snapshots use pure queries.
     ui::CharacterSnapshot s =
         ui::make_test_character(loc, hash32(static_cast<std::uint32_t>(character.value()) + 101U), 0);
 
@@ -270,6 +335,33 @@ character_snapshot(const loc::Localizer& loc, const sim::World& world, sim::Char
 
     s.age = age_in_years(t.birth_date[i], today);
     s.health = health_key(t.health[i]);
+    if (traits != nullptr && world.dynasty_mode()) {
+        static_assert(ui::kSkillCount == sim::kSkillCount);
+        for (std::size_t skill = 0; skill < sim::kSkillCount; ++skill) {
+            const sim::CharacterBreakdown breakdown =
+                sim::skill_breakdown(world, *traits, character, static_cast<sim::Skill>(skill));
+            s.skills[skill] = breakdown.total.round_int();
+            ui::Explanation explanation =
+                character_explanation(loc, *traits, breakdown, ui::kSkillKeys[skill]);
+            explanation.value = std::to_string(s.skills[skill]);
+            explanation.note =
+                loc.format("ui.skill.note", {loc::Arg("min", 0), loc::Arg("max", ui::kSkillMax)});
+            const core::Fixed32 rounding = core::Fixed32::from_int(s.skills[skill]) - breakdown.total;
+            if (rounding != core::Fixed32::zero()) {
+                explanation.terms.push_back(
+                    {loc.format("ui.explain.rounding"), point_value(rounding, true), "", {}});
+            }
+            s.skill_explanations[skill] = std::move(explanation);
+        }
+        s.traits.clear();
+        for (std::uint16_t id : t.traits[i]) {
+            if (const sim::TraitDef* trait = traits->find(id)) {
+                s.traits.push_back(loc.format(trait->name_key));
+            }
+        }
+        s.health = health_key(
+            sim::attribute_breakdown(world, *traits, character, sim::CharacterAttribute::Health).total);
+    }
     const sim::DynastyId dynasty = t.dynasty[i];
     const bool is_head = dynasty.valid() && world.dynasties().head[dynasty.index()] == character;
     if (is_head) {

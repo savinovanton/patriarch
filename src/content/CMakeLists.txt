@@ -8,6 +8,7 @@ add_library(patriarch_content STATIC
     include/pat/content/m1_scenario.hpp
     include/pat/content/names_content.hpp
     include/pat/content/province_bindings.hpp
+    include/pat/content/traits_content.hpp
     credits_content.cpp
     demography_content.cpp
     economy_content.cpp
@@ -16,7 +17,8 @@ add_library(patriarch_content STATIC
     m1_hot_reload.cpp
     m1_scenario.cpp
     names_content.cpp
-    province_bindings.cpp)
+    province_bindings.cpp
+    traits_content.cpp)
 add_library(patriarch::content ALIAS patriarch_content)
 
 target_include_directories(patriarch_content PUBLIC

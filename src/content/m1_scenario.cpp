@@ -5,6 +5,7 @@
 #include "pat/content/load_errors.hpp"
 #include "pat/content/m1_content.hpp"
 #include "pat/content/province_bindings.hpp"
+#include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
@@ -58,6 +59,10 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
         if (const auto* table = loaded.registry.table(kind); table == nullptr || table->empty()) {
             return fail_definition(std::format("M1 requires at least one '{}' definition", kind));
         }
+    }
+    auto traits = build_trait_catalog(loaded.registry);
+    if (!traits) {
+        return fail_definition(format_errors(traits.error()));
     }
     auto bindings = bind_pmd1_provinces(loaded.registry, map);
     if (!bindings) {
@@ -130,7 +135,8 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
                                   std::move(province_names),
                                   std::move(localized.localizer),
                                   demography,
-                                  std::move(honor_ranks)});
+                                  std::move(honor_ranks),
+                                  std::make_shared<const sim::TraitCatalog>(std::move(traits).value())});
 }
 
 core::Result<M1Scenario>
@@ -185,7 +191,8 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
                                std::move(definitions.province_names),
                                std::move(definitions.registry),
                                definitions.demography,
-                               std::move(definitions.honor_ranks)});
+                               std::move(definitions.honor_ranks),
+                               std::move(definitions.traits)});
 }
 
 }  // namespace pat::content

@@ -759,6 +759,9 @@ private:
                planned_death_is_valid(people_[c.character.index()].birth, c.date);
     }
     bool apply(DynastyId /*actor*/, const cmd::RecordChronicle& /*c*/) { return false; }  // not generated
+    // This model runs without a trait catalogue, so trait commands are rejected.
+    bool apply(DynastyId /*actor*/, const cmd::GrantTrait& /*c*/) { return false; }
+    bool apply(DynastyId /*actor*/, const cmd::RevokeTrait& /*c*/) { return false; }
     bool apply(DynastyId actor, const cmd::AdjustOpinion& c) {
         return !actor.valid() && alive(c.from) && alive(c.to) && c.from != c.to;
     }
