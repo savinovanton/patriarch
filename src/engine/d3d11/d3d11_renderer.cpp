@@ -1,5 +1,6 @@
 #include "pat/core/assert.hpp"
 #include "pat/core/log.hpp"
+#include "pat/core/profile.hpp"
 #include "pat/engine/renderer.hpp"
 
 #include <algorithm>
@@ -277,7 +278,11 @@ public:
         }
         const UINT sync = vsync_ ? 1U : 0U;
         const UINT flags = (!vsync_ && tearing_supported_) ? DXGI_PRESENT_ALLOW_TEARING : 0U;
-        const HRESULT hr = swapchain_->Present(sync, flags);
+        HRESULT hr = S_OK;
+        {
+            PAT_PROFILE_SCOPE("render.present");
+            hr = swapchain_->Present(sync, flags);
+        }
         if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
             PAT_LOG_ERROR(kLogCat,
                           "device lost on Present: {} (removed reason {})",

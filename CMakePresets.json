@@ -27,6 +27,16 @@
       "toolset": "ClangCL"
     },
     {
+      "name": "win-msvc-tracy",
+      "displayName": "Windows / MSVC + Tracy profiler client (docs/dev/profiling.md)",
+      "inherits": "base",
+      "cacheVariables": {
+        "PATRIARCH_ENABLE_TRACY": "ON",
+        "VCPKG_MANIFEST_FEATURES": "tracy",
+        "PATRIARCH_BUILD_BENCHMARKS": "OFF"
+      }
+    },
+    {
       "name": "win-msvc-asan",
       "displayName": "Windows / MSVC + AddressSanitizer",
       "inherits": "base",
@@ -69,6 +79,12 @@
     { "name": "win-msvc-release", "configurePreset": "win-msvc", "configuration": "Release" },
     { "name": "win-msvc-relwithdebinfo", "configurePreset": "win-msvc", "configuration": "RelWithDebInfo" },
     { "name": "win-msvc-asan-debug", "configurePreset": "win-msvc-asan", "configuration": "Debug" },
+    { "name": "win-msvc-tracy-debug", "configurePreset": "win-msvc-tracy", "configuration": "Debug" },
+    {
+      "name": "win-msvc-tracy-relwithdebinfo",
+      "configurePreset": "win-msvc-tracy",
+      "configuration": "RelWithDebInfo"
+    },
     { "name": "win-clangcl-debug", "configurePreset": "win-clangcl", "configuration": "Debug" },
     { "name": "win-clangcl-release", "configurePreset": "win-clangcl", "configuration": "Release" },
     { "name": "win-clangcl-relwithdebinfo", "configurePreset": "win-clangcl", "configuration": "RelWithDebInfo" },

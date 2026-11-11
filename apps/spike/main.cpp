@@ -13,6 +13,7 @@
 #include "pat/content/m1_scenario.hpp"
 #include "pat/core/log.hpp"
 #include "pat/core/png_writer.hpp"
+#include "pat/core/profile.hpp"
 #include "pat/data/content_source.hpp"
 #include "pat/engine/camera.hpp"
 #include "pat/engine/dpi.hpp"
@@ -1079,6 +1080,7 @@ int main(int argc, char** argv) {
         if (opt.hidden) {
             SDL_DelayNS(1'000'000);
         }
+        PAT_PROFILE_FRAME();
 
         if (opt.bench) {
             frame_ms.push_back(static_cast<double>(now_ns() - frame_start) * 1e-6);

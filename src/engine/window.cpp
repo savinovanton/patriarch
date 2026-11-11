@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/core/log.hpp"
+#include "pat/core/profile.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -108,6 +109,7 @@ core::Result<Window> Window::create(const WindowDesc& desc) {
 }
 
 void Window::poll_events(std::vector<Event>& out) {
+    PAT_PROFILE_SCOPE("window.poll_events");
     const float density = impl_->pixel_density();
     SDL_Event e;
     while (SDL_PollEvent(&e)) {

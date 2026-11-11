@@ -1,6 +1,7 @@
 #include "pat/engine/ui.hpp"
 
 #include "pat/core/log.hpp"
+#include "pat/core/profile.hpp"
 #include "pat/engine/window.hpp"
 
 #include <RmlUi/Core.h>
@@ -395,10 +396,12 @@ bool UiContext::reload_if_changed() {
 }
 
 void UiContext::update() {
+    PAT_PROFILE_SCOPE("ui.update");
     impl_->context->Update();
 }
 
 void UiContext::render() {
+    PAT_PROFILE_SCOPE("ui.render");
     impl_->context->Render();
 }
 
