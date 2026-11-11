@@ -232,6 +232,7 @@ void World::set_province_owner(ProvinceId province, DynastyId owner) {
         return;
     }
     DynastyId& current = provinces_.owner[province.index()];
+    const DynastyId previous = current;
     if (exists(current)) {
         owned_provinces_[current.index()].erase(province);
     }
@@ -246,6 +247,9 @@ void World::set_province_owner(ProvinceId province, DynastyId owner) {
             kind = static_cast<std::uint8_t>(economy::OwnerKind::Dynasty);
         } else if (kind == static_cast<std::uint8_t>(economy::OwnerKind::Dynasty)) {
             kind = static_cast<std::uint8_t>(economy::OwnerKind::Unowned);
+        }
+        if (current != previous) {
+            economy_release_foreign_administrator(province);
         }
     }
 }

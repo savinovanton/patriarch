@@ -161,8 +161,13 @@ bool World::set_province_owner_kind(ProvinceId province, economy::OwnerKind kind
         to_u8(kind) >= economy::kOwnerKindCount) {
         return false;
     }
-    set_province_owner(province, DynastyId());  // drops the dynasty owner, if any
+    const std::uint8_t previous_kind = economy_.provinces.owner_kind[province.index()];
+    set_province_owner(province,
+                       DynastyId());  // drops the dynasty owner, if any (and a foreign administrator)
     economy_.provinces.owner_kind[province.index()] = to_u8(kind);
+    if (previous_kind != to_u8(kind)) {
+        economy_release_foreign_administrator(province);  // crown to Church and the like: a new holder
+    }
     return true;
 }
 
@@ -219,6 +224,26 @@ void World::economy_remove_administrator(CharacterId id) noexcept {
         if (administrator == id) {
             administrator = CharacterId();
         }
+    }
+}
+
+void World::economy_release_foreign_administrator(ProvinceId province) noexcept {
+    if (economy_.meta.present == 0 || !exists(province)) {
+        return;
+    }
+    CharacterId& administrator = economy_.provinces.administrator[province.index()];
+    if (!administrator.valid()) {
+        return;
+    }
+    // The appointment is lawful only while the administrator belongs to the house of the owner (the check of
+    // AssignProvinceAdministrator for a house actor, economy-model section 8.2); the crown, the Church and
+    // nobody have no house, so whoever they appoint, they appoint again.
+    const bool owned_by_house =
+        economy_.provinces.owner_kind[province.index()] == to_u8(OwnerKind::Dynasty) &&
+        provinces_.owner[province.index()].valid() &&
+        characters_.dynasty[administrator.index()] == provinces_.owner[province.index()];
+    if (!owned_by_house) {
+        administrator = CharacterId();
     }
 }
 
