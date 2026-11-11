@@ -46,6 +46,11 @@
 // Fixed32 raw value. Holders, targets, and reasons are stored in ascending order at each level,
 // and only nonempty rows, relations, and sources are stored. Absence means empty.
 //
+// Schema 8 (E7-T14) adds section 7 "standing": u32 rows, each with u32 dynasty id,
+// i32 prestige raw value and u8 change count. Changes are i32 date | u8 metric | u16 reason |
+// i32 delta raw value. Rows are sorted by dynasty id and omitted when prestige and history both
+// have their defaults. Older saves default to initial prestige and empty history.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -64,6 +69,7 @@ using detail::kSectionDynasty;
 using detail::kSectionKin;
 using detail::kSectionOpinion;
 using detail::kSectionPerson;
+using detail::kSectionStanding;
 using detail::plausible;
 
 constexpr std::uint16_t kMaxSections = 32;
@@ -76,6 +82,8 @@ constexpr std::size_t kMinChronicleRowBytes = 6 + kChronicleEntryBytes;
 constexpr std::size_t kOpinionSourceBytes = 2 + 4;
 constexpr std::size_t kMinOpinionRelationBytes = 4 + 1 + kOpinionSourceBytes;
 constexpr std::size_t kMinOpinionRowBytes = 4 + 1 + kMinOpinionRelationBytes;
+constexpr std::size_t kMinStandingRowBytes = 4 + 4 + 1;
+constexpr std::size_t kStandingChangeBytes = 4 + 1 + 2 + 4;
 
 struct SectionInfo {
     std::uint16_t id;
@@ -88,6 +96,7 @@ constexpr SectionInfo kSections[] = {
     {kSectionKin, 1, 3},
     {kSectionChronicle, 1, 6},
     {kSectionOpinion, 1, 7},
+    {kSectionStanding, 1, 8},
     {detail::kSectionEconomy, 1, 5},
     {detail::kSectionEconomyDynasty, 1, 5},
     {detail::kSectionEconomyProvince, 1, 5},
@@ -329,6 +338,42 @@ void World::save_state(core::ByteWriter& out) const {
         sections.push_back(std::move(section));
     }
 
+    if (dynasty_mode()) {
+        std::uint32_t rows = 0;
+        for (const core::Fixed32 prestige : dynasties_.prestige) {
+            rows += prestige != kDefaultPrestige ? 1U : 0U;
+        }
+        for (const StandingHistory& history : standing_history_) {
+            rows += dynasties_.prestige[history.dynasty.index()] == kDefaultPrestige ? 1U : 0U;
+        }
+        if (rows != 0) {
+            Section section{kSectionStanding, 1, {}};
+            core::ByteWriter& w = section.body;
+            w.u32(rows);
+            auto history = standing_history_.begin();
+            for (std::size_t d = 0; d < dynasties_.size(); ++d) {
+                const bool has_history = history != standing_history_.end() && history->dynasty.index() == d;
+                const core::Fixed32 prestige = dynasties_.prestige[d];
+                if (!has_history && prestige == kDefaultPrestige) {
+                    continue;
+                }
+                w.u32(static_cast<std::uint32_t>(d));
+                w.i32(prestige.raw());
+                w.u8(has_history ? static_cast<std::uint8_t>(history->changes.size()) : std::uint8_t{0});
+                if (has_history) {
+                    for (const StandingChange& change : history->changes) {
+                        w.i32(change.date.days());
+                        w.u8(static_cast<std::uint8_t>(change.metric));
+                        w.u16(change.reason);
+                        w.i32(change.delta.raw());
+                    }
+                    ++history;
+                }
+            }
+            sections.push_back(std::move(section));
+        }
+    }
+
     economy_write_sections(sections);  // ids 32..39, after the sections above
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
@@ -374,7 +419,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     world.calendar_ = TickCalendar::restore(today, ticks);
     world.rng_.restore(rng);
 
-    // dynasties (schema 1 has no unity or law: they take their defaults, see the dynasty section)
+    // Dynasty extensions (unity, law, prestige) start at their defaults before sections are read.
     const std::uint32_t dynasty_count = in.u32();
     if (!plausible(in, dynasty_count, 12 + 8)) {
         return fail("invalid dynasty table");
@@ -384,6 +429,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         world.dynasties_.head.emplace_back(in.u32());
         world.dynasties_.honor.push_back(in.i32());
         world.dynasties_.unity.push_back(kDefaultUnity);
+        world.dynasties_.prestige.push_back(kDefaultPrestige);
         world.dynasties_.succession_law.push_back(SuccessionLaw::Majorat);
         world.members_.emplace_back();
         world.owned_provinces_.emplace_back();
@@ -491,6 +537,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     // dynasty-mode world are checked by check_invariants(). Schema 5 -> 6 (E7-T16): earlier
     // saves have no chronicle section, so every dynasty starts with an empty chronicle.
     // Schema 6 -> 7 (E7-T17): earlier saves have no opinion section and start with empty opinions.
+    // Schema 7 -> 8 (E7-T14): earlier saves keep default prestige and empty standing history.
     if (schema >= 2) {
         const std::uint32_t flags = in.u32();
         if (!in.ok() || (flags & ~kWorldFlagDynastyMode) != 0) {
@@ -678,6 +725,43 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                             entry.sources[source_index] = {reason, core::Fixed32::from_raw(value)};
                         }
                         entries.push_back(entry);
+                    }
+                }
+            } else if (id == kSectionStanding) {
+                const std::uint32_t rows = sr.u32();
+                if (!world.dynasty_mode() || rows == 0 || rows > dynasty_count ||
+                    !plausible(sr, rows, kMinStandingRowBytes)) {
+                    return fail("invalid standing section");
+                }
+                std::uint32_t previous_dynasty = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    const std::uint32_t dynasty = sr.u32();
+                    const core::Fixed32 prestige = core::Fixed32::from_raw(sr.i32());
+                    const std::uint8_t count = sr.u8();
+                    if (!sr.ok() || dynasty >= dynasty_count || (r != 0 && dynasty <= previous_dynasty)) {
+                        return fail("standing dynasties are out of range or out of order");
+                    }
+                    if (count > kMaxStandingChanges || !plausible(sr, count, kStandingChangeBytes) ||
+                        (count == 0 && prestige == kDefaultPrestige)) {
+                        return fail("invalid standing change count or default row");
+                    }
+                    previous_dynasty = dynasty;
+                    world.dynasties_.prestige[dynasty] = prestige;
+                    if (count == 0) {
+                        continue;
+                    }
+                    world.standing_history_.push_back({DynastyId(dynasty), {}});
+                    auto& changes = world.standing_history_.back().changes;
+                    changes.reserve(count);
+                    for (std::uint8_t change = 0; change < count; ++change) {
+                        const Date date = Date::from_days(sr.i32());
+                        const auto metric = static_cast<StandingMetric>(sr.u8());
+                        if (metric < StandingMetric::Honor || metric > StandingMetric::Prestige) {
+                            return fail("invalid standing metric");
+                        }
+                        const StandingReason reason = sr.u16();
+                        const core::Fixed32 delta = core::Fixed32::from_raw(sr.i32());
+                        changes.push_back({date, metric, reason, delta});
                     }
                 }
             } else if (id >= detail::kSectionEconomy) {

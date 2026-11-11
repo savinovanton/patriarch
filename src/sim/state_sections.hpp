@@ -7,7 +7,7 @@
 
 // Ids of the sections of the extension block of the world state (ADR-0006 D6) and the helpers that
 // the readers share. Internal to src/sim: the layout itself is documented at the top of world_io.cpp
-// (sections 1..3 and 5..6) and world_economy_io.cpp (sections 32..39).
+// (sections 1..3 and 5..7) and world_economy_io.cpp (sections 32..39).
 //
 // Ids are stable forever and are only ever added. Blocks: 1..15 E7, 16..31 E8, 32..47 E9.
 
@@ -18,6 +18,7 @@ inline constexpr std::uint16_t kSectionDynasty = 2;
 inline constexpr std::uint16_t kSectionKin = 3;
 inline constexpr std::uint16_t kSectionChronicle = 5;
 inline constexpr std::uint16_t kSectionOpinion = 6;
+inline constexpr std::uint16_t kSectionStanding = 7;
 
 // ---- E9-T03: the economy (schema >= 5). Written only when the economy is on. ----
 inline constexpr std::uint16_t kSectionEconomy = 32;              ///< scalars, rules hash

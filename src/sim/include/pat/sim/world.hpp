@@ -64,7 +64,8 @@ inline constexpr core::Fixed32 kScaleMax =
 inline constexpr core::Fixed32 kSignedScaleMax =
     core::Fixed32::from_int(100);  // ambition, loyalties: -100..100
 inline constexpr core::Fixed32 kDefaultUnity =
-    core::Fixed32::from_int(50);                         // [predl.] a freshly created dynasty
+    core::Fixed32::from_int(50);                                       // [predl.] a freshly created dynasty
+inline constexpr auto kDefaultPrestige = core::Fixed32::from_int(50);  // [predl.] neutral prestige
 inline constexpr std::uint8_t kEducationFocusCount = 5;  // focus 0 = none, 1..5 = skill index + 1
 inline constexpr std::uint8_t kMaxEducationLevel = 100;  // [predl.]
 
@@ -161,6 +162,21 @@ struct OpinionEntry {
     [[nodiscard]] bool operator==(const OpinionEntry&) const = default;
 };
 
+enum class StandingMetric : std::uint8_t { Honor = 1, Unity = 2, Prestige = 3 };
+using StandingReason = std::uint16_t;
+inline constexpr StandingReason kStandingReasonUnspecified = 0;
+inline constexpr StandingReason kStandingReasonMonthlyDrift = 1;
+inline constexpr std::size_t kMaxStandingChanges = 32;
+
+struct StandingChange {
+    Date date;
+    StandingMetric metric = StandingMetric::Honor;
+    StandingReason reason = kStandingReasonUnspecified;
+    core::Fixed32 delta;
+
+    [[nodiscard]] bool operator==(const StandingChange&) const = default;
+};
+
 /// Bits of `World::world_flags()`.
 inline constexpr std::uint32_t kWorldFlagDynastyMode = 1U << 0;
 
@@ -173,7 +189,8 @@ struct DynastyTable {
     std::vector<core::StringId> name;
     std::vector<CharacterId> head;
     std::vector<std::int32_t> honor;
-    std::vector<core::Fixed32> unity;  // 0..100, default kDefaultUnity
+    std::vector<core::Fixed32> unity;     // 0..100, default kDefaultUnity
+    std::vector<core::Fixed32> prestige;  // 0..100, default kDefaultPrestige
     std::vector<SuccessionLaw> succession_law;
 
     [[nodiscard]] std::size_t size() const noexcept { return name.size(); }
@@ -394,9 +411,15 @@ public:
     /// Head must be alive and a member of the dynasty (or invalid). Returns false otherwise.
     bool set_dynasty_head(DynastyId dynasty, CharacterId head);
     /// Adds `delta` to honor, clamped to [kMinHonor, kMaxHonor].
-    void add_honor(DynastyId dynasty, std::int32_t delta);
+    void add_honor(DynastyId dynasty, std::int32_t delta, StandingReason reason = kStandingReasonUnspecified);
     /// Sets the unity, clamped to 0..100.
-    void set_dynasty_unity(DynastyId dynasty, core::Fixed32 unity);
+    void set_dynasty_unity(DynastyId dynasty,
+                           core::Fixed32 unity,
+                           StandingReason reason = kStandingReasonUnspecified);
+    void add_unity(DynastyId dynasty, core::Fixed32 delta, StandingReason reason);
+    void add_prestige(DynastyId dynasty, core::Fixed32 delta, StandingReason reason);
+    /// The last applied nonzero changes, oldest first, in dynasty mode.
+    [[nodiscard]] std::span<const StandingChange> standing_changes(DynastyId dynasty) const;
     void set_dynasty_succession_law(DynastyId dynasty, SuccessionLaw law);
 
     // ---- branches (never destroyed) ----
@@ -647,7 +670,8 @@ public:
     ///   5  + the economy: sections 32..39 of the extension block (E9-T03); older files have none
     ///   6  + section 5 "chronicle" (E7-T16); older files start with empty chronicles
     ///   7  + section 6 "opinion" (E7-T17); older files start without stored opinions
-    static constexpr std::uint32_t kStateSchema = 7;
+    ///   8  + section 7 "dynasty_standing" (E7-T14); older files start with default prestige
+    static constexpr std::uint32_t kStateSchema = 8;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -657,6 +681,16 @@ public:
     [[nodiscard]] static core::Result<World, core::Error> load_state(core::ByteReader& in);
 
 private:
+    struct StandingHistory {
+        DynastyId dynasty;
+        std::vector<StandingChange> changes;
+    };
+    void append_standing_change(DynastyId dynasty,
+                                StandingMetric metric,
+                                StandingReason reason,
+                                core::Fixed32 delta);
+    [[nodiscard]] std::uint64_t standing_hash() const;
+    void check_standing_invariants(std::vector<std::string>& errors) const;
     struct OpinionRow {
         CharacterId holder;
         std::vector<OpinionEntry> entries;
@@ -730,8 +764,9 @@ private:
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
-    std::vector<OpinionRow> opinions_;  // nonempty holders, ascending id
-    economy::EconomyState economy_;     // E9-T02: empty unless enable_economy() was called
+    std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
+    std::vector<StandingHistory> standing_history_;  // nonempty histories, ascending dynasty id
+    economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
 };
 
 }  // namespace pat::sim

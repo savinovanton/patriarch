@@ -31,9 +31,12 @@ enum class CommandType : std::uint8_t {
     EndMarriage = 8,                   // E7-T03
     CreatePerson = 9,                  // E7-T02
     PlanDeath = 16,                    // E7-T10
+    AdjustUnity = 17,                  // E7-T14
     RecordChronicle = 18,              // E7-T16
     AdjustOpinion = 19,                // E7-T17
-    AssignProvinceAdministrator = 35,  // E9-T10 (the block 32..63 is E9's)
+    AdjustPrestige = 20,               // E7-T14
+    AdjustHonorWithReason = 21,        // E7-T14
+    AssignProvinceAdministrator = 35,  // E9-T10
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -68,6 +71,28 @@ struct AdjustHonor {
     DynastyId dynasty;
     std::int32_t delta = 0;
     [[nodiscard]] bool operator==(const AdjustHonor&) const = default;
+};
+
+struct AdjustUnity {
+    DynastyId dynasty;
+    core::Fixed32 delta;
+    StandingReason reason = kStandingReasonUnspecified;
+    [[nodiscard]] bool operator==(const AdjustUnity&) const = default;
+};
+
+struct AdjustPrestige {
+    DynastyId dynasty;
+    core::Fixed32 delta;
+    StandingReason reason = kStandingReasonUnspecified;
+    [[nodiscard]] bool operator==(const AdjustPrestige&) const = default;
+};
+
+/// Dynasty-mode honor change with a reason. The legacy AdjustHonor tag keeps its original layout.
+struct AdjustHonorWithReason {
+    DynastyId dynasty;
+    std::int32_t delta = 0;
+    StandingReason reason = kStandingReasonUnspecified;
+    [[nodiscard]] bool operator==(const AdjustHonorWithReason&) const = default;
 };
 
 /// Full character creation (scenarios, births): every column of CharacterInit. Unlike
@@ -161,6 +186,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::PlanDeath,
                                     cmd::RecordChronicle,
                                     cmd::AdjustOpinion,
+                                    cmd::AdjustUnity,
+                                    cmd::AdjustPrestige,
+                                    cmd::AdjustHonorWithReason,
                                     cmd::AssignProvinceAdministrator>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an

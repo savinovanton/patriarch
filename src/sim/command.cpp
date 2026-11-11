@@ -337,6 +337,29 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> standing_change(DynastyId dynasty) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may adjust dynasty standing");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "standing changes need dynasty mode");
+        }
+        if (!world.exists(dynasty)) {
+            return reject(Rejection::UnknownEntity, "unknown dynasty");
+        }
+        return accept();
+    }
+
+    Result<void, CommandError> operator()(const cmd::AdjustUnity& c) const {
+        return standing_change(c.dynasty);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustPrestige& c) const {
+        return standing_change(c.dynasty);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustHonorWithReason& c) const {
+        return standing_change(c.dynasty);
+    }
+
     Result<void, CommandError> operator()(const cmd::AdjustHonor& c) const {
         if (actor.valid()) {
             return reject(Rejection::NotAuthorized, "only the system may adjust honor directly");
@@ -366,6 +389,11 @@ struct Applier {
     void operator()(const cmd::KillCharacter& c) const { (void)world.destroy_character(c.character); }
     void operator()(const cmd::SetDynastyHead& c) const { (void)world.set_dynasty_head(c.dynasty, c.head); }
     void operator()(const cmd::AdjustHonor& c) const { world.add_honor(c.dynasty, c.delta); }
+    void operator()(const cmd::AdjustUnity& c) const { world.add_unity(c.dynasty, c.delta, c.reason); }
+    void operator()(const cmd::AdjustPrestige& c) const { world.add_prestige(c.dynasty, c.delta, c.reason); }
+    void operator()(const cmd::AdjustHonorWithReason& c) const {
+        world.add_honor(c.dynasty, c.delta, c.reason);
+    }
     void operator()(const cmd::CreatePerson& c) const { (void)world.create_character(c.init); }
     void operator()(const cmd::Die& c) const { (void)world.die(c.character, c.cause); }
     void operator()(const cmd::PlanDeath& c) const {
@@ -439,6 +467,18 @@ template <>
 struct CommandTag<cmd::AdjustOpinion> {
     static constexpr CommandType value = CommandType::AdjustOpinion;
 };
+template <>
+struct CommandTag<cmd::AdjustUnity> {
+    static constexpr CommandType value = CommandType::AdjustUnity;
+};
+template <>
+struct CommandTag<cmd::AdjustPrestige> {
+    static constexpr CommandType value = CommandType::AdjustPrestige;
+};
+template <>
+struct CommandTag<cmd::AdjustHonorWithReason> {
+    static constexpr CommandType value = CommandType::AdjustHonorWithReason;
+};
 
 template <>
 struct CommandTag<cmd::AssignProvinceAdministrator> {
@@ -504,6 +544,12 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustOpinion";
         case CommandType::AssignProvinceAdministrator:
             return "AssignProvinceAdministrator";
+        case CommandType::AdjustUnity:
+            return "AdjustUnity";
+        case CommandType::AdjustPrestige:
+            return "AdjustPrestige";
+        case CommandType::AdjustHonorWithReason:
+            return "AdjustHonorWithReason";
     }
     return "?";
 }

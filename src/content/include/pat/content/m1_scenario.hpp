@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/content/m1_content.hpp"
 #include "pat/content/province_bindings.hpp"
 #include "pat/core/result.hpp"
 #include "pat/data/content_registry.hpp"
@@ -23,18 +24,20 @@ struct M1Definitions {
     std::vector<std::string> province_names;
     loc::Localizer localizer;
     sim::DemographyRules demography;
+    std::vector<HonorRank> honor_ranks;
 };
 
 struct M1Scenario {
     sim::World world;
     std::uint64_t replay_id;
-    std::uint64_t content_hash;
+    std::uint64_t content_hash;  // Simulation compatibility hash, excluding presentation-only ranks.
     // Both arrays use the raster id. Entry 0 is water.
     std::vector<sim::ProvinceId> map_to_world;
     std::vector<std::string> province_names;
     // World name ids refer to this registry's interner.
     data::ContentRegistry registry;
     sim::DemographyRules demography;
+    std::vector<HonorRank> honor_ranks;
 };
 
 [[nodiscard]] mapdata::GenParams m1_map_params();
