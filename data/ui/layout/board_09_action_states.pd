@@ -1,0 +1,56 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "09 / Состояния действий и обратная связь" {
+  w = 1920 h = 770
+  el = [
+    { n = "09 / Состояния действий и обратная связь" t = board x = 0 y = 0 w = 1920 h = 770 f = ["#eee5d2"] }
+    { t = text x = 40 y = 28 w = 1800 h = 19.5 f = ["#365847"] txt = "PATRIARCH / СЦЕНАРИЙ 01" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { t = text x = 38 y = 67 w = 1800 h = 69 f = ["#242e29"] txt = "Условия ясны до решения" ff = "PT Serif" fs = 46 fw = 400 }
+    { t = text x = 40 y = 141 w = 1780 h = 25.5 f = ["#626658"] txt = "Брачные переговоры · состояния действия, причины недоступности и результат" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 40 y = 187 w = 1840 h = 1 f = ["#c3b695"] }
+    { t = text x = 40 y = 217 w = 590 h = 18 f = ["#365847"] txt = "ОБЫЧНОЕ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { n = "Button / Patriarch / Action / Send intermediary / Default" t = board x = 40 y = 265 w = 590 h = 56 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 inst = "Default" }
+    { n = "Icon / quill" t = group x = 56 y = 282 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 88 y = 280.5 w = 528 h = 25.5 f = ["#f3ead6"] txt = "Отправить посредника · 120 ₽" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { t = text x = 40 y = 343 w = 590 h = 22.5 f = ["#626658"] txt = "Одно действие — одна явная стоимость." ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 670 y = 217 w = 590 h = 18 f = ["#365847"] txt = "НАВЕДЕНИЕ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { n = "Button / Patriarch / Action / Send intermediary / Hover" t = board x = 670 y = 265 w = 590 h = 56 f = ["#436b56"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 inst = "Hover" }
+    { n = "Icon / quill" t = group x = 686 y = 282 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 718 y = 280.5 w = 528 h = 25.5 f = ["#f3ead6"] txt = "Отправить посредника · 120 ₽" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { t = text x = 670 y = 343 w = 590 h = 22.5 f = ["#626658"] txt = "Меняется фон; геометрия остаётся стабильной." ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 1300 y = 217 w = 590 h = 18 f = ["#365847"] txt = "ФОКУС С КЛАВИАТУРЫ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { n = "Focus outer ring" t = rectangle x = 1296 y = 261 w = 598 h = 64 f = ["#d2b77d"] r = 3 }
+    { n = "Focus ring separation" t = rectangle x = 1298 y = 263 w = 594 h = 60 f = ["#eee5d2"] r = 2 }
+    { n = "Button / Patriarch / Action / Send intermediary / Focus" t = board x = 1300 y = 265 w = 590 h = 56 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 inst = "Focus" }
+    { n = "Icon / quill" t = group x = 1316 y = 282 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1348 y = 280.5 w = 528 h = 25.5 f = ["#f3ead6"] txt = "Отправить посредника · 120 ₽" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { t = text x = 1300 y = 343 w = 590 h = 22.5 f = ["#626658"] txt = "Контур заметен на светлом и тёмном фоне." ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { n = "Divider" t = rectangle x = 40 y = 403 w = 1840 h = 1 f = ["#c3b695"] }
+    { t = text x = 40 y = 433 w = 590 h = 18 f = ["#365847"] txt = "НЕДОСТУПНОЕ ДЕЙСТВИЕ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { n = "Button / Patriarch / Action / Send intermediary / Disabled" t = board x = 40 y = 479 w = 590 h = 56 f = ["#e1d6bf"] r = 2 inst = "Disabled" }
+    { n = "Icon / quill" t = group x = 56 y = 496 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 88 y = 494.5 w = 528 h = 25.5 f = ["#626658"] txt = "Отправить посредника · 120 ₽" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { t = text x = 40 y = 562 w = 590 h = 33 f = ["#8d4235"] txt = "Не хватает 40 ₽" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 40 y = 604 w = 590 h = 24 f = ["#626658"] txt = "В этом состоянии доступно 80 ₽, требуется 120 ₽.\nПричина остаётся рядом с действием." ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 670 y = 433 w = 590 h = 18 f = ["#365847"] txt = "ПОЧЕМУ ТАКАЯ СТОИМОСТЬ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 670 y = 484 w = 440 h = 27 f = ["#242e29"] txt = "Дары и письмо" ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 1115 y = 484 w = 145 h = 27 f = ["#242e29"] txt = "80 ₽" ff = "PT Sans Caption" fs = 18 fw = 700 }
+    { t = text x = 670 y = 527 w = 440 h = 27 f = ["#242e29"] txt = "Дорога посредника" ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 1115 y = 527 w = 145 h = 27 f = ["#242e29"] txt = "40 ₽" ff = "PT Sans Caption" fs = 18 fw = 700 }
+    { n = "Divider" t = rectangle x = 670 y = 572 w = 590 h = 1 f = ["#c3b695"] }
+    { t = text x = 670 y = 599 w = 440 h = 30 f = ["#242e29"] txt = "Списать сейчас" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 1115 y = 595 w = 145 h = 36 f = ["#365847"] txt = "120 ₽" ff = "PT Serif" fs = 24 fw = 400 }
+    { t = text x = 1300 y = 433 w = 580 h = 18 f = ["#365847"] txt = "ЧТО ПРОИСХОДИТ ПОСЛЕ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 1300 y = 482 w = 580 h = 39 f = ["#242e29"] txt = "Посредник отправлен" ff = "PT Serif" fs = 26 fw = 400 }
+    { t = text x = 1300 y = 535 w = 580 h = 27 f = ["#626658"] txt = "Казна: 1 248 → 1 128 ₽\nЗаявка: ожидается ответ рода\nПрестиж: 68 / 100, без изменения\nБрак: ещё не заключён" ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 40 y = 722 w = 1840 h = 19.5 f = ["#626658"] txt = "Состояния для передачи в реализацию. Все числа — демонстрационные; итоговые правила и баланс задаются GDD." ff = "PT Sans Caption" fs = 13 fw = 400 }
+  ]
+}

@@ -1,0 +1,65 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "Отношение / Михаил Голицын к Ивану" {
+  w = 410 h = 238
+  el = [
+    { n = "Отношение / Михаил Голицын к Ивану" t = board x = 0 y = 0 w = 410 h = 238 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 350 h = 33 f = ["#f3ead6"] txt = "Михаил Голицын" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 20 y = 62 w = 370 h = 21 f = ["#bac1b1"] txt = "Мнение об Иване Голицыне" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 20 y = 102 w = 370 h = 51 f = ["#d2b77d"] txt = "+46" ff = "PT Serif" fs = 34 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 158 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 180 w = 370 h = 21 f = ["#bac1b1"] txt = "Текущая оценка: +46.\nДополнительных модификаторов нет." ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Отношение / Анна Голицына к Ивану" {
+  w = 410 h = 238
+  el = [
+    { n = "Отношение / Анна Голицына к Ивану" t = board x = 0 y = 0 w = 410 h = 238 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 350 h = 33 f = ["#f3ead6"] txt = "Анна Голицына" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 20 y = 62 w = 370 h = 21 f = ["#bac1b1"] txt = "Мнение об Иване Голицыне" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 20 y = 102 w = 370 h = 51 f = ["#d2b77d"] txt = "+38" ff = "PT Serif" fs = 34 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 158 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 180 w = 370 h = 21 f = ["#bac1b1"] txt = "Текущая оценка: +38.\nДополнительных модификаторов нет." ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Отношение / Мария Голицына к Ивану" {
+  w = 410 h = 238
+  el = [
+    { n = "Отношение / Мария Голицына к Ивану" t = board x = 0 y = 0 w = 410 h = 238 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 350 h = 33 f = ["#f3ead6"] txt = "Мария Голицына" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 20 y = 62 w = 370 h = 21 f = ["#bac1b1"] txt = "Мнение об Иване Голицыне" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 20 y = 102 w = 370 h = 51 f = ["#d2b77d"] txt = "+31" ff = "PT Serif" fs = 34 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 158 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 180 w = 370 h = 21 f = ["#bac1b1"] txt = "Текущая оценка: +31.\nДополнительных модификаторов нет." ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}
+
+board "Отношение / Пётр Голицын к Ивану" {
+  w = 410 h = 238
+  el = [
+    { n = "Отношение / Пётр Голицын к Ивану" t = board x = 0 y = 0 w = 410 h = 238 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 350 h = 33 f = ["#f3ead6"] txt = "Пётр Голицын" ff = "PT Serif" fs = 22 fw = 400 }
+    { t = text x = 20 y = 62 w = 370 h = 21 f = ["#bac1b1"] txt = "Мнение об Иване Голицыне" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 20 y = 102 w = 370 h = 51 f = ["#d2b77d"] txt = "+24" ff = "PT Serif" fs = 34 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 158 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 180 w = 370 h = 21 f = ["#bac1b1"] txt = "Текущая оценка: +24.\nДополнительных модификаторов нет." ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 8 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 13 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+  ]
+}

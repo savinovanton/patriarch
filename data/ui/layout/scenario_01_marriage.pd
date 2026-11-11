@@ -1,0 +1,53 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "Сценарий 01 / Брачные переговоры" {
+  w = 1920 h = 770
+  el = [
+    { n = "Сценарий 01 / Брачные переговоры" t = board x = 0 y = 0 w = 1920 h = 770 f = ["#eee5d2"] }
+    { t = text x = 40 y = 30 w = 1840 h = 19.5 f = ["#365847"] txt = "PATRIARCH / ПРОХОЖДЕНИЕ СЦЕНАРИЯ" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { t = text x = 38 y = 70 w = 1840 h = 66 f = ["#242e29"] txt = "От заботы о наследнике — к действию" ff = "PT Serif" fs = 44 fw = 400 }
+    { t = text x = 40 y = 145 w = 1840 h = 25.5 f = ["#626658"] txt = "Нажмите на этап, чтобы открыть соответствующий экран в прототипе." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 40 y = 190 w = 1840 h = 1 f = ["#c3b695"] }
+    { n = "Flow stage / Дела рода" t = board x = 40 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 60 y = 260 w = 240 h = 30 f = ["#365847"] txt = "01" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 60 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Дела рода" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 60 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Наследник не обручён" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / chevron" t = group x = 322 y = 331 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { n = "Flow stage / Наследник" t = board x = 347 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 367 y = 260 w = 240 h = 30 f = ["#365847"] txt = "02" ff = "PT Serif" fs = 20 fw = 400 }
+    { n = "Древо рода" t = text x = 367 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Наследник" ff = "PT Serif" fs = 28 fw = 400 }
+    { n = "Выбрать брачную пару" t = text x = 367 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Навыки и связи Ивана" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / chevron" t = group x = 629 y = 331 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { n = "Flow stage / Поиск партии" t = board x = 654 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 674 y = 260 w = 240 h = 30 f = ["#365847"] txt = "03" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 674 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Поиск партии" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 674 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Софья Долгорукова" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / chevron" t = group x = 936 y = 331 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { n = "Flow stage / Условия" t = board x = 961 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 981 y = 260 w = 240 h = 30 f = ["#365847"] txt = "04" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 981 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Условия" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 981 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Расход 120 ₽; остаток 1 128 ₽" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / chevron" t = group x = 1243 y = 331 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { n = "Flow stage / Результат" t = board x = 1268 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 1288 y = 260 w = 240 h = 30 f = ["#365847"] txt = "05" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 1288 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Результат" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 1288 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Посредник отправлен" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Icon / chevron" t = group x = 1550 y = 331 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { n = "Flow stage / Ожидание" t = board x = 1575 y = 242 w = 280 h = 218 f = ["#e1d6bf"] }
+    { t = text x = 1595 y = 260 w = 240 h = 30 f = ["#365847"] txt = "06" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 1595 y = 309 w = 240 h = 42 f = ["#242e29"] txt = "Ожидание" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 1595 y = 379 w = 240 h = 24 f = ["#626658"] txt = "Ответ семьи ещё впереди" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 40 y = 511 w = 880 h = 18 f = ["#365847"] txt = "ПРОВЕРЯЕМАЯ ЛОГИКА" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 40 y = 551 w = 890 h = 27 f = ["#242e29"] txt = "Расход подтверждается до списания.\nСостояние казны сохраняется при возврате к древу.\nПовторная отправка недоступна до ответа.\nСоюз, приданое и брак ещё не согласованы." ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 1020 y = 511 w = 860 h = 18 f = ["#365847"] txt = "ГРАНИЦЫ ЭСКИЗА" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 1020 y = 551 w = 860 h = 24 f = ["#626658"] txt = "В прототипе подробно раскрыта партия Софьи Долгоруковой.\nДругие партии показаны для сравнения. Персонажи вымышлены.\nЗначения и расходы демонстрационные; шрифты предложены к обсуждению.\nОсновной сценарий открывается с карты через «Дела рода» или «Род».\nСпособности и черты Ивана согласованы с данными проекта." ff = "PT Sans Caption" fs = 16 fw = 400 }
+  ]
+}

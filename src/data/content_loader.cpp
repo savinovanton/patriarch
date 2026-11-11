@@ -44,10 +44,11 @@ using Key = std::pair<std::string, std::string>;  // (kind, id)
 
 // Files below the top-level directory `loc/` are localisation tables (`key = "text"`, E4-T06,
 // docs/dev/localization.md); they are read by pat::loc, not by the content loader, and are not part
-// of the content hash.
+// of the content hash. Files below `ui/` are UI resources (theme tokens and design geometry,
+// docs/dev/ui-design.md): the theme loader reads them, they define no game objects.
 bool is_pd_file(const std::string& path) {
     return path.size() > 3 && path.ends_with(".pd") && path[path.size() - 4] != '/' &&
-           !path.starts_with("loc/");
+           !path.starts_with("loc/") && !path.starts_with("ui/");
 }
 
 class Loader {

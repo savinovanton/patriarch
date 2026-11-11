@@ -1,0 +1,187 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "07 / Карта — ожидание ответа" {
+  w = 1920 h = 1080
+  el = [
+    { n = "07 / Карта — ожидание ответа" t = board x = 0 y = 0 w = 1920 h = 1080 f = ["#1b2523"] }
+    { n = "Illustrative winter terrain / AI concept" t = rectangle x = 96 y = 96 w = 1824 h = 940 f = ["img:Patriarch v1 map"] }
+    { n = "Top resource bar" t = rectangle x = 0 y = 0 w = 1920 h = 96 f = ["#1b2523"] }
+    { n = "Brass top rule" t = rectangle x = 0 y = 94 w = 1920 h = 2 f = ["#d2b77d"] }
+    { n = "Icon / shield" t = group x = 24 y = 16 w = 42 h = 48 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 2 }
+    { t = text x = 100 y = 13 w = 240 h = 42 f = ["#f3ead6"] txt = "PATRIARCH" ff = "PT Serif" fs = 28 fw = 400 }
+    { t = text x = 102 y = 54 w = 220 h = 19.5 f = ["#d2b77d"] txt = "РОД ГОЛИЦЫНЫХ" ff = "PT Sans Caption" fs = 13 fw = 700 ls = 2 }
+    { n = "Header divider" t = rectangle x = 358 y = 20 w = 1 h = 56 f = ["#6e7158"] }
+    { n = "Icon / coin" t = group x = 386 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 421 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Казна" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "1 248 ₽" t = text x = 421 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "1 128 ₽" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 421 y = 67 w = 140 h = 18 f = ["#b5c9a0"] txt = "+42 / мес." ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / crown" t = group x = 560 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 595 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Престиж" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "186" t = text x = 595 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "68" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 595 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "+3 / мес." ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / people" t = group x = 734 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 769 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Влияние" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 769 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "64" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 769 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "при дворе" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / church" t = group x = 908 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 943 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Благочестие" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 943 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "72" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 943 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "благосклонность" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / sword" t = group x = 1082 y = 21 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1117 y = 15 w = 135 h = 19.5 f = ["#bac1b1"] txt = "Ополчение" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 1117 y = 34 w = 135 h = 37.5 f = ["#f3ead6"] txt = "1 240" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 1117 y = 67 w = 140 h = 18 f = ["#bac1b1"] txt = "из 1 600" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Date divider" t = rectangle x = 1260 y = 20 w = 1 h = 56 f = ["#6e7158"] }
+    { t = text x = 1290 y = 14 w = 254 h = 37.5 f = ["#f3ead6"] txt = "1 января 1703" ff = "PT Serif" fs = 25 fw = 400 }
+    { t = text x = 1292 y = 52 w = 240 h = 16.5 f = ["#bac1b1"] txt = "ЮЛИАНСКИЙ КАЛЕНДАРЬ" ff = "PT Sans Caption" fs = 11 fw = 400 ls = 1 }
+    { n = "Badge / НА ПАУЗЕ" t = rectangle x = 1552 y = 18 w = 123 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 1560 y = 22 w = 107 h = 19.5 f = ["#d2b77d"] txt = "НА ПАУЗЕ" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Pause / Space" t = board x = 1688 y = 16 w = 44 h = 56 f = ["#34423b"] }
+    { n = "Icon / pause" t = group x = 1698 y = 31 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { n = "Speed 1" t = rectangle x = 1752 y = 27 w = 17 h = 30 f = ["#d2b77d"] }
+    { n = "Speed 2" t = rectangle x = 1777 y = 27 w = 17 h = 30 f = ["#d2b77d"] }
+    { n = "Speed 3" t = rectangle x = 1802 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { n = "Speed 4" t = rectangle x = 1827 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { n = "Speed 5" t = rectangle x = 1852 y = 27 w = 17 h = 30 f = ["#34423b"] }
+    { t = text x = 1552 y = 66 w = 338 h = 18 f = ["#bac1b1"] txt = "Пробел — продолжить" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "System navigation" t = rectangle x = 0 y = 96 w = 96 h = 940 f = ["#1b2523"] }
+    { n = "Nav / Род" t = board x = 8 y = 120 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / dynasty" t = group x = 35 y = 132 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 168 w = 76 h = 18 f = ["#bac1b1"] txt = "Род" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Владения" t = board x = 8 y = 208 w = 80 h = 78 f = ["#34423b"] }
+    { n = "Active indicator" t = rectangle x = 8 y = 218 w = 3 h = 54 f = ["#d2b77d"] }
+    { n = "Icon / castle" t = group x = 35 y = 220 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 256 w = 76 h = 18 f = ["#f3ead6"] txt = "Владения" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Двор" t = board x = 8 y = 296 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / crown" t = group x = 35 y = 308 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 344 w = 76 h = 18 f = ["#bac1b1"] txt = "Двор" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Казна" t = board x = 8 y = 384 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / coin" t = group x = 35 y = 396 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 432 w = 76 h = 18 f = ["#bac1b1"] txt = "Казна" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Церковь" t = board x = 8 y = 472 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / church" t = group x = 35 y = 484 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 520 w = 76 h = 18 f = ["#bac1b1"] txt = "Церковь" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Войско" t = board x = 8 y = 560 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / sword" t = group x = 35 y = 572 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 608 w = 76 h = 18 f = ["#bac1b1"] txt = "Войско" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Дипломатия" t = board x = 8 y = 648 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / globe" t = group x = 35 y = 660 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 696 w = 76 h = 18 f = ["#bac1b1"] txt = "Дипломатия" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Интриги" t = board x = 8 y = 736 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / quill" t = group x = 35 y = 748 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 784 w = 76 h = 18 f = ["#bac1b1"] txt = "Интриги" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Nav / Журнал" t = board x = 8 y = 824 w = 80 h = 78 f = ["#1b2523"] }
+    { n = "Icon / scroll" t = group x = 35 y = 836 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 10 y = 872 w = 76 h = 18 f = ["#bac1b1"] txt = "Журнал" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Icon / gear" t = group x = 36 y = 970 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Map status bar" t = rectangle x = 0 y = 1036 w = 1920 h = 44 f = ["#1b2523"] }
+    { t = text x = 120 y = 1048 w = 210 h = 21 f = ["#d2b77d"] txt = "Карта владений" ff = "PT Sans Caption" fs = 14 fw = 700 }
+    { t = text x = 344 y = 1048 w = 640 h = 21 f = ["#bac1b1"] txt = "Политическая     Рельеф     Доходы     Вера" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 1090 y = 1049 w = 790 h = 19.5 f = ["#bac1b1"] txt = "ЛКМ — выбрать    ·    ПКМ — назад    ·    M — режим карты" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Selected domain / illustrative border" t = group x = 565 y = 340 w = 905 h = 520 }
+    { n = "svg-path" t = path x = 582 y = 358 w = 841 h = 465 f = ["#365847@0.12"] s = [{ c = "#d2b77d" w = 3 cap = round }] }
+    { n = "svg-path" t = path x = 657 y = 358 w = 729 h = 465 s = [{ c = "#eee5d2@0.38" w = 1.3 cap = round }] }
+    { t = text x = 678 y = 246 w = 760 h = 40.5 f = ["#242e29"] txt = "НОВГОРОДСКАЯ ЗЕМЛЯ" ff = "PT Serif" fs = 27 fw = 400 ls = 5 }
+    { t = text x = 846 y = 293 w = 420 h = 18 f = ["#242e29"] txt = "ВЛАДЕНИЯ ВАШЕГО РОДА" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 3 }
+    { n = "Map label / Новгород" t = board x = 1038 y = 594 w = 207 h = 58 f = ["#1b2523"] r = 2 }
+    { n = "Icon / castle" t = group x = 1052 y = 610 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1089 y = 604 w = 145 h = 37.5 f = ["#f3ead6"] txt = "Новгород" ff = "PT Serif" fs = 25 fw = 400 }
+    { n = "Map selected marker" t = rectangle x = 1038 y = 650 w = 207 h = 2 f = ["#d2b77d"] }
+    { n = "Icon / diamond" t = group x = 1125 y = 568 w = 24 h = 24 s = [{ c = "#365847" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 778 y = 820 w = 140 h = 34.5 f = ["#242e29"] txt = "Тверь" ff = "PT Serif" fs = 23 fw = 400 }
+    { n = "Icon / diamond" t = group x = 831 y = 794 w = 24 h = 24 s = [{ c = "#242e29" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 588 y = 560 w = 140 h = 34.5 f = ["#242e29"] txt = "Псков" ff = "PT Serif" fs = 23 fw = 400 }
+    { n = "Icon / diamond" t = group x = 630 y = 537 w = 24 h = 24 s = [{ c = "#242e29" w = 1.5 cap = round }] paths = 1 }
+    { n = "Badge / ЗИМА · 1703" t = rectangle x = 129 y = 115 w = 145 h = 28 f = ["#1b2523"] r = 2 }
+    { t = text x = 137 y = 119 w = 129 h = 19.5 f = ["#f3ead6"] txt = "ЗИМА · 1703" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { n = "Province inspector / Новгород" t = board x = 124 y = 160 w = 376 h = 822 f = ["#eee5d2"] s = [{ c = "#c3b695" w = 1 a = inner }] }
+    { n = "Inspector top rule" t = rectangle x = 124 y = 160 w = 376 h = 4 f = ["#d2b77d"] }
+    { t = text x = 148 y = 184 w = 270 h = 18 f = ["#365847"] txt = "ВОТЧИНА" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 3 }
+    { n = "Icon / close" t = group x = 452 y = 180 w = 24 h = 24 s = [{ c = "#626658" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 148 y = 210 w = 330 h = 58.5 f = ["#242e29"] txt = "Новгород" ff = "PT Serif" fs = 39 fw = 400 }
+    { t = text x = 150 y = 268 w = 326 h = 24 f = ["#626658"] txt = "Северо-западные владения" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Province tabs" t = board x = 148 y = 310 w = 328 h = 46 f = ["#eee5d2"] flex = { dir = row wrap = nowrap ai = center jc = start ac = stretch rg = 0 cg = 14 pad = [0 0 0 0] hs = fix vs = fix } }
+    { n = "Tab / Обзор" t = board x = 148 y = 311 w = 77 h = 44 f = ["#eee5d2"] }
+    { t = text x = 148 y = 319 w = 77 h = 24 f = ["#365847"] txt = "Обзор" ff = "PT Sans Caption" fs = 16 fw = 700 }
+    { n = "Active tab" t = rectangle x = 148 y = 353 w = 67 h = 2 f = ["#365847"] }
+    { n = "Tab / Доходы" t = board x = 239 y = 311 w = 91 h = 44 f = ["#eee5d2"] }
+    { t = text x = 239 y = 319 w = 91 h = 24 f = ["#626658"] txt = "Доходы" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Tab / Постройки" t = board x = 344 y = 311 w = 124 h = 44 f = ["#eee5d2"] }
+    { t = text x = 344 y = 319 w = 124 h = 24 f = ["#626658"] txt = "Постройки" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Divider" t = rectangle x = 148 y = 356 w = 328 h = 1 f = ["#c3b695"] }
+    { t = text x = 148 y = 380 w = 290 h = 18 f = ["#626658"] txt = "ДОХОД В МЕСЯЦ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 1.5 }
+    { t = text x = 146 y = 405 w = 185 h = 63 f = ["#242e29"] txt = "48 ₽" ff = "PT Serif" fs = 42 fw = 400 }
+    { n = "Badge / ↑ 12%" t = rectangle x = 384 y = 420 w = 90 h = 28 f = ["#e1d6bf"] r = 2 }
+    { t = text x = 392 y = 424 w = 74 h = 19.5 f = ["#365847"] txt = "↑ 12%" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 148 y = 466 w = 330 h = 22.5 f = ["#626658"] txt = "Земля, оброк и торговые сборы" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { n = "Divider" t = rectangle x = 148 y = 505 w = 328 h = 1 f = ["#c3b695"] }
+    { t = text x = 148 y = 528 w = 175 h = 25.5 f = ["#626658"] txt = "Население" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { t = text x = 322 y = 528 w = 154 h = 28.5 f = ["#242e29"] txt = "24 680" ff = "PT Sans Caption" fs = 19 fw = 700 }
+    { t = text x = 148 y = 571 w = 175 h = 25.5 f = ["#626658"] txt = "Порядок" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { t = text x = 322 y = 571 w = 154 h = 28.5 f = ["#242e29"] txt = "78 / 100" ff = "PT Sans Caption" fs = 19 fw = 700 }
+    { t = text x = 148 y = 614 w = 175 h = 25.5 f = ["#626658"] txt = "Гарнизон" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { t = text x = 322 y = 614 w = 154 h = 28.5 f = ["#242e29"] txt = "320 чел." ff = "PT Sans Caption" fs = 19 fw = 700 }
+    { n = "Order track" t = rectangle x = 148 y = 661 w = 328 h = 5 f = ["#e1d6bf"] }
+    { n = "Order value 78 percent" t = rectangle x = 148 y = 661 w = 256 h = 5 f = ["#365847"] }
+    { n = "Badge / Зимний простой" t = rectangle x = 148 y = 690 w = 157 h = 28 f = ["#e1d6bf"] r = 2 }
+    { t = text x = 156 y = 694 w = 141 h = 19.5 f = ["#242e29"] txt = "Зимний простой" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 148 y = 728 w = 329 h = 22.5 f = ["#626658"] txt = "Сборы от торговли: −15%" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { n = "Divider" t = rectangle x = 148 y = 768 w = 328 h = 1 f = ["#c3b695"] }
+    { t = text x = 148 y = 790 w = 300 h = 18 f = ["#626658"] txt = "ВЛАДЕЛЕЦ" ff = "PT Sans Caption" fs = 12 fw = 700 ls = 2 }
+    { n = "Portrait / fictional head of dynasty" t = rectangle x = 148 y = 823 w = 68 h = 84 f = ["img:Patriarch v1 portrait"] }
+    { t = text x = 232 y = 825 w = 239 h = 31.5 f = ["#242e29"] txt = "Михаил Голицын" ff = "PT Serif" fs = 21 fw = 400 }
+    { t = text x = 232 y = 864 w = 241 h = 19.5 f = ["#626658"] txt = "Глава вашего рода · 47 лет" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Button / Управление вотчиной" t = board x = 148 y = 924 w = 328 h = 42 f = ["#365847"] s = [{ c = "#365847" w = 1 a = inner }] r = 2 }
+    { n = "Icon / castle" t = group x = 164 y = 934 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 196 y = 932.5 w = 266 h = 25.5 f = ["#f3ead6"] txt = "Управление вотчиной" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Priority agenda" t = board x = 1536 y = 136 w = 352 h = 486 f = ["#25312d"] }
+    { n = "Agenda accent" t = rectangle x = 1536 y = 136 w = 352 h = 2 f = ["#d2b77d"] }
+    { n = "Icon / bell" t = group x = 1560 y = 159 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1596 y = 153 w = 235 h = 40.5 f = ["#f3ead6"] txt = "Дела рода" ff = "PT Serif" fs = 27 fw = 400 }
+    { n = "Badge / 2" t = rectangle x = 1833 y = 157 w = 31 h = 28 f = ["#34423b"] r = 2 }
+    { n = "2" t = text x = 1841 y = 161 w = 15 h = 19.5 f = ["#d2b77d"] txt = "1" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 1560 y = 201 w = 305 h = 21 f = ["#bac1b1"] txt = "Требуют вашего внимания" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { n = "Divider" t = rectangle x = 1560 y = 240 w = 304 h = 1 f = ["#6e7158"] }
+    { t = text x = 1560 y = 260 w = 28 h = 24 f = ["#bac1b1"] txt = "01" ff = "PT Serif" fs = 16 fw = 400 }
+    { n = "Наследник не обручён" t = text x = 1600 y = 258 w = 265 h = 27 f = ["#f3ead6"] txt = "Брачные переговоры" ff = "PT Sans Caption" fs = 18 fw = 700 }
+    { n = "Заключите союз с другим родом" t = text x = 1600 y = 289 w = 264 h = 19.5 f = ["#bac1b1"] txt = "Посредник отправлен к Долгоруковым" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Icon / dynasty" t = group x = 1601 y = 323 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { n = "Род" t = text x = 1627 y = 322 w = 190 h = 18 f = ["#d2b77d"] txt = "Ожидание ответа" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Divider" t = rectangle x = 1560 y = 354 w = 304 h = 1 f = ["#6e7158"] }
+    { n = "Hit area / dynasty" t = rectangle x = 1556 y = 255 w = 314 h = 92 f = ["#eee5d2"] op = 0 }
+    { t = text x = 1560 y = 371 w = 28 h = 24 f = ["#d2b77d"] txt = "02" ff = "PT Serif" fs = 16 fw = 400 }
+    { t = text x = 1600 y = 369 w = 265 h = 27 f = ["#f3ead6"] txt = "Письмо из Москвы" ff = "PT Sans Caption" fs = 18 fw = 700 }
+    { t = text x = 1600 y = 400 w = 264 h = 19.5 f = ["#bac1b1"] txt = "При дворе ждут вашего ответа" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Icon / scroll" t = group x = 1601 y = 434 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1627 y = 433 w = 190 h = 18 f = ["#d2b77d"] txt = "Двор" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { n = "Divider" t = rectangle x = 1560 y = 465 w = 304 h = 1 f = ["#6e7158"] }
+    { n = "Hit area / event" t = rectangle x = 1556 y = 366 w = 314 h = 92 f = ["#eee5d2"] op = 0 }
+    { t = text x = 1560 y = 482 w = 28 h = 24 f = ["#bac1b1"] txt = "03" ff = "PT Serif" fs = 16 fw = 400 }
+    { t = text x = 1600 y = 480 w = 265 h = 27 f = ["#f3ead6"] txt = "Зимний сбор податей" ff = "PT Sans Caption" fs = 18 fw = 700 }
+    { t = text x = 1600 y = 511 w = 264 h = 19.5 f = ["#bac1b1"] txt = "До поступления дохода: 12 дней" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Icon / coin" t = group x = 1601 y = 545 w = 24 h = 24 s = [{ c = "#d2b77d" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 1627 y = 544 w = 190 h = 18 f = ["#d2b77d"] txt = "Казна" ff = "PT Sans Caption" fs = 12 fw = 400 }
+    { t = text x = 1560 y = 593 w = 305 h = 21 f = ["#d2b77d"] txt = "Открыть журнал" ff = "PT Sans Caption" fs = 14 fw = 700 }
+    { n = "Overview minimap" t = board x = 1628 y = 800 w = 260 h = 212 f = ["#25312d"] }
+    { t = text x = 1646 y = 816 w = 224 h = 16.5 f = ["#bac1b1"] txt = "ОБЗОР ВЛАДЕНИЙ" ff = "PT Sans Caption" fs = 11 fw = 700 ls = 1.5 }
+    { n = "Schematic realm outline" t = group x = 1647 y = 853 w = 222 h = 104 }
+    { n = "svg-path" t = path x = 1651 y = 860 w = 209 h = 93 f = ["#6e7b65@null"] s = [{ c = "#9fa98a" w = 1 cap = round }] }
+    { n = "svg-rect" t = rectangle x = 1669 y = 879 w = 59 h = 53 s = [{ c = "#d2b77d" w = 2 }] }
+    { n = "Divider" t = rectangle x = 1646 y = 974 w = 224 h = 1 f = ["#6e7158"] }
+    { t = text x = 1646 y = 980 w = 29 h = 33 f = ["#f3ead6"] txt = "−" ff = "PT Sans Caption" fs = 22 fw = 400 }
+    { t = text x = 1702 y = 986 w = 110 h = 19.5 f = ["#bac1b1"] txt = "100 км" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { t = text x = 1835 y = 980 w = 29 h = 33 f = ["#f3ead6"] txt = "+" ff = "PT Sans Caption" fs = 22 fw = 400 }
+    { n = "Compass rose" t = group x = 1412 y = 854 w = 24 h = 24 }
+    { n = "svg-path" t = path x = 1413 y = 855 w = 22 h = 22 f = ["#eee5d2@0.65"] s = [{ c = "#26352d" w = 0.5 cap = round }] }
+    { n = "svg-path" t = path x = 1413 y = 855 w = 22 h = 22 s = [{ c = "#26352d" w = 0.5 cap = round }] }
+    { t = text x = 1434 y = 830 w = 40 h = 22.5 f = ["#242e29"] txt = "С" ff = "PT Serif" fs = 15 fw = 400 }
+  ]
+}

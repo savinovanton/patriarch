@@ -1,0 +1,239 @@
+format_version = 1
+# Exact geometry exported from the Penpot file "Patriarch Design UX/UI", page "01 · Родовая канцелярия" (snapshot 2026-11-11).
+# Each board lists its visible layers depth-first (hidden layers and icon internals are skipped).
+# Keys: n layer name, t type, x y offset from the board's top-left in px at the 1920x1080 reference, w h size,
+# f fills (hex[@opacity] | img:name | gradient block), s strokes (c colour, w width, a align), r radius, rc per-corner radii (tl tr br bl),
+# sh shadows, bl layer blur, op opacity, rot rotation, txt text, ff font family, fs size, fw weight, lh line height multiplier (omitted when 1.35, the only value in the file),
+# ls letter spacing, ta text align, va vertical align, tt text transform, grow text grow type, flex/grid auto-layout
+# (dir wrap ai jc ac rg cg pad[t r b l] hs vs), lc layout-child (hs vs as abs m[t r b l]), inst/main component instance or main,
+# paths number of vector paths in a collapsed Icon group. A text layer with no n is named by its own text. Format: docs/dev/ui-design.md.
+
+board "Персонаж / подсказка / Хозяйство" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Хозяйство" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Хозяйство" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 62 w = 370 h = 19.5 f = ["#bac1b1"] txt = "Итоговое значение · шкала 0–20" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 370 h = 1 f = ["#6e7158"] }
+    { n = "Breakdown / Основа" t = board x = 20 y = 116 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 123 w = 304 h = 21 f = ["#bac1b1"] txt = "Основа" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 121 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+9" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 252 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 273 w = 240 h = 30 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 274 y = 266 w = 116 h = 48 f = ["#d2b77d"] txt = "9" ff = "PT Serif" fs = 32 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Дипломатия" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Дипломатия" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Дипломатия" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 62 w = 370 h = 19.5 f = ["#bac1b1"] txt = "Итоговое значение · шкала 0–20" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 370 h = 1 f = ["#6e7158"] }
+    { n = "Breakdown / Основа" t = board x = 20 y = 116 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 123 w = 304 h = 21 f = ["#bac1b1"] txt = "Основа" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 121 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+10" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Breakdown / Образование: Дипломат" t = board x = 20 y = 155 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 162 w = 304 h = 21 f = ["#d2b77d"] txt = "Образование: Дипломат" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 160 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+3" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Breakdown / Черта: Честолюбивый" t = board x = 20 y = 194 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 201 w = 304 h = 21 f = ["#d2b77d"] txt = "Черта: Честолюбивый" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 199 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+1" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 252 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 273 w = 240 h = 30 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 274 y = 266 w = 116 h = 48 f = ["#d2b77d"] txt = "14" ff = "PT Serif" fs = 32 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Воинское дело" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Воинское дело" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Воинское дело" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 62 w = 370 h = 19.5 f = ["#bac1b1"] txt = "Итоговое значение · шкала 0–20" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 370 h = 1 f = ["#6e7158"] }
+    { n = "Breakdown / Основа" t = board x = 20 y = 116 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 123 w = 304 h = 21 f = ["#bac1b1"] txt = "Основа" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 121 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+8" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Breakdown / Черта: Осторожный" t = board x = 20 y = 155 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 162 w = 304 h = 21 f = ["#d2b77d"] txt = "Черта: Осторожный" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 160 w = 63 h = 25.5 f = ["#f3ead6"] txt = "-1" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 252 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 273 w = 240 h = 30 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 274 y = 266 w = 116 h = 48 f = ["#d2b77d"] txt = "7" ff = "PT Serif" fs = 32 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Интриги" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Интриги" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Интриги" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 62 w = 370 h = 19.5 f = ["#bac1b1"] txt = "Итоговое значение · шкала 0–20" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 370 h = 1 f = ["#6e7158"] }
+    { n = "Breakdown / Основа" t = board x = 20 y = 116 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 123 w = 304 h = 21 f = ["#bac1b1"] txt = "Основа" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 121 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+6" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Breakdown / Черта: Честолюбивый" t = board x = 20 y = 155 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 162 w = 304 h = 21 f = ["#d2b77d"] txt = "Черта: Честолюбивый" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 160 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+2" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Breakdown / Черта: Осторожный" t = board x = 20 y = 194 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 201 w = 304 h = 21 f = ["#d2b77d"] txt = "Черта: Осторожный" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 199 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+1" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 252 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 273 w = 240 h = 30 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 274 y = 266 w = 116 h = 48 f = ["#d2b77d"] txt = "9" ff = "PT Serif" fs = 32 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Учёность" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Учёность" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Учёность" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 62 w = 370 h = 19.5 f = ["#bac1b1"] txt = "Итоговое значение · шкала 0–20" ff = "PT Sans Caption" fs = 13 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 98 w = 370 h = 1 f = ["#6e7158"] }
+    { n = "Breakdown / Основа" t = board x = 20 y = 116 w = 370 h = 36 f = ["#25312d"] }
+    { t = text x = 20 y = 123 w = 304 h = 21 f = ["#bac1b1"] txt = "Основа" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 327 y = 121 w = 63 h = 25.5 f = ["#f3ead6"] txt = "+8" ff = "PT Sans Caption" fs = 17 fw = 700 }
+    { n = "Divider" t = rectangle x = 20 y = 252 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 273 w = 240 h = 30 f = ["#f3ead6"] txt = "Итого" ff = "PT Serif" fs = 20 fw = 400 }
+    { t = text x = 274 y = 266 w = 116 h = 48 f = ["#d2b77d"] txt = "8" ff = "PT Serif" fs = 32 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Дипломат" {
+  w = 410 h = 286
+  el = [
+    { n = "Персонаж / подсказка / Дипломат" t = board x = 0 y = 0 w = 410 h = 286 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Дипломат" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Badge / ОБРАЗОВАНИЕ" t = rectangle x = 20 y = 62 w = 199 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 28 y = 66 w = 183 h = 19.5 f = ["#d2b77d"] txt = "ОБРАЗОВАНИЕ" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 20 y = 112 w = 370 h = 25.5 f = ["#bac1b1"] txt = "Обучен переговорам и умеет\nнаходить приемлемые условия\nсоглашения." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 207 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 226 w = 280 h = 27 f = ["#f3ead6"] txt = "Дипломатия" ff = "PT Serif" fs = 18 fw = 400 }
+    { t = text x = 304 y = 225 w = 86 h = 33 f = ["#d2b77d"] txt = "+3" ff = "PT Serif" fs = 22 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Честолюбивый" {
+  w = 410 h = 326
+  el = [
+    { n = "Персонаж / подсказка / Честолюбивый" t = board x = 0 y = 0 w = 410 h = 326 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Честолюбивый" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Badge / ХАРАКТЕР" t = rectangle x = 20 y = 62 w = 155 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 28 y = 66 w = 139 h = 19.5 f = ["#d2b77d"] txt = "ХАРАКТЕР" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 20 y = 112 w = 370 h = 25.5 f = ["#bac1b1"] txt = "Стремится к высоким должностям\nи ищет случай возвысить своё имя." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 180 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 201 w = 290 h = 25.5 f = ["#f3ead6"] txt = "Дипломатия\nИнтриги\nЧестолюбие" ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { t = text x = 304 y = 201 w = 86 h = 25.5 f = ["#d2b77d"] txt = "+1\n+2\n+30" ff = "PT Sans Caption" fs = 17 fw = 700 }
+  ]
+}
+
+board "Персонаж / подсказка / Осторожный" {
+  w = 410 h = 300
+  el = [
+    { n = "Персонаж / подсказка / Осторожный" t = board x = 0 y = 0 w = 410 h = 300 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Осторожный" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Badge / ХАРАКТЕР" t = rectangle x = 20 y = 62 w = 155 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 28 y = 66 w = 139 h = 19.5 f = ["#d2b77d"] txt = "ХАРАКТЕР" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 20 y = 112 w = 370 h = 24 f = ["#bac1b1"] txt = "Предпочитает узнать о риске заранее\nи обдумать последствия поступка." ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 184 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 206 w = 290 h = 27 f = ["#f3ead6"] txt = "Интриги\nВоинское дело" ff = "PT Sans Caption" fs = 18 fw = 400 }
+    { t = text x = 304 y = 206 w = 86 h = 27 f = ["#d2b77d"] txt = "+1\n−1" ff = "PT Sans Caption" fs = 18 fw = 700 }
+  ]
+}
+
+board "Персонаж / подсказка / Здоровье" {
+  w = 410 h = 298
+  el = [
+    { n = "Персонаж / подсказка / Здоровье" t = board x = 0 y = 0 w = 410 h = 298 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Здоровье" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 63 w = 370 h = 48 f = ["#d2b77d"] txt = "78 / 100" ff = "PT Serif" fs = 32 fw = 400 }
+    { t = text x = 20 y = 123 w = 370 h = 24 f = ["#bac1b1"] txt = "Активные черты Ивана не изменяют\nпоказатель здоровья." ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 192 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 214 w = 278 h = 24 f = ["#f3ead6"] txt = "Основа\nПоправка от черт" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 304 y = 214 w = 86 h = 24 f = ["#d2b77d"] txt = "78\n0" ff = "PT Sans Caption" fs = 16 fw = 700 }
+  ]
+}
+
+board "Персонаж / подсказка / Напряжение" {
+  w = 410 h = 298
+  el = [
+    { n = "Персонаж / подсказка / Напряжение" t = board x = 0 y = 0 w = 410 h = 298 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Напряжение" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 63 w = 370 h = 48 f = ["#d2b77d"] txt = "24 / 100" ff = "PT Serif" fs = 32 fw = 400 }
+    { t = text x = 20 y = 123 w = 370 h = 24 f = ["#bac1b1"] txt = "Активные черты Ивана не изменяют\nтекущее напряжение." ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 192 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 214 w = 278 h = 24 f = ["#f3ead6"] txt = "Основа\nПоправка от черт" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 304 y = 214 w = 86 h = 24 f = ["#d2b77d"] txt = "24\n0" ff = "PT Sans Caption" fs = 16 fw = 700 }
+  ]
+}
+
+board "Персонаж / подсказка / Благочестие" {
+  w = 410 h = 298
+  el = [
+    { n = "Персонаж / подсказка / Благочестие" t = board x = 0 y = 0 w = 410 h = 298 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 340 h = 36 f = ["#f3ead6"] txt = "Благочестие" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 376 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 381 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 63 w = 370 h = 48 f = ["#d2b77d"] txt = "61 / 100" ff = "PT Serif" fs = 32 fw = 400 }
+    { t = text x = 20 y = 123 w = 370 h = 24 f = ["#bac1b1"] txt = "Личное благочестие персонажа.\nАктивные черты не дают поправок." ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 192 w = 370 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 214 w = 278 h = 24 f = ["#f3ead6"] txt = "Основа\nПоправка от черт" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 304 y = 214 w = 86 h = 24 f = ["#d2b77d"] txt = "61\n0" ff = "PT Sans Caption" fs = 16 fw = 700 }
+  ]
+}
+
+board "Персонаж / подсказка / Почему Иван наследник" {
+  w = 430 h = 322
+  el = [
+    { n = "Персонаж / подсказка / Почему Иван наследник" t = board x = 0 y = 0 w = 430 h = 322 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 360 h = 36 f = ["#f3ead6"] txt = "Почему Иван наследник" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 396 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 401 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { n = "Badge / ЗАКОН РОДА · МАЙОРАТ" t = rectangle x = 20 y = 64 w = 310 h = 28 f = ["#34423b"] r = 2 }
+    { t = text x = 28 y = 68 w = 294 h = 19.5 f = ["#d2b77d"] txt = "ЗАКОН РОДА · МАЙОРАТ" ff = "PT Sans Caption" fs = 13 fw = 700 }
+    { t = text x = 20 y = 119 w = 390 h = 25.5 f = ["#bac1b1"] txt = "Иван — старший законный сын\nнынешнего главы рода. При майорате\nон первый в очереди наследования." ff = "PT Sans Caption" fs = 17 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 218 w = 390 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 240 w = 390 h = 21 f = ["#bac1b1"] txt = "Следующий по прямой линии" ff = "PT Sans Caption" fs = 14 fw = 400 }
+    { t = text x = 20 y = 268 w = 390 h = 30 f = ["#f3ead6"] txt = "Пётр Михайлович Голицын" ff = "PT Serif" fs = 20 fw = 400 }
+  ]
+}
+
+board "Персонаж / подсказка / Лояльность главе рода" {
+  w = 430 h = 300
+  el = [
+    { n = "Персонаж / подсказка / Лояльность главе рода" t = board x = 0 y = 0 w = 430 h = 300 f = ["#25312d"] s = [{ c = "#d2b77d" w = 1 a = inner }] }
+    { t = text x = 20 y = 17 w = 360 h = 36 f = ["#f3ead6"] txt = "Лояльность главе рода" ff = "PT Serif" fs = 24 fw = 400 }
+    { n = "Close tooltip" t = board x = 396 y = 9 w = 26 h = 26 f = ["#25312d"] }
+    { n = "Icon / close" t = group x = 401 y = 14 w = 24 h = 24 s = [{ c = "#bac1b1" w = 1.5 cap = round }] paths = 1 }
+    { t = text x = 20 y = 65 w = 390 h = 24 f = ["#bac1b1"] txt = "Иван → Михаил Голицын" ff = "PT Sans Caption" fs = 16 fw = 400 }
+    { t = text x = 20 y = 101 w = 390 h = 51 f = ["#d2b77d"] txt = "+52" ff = "PT Serif" fs = 34 fw = 400 }
+    { n = "Divider" t = rectangle x = 20 y = 156 w = 390 h = 1 f = ["#6e7158"] }
+    { t = text x = 20 y = 179 w = 309 h = 22.5 f = ["#f3ead6"] txt = "Основа\nПоправка от активных черт" ff = "PT Sans Caption" fs = 15 fw = 400 }
+    { t = text x = 331 y = 179 w = 79 h = 22.5 f = ["#d2b77d"] txt = "52\n0" ff = "PT Sans Caption" fs = 15 fw = 700 }
+    { t = text x = 20 y = 245 w = 390 h = 19.5 f = ["#bac1b1"] txt = "Мнение отца об Иване показано отдельно\nво вкладке «Семья и связи»." ff = "PT Sans Caption" fs = 13 fw = 400 }
+  ]
+}
