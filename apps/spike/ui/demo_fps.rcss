@@ -1,0 +1,24 @@
+/* The map readout of the demo panel lives in its own tiny document on purpose (issue #93): RmlUi re-lays out a whole
+   document when any text in it changes, and demo.rml holds a 1000-row list (about 12 ms per layout), so a readout
+   that changes every 30 frames inside it caused a CPU spike each time. In a document of its own it costs ~0.02 ms.
+   The position is tuned to sit after the "Карта:" label of the paragraph in demo.rml. */
+div {
+    display: block;
+}
+
+body {
+    width: 0;
+    height: 0;
+    margin: 0;
+    font-family: Arial;
+    font-size: 15dp;
+    color: #e8e0cc;
+}
+
+#demo-fps {
+    position: absolute;
+    left: 83dp;
+    top: 62dp;
+    width: 300dp;
+    white-space: nowrap;
+}

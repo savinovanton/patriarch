@@ -1,0 +1,9 @@
+<rml>
+<head>
+    <title>Patriarch spike UI: map readout</title>
+    <link type="text/rcss" href="demo_fps.rcss"/>
+</head>
+<body>
+    <div id="demo-fps"></div>
+</body>
+</rml>
