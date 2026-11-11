@@ -58,6 +58,7 @@ add_executable(patriarch_tests
     spsc_queue_test.cpp
     static_vec_test.cpp
     string_interner_test.cpp
+    world_model_test.cpp
     world_test.cpp)
 
 target_link_libraries(patriarch_tests PRIVATE
