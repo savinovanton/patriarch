@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/money.hpp"
+#include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/world.hpp"
 
@@ -120,7 +121,7 @@ ProvinceMood compute_province_mood(const EconomyRules& rules, const MoodInput& i
 
 // ---- province --------------------------------------------------------------------------------------
 
-MoodInput mood_input(const World& world, ProvinceId province) {
+MoodInput mood_input(const World& world, const EconomyRules& rules, ProvinceId province) {
     MoodInput in;
     if (!world.economy_present() || !world.exists(province)) {
         return in;
@@ -133,8 +134,8 @@ MoodInput mood_input(const World& world, ProvinceId province) {
         in.wealth[g] = e.groups.wealth[first + g];
     }
     in.control = e.provinces.control[p];
-    in.tax_level = e.provinces.tax_policy[p];
-    in.recruit_level = e.provinces.recruit_policy[p];
+    in.tax_level = effective_tax_level(world, rules, province);
+    in.recruit_level = effective_recruit_level(world, rules, province);
     return in;
 }
 
@@ -153,7 +154,7 @@ ProvinceMood step_province_mood(World& world, const EconomyRules& rules, Provinc
     if (!world.economy_present() || !world.exists(province)) {
         return {};
     }
-    const ProvinceMood result = compute_province_mood(rules, mood_input(world, province));
+    const ProvinceMood result = compute_province_mood(rules, mood_input(world, rules, province));
     apply_province_mood(world, province, result);
     return result;
 }

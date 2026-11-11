@@ -13,6 +13,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/ledger.hpp
     include/pat/sim/economy/money.hpp
     include/pat/sim/economy/mood.hpp
+    include/pat/sim/economy/policy.hpp
     include/pat/sim/economy/population.hpp
     include/pat/sim/economy/production.hpp
     include/pat/sim/economy/rules.hpp
@@ -50,6 +51,7 @@ add_library(patriarch_sim STATIC
     economy/forecast.cpp
     economy/invariants.cpp
     economy/mood.cpp
+    economy/policy.cpp
     economy/population.cpp
     economy/production.cpp
     economy/rules.cpp

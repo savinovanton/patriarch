@@ -1,6 +1,7 @@
 #include "pat/sim/command.hpp"
 
 #include "pat/sim/command_log.hpp"
+#include "pat/sim/economy/rules.hpp"
 
 #include <algorithm>
 #include <array>
@@ -306,6 +307,30 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> policy(DynastyId dynasty, std::uint8_t level, std::uint8_t levels) const {
+        if (!world.economy_present()) {
+            return reject(Rejection::InvalidState, "the world has no economy");
+        }
+        if (!world.exists(dynasty)) {
+            return reject(Rejection::UnknownEntity, "unknown dynasty");
+        }
+        if (!may_act_for(actor, dynasty)) {
+            return reject(Rejection::NotAuthorized, "a dynasty sets only its own policy");
+        }
+        // Without the number of levels of the rules (0, never set) only the structural limit holds.
+        const std::size_t limit = levels != 0 ? levels : economy::kMaxPolicyLevels;
+        if (level >= limit) {
+            return reject(Rejection::InvalidArgument, "the policy has no such level");
+        }
+        return accept();
+    }
+    Result<void, CommandError> operator()(const cmd::SetTaxPolicy& c) const {
+        return policy(c.dynasty, c.level, world.economy().meta.tax_levels);
+    }
+    Result<void, CommandError> operator()(const cmd::SetRecruitPolicy& c) const {
+        return policy(c.dynasty, c.level, world.economy().meta.recruit_levels);
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -408,6 +433,12 @@ struct Applier {
     void operator()(const cmd::AssignProvinceAdministrator& c) const {
         (void)world.set_province_administrator(c.province, c.administrator);
     }
+    void operator()(const cmd::SetTaxPolicy& c) const {
+        (void)world.set_dynasty_tax_policy(c.dynasty, c.level);
+    }
+    void operator()(const cmd::SetRecruitPolicy& c) const {
+        (void)world.set_dynasty_recruit_policy(c.dynasty, c.level);
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -485,6 +516,15 @@ struct CommandTag<cmd::AssignProvinceAdministrator> {
     static constexpr CommandType value = CommandType::AssignProvinceAdministrator;
 };
 
+template <>
+struct CommandTag<cmd::SetTaxPolicy> {
+    static constexpr CommandType value = CommandType::SetTaxPolicy;
+};
+template <>
+struct CommandTag<cmd::SetRecruitPolicy> {
+    static constexpr CommandType value = CommandType::SetRecruitPolicy;
+};
+
 template <class Variant>
 struct TagTable;
 template <class... Alternatives>
@@ -544,6 +584,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustOpinion";
         case CommandType::AssignProvinceAdministrator:
             return "AssignProvinceAdministrator";
+        case CommandType::SetTaxPolicy:
+            return "SetTaxPolicy";
+        case CommandType::SetRecruitPolicy:
+            return "SetRecruitPolicy";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

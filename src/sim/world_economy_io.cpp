@@ -41,6 +41,9 @@
 //                                                                                     (only if any)
 //   39 incidents      u32 rows (<= 256) | rows x { u32 seq | i32 date | u32 province | u32 dynasty |
 //                     u8 kind | i32 param }                                           (only if any)
+//   40 policy         u8 tax_levels | u8 recruit_levels | u32 rows (= dynasties) |
+//                     rows x { u8 tax_policy | u8 recruit_policy }      (schema >= 9, E9-T12; always,
+//                     when the economy is on; 255 = "not chosen", the default of the rules)
 //
 // Nothing read here is trusted: counts must match the dynasty and province tables or be plausible for
 // the bytes that are left, and everything else (enumerations, ranges, references, ordering) is
@@ -62,6 +65,7 @@ constexpr std::size_t kLines = economy::kLedgerLineCount;
 constexpr std::size_t kRing = economy::kLedgerRingMonths;
 
 constexpr std::size_t kDynastyRowBytes = 4 + 1;
+constexpr std::size_t kPolicyRowBytes = 2;
 constexpr std::size_t kProvinceRowBytes =
     5 + 2 + 4 + 3 * 4 + 4 + 4 + 4 + 8 + 4 + 4 * economy::kMaxGoods + economy::kMaxSlots;
 constexpr std::size_t kGroupRowBytes = 5 * 4;
@@ -126,6 +130,8 @@ std::array<std::uint64_t, economy::kEconomyHashPartCount> World::economy_hash_pa
         for (std::size_t d = 0; d < e.dynasties.size(); ++d) {
             h.u32(e.dynasties.manpower_reserve[d]);
             h.u8(e.dynasties.bankrupt[d]);
+            h.u8(e.dynasties.tax_policy[d]);
+            h.u8(e.dynasties.recruit_policy[d]);
         }
         out[at(economy::EconomyHashPart::Dynasties)] = h.value();
     }
@@ -448,6 +454,18 @@ void World::economy_write_sections(std::vector<StateSection>& sections) const {
         }
         sections.push_back(std::move(s));
     }
+    {  // 40
+        StateSection s{detail::kSectionEconomyPolicy, 1, {}};
+        core::ByteWriter& w = s.body;
+        w.u8(e.meta.tax_levels);
+        w.u8(e.meta.recruit_levels);
+        w.u32(static_cast<std::uint32_t>(e.dynasties.size()));
+        for (std::size_t d = 0; d < e.dynasties.size(); ++d) {
+            w.u8(e.dynasties.tax_policy[d]);
+            w.u8(e.dynasties.recruit_policy[d]);
+        }
+        sections.push_back(std::move(s));
+    }
 }
 
 // ---- reading ------------------------------------------------------------------------------------
@@ -689,6 +707,21 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
                 l.dynasty.emplace_back(in.u32());
                 l.kind.push_back(in.u8());
                 l.param.push_back(in.i32());
+            }
+            break;
+        }
+        case detail::kSectionEconomyPolicy: {
+            e.meta.tax_levels = in.u8();
+            e.meta.recruit_levels = in.u8();
+            const std::uint32_t rows = in.u32();
+            if (rows != dynasty_count || !plausible(in, rows, kPolicyRowBytes)) {
+                return "the economy policy rows do not match the dynasties";
+            }
+            e.dynasties.tax_policy.resize(rows);
+            e.dynasties.recruit_policy.resize(rows);
+            for (std::uint32_t d = 0; d < rows; ++d) {
+                e.dynasties.tax_policy[d] = in.u8();
+                e.dynasties.recruit_policy[d] = in.u8();
             }
             break;
         }

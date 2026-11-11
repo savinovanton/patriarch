@@ -105,6 +105,7 @@ constexpr SectionInfo kSections[] = {
     {detail::kSectionEconomyConstruction, 1, 5},
     {detail::kSectionEconomyCredit, 1, 5},
     {detail::kSectionEconomyIncidents, 1, 5},
+    {detail::kSectionEconomyPolicy, 1, 9},
 };
 
 const SectionInfo* find_section(std::uint16_t id) {
@@ -374,7 +375,7 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
-    economy_write_sections(sections);  // ids 32..39, after the sections above
+    economy_write_sections(sections);  // ids 32..40, after the sections above
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
     for (const Section& section : sections) {
@@ -809,6 +810,9 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         }
     }
 
+    if (schema < 9) {
+        world.economy_migrate_policies();  // 8 -> 9: the policies of the dynasties are all "default"
+    }
     world.rebuild_derived_indexes();
     const std::vector<std::string> problems = world.check_invariants();
     if (!problems.empty()) {

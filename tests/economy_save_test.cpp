@@ -243,6 +243,7 @@ constexpr std::uint16_t kSecAccounts = 36;
 constexpr std::uint16_t kSecConstruction = 37;
 constexpr std::uint16_t kSecCredit = 38;
 constexpr std::uint16_t kSecIncidents = 39;
+constexpr std::uint16_t kSecPolicy = 40;
 
 std::vector<std::uint16_t> section_ids(const std::vector<std::uint8_t>& bytes) {
     std::vector<std::uint16_t> ids;
@@ -584,7 +585,7 @@ TEST_CASE("save: a minimal economy (no provinces, no dynasties, a crown only) ro
     CHECK(hash.ext[ext_index(ExtPart::Economy)] != 0);  // "on, nearly empty" is not "off"
     const std::vector<std::uint8_t> bytes = state_bytes(world);
     const auto ids = section_ids(bytes);
-    CHECK(ids == std::vector<std::uint16_t>{kSecMeta, kSecAccounts});
+    CHECK(ids == std::vector<std::uint16_t>{kSecMeta, kSecAccounts, kSecPolicy});
     auto loaded = load(bytes);
     REQUIRE(loaded.has_value());
     CHECK(loaded.value().economy() == world.economy());
@@ -1017,7 +1018,7 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
         "out of order");
     refuse("a section twice", [](auto& secs) { secs.push_back(secs.back()); }, "out of order");
     refuse("version 2", [](auto& secs) { secs.back().version = 2; }, "unsupported");
-    refuse("an unknown section", [](auto& secs) { secs.push_back(Sec{40, 1, {1, 2, 3, 4}}); }, "unsupported");
+    refuse("an unknown section", [](auto& secs) { secs.push_back(Sec{41, 1, {1, 2, 3, 4}}); }, "unsupported");
     refuse(
         "unused bytes in a section",
         [](auto& secs) { body_of(secs, kSecDynasty).push_back(0); },

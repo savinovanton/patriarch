@@ -69,11 +69,12 @@ TEST_CASE("rules invariants: a consistent world and a world without economy pass
 
 TEST_CASE("rules invariants E-R1: a policy level the rules do not define is reported") {
     World world = make_world();
-    world.economy_columns_mut().tax_policy[1] = 200;
-    // the world alone cannot know: level K lets it through, level R does not
+    world.economy_columns_mut().tax_policy[1] = 6;
+    // the world alone cannot know the rules (only that 8 levels is the most): level K lets it through, level
+    // R does not
     CHECK(world.check_invariants().empty());
     const auto problems = check_rules_invariants(world, rules());
-    CHECK(mentions(problems, "province 1 has the tax policy level 200"));
+    CHECK(mentions(problems, "province 1 has the tax policy level 6"));
     CHECK(problems.size() == 1);
 
     world.economy_columns_mut().tax_policy[1] = static_cast<std::uint8_t>(rules().tax.level_count - 1);
@@ -82,8 +83,8 @@ TEST_CASE("rules invariants E-R1: a policy level the rules do not define is repo
     CHECK_FALSE(check_rules_invariants(world, rules()).empty());
 
     world.economy_columns_mut().tax_policy[1] = 0;
-    world.economy_columns_mut().recruit_policy[2] = 99;
-    CHECK(mentions(check_rules_invariants(world, rules()), "province 2 has the recruit policy level 99"));
+    world.economy_columns_mut().recruit_policy[2] = 7;
+    CHECK(mentions(check_rules_invariants(world, rules()), "province 2 has the recruit policy level 7"));
 }
 
 TEST_CASE("rules invariants E-R1: a building type the rules do not define is reported") {

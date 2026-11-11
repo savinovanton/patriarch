@@ -570,6 +570,17 @@ public:
     [[nodiscard]] economy::EconomyColumnsMut economy_columns_mut() noexcept;
     /// Hash of the rules the world was built with. Saved with the economy, but not hashed.
     void set_economy_rules_hash(std::uint64_t rules_hash) noexcept;
+    /// The number of levels of the tax and of the recruit policy in the rules of this world (E9-T12):
+    /// the range of SetTaxPolicy and SetRecruitPolicy. Call it where the rules are known (scenario
+    /// builders; the invariant E-R1 checks it against the rules). Without it only the structural limit
+    /// economy::kMaxPolicyLevels holds. False (nothing changed) without economy or for more levels
+    /// than the limit.
+    bool set_economy_policy_levels(std::uint8_t tax_levels, std::uint8_t recruit_levels) noexcept;
+    /// The policy of a dynasty for all its provinces (E9-T12, the effect of SetTaxPolicy /
+    /// SetRecruitPolicy). The level must be below the number of levels set by set_economy_policy_levels.
+    /// False (nothing changed) for an unknown dynasty, a level out of range or without economy.
+    bool set_dynasty_tax_policy(DynastyId dynasty, std::uint8_t level);
+    bool set_dynasty_recruit_policy(DynastyId dynasty, std::uint8_t level);
     /// The sub-hashes of the economy (economy::EconomyHashPart order); all 0 without economy. A
     /// diagnostic: `compute_hash().ext[ExtPart::Economy]` is the hash of these nine numbers.
     [[nodiscard]] std::array<std::uint64_t, economy::kEconomyHashPartCount> economy_hash_parts() const;
@@ -672,7 +683,8 @@ public:
     ///   6  + section 5 "chronicle" (E7-T16); older files start with empty chronicles
     ///   7  + section 6 "opinion" (E7-T17); older files start without stored opinions
     ///   8  + section 7 "dynasty_standing" (E7-T14); older files start with default prestige
-    static constexpr std::uint32_t kStateSchema = 8;
+    ///   9  + section 40 "economy policy" (E9-T12): policies of the dynasties; older files: all default
+    static constexpr std::uint32_t kStateSchema = 9;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -738,6 +750,8 @@ private:
     /// before (ids ascend). Returns nullptr on success, otherwise a description of the damage; the
     /// invariants are checked by the caller once everything has been read.
     [[nodiscard]] const char* economy_read_section(std::uint16_t id, core::ByteReader& in);
+    /// Migration 8 -> 9 (E9-T12): gives every dynasty the policy "default"; nothing without economy.
+    void economy_migrate_policies();
     // Economy helpers (world_economy.cpp).
     void economy_add_dynasty_rows();
     /// Appends the economy rows of province `index`, which exists in ProvinceTable already: the

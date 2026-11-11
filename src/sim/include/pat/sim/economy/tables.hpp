@@ -67,6 +67,12 @@ inline constexpr core::Fixed32 kStockMax = core::Fixed32::from_int(32'767);  // 
 inline constexpr core::Fixed32 kDefaultWealth = core::Fixed32::from_int(100);
 inline constexpr core::Fixed32 kDefaultControl = core::Fixed32::from_int(100);
 
+/// The value of a policy column that says "not chosen": a dynasty row means the `default_level` of the
+/// rules, a province row means "follow the owner" (E9-T12). Never a valid level (the rules have at most
+/// kMaxPolicyLevels = 8 of them), and it is what a new row starts with, so that the default needs no
+/// knowledge of the rules where the row is made.
+inline constexpr std::uint8_t kPolicyDefault = 0xFF;
+
 // ---- enumerations (values are stable: they go into saves) ----------------------------------------
 
 /// Who holds a province (economy-model section 4).
@@ -137,6 +143,12 @@ struct EconomyMeta {
     std::uint32_t next_outcome_seq = 0;
     std::uint32_t next_incident_seq = 0;
     std::uint32_t next_construction_seq = 0;
+    /// How many levels the tax and the recruit policy have in the rules the world was built with
+    /// (E9-T12): the range that SetTaxPolicy / SetRecruitPolicy accept. 0 = not set, then only the
+    /// structural limit kMaxPolicyLevels holds. Informational like `rules_hash`: saved, not hashed
+    /// (the rules decide it), checked against the rules by the rules invariant E-R1.
+    std::uint8_t tax_levels = 0;
+    std::uint8_t recruit_levels = 0;
 
     [[nodiscard]] bool operator==(const EconomyMeta&) const = default;
 };
@@ -207,6 +219,11 @@ private:
 struct DynastyEconomy {
     std::vector<std::uint32_t> manpower_reserve;  ///< people
     std::vector<std::uint8_t> bankrupt;           ///< 0 / 1
+    /// The policy of the dynasty for all its provinces (E9-T12, GDD 03 section 9): a level index or
+    /// kPolicyDefault ("not chosen": the `default_level` of the rules). Set by SetTaxPolicy.
+    std::vector<std::uint8_t> tax_policy;
+    /// Same for the recruit policy; set by SetRecruitPolicy.
+    std::vector<std::uint8_t> recruit_policy;
 
     [[nodiscard]] std::size_t size() const noexcept { return manpower_reserve.size(); }
     [[nodiscard]] bool operator==(const DynastyEconomy&) const = default;
@@ -214,10 +231,13 @@ struct DynastyEconomy {
 
 /// Per province (section 4.4), parallel to ProvinceTable. `development` stays in ProvinceTable.
 struct ProvinceEconomy {
-    std::vector<std::uint8_t> kind;            ///< ProvinceKind
-    std::vector<std::uint8_t> owner_kind;      ///< OwnerKind; Dynasty <=> ProvinceTable::owner is valid
-    std::vector<std::uint8_t> tax_policy;      ///< level index
-    std::vector<std::uint8_t> recruit_policy;  ///< level index
+    std::vector<std::uint8_t> kind;        ///< ProvinceKind
+    std::vector<std::uint8_t> owner_kind;  ///< OwnerKind; Dynasty <=> ProvinceTable::owner is valid
+    /// A decree for this one province: a level index, or kPolicyDefault = "follow the owner" (the
+    /// policy of the owner dynasty, see effective_tax_level). A new row follows the owner; no command
+    /// writes this column (E9-T12 made the policy a matter of the dynasty), it is for scenarios.
+    std::vector<std::uint8_t> tax_policy;
+    std::vector<std::uint8_t> recruit_policy;  ///< same
     std::vector<std::uint8_t> slots_total;     ///< 0..kMaxSlots
     std::vector<std::uint16_t> trade_node;     ///< 0 = none
     std::vector<CharacterId> administrator;    ///< invalid = none; otherwise alive

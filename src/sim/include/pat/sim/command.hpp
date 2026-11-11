@@ -36,6 +36,8 @@ enum class CommandType : std::uint8_t {
     AdjustOpinion = 19,                // E7-T17
     AdjustPrestige = 20,               // E7-T14
     AdjustHonorWithReason = 21,        // E7-T14
+    SetTaxPolicy = 32,                 // E9-T12
+    SetRecruitPolicy = 33,             // E9-T12
     AssignProvinceAdministrator = 35,  // E9-T10
 };
 
@@ -158,6 +160,25 @@ struct AssignProvinceAdministrator {
     [[nodiscard]] bool operator==(const AssignProvinceAdministrator&) const = default;
 };
 
+/// The tax policy of a dynasty for all its provinces (E9-T12, GDD 03 section 9): a level index, 0 = low
+/// ... 3 = excessive in M1 (the number of levels comes from the rules, see
+/// World::set_economy_policy_levels). Needs an economy. A dynasty sets its own policy (`actor ==
+/// dynasty`), the system (invalid actor) may set any. Changes only the choice of the dynasty: the
+/// level takes effect in the next monthly pass of each of its provinces (economy::effective_tax_level).
+struct SetTaxPolicy {
+    DynastyId dynasty;
+    std::uint8_t level = 0;
+    [[nodiscard]] bool operator==(const SetTaxPolicy&) const = default;
+};
+
+/// The recruit policy of a dynasty (E9-T12): 0 = voluntary ... 2 = intensified in M1. Same rules as
+/// SetTaxPolicy.
+struct SetRecruitPolicy {
+    DynastyId dynasty;
+    std::uint8_t level = 0;
+    [[nodiscard]] bool operator==(const SetRecruitPolicy&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -189,7 +210,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::AdjustUnity,
                                     cmd::AdjustPrestige,
                                     cmd::AdjustHonorWithReason,
-                                    cmd::AssignProvinceAdministrator>;
+                                    cmd::AssignProvinceAdministrator,
+                                    cmd::SetTaxPolicy,
+                                    cmd::SetRecruitPolicy>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

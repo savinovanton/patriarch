@@ -386,8 +386,8 @@ TEST_CASE("F8: the mood never reads the grain: the shortage acts through the wea
     World world = make_world(2);
     world.economy_columns_mut().grain_stock[0] = Fixed32::zero();
     world.economy_columns_mut().grain_stock[1] = Fixed32::from_int(30'000);
-    const MoodInput a = mood_input(world, ProvinceId(0));
-    const MoodInput b = mood_input(world, ProvinceId(1));
+    const MoodInput a = mood_input(world, rules(), ProvinceId(0));
+    const MoodInput b = mood_input(world, rules(), ProvinceId(1));
     CHECK(a.wealth == b.wealth);
     CHECK(compute_province_mood(rules(), a) == compute_province_mood(rules(), b));
 
@@ -397,10 +397,10 @@ TEST_CASE("F8: the mood never reads the grain: the shortage acts through the wea
     const std::size_t row = group_row(0, Group::Peasants);
     const Fixed32 usual_wealth = hungry.economy().groups.wealth[row];
     hungry.economy_columns_mut().wealth[row] = raw(usual_wealth.raw() - 30 * kOne);
-    const MoodInput poor = mood_input(hungry, ProvinceId(0));
+    const MoodInput poor = mood_input(hungry, rules(), ProvinceId(0));
     Breakdown rich_b;
     Breakdown poor_b;
-    const MoodInput well = mood_input(make_world(1), ProvinceId(0));
+    const MoodInput well = mood_input(make_world(1), rules(), ProvinceId(0));
     (void)compute_group_target(rules(), well, Group::Peasants, &rich_b);
     (void)compute_group_target(rules(), poor, Group::Peasants, &poor_b);
     CHECK(poor_b.total() - rich_b.total() == -3 * kOne);  // 30 points of wealth x 0.1
@@ -449,7 +449,7 @@ TEST_CASE("province: a world without economy or an unknown province is left alon
     (void)plain.create_dynasty(StringId(1));
     (void)plain.create_province(StringId(100), DynastyId(0), Fixed32::from_int(1));
     CHECK(step_province_mood(plain, rules(), ProvinceId(0)) == ProvinceMood{});
-    CHECK(mood_input(plain, ProvinceId(0)).control == kDefaultControl);
+    CHECK(mood_input(plain, rules(), ProvinceId(0)).control == kDefaultControl);
 
     World world = make_world(1);
     const World copy = world;
@@ -462,7 +462,7 @@ TEST_CASE("province: a world without economy or an unknown province is left alon
 TEST_CASE("province: explain_mood is the target the step used") {
     World world = make_world(1);
     world.economy_columns_mut().tax_policy[0] = 2;
-    const MoodInput in = mood_input(world, ProvinceId(0));
+    const MoodInput in = mood_input(world, rules(), ProvinceId(0));
     const ProvinceMood result = compute_province_mood(rules(), in);
     for (std::size_t g = 0; g < kGroupCount; ++g) {
         const Breakdown b = explain_mood(rules(), in, static_cast<Group>(g));
@@ -486,7 +486,7 @@ TEST_CASE("F8: month lengths of 28, 29, 30 and 31 days, Julian leap years includ
             world.economy_columns_mut().tax_policy[p] = 3;
             expected[p] = mood_of(world, p, Group::Peasants);
         }
-        const MoodInput in = mood_input(world, ProvinceId(0));
+        const MoodInput in = mood_input(world, rules(), ProvinceId(0));
         Simulation sim(std::move(world));
         install_economy_systems(sim, r);
         bool saw_february_of_29 = false;
