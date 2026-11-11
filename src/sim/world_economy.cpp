@@ -1,8 +1,10 @@
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
+#include <array>
 #include <format>
 #include <limits>
 #include <utility>
@@ -195,6 +197,36 @@ bool World::set_dynasty_recruit_policy(DynastyId dynasty, std::uint8_t level) {
     }
     economy_.dynasties.recruit_policy[dynasty.index()] = level;
     return true;
+}
+
+std::uint32_t World::conscript_recruits(ProvinceId province, std::uint32_t count) {
+    if (economy_.meta.present == 0 || !exists(province) || count == 0) {
+        return 0;
+    }
+    const std::size_t p = province.index();
+    const DynastyId owner = provinces_.owner[p];
+    if (economy_.provinces.owner_kind[p] != to_u8(OwnerKind::Dynasty) || !owner.valid() || !exists(owner)) {
+        return 0;
+    }
+    std::uint32_t& reserve = economy_.dynasties.manpower_reserve[owner.index()];
+    const std::uint32_t room = std::numeric_limits<std::uint32_t>::max() - reserve;
+    std::array<std::uint32_t, economy::kGroupCount> size{};
+    for (std::size_t g = 0; g < economy::kGroupCount; ++g) {
+        size[g] = economy_.groups.size[p * economy::kGroupCount + g];
+    }
+    const std::uint32_t pool = economy_.provinces.recruit_pool[p];
+    const std::array<std::uint32_t, economy::kGroupCount> take =
+        economy::split_conscription(size, std::min({count, pool, room}));
+    std::uint32_t total = 0;
+    for (std::size_t g = 0; g < economy::kGroupCount; ++g) {
+        total += take[g];
+        if (take[g] != 0) {
+            (void)set_group_size(province, static_cast<economy::Group>(g), size[g] - take[g]);
+        }
+    }
+    economy_.provinces.recruit_pool[p] = pool - total;
+    reserve += total;
+    return total;
 }
 
 // ---- provinces ----------------------------------------------------------------------------------

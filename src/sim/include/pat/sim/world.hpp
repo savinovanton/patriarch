@@ -581,6 +581,12 @@ public:
     /// False (nothing changed) for an unknown dynasty, a level out of range or without economy.
     bool set_dynasty_tax_policy(DynastyId dynasty, std::uint8_t level);
     bool set_dynasty_recruit_policy(DynastyId dynasty, std::uint8_t level);
+    /// Conscription (E9-T13, the effect of ConscriptRecruits): takes `count` people out of the recruit
+    /// pool of a province, out of the peasants, cossacks and townsfolk (economy::split_conscription),
+    /// and adds the same number to the manpower reserve of the owner dynasty. Returns the number really
+    /// conscripted: `count`, or less when the pool, the people of the recruit groups or the room in the
+    /// reserve are fewer; 0 without economy, for an unknown province or one that no dynasty owns.
+    std::uint32_t conscript_recruits(ProvinceId province, std::uint32_t count);
     /// The sub-hashes of the economy (economy::EconomyHashPart order); all 0 without economy. A
     /// diagnostic: `compute_hash().ext[ExtPart::Economy]` is the hash of these nine numbers.
     [[nodiscard]] std::array<std::uint64_t, economy::kEconomyHashPartCount> economy_hash_parts() const;

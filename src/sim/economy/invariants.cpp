@@ -1,6 +1,7 @@
 #include "pat/sim/economy/invariants.hpp"
 
 #include "pat/sim/economy/production.hpp"
+#include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/world.hpp"
 
@@ -102,6 +103,16 @@ std::vector<std::string> check_rules_invariants(const World& world, const Econom
                                           p,
                                           pe.grain_stock[p].raw(),
                                           cap));
+            }
+            // F11: the pool never exceeds what the people can give under the heaviest policy and full
+            // control. (Not the cap of the policy of the day: a command or a fall of control between
+            // two slots may leave the pool above it until the next slot cuts it.)
+            const std::uint32_t ceiling = recruit_ceiling(rules, sizes);
+            if (pe.recruit_pool[p] > ceiling) {
+                bad.push_back(std::format("province {} has a recruit pool of {}, above the ceiling of {}",
+                                          p,
+                                          pe.recruit_pool[p],
+                                          ceiling));
             }
         }
     }

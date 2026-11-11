@@ -18,6 +18,7 @@ add_executable(patriarch_tests
     dynasty_standing_test.cpp
     economy_administrator_test.cpp
     economy_policy_test.cpp
+    economy_recruits_test.cpp
     economy_invariants_test.cpp
     economy_mood_test.cpp
     economy_content_test.cpp

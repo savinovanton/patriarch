@@ -16,6 +16,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/policy.hpp
     include/pat/sim/economy/population.hpp
     include/pat/sim/economy/production.hpp
+    include/pat/sim/economy/recruits.hpp
     include/pat/sim/economy/rules.hpp
     include/pat/sim/economy/settlement.hpp
     include/pat/sim/economy/systems.hpp
@@ -55,6 +56,7 @@ add_library(patriarch_sim STATIC
     economy/policy.cpp
     economy/population.cpp
     economy/production.cpp
+    economy/recruits.cpp
     economy/rules.cpp
     economy/settlement.cpp
     economy/systems.cpp
