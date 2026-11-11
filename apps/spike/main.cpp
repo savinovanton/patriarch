@@ -459,6 +459,16 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
     pat::content::CreditsList credits_list;               // data/credits, read once (and again on a reload)
     bool hud_visible = true;
+    // The map readout of the demo panel (demo_fps.rml); looked up by element id, as a hot reload recreates documents.
+    const auto find_demo_readout = [&]() -> Rml::ElementDocument* {
+        for (int i = 0; ui && i < ui->context()->GetNumDocuments(); ++i) {
+            Rml::ElementDocument* d = ui->context()->GetDocument(i);
+            if (d->GetElementById("demo-fps") != nullptr) {
+                return d;
+            }
+        }
+        return nullptr;
+    };
     const auto populate_demo = [&](Rml::ElementDocument* doc) {
         if (doc == nullptr) {
             return;
@@ -495,6 +505,9 @@ int main(int argc, char** argv) {
             if (doc != nullptr) {
                 populate_demo(doc);
                 doc->Hide();  // the plain demo panel is toggled with F2
+                if (Rml::ElementDocument* readout = ui->load_document(ui_dir / "demo_fps.rml")) {
+                    readout->Hide();
+                }
             } else {
                 PAT_LOG_WARN("spike", "UI demo document not found in '{}'", PATRIARCH_SPIKE_UI_DIR);
             }
@@ -654,6 +667,10 @@ int main(int argc, char** argv) {
     // Benchmark bookkeeping.
     std::vector<double> frame_ms;
     std::vector<double> gpu_ms;
+    // Per-frame UI phase times (bench only): scroll + list window rebuild, RmlUi update, RmlUi render.
+    std::vector<double> ui_rows_ms;
+    std::vector<double> ui_update_ms;
+    std::vector<double> ui_render_ms;
     std::size_t min_nodes = ~static_cast<std::size_t>(0);
     std::size_t max_nodes = 0;
     double max_mode_switch_ms = 0.0;
@@ -746,10 +763,17 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == scancode::f2 && !m1 && ui != nullptr &&
                                ui->context()->GetNumDocuments() > 0) {
                         Rml::ElementDocument* doc = ui->context()->GetDocument(0);
-                        if (doc->IsVisible()) {
-                            doc->Hide();
-                        } else {
-                            doc->Show();
+                        const bool show = !doc->IsVisible();
+                        Rml::ElementDocument* readout = find_demo_readout();
+                        for (Rml::ElementDocument* d : {doc, readout}) {
+                            if (d == nullptr) {
+                                continue;
+                            }
+                            if (show) {
+                                d->Show(Rml::ModalFlag::None, d == doc ? Rml::FocusFlag::Auto : Rml::FocusFlag::None);
+                            } else {
+                                d->Hide();
+                            }
                         }
                     } else if (key->scancode >= kScancode1 && key->scancode < kScancode1 + 4) {
                         view->set_mode(static_cast<MapMode>(key->scancode - kScancode1));
@@ -1003,6 +1027,7 @@ int main(int argc, char** argv) {
             renderer->pop_marker();
             if (ui) {
                 renderer->push_marker("ui");
+                const std::int64_t ui_t0 = now_ns();
                 if (character && opt.bench) {
                     // Benchmark: show the 1000-row relations list and scroll it up and down.
                     character->set_tab("relations");
@@ -1020,8 +1045,16 @@ int main(int argc, char** argv) {
                 if (tooltips) {
                     tooltips->update(frame_dt);
                 }
+                const std::int64_t ui_t1 = now_ns();
                 ui->update();
+                const std::int64_t ui_t2 = now_ns();
                 ui->render();
+                const std::int64_t ui_t3 = now_ns();
+                if (opt.bench) {
+                    ui_rows_ms.push_back(static_cast<double>(ui_t1 - ui_t0) * 1e-6);
+                    ui_update_ms.push_back(static_cast<double>(ui_t2 - ui_t1) * 1e-6);
+                    ui_render_ms.push_back(static_cast<double>(ui_t3 - ui_t2) * 1e-6);
+                }
                 renderer->pop_marker();
             }
             if (!opt.shot_file.empty() && clock.frame_count() >= 4) {
@@ -1073,12 +1106,14 @@ int main(int argc, char** argv) {
                           view->last_node_count(), label_stats.placed, mode_name(view->mode()), renderer->vsync() ? "on" : "off",
                           std::string(renderer->adapter_name()).c_str(), info);
             window.set_title(title);
-            if (ui && ui->context()->GetNumDocuments() > 0) {
-                if (Rml::Element* el = ui->context()->GetDocument(0)->GetElementById("fps")) {
+            if (ui) {
+                // The readout is a document of its own (demo_fps.rml): changing text inside demo.rml re-lays out its
+                // 1000-row list, a CPU spike of about 12 ms every 30 frames (issue #93).
+                if (Rml::ElementDocument* readout = find_demo_readout()) {
                     char text[128];
                     std::snprintf(text, sizeof(text), "%.0f fps, %zu узлов, режим %s", static_cast<double>(clock.fps()),
                                   view->last_node_count(), mode_name(view->mode()));
-                    el->SetInnerRML(text);
+                    readout->GetElementById("demo-fps")->SetInnerRML(text);
                 }
             }
         }
@@ -1097,6 +1132,39 @@ int main(int argc, char** argv) {
                     static_cast<unsigned>(renderer->size().h), map.width, map.height, map.province_list.size());
         std::printf("bench: frame ms  p50 %.2f  p95 %.2f  p99 %.2f  max %.2f\n", percentile(steady, 0.50),
                     percentile(steady, 0.95), percentile(steady, 0.99), percentile(steady, 1.0));
+        {
+            // Frame-time histogram: a spike every N frames shows up as a populated tail bucket.
+            constexpr double kEdges[] = {2.0, 4.0, 8.0, 16.6};
+            std::size_t buckets[5] = {0, 0, 0, 0, 0};
+            for (const double v : steady) {
+                std::size_t b = 0;
+                while (b < 4 && v >= kEdges[b]) {
+                    ++b;
+                }
+                ++buckets[b];
+            }
+            std::printf("bench: frame histogram  <2 ms: %zu  2-4: %zu  4-8: %zu  8-16.6: %zu  >=16.6: %zu  (of %zu)\n",
+                        buckets[0], buckets[1], buckets[2], buckets[3], buckets[4], steady.size());
+        }
+        if (!ui_update_ms.empty()) {
+            const auto skip = static_cast<std::ptrdiff_t>(std::min<std::size_t>(30, ui_update_ms.size() / 4));
+            const auto print_phase = [&](const char* name, const std::vector<double>& v) {
+                const std::vector<double> t(v.begin() + skip, v.end());
+                std::printf("bench: UI %-12s ms  p50 %.2f  p95 %.2f  p99 %.2f  max %.2f\n", name, percentile(t, 0.50),
+                            percentile(t, 0.95), percentile(t, 0.99), percentile(t, 1.0));
+            };
+            print_phase("list window", ui_rows_ms);
+            print_phase("RmlUi update", ui_update_ms);
+            print_phase("RmlUi render", ui_render_ms);
+            if (std::getenv("PAT_BENCH_OUTLIERS") != nullptr) {
+                for (std::size_t i = 0; i < ui_update_ms.size(); ++i) {
+                    if (ui_update_ms[i] > 3.0 || ui_render_ms[i] > 3.0) {
+                        std::printf("bench: outlier frame %zu  rows %.2f  update %.2f  render %.2f\n", i, ui_rows_ms[i],
+                                    ui_update_ms[i], ui_render_ms[i]);
+                    }
+                }
+            }
+        }
         if (!gpu_ms.empty()) {
             const std::vector<double> gpu_steady(gpu_ms.begin() + static_cast<std::ptrdiff_t>(gpu_ms.size() / 4), gpu_ms.end());
             std::printf("bench: GPU ms    p50 %.2f  p95 %.2f  p99 %.2f  max %.2f  (%zu samples)\n",
