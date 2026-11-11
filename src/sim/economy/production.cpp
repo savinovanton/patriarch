@@ -1,6 +1,7 @@
 #include "pat/sim/economy/production.hpp"
 
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
@@ -242,12 +243,9 @@ WealthResult compute_wealth(const ConsumptionRules& rules,
         PAT_ASSERT(breakdown->is_consistent(), "the wealth breakdown must add up to the target");
     }
 
-    // The gap closes by `inertia` per-mille a month, truncated toward zero: wealth never overshoots.
-    const std::int64_t now = wealth.raw();
-    const std::int64_t next = std::clamp<std::int64_t>(
-        now + (target - now) * rules.wealth_inertia_permille / kPermilleOne, 0, kWealthMax.raw());
-    return WealthResult{Fixed32::from_raw(static_cast<std::int32_t>(target)),
-                        Fixed32::from_raw(static_cast<std::int32_t>(next))};
+    const auto target_value = Fixed32::from_raw(static_cast<std::int32_t>(target));
+    const auto next = approach(wealth, target_value, rules.wealth_inertia_permille);
+    return WealthResult{target_value, std::clamp(next, Fixed32{}, kWealthMax)};
 }
 
 // ---- province --------------------------------------------------------------------------------------

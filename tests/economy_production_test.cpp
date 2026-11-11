@@ -456,10 +456,41 @@ TEST_CASE("production: a missing good lowers the wealth target by the points of 
     all[7] = 0;
     CHECK(compute_wealth(custom.consumption, Group::Clergy, Fixed32::from_int(100), all).target ==
           Fixed32::from_int(10));
-    // a gap closes by truncation toward zero: the wealth never overshoots
+    // even a tiny gap closes by at least one raw unit, without overshooting
     const WealthResult tiny =
         compute_wealth(r, Group::Peasants, Fixed32::from_raw(Fixed32::one_raw * 100 + 3), none);
-    CHECK(tiny.next.raw() == Fixed32::one_raw * 100 + 3);  // 3 x 0.2 truncates to 0: no overshoot
+    CHECK(tiny.next.raw() == Fixed32::one_raw * 100 + 2);
+    const WealthResult tiny_up =
+        compute_wealth(r, Group::Peasants, Fixed32::from_raw(Fixed32::one_raw * 100 - 3), none);
+    CHECK(tiny_up.next.raw() == Fixed32::one_raw * 100 - 2);
+}
+
+TEST_CASE("production: wealth reaches its exact target from either side without crossing it") {
+    for (const std::int32_t missing : {0, 500, 1000}) {
+        std::array<std::int32_t, kMaxGoods> shortage{};
+        shortage[kGrainGood] = missing;
+        for (const std::int32_t start : {0, 160}) {
+            Fixed32 wealth = Fixed32::from_int(start);
+            const Fixed32 target =
+                compute_wealth(rules().consumption, Group::Peasants, wealth, shortage).target;
+            for (int month = 0; month < 200; ++month) {
+                const Fixed32 next =
+                    compute_wealth(rules().consumption, Group::Peasants, wealth, shortage).next;
+                if (wealth < target) {
+                    CHECK(next > wealth);
+                    CHECK(next <= target);
+                } else if (wealth > target) {
+                    CHECK(next < wealth);
+                    CHECK(next >= target);
+                } else {
+                    CHECK(next == target);
+                }
+                wealth = next;
+            }
+            INFO("grain shortage " << missing << ", start " << start);
+            CHECK(wealth == target);
+        }
+    }
 }
 
 TEST_CASE("production: the wealth breakdown adds up and the wealth stays in its range") {

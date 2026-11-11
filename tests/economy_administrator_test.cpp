@@ -349,14 +349,17 @@ TEST_CASE("F7 corruption target: honest administrators steal less, weak control 
     CHECK(bottom.node(bottom.find(term::kCorruptionLimit)).value > 0);
 }
 
-TEST_CASE("F7: a month moves a part of the gap, truncated toward zero, and never jumps over the target") {
+TEST_CASE("F7: a month closes part of the gap and never jumps over the target") {
     CHECK(approach(points(70), points(100), 0) == points(70));      // frozen
     CHECK(approach(points(70), points(100), 1000) == points(100));  // all at once
     CHECK(approach(points(70), points(100), 150) == Fixed32::from_raw(74 * kOne + kOne / 2));
     CHECK(approach(points(100), points(70), 150) == Fixed32::from_raw(95 * kOne + kOne / 2));
-    // a tiny gap truncates to no move at all instead of overshooting
-    CHECK(approach(Fixed32::from_raw(1000), Fixed32::from_raw(1003), 150) == Fixed32::from_raw(1000));
-    CHECK(approach(Fixed32::from_raw(1003), Fixed32::from_raw(1000), 150) == Fixed32::from_raw(1003));
+    // a positive inertia closes even a tiny gap by at least one raw unit, without overshooting
+    CHECK(approach(Fixed32::from_raw(1000), Fixed32::from_raw(1003), 150) == Fixed32::from_raw(1001));
+    CHECK(approach(Fixed32::from_raw(1003), Fixed32::from_raw(1000), 150) == Fixed32::from_raw(1002));
+    CHECK(approach(Fixed32::from_raw(1000), Fixed32::from_raw(1001), 1) == Fixed32::from_raw(1001));
+    CHECK(approach(Fixed32::from_raw(1001), Fixed32::from_raw(1000), 1) == Fixed32::from_raw(1000));
+    CHECK(approach(Fixed32::from_raw(1000), Fixed32::from_raw(1000), 150) == Fixed32::from_raw(1000));
     // an inertia out of its range is clamped
     CHECK(approach(points(10), points(20), 5000) == points(20));
     CHECK(approach(points(10), points(20), -5) == points(10));
@@ -370,8 +373,67 @@ TEST_CASE("F7: a month moves a part of the gap, truncated toward zero, and never
         CHECK(up <= points(60));
         CHECK(down >= points(60));
     }
-    CHECK(up.raw() >= 60 * kOne - 8);
-    CHECK(down.raw() <= 60 * kOne + 8);
+    CHECK(up == points(60));
+    CHECK(down == points(60));
+}
+
+TEST_CASE("F7: converged control at 40 and 15 has the same state and tax from either side") {
+    for (const std::int32_t threshold : {40, 15}) {
+        EconomyRules r = rules();
+        // The default worst steward targets 40; a data-defined base can put the target at 15.
+        r.control.control_base = threshold + 30;
+        AdministrationInput settled = neutral_input();
+        settled.profile.stewardship = 0;
+        settled.control = points(threshold);
+        settled.corruption = compute_corruption_target(r.control, settled);
+        REQUIRE(compute_control_target(r.control, settled) == points(threshold));
+
+        TaxInput tax;
+        tax.wealth.fill(points(100));
+        tax.owner_kind = OwnerKind::Dynasty;
+        tax.tax_level = 1;
+        tax.size[index_of(Group::Peasants)] = 12'000;
+        tax.control = settled.control;
+        tax.corruption = settled.corruption;
+        const ProvinceIncome expected = compute_province_income(r, tax, 1000);
+        REQUIRE(expected.group[index_of(Group::Peasants)].gross > 0);
+        REQUIRE_FALSE(expected.anarchy);
+
+        for (const std::int32_t start : {threshold - 10, threshold + 20}) {
+            AdministrationInput in = settled;
+            in.control = points(start);
+            in.corruption = Fixed32::zero();
+            for (int month = 0; month < 200; ++month) {
+                const Administration next = compute_administration(r.control, in);
+                in.control = next.control;
+                in.corruption = next.corruption;
+            }
+            INFO("target " << threshold << ", start " << start);
+            CHECK(in.control == settled.control);
+            CHECK(in.corruption == settled.corruption);
+            CHECK(control_state(r.control, in.control) ==
+                  (threshold == 40 ? ControlState::Normal : ControlState::Low));
+            CHECK(points_permille(in.control) == threshold * 10);
+            tax.control = in.control;
+            tax.corruption = in.corruption;
+            CHECK(compute_province_income(r, tax, 1000) == expected);
+        }
+    }
+}
+
+TEST_CASE("F7: corruption starting at zero reaches the default 150 per-mille exactly") {
+    AdministrationInput in = neutral_input();
+    in.corruption = Fixed32::zero();
+    const Fixed32 target = compute_corruption_target(rules().control, in);
+    for (int month = 0; month < 200; ++month) {
+        const Administration next = compute_administration(rules().control, in);
+        CHECK(next.corruption >= in.corruption);
+        CHECK(next.corruption <= target);
+        in.control = next.control;
+        in.corruption = next.corruption;
+    }
+    CHECK(in.corruption == target);
+    CHECK(corruption_permille(in.corruption) == 150);
 }
 
 TEST_CASE("F7: control stays within 0..100 and corruption within 0..1 whatever the input") {
