@@ -394,7 +394,7 @@ int main(int argc, char** argv) {
     std::size_t label_min = ~static_cast<std::size_t>(0);
     std::size_t label_max = 0;
     if (!opt.no_labels) {
-        for (const std::filesystem::path font : {font_dir / "pt-serif" / "PT_Serif-Web-Bold.ttf"}) {
+        for (const std::filesystem::path& font : std::vector<std::filesystem::path>{font_dir / "pt-serif" / "PT_Serif-Web-Bold.ttf"}) {
             if (!std::filesystem::exists(font)) {
                 continue;
             }
