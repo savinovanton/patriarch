@@ -35,8 +35,17 @@ namespace {
 
 constexpr std::int64_t kOne = Fixed32::one_raw;
 
+/// The default rules, except that mood, unrest and riots stand still (E9-T11): here unrest is a number
+/// the test puts into the column, not a result.
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
+    static const EconomyRules value = [] {
+        EconomyRules r = EconomyRules::defaults();
+        r.mood.inertia_permille = 0;
+        r.unrest.inertia_permille = 0;
+        r.unrest.riot_chance_min_permille = 0;
+        r.unrest.riot_chance_max_permille = 0;
+        return r;
+    }();
     return value;
 }
 
@@ -46,6 +55,11 @@ const EconomyRules& frozen_rules() {
         EconomyRules r = EconomyRules::defaults();
         r.control.control_inertia_permille = 0;
         r.control.corruption_inertia_permille = 0;
+        // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
+        r.mood.inertia_permille = 0;
+        r.unrest.inertia_permille = 0;
+        r.unrest.riot_chance_min_permille = 0;
+        r.unrest.riot_chance_max_permille = 0;
         return r;
     }();
     return value;

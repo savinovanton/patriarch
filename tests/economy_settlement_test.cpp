@@ -42,6 +42,11 @@ const EconomyRules& rules() {
         // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
         r.control.control_inertia_permille = 0;
         r.control.corruption_inertia_permille = 0;
+        // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
+        r.mood.inertia_permille = 0;
+        r.unrest.inertia_permille = 0;
+        r.unrest.riot_chance_min_permille = 0;
+        r.unrest.riot_chance_max_permille = 0;
         return r;
     }();
     return value;
@@ -593,6 +598,11 @@ EconomyRules steady_rules() {
     // and nobody governs better or worse month by month (E9-T10)
     r.control.control_inertia_permille = 0;
     r.control.corruption_inertia_permille = 0;
+    // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
+    r.mood.inertia_permille = 0;
+    r.unrest.inertia_permille = 0;
+    r.unrest.riot_chance_min_permille = 0;
+    r.unrest.riot_chance_max_permille = 0;
     return r;
 }
 

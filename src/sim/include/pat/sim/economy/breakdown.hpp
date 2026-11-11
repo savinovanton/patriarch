@@ -146,7 +146,10 @@ inline constexpr std::uint16_t kMoodReligion = 2005;
 inline constexpr std::uint16_t kMoodWealth = 2006;
 inline constexpr std::uint16_t kMoodAdministrator = 2007;
 inline constexpr std::uint16_t kMoodEvents = 2008;
-inline constexpr std::uint16_t kMoodStep = 2009;
+inline constexpr std::uint16_t kMoodStep =
+    2009;  // the movement of a month (a label, not a node of the mood tree)
+inline constexpr std::uint16_t kMoodTarget = 2010;  // the root of a mood breakdown: the target mood
+inline constexpr std::uint16_t kMoodLimit = 2011;   // the clamp to -100..100
 // 3000: population growth (F1)
 inline constexpr std::uint16_t kGrowthBirth = 3001;
 inline constexpr std::uint16_t kGrowthDeath = 3002;
@@ -207,6 +210,8 @@ inline constexpr std::uint16_t kLoanDebt = 8003;
 inline constexpr std::uint16_t kUnrestGroupFirst = 9010;
 inline constexpr std::uint16_t kUnrestControl = 9020;
 inline constexpr std::uint16_t kUnrestEvents = 9021;
+inline constexpr std::uint16_t kUnrestLimit = 9022;   // the clamp to 0..100
+inline constexpr std::uint16_t kUnrestTarget = 9023;  // the root of an unrest breakdown: the target
 
 }  // namespace term
 

@@ -203,15 +203,16 @@ TEST_CASE(
     // The stubs change nothing; the real `economy.provinces` grows the population (E9-T06; a year of
     // peace: every group of a province is processed once a month), since E9-T08 pays the taxes and the
     // holding income to the accounts of the owners and since E9-T10 moves control and corruption; it
-    // touches nothing else.
+    // moves the moods of the groups and the unrest (E9-T11); it touches nothing else.
     CHECK(with.world().compute_hash() != without.world().compute_hash());
     CHECK(with.world().check_invariants().empty());
     CHECK(with.world().economy().accounts != without.world().economy().accounts);
     // since E9-T10 control and corruption move toward the targets of the administrators (the stub:
-    // everybody average); the mood is still untouched
+    // everybody average); since E9-T11 the moods follow the policies and the unrest follows the moods
     CHECK(with.world().economy().provinces.control != without.world().economy().provinces.control);
     CHECK(with.world().economy().provinces.corruption != without.world().economy().provinces.corruption);
-    CHECK(with.world().economy().groups.mood == without.world().economy().groups.mood);
+    CHECK(with.world().economy().groups.mood != without.world().economy().groups.mood);
+    CHECK(with.world().economy().provinces.unrest != without.world().economy().provinces.unrest);
     for (std::size_t p = 0; p < provinces; ++p) {
         CHECK(with.world().economy().provinces.last_slot_date[p] != sim::kNoDate);
     }
@@ -286,6 +287,11 @@ TEST_CASE("economy.provinces: fifty years of peace on the 400 provinces of the s
     // administration is frozen: this test is about peace, not about governors (E9-T10)
     rules.control.control_inertia_permille = 0;
     rules.control.corruption_inertia_permille = 0;
+    // and so are mood, unrest and riots (E9-T11): the moods of the generated world are random
+    rules.mood.inertia_permille = 0;
+    rules.unrest.inertia_permille = 0;
+    rules.unrest.riot_chance_min_permille = 0;
+    rules.unrest.riot_chance_max_permille = 0;
 
     sim::Simulation a(world);
     eco::install_economy_systems(a, rules);

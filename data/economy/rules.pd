@@ -67,7 +67,7 @@ economy_rules "main" {
 
     # F9-F10: беспорядки и бунты (GDD 03 §4.3). Вклад групп — groups.pd.
     unrest {
-        slope_permille = 1000
+        slope_permille = 4000
         control_slope_permille = 500
         inertia_permille = 250
         calm_below = 25

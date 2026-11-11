@@ -12,6 +12,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/invariants.hpp
     include/pat/sim/economy/ledger.hpp
     include/pat/sim/economy/money.hpp
+    include/pat/sim/economy/mood.hpp
     include/pat/sim/economy/population.hpp
     include/pat/sim/economy/production.hpp
     include/pat/sim/economy/rules.hpp
@@ -20,6 +21,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/tables.hpp
     include/pat/sim/economy/taxes.hpp
     include/pat/sim/economy/types.hpp
+    include/pat/sim/economy/unrest.hpp
     include/pat/sim/entity_ids.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
@@ -47,12 +49,14 @@ add_library(patriarch_sim STATIC
     economy/breakdown.cpp
     economy/forecast.cpp
     economy/invariants.cpp
+    economy/mood.cpp
     economy/population.cpp
     economy/production.cpp
     economy/rules.cpp
     economy/settlement.cpp
     economy/systems.cpp
     economy/taxes.cpp
+    economy/unrest.cpp
     kinship.cpp
     mortality.cpp
     opinion.cpp
