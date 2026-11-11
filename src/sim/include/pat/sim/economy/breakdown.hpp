@@ -201,7 +201,9 @@ inline constexpr std::uint16_t kRecruitBase = 7001;
 inline constexpr std::uint16_t kRecruitPolicy = 7002;
 inline constexpr std::uint16_t kRecruitControl = 7003;
 inline constexpr std::uint16_t kRecruitQuota = 7004;
-inline constexpr std::uint16_t kRecruitRegen = 7005;
+inline constexpr std::uint16_t kRecruitRegen = 7005;    // reserved: the monthly gain (not in the cap's tree)
+inline constexpr std::uint16_t kRecruitCap = 7006;      // the root of a recruit breakdown: the potential
+inline constexpr std::uint16_t kRecruitAnarchy = 7007;  // a step to zero: a province in turmoil
 // 8000: loan limit (F13)
 inline constexpr std::uint16_t kLoanBase = 8001;
 inline constexpr std::uint16_t kLoanHonor = 8002;
