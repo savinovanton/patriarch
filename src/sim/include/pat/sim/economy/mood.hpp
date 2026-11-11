@@ -103,8 +103,8 @@ recruit_mood_pressure(const RecruitRules& recruit, std::uint8_t level, Group gro
 // ---- province ------------------------------------------------------------------------------------
 
 /// The input of a province as the World holds it; a default input for a world without economy or an
-/// unknown province.
-[[nodiscard]] MoodInput mood_input(const World& world, ProvinceId province);
+/// unknown province. The policy levels are the ones the province is processed at (effective_*_level).
+[[nodiscard]] MoodInput mood_input(const World& world, const EconomyRules& rules, ProvinceId province);
 
 /// Writes the six moods of a result into the columns of the province.
 void apply_province_mood(World& world, ProvinceId province, const ProvinceMood& result);

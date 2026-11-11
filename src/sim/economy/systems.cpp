@@ -4,6 +4,7 @@
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/mood.hpp"
+#include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/population.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/settlement.hpp"
@@ -57,6 +58,7 @@ public:
         if (!world.economy_present()) {
             return;
         }
+        bind_policy_levels(world, rules_);  // the range of the policy commands follows the rules (E9-T12)
         const int day = context.date.day();
         if (day > kStaggerDays) {
             return;  // days 29..31 select nobody (is_monthly_slot)

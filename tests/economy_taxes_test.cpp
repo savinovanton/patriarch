@@ -451,7 +451,7 @@ TEST_CASE("taxes: the input is read from the world and the recipient follows the
     columns.tax_policy[1] = 3;
     columns.wealth[group_row(1, Group::Peasants)] = points(77);
 
-    const TaxInput in = tax_input(world, ProvinceId(1));
+    const TaxInput in = tax_input(world, rules(), ProvinceId(1));
     CHECK(in.size[kPeasants] == 1000);
     CHECK(in.size[kTownsfolk] == 300);
     CHECK(in.control == points(33));
@@ -469,11 +469,11 @@ TEST_CASE("taxes: the input is read from the world and the recipient follows the
     CHECK_FALSE(income_recipient(world, ProvinceId(2)).has_value());
     REQUIRE(world.set_province_owner_kind(ProvinceId(3), OwnerKind::Unowned));
     CHECK_FALSE(income_recipient(world, ProvinceId(3)).has_value());
-    CHECK(tax_input(world, ProvinceId(1)).owner_kind == OwnerKind::Crown);
+    CHECK(tax_input(world, rules(), ProvinceId(1)).owner_kind == OwnerKind::Crown);
 
     // an unknown province and a world without economy: defaults and no recipient
     CHECK_FALSE(income_recipient(world, ProvinceId(99)).has_value());
-    CHECK(tax_input(world, ProvinceId(99)).size == std::array<std::uint32_t, kGroupCount>{});
+    CHECK(tax_input(world, rules(), ProvinceId(99)).size == std::array<std::uint32_t, kGroupCount>{});
     World bare(Date::from_ymd(1703, 1, 1), 1);
     (void)bare.create_province(StringId(1), DynastyId(), Fixed32::from_int(1));
     CHECK_FALSE(income_recipient(bare, ProvinceId(0)).has_value());
@@ -710,8 +710,8 @@ TEST_CASE("economy.provinces: the postings of a month are the sum of the taxes o
     for (std::uint32_t p = 0; p < kProvinces; ++p) {
         (void)step_province_population(model, rules().population, ProvinceId(p));
         const ProvinceProduction production = step_province_production(model, rules(), prices, ProvinceId(p));
-        const ProvinceIncome income =
-            compute_province_income(rules(), tax_input(model, ProvinceId(p)), production.holding_income_kop);
+        const ProvinceIncome income = compute_province_income(
+            rules(), tax_input(model, rules(), ProvinceId(p)), production.holding_income_kop);
         if (income_recipient(model, ProvinceId(p))) {
             expected_net += income.net_total();
             expected_holding += income.holding;

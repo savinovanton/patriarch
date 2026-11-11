@@ -99,6 +99,14 @@ struct Writer {
         out.u32(c.province.value());
         out.u32(c.administrator.value());
     }
+    void operator()(const cmd::SetTaxPolicy& c) const {
+        out.u32(c.dynasty.value());
+        out.u8(c.level);
+    }
+    void operator()(const cmd::SetRecruitPolicy& c) const {
+        out.u32(c.dynasty.value());
+        out.u8(c.level);
+    }
     void operator()(const cmd::AdjustOpinion& c) const {
         out.u32(c.from.value());
         out.u32(c.to.value());
@@ -266,6 +274,16 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::AssignProvinceAdministrator: {
             const ProvinceId province(in.u32());
             out.payload = cmd::AssignProvinceAdministrator{province, CharacterId(in.u32())};
+            break;
+        }
+        case CommandType::SetTaxPolicy: {
+            const DynastyId dynasty(in.u32());
+            out.payload = cmd::SetTaxPolicy{dynasty, in.u8()};
+            break;
+        }
+        case CommandType::SetRecruitPolicy: {
+            const DynastyId dynasty(in.u32());
+            out.payload = cmd::SetRecruitPolicy{dynasty, in.u8()};
             break;
         }
         case CommandType::AdjustUnity:

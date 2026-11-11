@@ -29,6 +29,8 @@ inline constexpr std::uint16_t kSectionEconomyAccounts = 36;      ///< balances 
 inline constexpr std::uint16_t kSectionEconomyConstruction = 37;  ///< construction queue (when not empty)
 inline constexpr std::uint16_t kSectionEconomyCredit = 38;        ///< loans, quotas, outcomes (if any)
 inline constexpr std::uint16_t kSectionEconomyIncidents = 39;     ///< incident ring (when not empty)
+inline constexpr std::uint16_t kSectionEconomyPolicy =
+    40;  ///< policy levels, dynasty policies (E9-T12, schema >= 9)
 
 /// True when `count` entries of at least `bytes_each` bytes could still be present in the input;
 /// guards allocations against absurd counts in damaged files.

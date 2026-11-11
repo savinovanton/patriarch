@@ -36,15 +36,43 @@ std::vector<std::string> check_rules_invariants(const World& world, const Econom
     const std::size_t provinces = std::min(world.provinces().size(), pe.size());
     const std::array<bool, 256> known_building = defined_buildings(rules.buildings);
 
+    // ---- E-R1: policies of the dynasties, the levels the world was given -------------------------
+    for (std::size_t d = 0; d < e.dynasties.size(); ++d) {
+        if (e.dynasties.tax_policy[d] != kPolicyDefault &&
+            e.dynasties.tax_policy[d] >= rules.tax.level_count) {
+            bad.push_back(std::format("dynasty {} has the tax policy level {}, the rules define {}",
+                                      d,
+                                      static_cast<unsigned>(e.dynasties.tax_policy[d]),
+                                      rules.tax.level_count));
+        }
+        if (e.dynasties.recruit_policy[d] != kPolicyDefault &&
+            e.dynasties.recruit_policy[d] >= rules.recruit.level_count) {
+            bad.push_back(std::format("dynasty {} has the recruit policy level {}, the rules define {}",
+                                      d,
+                                      static_cast<unsigned>(e.dynasties.recruit_policy[d]),
+                                      rules.recruit.level_count));
+        }
+    }
+    if (e.meta.tax_levels != 0 && e.meta.tax_levels != rules.tax.level_count) {
+        bad.push_back(std::format("the world accepts {} tax policy levels, the rules define {}",
+                                  static_cast<unsigned>(e.meta.tax_levels),
+                                  rules.tax.level_count));
+    }
+    if (e.meta.recruit_levels != 0 && e.meta.recruit_levels != rules.recruit.level_count) {
+        bad.push_back(std::format("the world accepts {} recruit policy levels, the rules define {}",
+                                  static_cast<unsigned>(e.meta.recruit_levels),
+                                  rules.recruit.level_count));
+    }
+
     // ---- E-R1: provinces ---------------------------------------------------------------------
     for (std::size_t p = 0; p < provinces; ++p) {
-        if (pe.tax_policy[p] >= rules.tax.level_count) {
+        if (pe.tax_policy[p] != kPolicyDefault && pe.tax_policy[p] >= rules.tax.level_count) {
             bad.push_back(std::format("province {} has the tax policy level {}, the rules define {}",
                                       p,
                                       static_cast<unsigned>(pe.tax_policy[p]),
                                       rules.tax.level_count));
         }
-        if (pe.recruit_policy[p] >= rules.recruit.level_count) {
+        if (pe.recruit_policy[p] != kPolicyDefault && pe.recruit_policy[p] >= rules.recruit.level_count) {
             bad.push_back(std::format("province {} has the recruit policy level {}, the rules define {}",
                                       p,
                                       static_cast<unsigned>(pe.recruit_policy[p]),

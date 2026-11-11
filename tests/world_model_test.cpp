@@ -117,6 +117,8 @@ World build_world(std::uint64_t seed, bool with_economy = true) {
         return world;
     }
     REQUIRE(world.enable_economy());
+    REQUIRE(
+        world.set_economy_policy_levels(4, 3));  // the levels of the rules: the range of the policy commands
     eco::EconomyColumnsMut columns = world.economy_columns_mut();
     for (std::uint32_t p = 0; p < kProvinces; ++p) {
         const auto peasants = static_cast<std::uint32_t>(rng.range(4'000, 30'000));
@@ -245,6 +247,20 @@ Command random_command(Pcg32& rng, const World& world) {
             actor = world.provinces().owner[province.index()];
         }
         return Command{actor, cmd::SetProvinceOwner{province, new_owner}};
+    }
+    if (roll < 90) {
+        // a policy of a dynasty: mostly in the range of the rules (4 and 3 levels), sometimes beyond it
+        const auto level =
+            static_cast<std::uint8_t>(rng.chance_permille(150) ? rng.bounded(8) : rng.bounded(4));
+        const DynastyId dynasty = random_dynasty(rng, world);
+        DynastyId actor = random_actor(rng, world, 250);
+        if (rng.chance_permille(400)) {
+            actor = dynasty;
+        }
+        if (rng.chance_permille(500)) {
+            return Command{actor, cmd::SetTaxPolicy{dynasty, level}};
+        }
+        return Command{actor, cmd::SetRecruitPolicy{dynasty, level}};
     }
     if (roll < 94) {
         const ProvinceId province = random_province(rng, world);
@@ -540,8 +556,12 @@ public:
         owner_ = world.provinces().owner;
         economy_ = world.economy_present();
         administrator_.assign(owner_.size(), CharacterId());
+        tax_policy_.assign(head_.size(), eco::kPolicyDefault);
+        recruit_policy_.assign(head_.size(), eco::kPolicyDefault);
         if (economy_) {
             administrator_ = world.economy().provinces.administrator;
+            tax_policy_ = world.economy().dynasties.tax_policy;
+            recruit_policy_ = world.economy().dynasties.recruit_policy;
         }
     }
 
@@ -595,6 +615,12 @@ public:
         }
         if (economy_ && world.economy().provinces.administrator != administrator_) {
             return "the administrators differ from the model";
+        }
+        if (economy_ && world.economy().dynasties.tax_policy != tax_policy_) {
+            return "the tax policies of the dynasties differ from the model";
+        }
+        if (economy_ && world.economy().dynasties.recruit_policy != recruit_policy_) {
+            return "the recruit policies of the dynasties differ from the model";
         }
         return {};
     }
@@ -736,6 +762,24 @@ private:
     bool apply(DynastyId actor, const cmd::AdjustOpinion& c) {
         return !actor.valid() && alive(c.from) && alive(c.to) && c.from != c.to;
     }
+    /// The model knows the rules of the template worlds: 4 tax levels and 3 recruit levels.
+    bool set_policy(std::vector<std::uint8_t>& column,
+                    std::uint8_t levels,
+                    DynastyId actor,
+                    DynastyId dynasty,
+                    std::uint8_t level) {
+        if (!economy_ || !known(dynasty) || (actor.valid() && actor != dynasty) || level >= levels) {
+            return false;
+        }
+        column[dynasty.index()] = level;
+        return true;
+    }
+    bool apply(DynastyId actor, const cmd::SetTaxPolicy& c) {
+        return set_policy(tax_policy_, 4, actor, c.dynasty, c.level);
+    }
+    bool apply(DynastyId actor, const cmd::SetRecruitPolicy& c) {
+        return set_policy(recruit_policy_, 3, actor, c.dynasty, c.level);
+    }
     bool apply(DynastyId actor, const cmd::AssignProvinceAdministrator& c) {
         if (!economy_ || !known(c.province) || (c.administrator.valid() && !alive(c.administrator))) {
             return false;
@@ -761,6 +805,8 @@ private:
     std::vector<std::int32_t> honor_;
     std::vector<DynastyId> owner_;
     std::vector<CharacterId> administrator_;
+    std::vector<std::uint8_t> tax_policy_;
+    std::vector<std::uint8_t> recruit_policy_;
 };
 
 // ---- runs ---------------------------------------------------------------------------------------

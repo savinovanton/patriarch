@@ -14,7 +14,9 @@
 // A pure read of the world: no changes, no random numbers, deterministic order of the findings. An empty
 // result means the world is consistent with the rules. A world without economy has nothing to check.
 //
-//   E-R1  every province: tax_policy < tax.level_count and recruit_policy < recruit.level_count; every
+//   E-R1  every province and every dynasty: tax_policy < tax.level_count and recruit_policy <
+//         recruit.level_count, or "not chosen" (kPolicyDefault, E9-T12); the numbers of levels the
+//         world was given (set_economy_policy_levels), when set, equal those of the rules; every
 //         built slot (below slots_total) holds a building type the rules define; every entry of the
 //         construction queue builds such a type; goods are the fixed array of kMaxGoods and need no check;
 //         for a province that the monthly slot already processed (last_slot_date set):

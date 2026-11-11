@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/ledger.hpp"
+#include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/world.hpp"
 
@@ -181,7 +182,7 @@ compute_province_income(const EconomyRules& rules, const TaxInput& input, Kopeck
 
 // ---- province --------------------------------------------------------------------------------------
 
-TaxInput tax_input(const World& world, ProvinceId province) {
+TaxInput tax_input(const World& world, const EconomyRules& rules, ProvinceId province) {
     TaxInput in;
     if (!world.economy_present() || !world.exists(province)) {
         return in;
@@ -197,7 +198,7 @@ TaxInput tax_input(const World& world, ProvinceId province) {
     in.corruption = e.provinces.corruption[p];
     in.kind = static_cast<ProvinceKind>(e.provinces.kind[p]);
     in.owner_kind = static_cast<OwnerKind>(e.provinces.owner_kind[p]);
-    in.tax_level = e.provinces.tax_policy[p];
+    in.tax_level = effective_tax_level(world, rules, province);
     return in;
 }
 
@@ -263,7 +264,8 @@ ProvinceIncome step_province_taxes(World& world,
     if (!world.economy_present() || !world.exists(province)) {
         return {};
     }
-    ProvinceIncome income = compute_province_income(rules, tax_input(world, province), holding_income_kop);
+    ProvinceIncome income =
+        compute_province_income(rules, tax_input(world, rules, province), holding_income_kop);
     (void)post_province_income(world, province, income, &income.refused_kop);
     return income;
 }

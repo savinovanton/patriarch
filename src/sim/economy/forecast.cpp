@@ -52,7 +52,7 @@ TreasuryForecast forecast_treasury(const World& world,
         const ProvinceProduction production =
             compute_province_production(rules, production_input(world, prices, province));
         const ProvinceIncome income =
-            compute_province_income(rules, tax_input(world, province), production.holding_income_kop);
+            compute_province_income(rules, tax_input(world, rules, province), production.holding_income_kop);
         for (std::size_t g = 0; g < kGroupCount; ++g) {
             const GroupTax& tax = income.group[g];
             const LedgerCode code = tax_code(static_cast<Group>(g));

@@ -1408,6 +1408,9 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
         {Command{DynastyId(), cmd::Marry{CharacterId(1), CharacterId(2)}}, CommandType::Marry},
         {Command{DynastyId(), cmd::EndMarriage{CharacterId(3), MarriageEnd::Tonsure}},
          CommandType::EndMarriage},
+        {Command{DynastyId(), cmd::SetTaxPolicy{DynastyId(2), 3}},
+         CommandType::SetTaxPolicy},  // E9 block 32..63
+        {Command{DynastyId(), cmd::SetRecruitPolicy{DynastyId(2), 1}}, CommandType::SetRecruitPolicy},
     };
     for (const auto& [command, tag] : cases) {
         CHECK(type_of(command) == tag);
@@ -1433,7 +1436,7 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
                                    std::uint8_t{10},
                                    std::uint8_t{11},
                                    std::uint8_t{31},
-                                   std::uint8_t{32},
+                                   std::uint8_t{34},
                                    std::uint8_t{255}}) {
         std::vector<std::uint8_t> bytes(40, 0);
         bytes[0] = tag;

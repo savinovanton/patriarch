@@ -919,7 +919,7 @@ TEST_CASE("unrest: the mood the unrest reads is the mood the same slot has just 
     World world = make_world(1);
     world.economy_columns_mut().tax_policy[0] = 3;
     world.economy_columns_mut().control[0] = points(70);
-    const MoodInput mood_in = mood_input(world, ProvinceId(0));
+    const MoodInput mood_in = mood_input(world, rules(), ProvinceId(0));
     const ProvinceMood new_mood = compute_province_mood(r, mood_in);
     UnrestInput unrest_in = unrest_input(world, ProvinceId(0));
     for (std::size_t g = 0; g < kGroupCount; ++g) {

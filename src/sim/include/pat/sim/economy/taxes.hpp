@@ -121,8 +121,9 @@ compute_province_income(const EconomyRules& rules, const TaxInput& input, Kopeck
 // ---- province ------------------------------------------------------------------------------------
 
 /// The input of a province as the World holds it; a default input for a world without economy or an
-/// unknown province.
-[[nodiscard]] TaxInput tax_input(const World& world, ProvinceId province);
+/// unknown province. The policy level is the one the province is processed at (effective_tax_level:
+/// the choice of the owner dynasty, or the default of the rules).
+[[nodiscard]] TaxInput tax_input(const World& world, const EconomyRules& rules, ProvinceId province);
 
 /// The account that receives what a province earns: the account of the owning dynasty, the crown
 /// account, or nobody (Unowned, Church, Free; a dynasty owner that does not exist).

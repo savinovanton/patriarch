@@ -1,4 +1,5 @@
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/rules.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
@@ -34,6 +35,17 @@ constexpr Fixed32 kZero = Fixed32::zero();
     return static_cast<std::uint32_t>(std::clamp<std::int64_t>(persons, 0, economy::kMaxProvincePersons));
 }
 
+/// `level` is below the number of levels of the rules the world was built with; without that number
+/// (0, never set) the structural limit holds.
+[[nodiscard]] bool policy_level_allowed(std::uint8_t level, std::uint8_t levels) noexcept {
+    return level < (levels != 0 ? levels : economy::kMaxPolicyLevels);
+}
+
+/// A policy column holds a level of the rules or "not chosen" (economy::kPolicyDefault).
+[[nodiscard]] bool is_policy_value(std::uint8_t value) noexcept {
+    return value < economy::kMaxPolicyLevels || value == economy::kPolicyDefault;
+}
+
 }  // namespace
 
 // ---- enabling and rows --------------------------------------------------------------------------
@@ -44,6 +56,8 @@ void World::economy_add_dynasty_rows() {
     constexpr std::size_t kRing = economy::kLedgerRingMonths;
     e.dynasties.manpower_reserve.push_back(0);
     e.dynasties.bankrupt.push_back(0);
+    e.dynasties.tax_policy.push_back(economy::kPolicyDefault);
+    e.dynasties.recruit_policy.push_back(economy::kPolicyDefault);
     economy::AccountTable& a = e.accounts;
     a.treasury_.push_back(0);
     a.opening_.push_back(0);
@@ -57,8 +71,8 @@ void World::economy_add_province_rows(std::size_t index) {
     economy::ProvinceEconomy& p = e.provinces;
     p.kind.push_back(static_cast<std::uint8_t>(economy::ProvinceKind::Rural));
     p.owner_kind.push_back(to_u8(provinces_.owner[index].valid() ? OwnerKind::Dynasty : OwnerKind::Unowned));
-    p.tax_policy.push_back(0);
-    p.recruit_policy.push_back(0);
+    p.tax_policy.push_back(economy::kPolicyDefault);
+    p.recruit_policy.push_back(economy::kPolicyDefault);
     p.slots_total.push_back(0);
     p.trade_node.push_back(0);
     p.administrator.emplace_back();
@@ -144,6 +158,43 @@ economy::EconomyColumnsMut World::economy_columns_mut() noexcept {
 
 void World::set_economy_rules_hash(std::uint64_t rules_hash) noexcept {
     economy_.meta.rules_hash = rules_hash;
+}
+
+void World::economy_migrate_policies() {
+    economy::DynastyEconomy& d = economy_.dynasties;
+    if (economy_.meta.present == 0 || d.tax_policy.size() != 0 || d.recruit_policy.size() != 0) {
+        return;
+    }
+    d.tax_policy.assign(d.manpower_reserve.size(), economy::kPolicyDefault);
+    d.recruit_policy.assign(d.manpower_reserve.size(), economy::kPolicyDefault);
+}
+
+bool World::set_economy_policy_levels(std::uint8_t tax_levels, std::uint8_t recruit_levels) noexcept {
+    if (economy_.meta.present == 0 || tax_levels > economy::kMaxPolicyLevels ||
+        recruit_levels > economy::kMaxPolicyLevels) {
+        return false;
+    }
+    economy_.meta.tax_levels = tax_levels;
+    economy_.meta.recruit_levels = recruit_levels;
+    return true;
+}
+
+bool World::set_dynasty_tax_policy(DynastyId dynasty, std::uint8_t level) {
+    if (economy_.meta.present == 0 || !exists(dynasty) ||
+        !policy_level_allowed(level, economy_.meta.tax_levels)) {
+        return false;
+    }
+    economy_.dynasties.tax_policy[dynasty.index()] = level;
+    return true;
+}
+
+bool World::set_dynasty_recruit_policy(DynastyId dynasty, std::uint8_t level) {
+    if (economy_.meta.present == 0 || !exists(dynasty) ||
+        !policy_level_allowed(level, economy_.meta.recruit_levels)) {
+        return false;
+    }
+    economy_.dynasties.recruit_policy[dynasty.index()] = level;
+    return true;
 }
 
 // ---- provinces ----------------------------------------------------------------------------------
@@ -431,6 +482,8 @@ void World::check_economy_invariants(std::vector<std::string>& bad) const {
     };
     expect("dynasty manpower_reserve", e.dynasties.manpower_reserve.size(), dynasty_count);
     expect("dynasty bankrupt", e.dynasties.bankrupt.size(), dynasty_count);
+    expect("dynasty tax_policy", e.dynasties.tax_policy.size(), dynasty_count);
+    expect("dynasty recruit_policy", e.dynasties.recruit_policy.size(), dynasty_count);
     expect("account treasury", acc.treasury_.size(), 1 + dynasty_count);
     expect("account opening", acc.opening_.size(), 1 + dynasty_count);
     expect("account open lines", acc.open_lines_.size(), (1 + dynasty_count) * kLines);
@@ -511,6 +564,9 @@ void World::check_economy_invariants(std::vector<std::string>& bad) const {
     }
     if (!is_sane_date(meta.open_month_start) || meta.open_month_start.day() != 1) {
         fail("the open month does not start on the first day of a month");
+    }
+    if (meta.tax_levels > economy::kMaxPolicyLevels || meta.recruit_levels > economy::kMaxPolicyLevels) {
+        fail("the economy header has more policy levels than the rules can define");
     }
     if (static_cast<std::size_t>(meta.closed_months) > kRing) {
         fail(std::format("{} closed months, at most {} fit in the ring", meta.closed_months, kRing));
@@ -630,6 +686,9 @@ void World::check_economy_invariants(std::vector<std::string>& bad) const {
         if (e.dynasties.bankrupt[d] > 1) {
             fail(std::format("dynasty {} bankrupt flag is neither 0 nor 1", d));
         }
+        if (!is_policy_value(e.dynasties.tax_policy[d]) || !is_policy_value(e.dynasties.recruit_policy[d])) {
+            fail(std::format("dynasty {} has a policy that is neither a level nor the default", d));
+        }
     }
 
     // ---- provinces and groups: E-S2, E-P1..E-P4 ------------------------------------------------
@@ -641,6 +700,9 @@ void World::check_economy_invariants(std::vector<std::string>& bad) const {
             fail(std::format("province {} has an unknown owner kind", p));
         } else if ((pe.owner_kind[p] == to_u8(OwnerKind::Dynasty)) != provinces_.owner[p].valid()) {
             fail(std::format("province {}: the owner kind Dynasty must go with a dynasty owner", p));
+        }
+        if (!is_policy_value(pe.tax_policy[p]) || !is_policy_value(pe.recruit_policy[p])) {
+            fail(std::format("province {} has a policy that is neither a level nor the default", p));
         }
         if (static_cast<std::size_t>(pe.slots_total[p]) > economy::kMaxSlots) {
             fail(std::format(
