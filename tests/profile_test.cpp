@@ -13,4 +13,5 @@ TEST_CASE("profile: zone macros compile and are harmless without Tracy") {
         CHECK(sum == 45);
     }
     PAT_PROFILE_FRAME();
+    PAT_PROFILE_FRAME_NAMED("test.frame");
 }

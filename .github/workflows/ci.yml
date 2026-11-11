@@ -147,6 +147,24 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # Tracy client build (issue #32): the optional PATRIARCH_ENABLE_TRACY configuration must keep compiling
+  # (zones in core/sim) and must not change the simulation: all tests, including the golden hashes, pass.
+  # Linux/GCC without the engine keeps it cheap; the engine zones are compiled locally (docs/dev/profiling.md).
+  linux-tracy:
+    name: Linux gcc Tracy client
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-vcpkg
+      - name: Configure
+        uses: ./.github/actions/cmake-configure
+        with:
+          args: --preset linux-gcc -B out/linux-tracy -DCMAKE_BUILD_TYPE=Debug -DPATRIARCH_ENABLE_TRACY=ON -DVCPKG_MANIFEST_FEATURES=tracy
+      - name: Build
+        run: cmake --build out/linux-tracy -- -k 0
+      - name: Test
+        run: ctest --test-dir out/linux-tracy --output-on-failure
+
   # Second Windows compiler (issue #30): clang-cl from the "C++ Clang tools for Windows" component of the
   # Visual Studio 2022 image (ClangCL platform toolset). The whole project including the engine is built with
   # warnings as errors; the golden hashes pinned on MSVC must come out identical (NFR-DET-1).

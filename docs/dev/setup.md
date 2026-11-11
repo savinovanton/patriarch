@@ -45,7 +45,9 @@ cmake --build --preset win-msvc-asan-debug
 ctest --preset win-msvc-asan-debug
 ```
 
-Выходные каталоги: `out/win-msvc`, `out/win-msvc-asan` (в `.gitignore`).
+Профилировщик Tracy (необязательно): `cmake --preset win-msvc-tracy`, `cmake --build --preset win-msvc-tracy-relwithdebinfo`; подробности и версия GUI — в [profiling.md](profiling.md).
+
+Выходные каталоги: `out/win-msvc`, `out/win-msvc-asan`, `out/win-msvc-tracy` (в `.gitignore`).
 
 ## 4. Форматирование
 

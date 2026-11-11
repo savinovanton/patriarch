@@ -14,6 +14,12 @@
     "engine"
   ],
   "features": {
+    "tracy": {
+      "description": "Tracy profiler client for PATRIARCH_ENABLE_TRACY (off by default; see docs/dev/profiling.md).",
+      "dependencies": [
+        "tracy"
+      ]
+    },
     "engine": {
       "description": "Window, renderer and UI libraries; the Linux determinism job builds without them.",
       "dependencies": [

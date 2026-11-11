@@ -67,7 +67,7 @@ core  ←  engine  ←  ui  ←  game
 
 ## 7. Профилирование
 
-`PAT_PROFILE_SCOPE("subsystem.stage")` на границах подсистем и стадий тика; `PAT_PROFILE_FRAME()` — конец тика/кадра. Имена — строковые литералы вида `economy.monthly`. Макросы пусты без Tracy. Телеметрия для бюджетов (E2-T06) строится отдельным RAII-таймером.
+`PAT_PROFILE_SCOPE("subsystem.stage")` на границах подсистем и стадий тика; `PAT_PROFILE_FRAME()` — конец кадра рендера, `PAT_PROFILE_FRAME_NAMED("sim.tick")` — конец тика. Имена — строковые литералы вида `economy.monthly`. Макросы пусты без Tracy; сборка и захват — `docs/dev/profiling.md`. Телеметрия для бюджетов (E2-T06) строится отдельным RAII-таймером.
 
 ## 8. Память и производительность
 

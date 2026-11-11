@@ -185,7 +185,7 @@ const TickReport& Simulation::tick() {
     report_.wu_quota = budget_.quota();
     report_.wu_used = budget_.used();
     report_.over_budget = budget_.over_budget();
-    PAT_PROFILE_FRAME();
+    PAT_PROFILE_FRAME_NAMED("sim.tick");
     return report_;
 }
 
