@@ -7,6 +7,7 @@
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 
 namespace pat::sim::economy {
 
@@ -223,20 +224,31 @@ std::optional<AccountRef> income_recipient(const World& world, ProvinceId provin
     return std::nullopt;
 }
 
-Kopecks post_province_income(World& world, ProvinceId province, const ProvinceIncome& income) {
+Kopecks
+post_province_income(World& world, ProvinceId province, const ProvinceIncome& income, Kopecks* refused) {
     const auto owner = income_recipient(world, province);
     Kopecks received = 0;
+    Kopecks refused_total = 0;
+    // One posting; what the account did not take (saturation) is counted, never silently dropped.
+    const auto post = [&](AccountRef account, LedgerCode code, Kopecks amount) {
+        const Kopecks applied = world.post_money(account, code, amount);
+        refused_total = saturating_add(refused_total, std::abs(amount - applied));
+        return applied;
+    };
     if (owner) {
         for (std::size_t g = 0; g < kGroupCount; ++g) {
             const GroupTax& tax = income.group[g];
             const LedgerCode code = tax_code(static_cast<Group>(g));
-            received += world.post_money(*owner, code, tax.gross - tax.crown);
-            received += world.post_money(*owner, LedgerCode::Embezzlement, -tax.leak);
+            received += post(*owner, code, tax.gross - tax.crown);
+            received += post(*owner, LedgerCode::Embezzlement, -tax.leak);
             if (tax.crown > 0) {
-                (void)world.post_money(AccountRef::crown(), code, tax.crown);
+                (void)post(AccountRef::crown(), code, tax.crown);
             }
         }
-        received += world.post_money(*owner, LedgerCode::HoldingIncome, income.holding);
+        received += post(*owner, LedgerCode::HoldingIncome, income.holding);
+    }
+    if (refused != nullptr) {
+        *refused = refused_total;
     }
     // the income of a month is never negative (the leak is part of a tax that was paid in full)
     const Kopecks net = std::max<Kopecks>(0, received);
@@ -251,9 +263,8 @@ ProvinceIncome step_province_taxes(World& world,
     if (!world.economy_present() || !world.exists(province)) {
         return {};
     }
-    const ProvinceIncome income =
-        compute_province_income(rules, tax_input(world, province), holding_income_kop);
-    (void)post_province_income(world, province, income);
+    ProvinceIncome income = compute_province_income(rules, tax_input(world, province), holding_income_kop);
+    (void)post_province_income(world, province, income, &income.refused_kop);
     return income;
 }
 

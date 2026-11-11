@@ -74,6 +74,11 @@ struct ProvinceIncome {
     Kopecks holding = 0;
     /// True while control is below the anarchy threshold: nothing is collected, nothing is paid.
     bool anarchy = false;
+    /// What an account refused when the income was posted (requested minus applied, kopecks): the books
+    /// saturate at +-kMaxTreasuryKop and the money of the excess is not created. 0 from
+    /// `compute_province_income`; `step_province_taxes` fills it, so a saturation never passes unseen
+    /// (economy-model section 3).
+    Kopecks refused_kop = 0;
 
     [[nodiscard]] Kopecks gross_total() const noexcept;
     [[nodiscard]] Kopecks leak_total() const noexcept;
@@ -126,12 +131,17 @@ compute_province_income(const EconomyRules& rules, const TaxInput& input, Kopeck
 /// Posts `income` to the accounts through World::post_money (the owner's taxes, the leak and the
 /// holding income; the crown's share to the crown) and writes the net income of the owner into the
 /// column `income_last_month` (0 without a recipient). Returns that income. Posting order: groups in
-/// ascending order (tax, then leak), the crown's share, the holding income.
-Kopecks post_province_income(World& world, ProvinceId province, const ProvinceIncome& income);
+/// ascending order (tax, then leak), the crown's share, the holding income. `refused` (optional) receives
+/// the sum, over the postings, of what the accounts did not take (the saturation of a balance or a line).
+Kopecks post_province_income(World& world,
+                             ProvinceId province,
+                             const ProvinceIncome& income,
+                             Kopecks* refused = nullptr);
 
 /// tax_input + compute_province_income + post_province_income: what the system `economy.provinces`
 /// runs on the slot day of a province (step 4 of section 7.3). `holding_income_kop` is the result of
-/// step 3 (E9-T07). Returns the income that was computed (before saturation of an account).
+/// step 3 (E9-T07). Returns the income that was computed, with `refused_kop` set to what the accounts
+/// did not take (saturation).
 ProvinceIncome
 step_province_taxes(World& world, const EconomyRules& rules, ProvinceId province, Kopecks holding_income_kop);
 

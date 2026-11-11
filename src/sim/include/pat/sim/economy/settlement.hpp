@@ -100,6 +100,9 @@ struct SettlementReport {
     Date closed_month_start;      ///< first day of the month that was closed (when `closed`)
     Kopecks building_upkeep = 0;  ///< what was really posted for buildings, all accounts, positive
     Kopecks other_expenses = 0;   ///< what was really posted from the ExpenseSources, positive
+    /// What the accounts refused of the expenses (requested minus posted, positive; the balance of an
+    /// account saturates at -kMaxTreasuryKop): 0 unless a saturation happened, so it never passes unseen.
+    Kopecks refused_kop = 0;
 };
 
 /// Closes the open month of the statement on the 1st day `month_start` of the next one: posts the
