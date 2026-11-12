@@ -1,8 +1,8 @@
-// The start menu (UI-D12, #284; boards "МЕНЮ / ..." of the mockup), parts 1 and 2: the screen stack, the main
-// menu, "Об игре", "Загрузка", the dialogs, the overview page, "Новая игра", "Свой род", "Цель партии" and
-// the world screen, on an offscreen WARP target. Rectangles are compared with data/ui/layout/menu_boards.pd
-// (1 px at 1920x1080), texts come from the string table, and the actions that need a world only reach the
-// callbacks.
+// The start menu (UI-D12, #284; boards "МЕНЮ / ..." of the mockup), parts 1 to 3: the screen stack, the main
+// menu, "Об игре", "Загрузка", the dialogs, the overview page, "Новая игра", "Свой род", "Цель партии", the
+// world screen and "Настройки" (four tabs and their dialogs), on an offscreen WARP target. Rectangles are
+// compared with data/ui/layout/menu_boards.pd (1 px at 1920x1080), texts come from the string table, and the
+// actions that need a world only reach the callbacks.
 
 #include "pat/ui/menu.hpp"
 
@@ -41,6 +41,52 @@ TEST_CASE("menu: the placeholder snapshot is the three saves of the mockup") {
     CHECK(snapshot.saves[1].name == "Перед переговорами");
     CHECK_FALSE(snapshot.saves[2].compatible);
     CHECK(snapshot.saves[0].house_gen == "Голицыных");
+}
+
+TEST_CASE("settings model: the defaults are the values drawn on the boards") {
+    const pat::ui::SettingsModel m;
+    CHECK(m.width == 1920);
+    CHECK(m.height == 1080);
+    CHECK(m.frame_limit == 60);
+    CHECK(m.vsync);
+    CHECK(m.ui_scale == 100);
+    CHECK_FALSE(m.reduce_motion);
+    CHECK(m.master_volume == 80);
+    CHECK(m.music_volume == 65);
+    CHECK(m.ambient_volume == 70);
+    CHECK(m.interface_volume == 75);
+    CHECK(m.keys[static_cast<std::size_t>(pat::ui::KeyAction::Pause)] == "space");
+    CHECK(m.keys[static_cast<std::size_t>(pat::ui::KeyAction::MapMode)] == "m");
+}
+
+TEST_CASE("settings model: a tab is reset and compared on its own") {
+    using namespace pat::ui;
+    SettingsModel edited;
+    edited.ui_scale = 125;
+    edited.reduce_motion = true;
+    edited.master_volume = 10;
+    const SettingsModel defaults;
+    CHECK(settings_differ(edited, defaults, SettingsTab::Interface));
+    CHECK(settings_differ(edited, defaults, SettingsTab::Audio));
+    CHECK_FALSE(settings_differ(edited, defaults, SettingsTab::Video));
+    CHECK_FALSE(settings_differ(edited, defaults, SettingsTab::Controls));
+    reset_settings_tab(edited, SettingsTab::Interface);
+    CHECK(edited.ui_scale == 100);
+    CHECK_FALSE(edited.reduce_motion);
+    CHECK(edited.master_volume == 10);  // the other tabs keep their edits
+    CHECK_FALSE(settings_differ(edited, defaults, SettingsTab::Interface));
+}
+
+TEST_CASE("settings model: a key that is taken moves to the action that gave it up") {
+    using namespace pat::ui;
+    SettingsModel m;
+    rebind_key(m, KeyAction::Pause, "p");
+    CHECK(m.keys[static_cast<std::size_t>(KeyAction::Pause)] == "p");
+    rebind_key(m, KeyAction::MapMode, "p");  // "p" was the pause: the two swap
+    CHECK(m.keys[static_cast<std::size_t>(KeyAction::MapMode)] == "p");
+    CHECK(m.keys[static_cast<std::size_t>(KeyAction::Pause)] == "m");
+    rebind_key(m, KeyAction::Pause, "m");  // the key it already has: nothing moves
+    CHECK(m.keys[static_cast<std::size_t>(KeyAction::MapMode)] == "p");
 }
 
 #ifdef _WIN32
@@ -93,6 +139,7 @@ struct Fixture {
     std::unique_ptr<MenuWindow> menu;
     std::vector<std::string> log;  // what the actions reported
     std::vector<pat::ui::MenuStart> starts;
+    std::vector<pat::ui::SettingsModel> applied;  // what "Применить" handed over
 
     explicit Fixture(PixelSize size = {1920, 1080}, bool with_saves = true) {
         RendererDesc rd;
@@ -128,7 +175,10 @@ struct Fixture {
         actions.enter_game = [this] { log.push_back("enter"); };
         actions.continue_game = [this] { log.push_back("continue"); };
         actions.load_save = [this](const std::string& id) { log.push_back("load:" + id); };
-        actions.open_settings = [this] { log.push_back("settings"); };
+        actions.apply_settings = [this](const pat::ui::SettingsModel& settings) {
+            log.push_back("apply");
+            applied.push_back(settings);
+        };
         actions.quit = [this] { log.push_back("quit"); };
         menu->set_actions(actions);
     }
@@ -339,9 +389,10 @@ TEST_CASE("menu: Up and Down move the highlight, Enter presses, the actions only
     REQUIRE(f.log.size() == 2);
     CHECK(f.log[1] == "cancel");
     CHECK(f.menu->screen() == MenuScreen::Main);
-    f.click("mi-settings");
-    REQUIRE(f.log.size() == 3);
-    CHECK(f.log[2] == "settings");
+    f.click("mi-settings");  // "Настройки" open their own screen (part 3): nothing reaches the game
+    CHECK(f.menu->screen() == MenuScreen::Settings);
+    CHECK(f.log.size() == 2);
+    f.key(Rml::Input::KI_ESCAPE);
     CHECK(f.menu->screen() == MenuScreen::Main);
     f.click("mi-new");  // "Новая игра" opens its own screen (part 2): nothing reaches the game yet
     CHECK(f.menu->screen() == MenuScreen::NewGame);
@@ -621,11 +672,13 @@ TEST_CASE("menu: the overview page lists the eight cards of its board and opens 
         INFO("card " << i);
         check_rect(f.el(("card-" + std::to_string(i)).c_str()), layer(kOverview, names[i]));
     }
-    CHECK(f.el("card-6")->IsClassSet("is-disabled"));  // "Настройки" arrive in part 3
+    CHECK_FALSE(f.el("card-6")->IsClassSet("is-disabled"));  // "Настройки" exist since part 3
     CHECK_FALSE(f.el("card-0")->IsClassSet("is-disabled"));
     CHECK(f.focused() == "card-0");
 
     f.click("card-6");
+    CHECK(f.menu->screen() == MenuScreen::Settings);
+    f.key(Rml::Input::KI_ESCAPE);
     CHECK(f.menu->screen() == MenuScreen::Overview);
 
     f.click("card-0");  // the first run: no saves, "Новая игра" is the primary entry
@@ -1141,7 +1194,7 @@ TEST_CASE("menu: the overview opens the screens of part 2 without calling a call
     CHECK_FALSE(f.el("card-2")->IsClassSet("is-disabled"));
     CHECK_FALSE(f.el("card-3")->IsClassSet("is-disabled"));
     CHECK_FALSE(f.el("card-7")->IsClassSet("is-disabled"));
-    CHECK(f.el("card-6")->IsClassSet("is-disabled"));  // "Настройки" arrive in part 3
+    CHECK_FALSE(f.el("card-6")->IsClassSet("is-disabled"));
     f.click("card-2");
     REQUIRE(f.menu->screen() == MenuScreen::NewGame);
     f.key(Rml::Input::KI_ESCAPE);
@@ -1189,6 +1242,744 @@ TEST_CASE("menu: the start screens fit the window at 1280x720 and in 21:9") {
         f.menu->open_world(pat::ui::MenuWorldKind::Restore, 100);
         f.settle();
         CHECK(std::abs(f.el("btn-enter")->GetAbsoluteLeft() - (320 + 1382)) <= 1.5);
+    }
+}
+
+// ---- settings (part 3) ------------------------------------------------------------------------
+
+namespace {
+
+struct SettingsBoards {
+    static constexpr const char* kVideo = "МЕНЮ / Настройки / Изображение";
+    static constexpr const char* kInterface = "МЕНЮ / Настройки / Интерфейс";
+    static constexpr const char* kChanged = "МЕНЮ / Настройки / есть изменения";
+    static constexpr const char* kSaved = "МЕНЮ / Настройки / изменения сохранены";
+    static constexpr const char* kAudio = "МЕНЮ / Настройки / Звук";
+    static constexpr const char* kControls = "МЕНЮ / Настройки / Управление";
+    static constexpr const char* kDlgSave = "МЕНЮ / Диалог / Сохранить изменения?";
+    static constexpr const char* kDlgReset = "МЕНЮ / Диалог / Вернуть настройки по умолчанию?";
+    static constexpr const char* kDlgRebind = "МЕНЮ / Диалог / Нажмите новую клавишу";
+};
+
+struct RowBoard {
+    const char* row;      // "Setting row / …"
+    const char* control;  // "Control / …", "Toggle / …", "Slider / …", "Key binding / …"
+    const char* title;
+    const char* hint;
+    const char* value;  // the text on the control
+};
+
+using Rows = std::array<RowBoard, 6>;
+
+const Rows kVideoRows = {{
+    {"Setting row / Разрешение",
+     "Control / 1920 × 1080",
+     "Разрешение",
+     "Размер изображения на экране",
+     "1920 × 1080"},
+    {"Setting row / Режим окна",
+     "Control / Безрамочное окно",
+     "Режим окна",
+     "Поведение окна игры",
+     "Безрамочное окно"},
+    {"Setting row / Качество карты",
+     "Control / Среднее",
+     "Качество карты",
+     "Общий уровень детализации ландшафта",
+     "Среднее"},
+    {"Setting row / Тени и освещение",
+     "Control / Средние",
+     "Тени и освещение",
+     "Детализация теней на карте",
+     "Средние"},
+    {"Setting row / Частота кадров",
+     "Control / 60 FPS",
+     "Частота кадров",
+     "Ограничение частоты отображения",
+     "60 FPS"},
+    {"Setting row / Вертикальная синхронизация",
+     "Toggle / Вертикальная синхронизация",
+     "Вертикальная синхронизация",
+     "Уменьшает разрывы изображения",
+     "Вкл."},
+}};
+const Rows kInterfaceRows = {{
+    {"Setting row / Масштаб интерфейса",
+     "Control / 100%",
+     "Масштаб интерфейса",
+     "Размер панелей и элементов управления",
+     "100%"},
+    {"Setting row / Язык интерфейса",
+     "Control / Русский",
+     "Язык интерфейса",
+     "Язык текста и названий",
+     "Русский"},
+    {"Setting row / Размер текста",
+     "Control / Стандартный",
+     "Размер текста",
+     "Читаемость описаний и сообщений",
+     "Стандартный"},
+    {"Setting row / Подсказки",
+     "Control / Контекстные",
+     "Подсказки",
+     "Пояснения к значениям и действиям",
+     "Контекстные"},
+    {"Setting row / Пауза при важных событиях",
+     "Toggle / Пауза при важных событиях",
+     "Пауза при важных событиях",
+     "Останавливать время перед важным выбором",
+     "Вкл."},
+    {"Setting row / Уменьшение анимации",
+     "Toggle / Уменьшение анимации",
+     "Уменьшение анимации",
+     "Сократить декоративное движение",
+     "Выкл."},
+}};
+const Rows kAudioRows = {{
+    {"Setting row / Общая громкость", "Slider / Общая громкость", "Общая громкость", "Все звуки игры", "80%"},
+    {"Setting row / Музыка", "Slider / Музыка", "Музыка", "Музыкальное сопровождение", "65%"},
+    {"Setting row / Окружение", "Slider / Окружение", "Окружение", "Звуки мира и атмосфера", "70%"},
+    {"Setting row / Интерфейс", "Slider / Интерфейс", "Интерфейс", "Сигналы действий и уведомлений", "75%"},
+    {"Setting row / Устройство вывода",
+     "Control / По умолчанию",
+     "Устройство вывода",
+     "Куда воспроизводится звук",
+     "По умолчанию"},
+    {"Setting row / Тишина вне окна",
+     "Toggle / Тишина вне окна",
+     "Тишина вне окна",
+     "Приглушать игру, когда окно неактивно",
+     "Вкл."},
+}};
+const Rows kControlRows = {{
+    {"Setting row / Пауза / продолжить",
+     "Key binding / Пауза / продолжить",
+     "Пауза / продолжить",
+     "Управление ходом времени",
+     "Пробел"},
+    {"Setting row / Перемещение камеры",
+     "Key binding / Перемещение камеры",
+     "Перемещение камеры",
+     "Движение по карте",
+     "W   A   S   D"},
+    {"Setting row / Масштаб карты",
+     "Key binding / Масштаб карты",
+     "Масштаб карты",
+     "Приближение и отдаление",
+     "Колесо мыши"},
+    {"Setting row / Выбрать объект",
+     "Key binding / Выбрать объект",
+     "Выбрать объект",
+     "Провинция, персонаж или маркер",
+     "ЛКМ"},
+    {"Setting row / Назад / закрыть окно",
+     "Key binding / Назад / закрыть окно",
+     "Назад / закрыть окно",
+     "Возврат из открытого окна",
+     "ПКМ / Esc"},
+    {"Setting row / Режим карты",
+     "Key binding / Режим карты",
+     "Режим карты",
+     "Переключение представления карты",
+     "M"},
+}};
+
+/// The frame of a tab: the categories, the panel, the six rows with their texts and controls, the buttons.
+void check_settings_tab(Fixture& f,
+                        const char* board,
+                        const char* tab_name,
+                        const char* content_name,
+                        const Rows& rows,
+                        const char* subtitle) {
+    INFO("board " << board);
+    REQUIRE(f.menu->screen() == MenuScreen::Settings);
+    check_text(f.el("page-caption"), text_layer(board, "НАСТРОЙКИ"));
+    {
+        // The title of these boards is 63 high (the line box of 42 px at 1.5), the other boards draw 57.
+        const Layer title = text_layer(board, "Настройки");
+        REQUIRE(title.found);
+        Rml::Element* e = f.el("page-title");
+        CHECK(std::abs(e->GetAbsoluteLeft() - title.x) <= 1.0);
+        CHECK(std::abs(e->GetAbsoluteTop() - title.y) <= 1.0);
+        CHECK(std::abs(e->GetOffsetWidth() - title.w) <= 1.0);
+    }
+    check_text(f.el("page-subtitle"), text_layer(board, subtitle));
+    check_rect(f.el("panel"), layer(board, "Front panel"));
+    check_rect(f.el("set-cats"), layer(board, "Settings categories"));
+    const char* cats[4] = {"Settings category / video",
+                           "Settings category / interface",
+                           "Settings category / audio",
+                           "Settings category / controls"};
+    for (int i = 0; i < 4; ++i) {
+        const std::string id = "cat-" + std::to_string(i);
+        check_rect(f.el(id.c_str()), layer(board, cats[i]));
+    }
+    check_text(f.el("set-note"), layer(board, "Изменения вступают в силу после применения."));
+    check_rect(f.el("set-content"), layer(board, content_name));
+    for (int i = 0; i < 6; ++i) {
+        INFO("row " << i << " of " << tab_name);
+        const RowBoard& r = rows[static_cast<std::size_t>(i)];
+        Rml::Element* row = f.el(("row-" + std::to_string(i)).c_str());
+        Rml::Element* ctl = f.el(("ctl-" + std::to_string(i)).c_str());
+        check_rect(row, layer(board, r.row));
+        Layer title = text_layer(board, r.title);
+        if (std::string(r.title) == "Интерфейс") {
+            title = Layer{true, 462, 601, 738, 31.5};  // the tab of that name comes first on the board
+        }
+        check_text(child_of_class(row, "set-title"), title);
+        check_text(child_of_class(row, "set-hint"), text_layer(board, r.hint));
+        check_rect(ctl, layer(board, r.control));
+        CHECK(text_of(child_of_class(ctl, "ctl-text")) == r.value);
+    }
+    check_rect(f.el("btn-main"), layer(board, "Button / Главное меню"));
+    check_rect(f.el("btn-defaults"), layer(board, "Button / По умолчанию"));
+    check_rect(f.el("btn-apply"), layer(board, "Button / Применить"));
+}
+
+void mouse_at(Fixture& f, float x, float y) {
+    f.ui->handle_event(event::MouseMove{x, y, 0, 0});
+    f.settle();
+}
+
+}  // namespace
+
+TEST_CASE("menu: 'Настройки' open from the main menu and Esc leaves them") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    f.open();
+    f.click("mi-settings");
+    REQUIRE(f.menu->screen() == MenuScreen::Settings);
+    CHECK(f.menu->depth() == 2);
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Video);
+    CHECK(f.focused() == "cat-0");
+    CHECK_FALSE(f.menu->settings_dirty());
+    CHECK_FALSE(f.has("set-msg"));
+    f.key(Rml::Input::KI_ESCAPE);  // nothing changed: no question
+    CHECK(f.menu->screen() == MenuScreen::Main);
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.log.empty());
+}
+
+TEST_CASE("menu: the tab 'Изображение' sits where its board puts it") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    check_settings_tab(f,
+                       B::kVideo,
+                       "video",
+                       "Settings content / video",
+                       kVideoRows,
+                       "Изображение · Настройте игру под свой экран и привычки");
+    // The chevron of a dropdown and the toggle with its track, thumb and caption.
+    check_rect(child_of_class(f.el("ctl-0"), "ctl-chev"), layer(B::kVideo, "Dropdown chevron"));
+    Rml::Element* toggle = f.el("ctl-5");
+    CHECK(toggle->IsClassSet("on"));
+    check_rect(child_of_class(toggle, "tg-track"), layer(B::kVideo, "Toggle track"));
+    check_rect(child_of_class(toggle, "tg-thumb"), layer(B::kVideo, "Toggle thumb"));
+    check_text(child_of_class(toggle, "tg-text"), text_layer(B::kVideo, "Вкл."));
+    // Nothing changed: "Применить" is the disabled button of the board and no message shows.
+    CHECK(f.el("btn-apply")->IsClassSet("is-disabled"));
+    CHECK_FALSE(f.has("set-msg"));
+    CHECK(f.el("cat-0")->IsClassSet("selected"));
+}
+
+TEST_CASE("menu: the tab 'Интерфейс' sits where its board puts it") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.click("cat-1");
+    REQUIRE(f.menu->settings_tab() == pat::ui::SettingsTab::Interface);
+    check_settings_tab(f,
+                       B::kInterface,
+                       "interface",
+                       "Settings content / interface",
+                       kInterfaceRows,
+                       "Интерфейс · Настройте игру под свой экран и привычки");
+    // A switched-off toggle keeps its thumb on the left (board: 1643 - 1638).
+    Rml::Element* off = f.el("ctl-5");
+    CHECK_FALSE(off->IsClassSet("on"));
+    CHECK(std::abs(child_of_class(off, "tg-thumb")->GetAbsoluteLeft() - off->GetAbsoluteLeft() - 5) <= 1.0);
+    CHECK(f.el("cat-1")->IsClassSet("selected"));
+    CHECK_FALSE(f.el("cat-0")->IsClassSet("selected"));
+}
+
+TEST_CASE("menu: the tab 'Звук' sits where its board puts it") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.menu->press_tab(pat::ui::SettingsTab::Audio);
+    f.settle();
+    check_settings_tab(f,
+                       B::kAudio,
+                       "audio",
+                       "Settings content / audio",
+                       kAudioRows,
+                       "Звук · Настройте игру под свой экран и привычки");
+    Rml::Element* master = f.el("ctl-0");
+    check_rect(child_of_class(master, "sl-track"), layer(B::kAudio, "Slider track"));
+    check_rect(child_of_class(master, "sl-value"), layer(B::kAudio, "Slider value"));
+    check_rect(child_of_class(master, "sl-thumb"), layer(B::kAudio, "Slider thumb"));
+    check_text(child_of_class(master, "sl-text"), text_layer(B::kAudio, "80%"));
+    check_text(child_of_class(f.el("ctl-1"), "sl-text"), text_layer(B::kAudio, "65%"));
+    CHECK(f.menu->settings().master_volume == 80);
+}
+
+TEST_CASE("menu: the tab 'Управление' sits where its board puts it") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.click("cat-3");
+    check_settings_tab(f,
+                       B::kControls,
+                       "controls",
+                       "Settings content / controls",
+                       kControlRows,
+                       "Управление · Настройте игру под свой экран и привычки");
+}
+
+TEST_CASE("menu: a change shows the red message and the green button, 'Применить' hands the values over") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.click("cat-1");
+    f.click("ctl-5");  // "Уменьшение анимации" goes on
+    CHECK(f.menu->settings_dirty());
+    CHECK(f.menu->pending_settings().reduce_motion);
+    CHECK_FALSE(f.menu->settings().reduce_motion);  // not applied yet
+    CHECK(f.el("ctl-5")->IsClassSet("on"));
+    check_text(f.el("set-msg"), text_layer(B::kChanged, "Есть неприменённые изменения"));
+    CHECK(text_of(f.el("set-msg")) == "Есть неприменённые изменения");
+    CHECK_FALSE(f.el("set-msg")->IsClassSet("ok"));
+    CHECK_FALSE(f.el("btn-apply")->IsClassSet("is-disabled"));
+    check_rect(f.el("btn-apply"), layer(B::kChanged, "Button / Применить"));
+    CHECK(f.log.empty());
+
+    f.click("btn-apply");
+    REQUIRE(f.log.size() == 1);
+    CHECK(f.log[0] == "apply");
+    REQUIRE(f.applied.size() == 1);
+    CHECK(f.applied[0].reduce_motion);
+    CHECK_FALSE(f.menu->settings_dirty());
+    CHECK(f.menu->settings_applied());
+    CHECK(f.menu->settings().reduce_motion);
+    check_text(f.el("set-msg"), text_layer(B::kSaved, "Изменения применены"));
+    CHECK(text_of(f.el("set-msg")) == "Изменения применены");
+    CHECK(f.el("set-msg")->IsClassSet("ok"));
+    CHECK(f.el("btn-apply")->IsClassSet("is-disabled"));
+    f.click("btn-apply");  // nothing to apply any more
+    CHECK(f.log.size() == 1);
+
+    f.click("ctl-3");  // the next change takes the confirmation away
+    CHECK_FALSE(f.menu->settings_applied());
+    CHECK(text_of(f.el("set-msg")) == "Есть неприменённые изменения");
+}
+
+TEST_CASE("menu: the dropdowns step through their options and the UI scale comes out in percent") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.click("ctl-0");  // the resolution: next in the list
+    CHECK(f.menu->pending_settings().width == 2560);
+    CHECK(f.menu->pending_settings().height == 1440);
+    CHECK(text_of(child_of_class(f.el("ctl-0"), "ctl-text")) == "2560 × 1440");
+    f.click("ctl-4");  // the frame limit: 60 -> 120
+    CHECK(f.menu->pending_settings().frame_limit == 120);
+    f.click("ctl-4");  // -> no limit
+    CHECK(f.menu->pending_settings().frame_limit == 0);
+    CHECK(text_of(child_of_class(f.el("ctl-4"), "ctl-text")) == "Без ограничения");
+    f.click("ctl-4");  // the last one wraps
+    CHECK(f.menu->pending_settings().frame_limit == 30);
+    f.click("ctl-5");  // vertical sync off
+    CHECK_FALSE(f.menu->pending_settings().vsync);
+    CHECK(text_of(child_of_class(f.el("ctl-5"), "tg-text")) == "Выкл.");
+
+    f.click("cat-1");
+    f.click("ctl-0");  // 100% -> 110%
+    CHECK(f.menu->pending_settings().ui_scale == 110);
+    CHECK(text_of(child_of_class(f.el("ctl-0"), "ctl-text")) == "110%");
+    f.click("ctl-0");
+    f.click("ctl-0");  // 125%, 150%
+    CHECK(f.menu->pending_settings().ui_scale == 150);
+    f.click("ctl-0");  // wraps to 80%
+    CHECK(f.menu->pending_settings().ui_scale == 80);
+    f.click("ctl-1");  // one language: nothing to step to
+    CHECK(f.menu->pending_settings().language == "ru");
+    f.click("ctl-2");
+    CHECK(f.menu->pending_settings().text_size == 2);
+    f.click("ctl-3");
+    CHECK(f.menu->pending_settings().tooltips == 2);
+}
+
+TEST_CASE("menu: the arrows change the focused row and walk the tabs and rows") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    CHECK(f.focused() == "cat-0");
+    f.key(Rml::Input::KI_DOWN);  // Up and Down on the tabs walk them
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Interface);
+    CHECK(f.focused() == "cat-1");
+    f.key(Rml::Input::KI_UP);
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Video);
+    f.key(Rml::Input::KI_UP);  // the first one stays
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Video);
+    for (int i = 0; i < 5; ++i) {
+        f.key(Rml::Input::KI_DOWN);
+    }
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Controls);
+    f.key(Rml::Input::KI_UP);  // Audio
+    f.key(Rml::Input::KI_UP);  // Interface
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Interface);
+
+    f.el("ctl-0")->Focus();
+    f.settle();
+    f.key(Rml::Input::KI_RIGHT);  // a dropdown steps (and does not wrap with the arrows)
+    CHECK(f.menu->pending_settings().ui_scale == 110);
+    f.key(Rml::Input::KI_LEFT);
+    f.key(Rml::Input::KI_LEFT);
+    CHECK(f.menu->pending_settings().ui_scale == 90);
+    f.key(Rml::Input::KI_DOWN);  // the next row
+    CHECK(f.focused() == "ctl-1");
+    f.key(Rml::Input::KI_UP);
+    f.key(Rml::Input::KI_UP);  // the first row goes up to the tab
+    CHECK(f.focused() == "cat-1");
+
+    f.el("ctl-5")->Focus();
+    f.settle();
+    f.key(Rml::Input::KI_RIGHT);  // a toggle: right is on, left is off
+    CHECK(f.menu->pending_settings().reduce_motion);
+    f.key(Rml::Input::KI_RIGHT);
+    CHECK(f.menu->pending_settings().reduce_motion);
+    f.key(Rml::Input::KI_LEFT);
+    CHECK_FALSE(f.menu->pending_settings().reduce_motion);
+    f.key(Rml::Input::KI_DOWN);  // below the last row: the buttons
+    CHECK(f.focused() == "btn-defaults");
+}
+
+TEST_CASE("menu: a slider follows the mouse and the arrows") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.menu->press_tab(pat::ui::SettingsTab::Audio);
+    f.settle();
+    Rml::Element* track = child_of_class(f.el("ctl-1"), "sl-track");
+    const float left = track->GetAbsoluteLeft();
+    const float width = track->GetOffsetWidth();
+    const float y = track->GetAbsoluteTop() + 2;
+    mouse_at(f, left + width * 0.20f, y);
+    f.ui->handle_event(event::MouseButton{1, true, 1, left + width * 0.20f, y});
+    CHECK(f.menu->pending_settings().music_volume == 20);
+    mouse_at(f, left + width * 0.90f, y + 300);  // the drag goes on outside the control
+    CHECK(f.menu->pending_settings().music_volume == 90);
+    f.ui->handle_event(event::MouseButton{1, false, 1, left + width * 0.90f, y + 300});
+    mouse_at(f, left + width * 0.10f, y);  // released: the pointer no longer drags
+    CHECK(f.menu->pending_settings().music_volume == 90);
+    CHECK(text_of(child_of_class(f.el("ctl-1"), "sl-text")) == "90%");
+    CHECK(f.menu->settings_dirty());
+    CHECK(std::abs(f.el("ctl-1")->GetOffsetWidth() - 430) <= 1.0);  // the control keeps its size
+
+    f.el("ctl-2")->Focus();
+    f.settle();
+    f.key(Rml::Input::KI_RIGHT);  // 70 -> 75
+    CHECK(f.menu->pending_settings().ambient_volume == 75);
+    for (int i = 0; i < 8; ++i) {
+        f.key(Rml::Input::KI_RIGHT);
+    }
+    CHECK(f.menu->pending_settings().ambient_volume == 100);  // stops at the end
+    f.menu->press_slider(2, 40);
+    CHECK(f.menu->pending_settings().ambient_volume == 40);
+    f.menu->press_setting(2);  // a press on a slider does nothing
+    CHECK(f.menu->pending_settings().ambient_volume == 40);
+}
+
+TEST_CASE("menu: Esc or 'Главное меню' with unapplied changes asks, and the answers do what they say (dialog "
+          "'Сохранить изменения?')") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open();
+    f.click("mi-settings");
+    f.click("cat-1");
+    f.click("ctl-5");
+    REQUIRE(f.menu->settings_dirty());
+    CHECK(f.menu->press_back() == pat::ui::MenuBack::AskedSave);
+    REQUIRE(f.menu->dialog() == MenuDialog::SaveChanges);
+    f.settle();
+    CHECK(f.focused() == "dlg-save-return");  // the safe answer is the default one
+    Rml::Element* dialog = f.el("dialog-save");
+    CHECK(std::abs(dialog->GetOffsetWidth() - 760) <= 1);
+    CHECK(std::abs(dialog->GetOffsetHeight() - 386) <= 1);
+    CHECK(std::abs(dialog->GetAbsoluteLeft() + dialog->GetOffsetWidth() / 2 - 960) <= 1);
+    CHECK(std::abs(dialog->GetAbsoluteTop() + dialog->GetOffsetHeight() / 2 - 540) <= 1);
+    check_text_inside(
+        child_of_class(dialog, "dialog-title"), dialog, text_layer(B::kDlgSave, "Сохранить изменения?"));
+    check_text_inside(
+        f.el("dialog-save-text"),
+        dialog,
+        layer(B::kDlgSave, "Вы изменили настройки интерфейса. Применить изменения перед выходом?"));
+    CHECK(text_of(f.el("dialog-save-text")) ==
+          "Вы изменили настройки интерфейса.<br />Применить изменения перед выходом?");
+    check_inside(f.el("dlg-save-apply"), dialog, layer(B::kDlgSave, "Button / Применить"));
+    check_inside(f.el("dlg-save-discard"), dialog, layer(B::kDlgSave, "Button / Без сохранения"));
+    check_inside(f.el("dlg-save-return"), dialog, layer(B::kDlgSave, "Button / Вернуться"));
+
+    f.key(Rml::Input::KI_ESCAPE);  // Esc = "Вернуться"
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->screen() == MenuScreen::Settings);
+    CHECK(f.menu->settings_dirty());
+
+    f.click("btn-main");  // the button asks too
+    REQUIRE(f.menu->dialog() == MenuDialog::SaveChanges);
+    f.click("dlg-save-return");
+    CHECK(f.menu->screen() == MenuScreen::Settings);
+    CHECK(f.log.empty());
+
+    f.click("btn-main");
+    f.click("dlg-save-discard");  // "Без сохранения": the edits are gone, the game is not told
+    CHECK(f.menu->screen() == MenuScreen::Main);
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.log.empty());
+    CHECK_FALSE(f.menu->settings_dirty());
+    CHECK_FALSE(f.menu->settings().reduce_motion);
+
+    f.click("mi-settings");  // a new visit starts from what was applied
+    CHECK_FALSE(f.menu->pending_settings().reduce_motion);
+    CHECK(f.menu->settings_tab() == pat::ui::SettingsTab::Video);
+    f.click("cat-1");
+    f.click("ctl-5");
+    f.key(Rml::Input::KI_ESCAPE);
+    f.click("dlg-save-apply");  // "Применить": applies and leaves
+    CHECK(f.menu->screen() == MenuScreen::Main);
+    REQUIRE(f.log.size() == 1);
+    CHECK(f.log[0] == "apply");
+    REQUIRE(f.applied.size() == 1);
+    CHECK(f.applied[0].reduce_motion);
+    CHECK(f.menu->settings().reduce_motion);
+}
+
+TEST_CASE("menu: the dialog names the section when only one tab changed, and says nothing when several did") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.menu->press_setting(0);  // the resolution of the tab "Изображение"
+    f.menu->press_back();
+    f.settle();
+    CHECK(text_of(f.el("dialog-save-text")) ==
+          "Вы изменили настройки изображения.<br />Применить изменения перед выходом?");
+    f.menu->press_dialog("return");
+    f.menu->press_tab(pat::ui::SettingsTab::Audio);
+    f.menu->press_slider(0, 10);
+    f.menu->press_back();
+    f.settle();
+    CHECK(text_of(f.el("dialog-save-text")) ==
+          "Вы изменили настройки.<br />Применить изменения перед выходом?");
+}
+
+TEST_CASE("menu: 'По умолчанию' asks first and puts back the values of the open tab only (dialog 'Вернуть "
+          "настройки по умолчанию?')") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.menu->press_setting(0);  // video: 2560 x 1440
+    f.click("cat-1");
+    f.click("ctl-0");  // interface: 110%
+    f.click("ctl-5");
+    f.click("btn-defaults");
+    REQUIRE(f.menu->dialog() == MenuDialog::ResetDefaults);
+    CHECK(f.focused() == "dlg-reset-cancel");
+    Rml::Element* dialog = f.el("dialog-reset");
+    CHECK(std::abs(dialog->GetOffsetWidth() - 760) <= 1);
+    CHECK(std::abs(dialog->GetOffsetHeight() - 386) <= 1);
+    check_text_inside(child_of_class(dialog, "dialog-title"),
+                      dialog,
+                      text_layer(B::kDlgReset, "Вернуть настройки по умолчанию?"));
+    check_text_inside(
+        f.el("dialog-reset-text"),
+        dialog,
+        layer(B::kDlgReset, "Текущие значения выбранного раздела будут заменены. Изменения можно пр"));
+    check_inside(f.el("dlg-reset-cancel"), dialog, layer(B::kDlgReset, "Button / Отмена"));
+    check_inside(f.el("dlg-reset-do"), dialog, layer(B::kDlgReset, "Button / Вернуть"));
+
+    f.key(Rml::Input::KI_ESCAPE);  // Esc = "Отмена"
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->pending_settings().ui_scale == 110);
+    CHECK(f.focused() == "btn-defaults");  // the focus comes back to the button that asked
+
+    f.click("btn-defaults");
+    f.click("dlg-reset-cancel");
+    CHECK(f.menu->pending_settings().ui_scale == 110);
+    f.click("btn-defaults");
+    f.click("dlg-reset-do");
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->pending_settings().ui_scale == 100);
+    CHECK_FALSE(f.menu->pending_settings().reduce_motion);
+    CHECK(f.menu->pending_settings().width == 2560);  // the other tab keeps its edit
+    CHECK(f.menu->settings_dirty());
+    CHECK(f.log.empty());
+}
+
+TEST_CASE("menu: a binding is chosen in the dialog 'Нажмите новую клавишу' (board)") {
+    if (!fonts_ok()) {
+        return;
+    }
+    using B = SettingsBoards;
+    Fixture f;
+    f.open(MenuScreen::Settings);
+    f.click("cat-3");
+    f.click("ctl-0");
+    REQUIRE(f.menu->dialog() == MenuDialog::Rebind);
+    CHECK(f.focused() == "dlg-rebind-cancel");
+    Rml::Element* dialog = f.el("dialog-rebind");
+    CHECK(std::abs(dialog->GetOffsetWidth() - 700) <= 1);
+    CHECK(std::abs(dialog->GetOffsetHeight() - 394) <= 1);
+    CHECK(std::abs(dialog->GetAbsoluteLeft() + dialog->GetOffsetWidth() / 2 - 960) <= 1);
+    CHECK(std::abs(dialog->GetAbsoluteTop() + dialog->GetOffsetHeight() / 2 - 540) <= 1);
+    check_text_inside(
+        child_of_class(dialog, "dialog-title"), dialog, text_layer(B::kDlgRebind, "Нажмите новую клавишу"));
+    check_text_inside(f.el("dialog-rebind-text"),
+                      dialog,
+                      layer(B::kDlgRebind, "Пауза / продолжить Текущее назначение: Пробел"));
+    CHECK(text_of(f.el("dialog-rebind-text")) == "Пауза / продолжить<br />Текущее назначение: Пробел");
+    check_inside(f.el("rebind-badge"), dialog, layer(B::kDlgRebind, "Badge / ПРОБЕЛ"));
+    check_text_inside(f.el("rebind-badge-text"), dialog, text_layer(B::kDlgRebind, "ПРОБЕЛ"));
+    check_inside(f.el("dlg-rebind-cancel"), dialog, layer(B::kDlgRebind, "Button / Отмена"));
+    check_inside(f.el("dlg-rebind-save"), dialog, layer(B::kDlgRebind, "Button / Сохранить"));
+    CHECK(f.menu->rebind_pending() == "space");
+
+    f.key(Rml::Input::KI_F);  // the key is the new binding (the dialog stays open)
+    CHECK(f.menu->dialog() == MenuDialog::Rebind);
+    CHECK(f.menu->rebind_pending() == "f");
+    CHECK(text_of(f.el("rebind-badge-text")) == "F");
+    CHECK(f.menu->pending_settings().keys[0] == "space");  // until "Сохранить"
+    f.key(Rml::Input::KI_SPACE);  // Space would press the focused button: here it is a key like any other
+    CHECK(f.menu->dialog() == MenuDialog::Rebind);
+    CHECK(f.menu->rebind_pending() == "space");
+    CHECK(text_of(f.el("rebind-badge-text")) == "ПРОБЕЛ");
+    f.key(Rml::Input::KI_F5);
+    CHECK(text_of(f.el("rebind-badge-text")) == "F5");
+    f.key(Rml::Input::KI_LSHIFT);  // a key that cannot be bound changes nothing
+    CHECK(f.menu->rebind_pending() == "f5");
+
+    f.key(Rml::Input::KI_ESCAPE);  // Esc cancels: the old key stays
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->pending_settings().keys[0] == "space");
+    CHECK_FALSE(f.menu->settings_dirty());
+    CHECK(f.focused() == "ctl-0");
+
+    f.click("ctl-0");
+    f.key(Rml::Input::KI_F5);
+    f.key(Rml::Input::KI_RETURN);  // Enter is not a binding: it presses the focused "Отмена"
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->pending_settings().keys[0] == "space");
+
+    f.click("ctl-0");
+    f.key(Rml::Input::KI_F5);
+    f.click("dlg-rebind-save");
+    CHECK(f.menu->dialog() == MenuDialog::None);
+    CHECK(f.menu->pending_settings().keys[0] == "f5");
+    CHECK(f.menu->settings_dirty());
+    CHECK(text_of(child_of_class(f.el("ctl-0"), "ctl-text")) == "F5");
+    CHECK(f.log.empty());
+
+    // A key that another action has goes to it in exchange: no key serves two actions.
+    f.click("ctl-5");
+    CHECK(text_of(f.el("dialog-rebind-text")) == "Режим карты<br />Текущее назначение: M");
+    f.key(Rml::Input::KI_F5);
+    f.click("dlg-rebind-save");
+    CHECK(f.menu->pending_settings().keys[5] == "f5");
+    CHECK(f.menu->pending_settings().keys[0] == "m");
+
+    f.menu->press_defaults();  // the defaults of the tab bring the keys back
+    f.settle();
+    f.click("dlg-reset-do");
+    CHECK(f.menu->pending_settings().keys[0] == "space");
+    CHECK(f.menu->pending_settings().keys[5] == "m");
+    CHECK_FALSE(f.menu->settings_dirty());
+}
+
+TEST_CASE("menu: the host's values fill the screen and the applied scale reaches the callback") {
+    if (!fonts_ok()) {
+        return;
+    }
+    Fixture f;
+    pat::ui::SettingsModel host;
+    host.ui_scale = 125;
+    host.master_volume = 30;
+    f.menu->set_settings(host);
+    f.open(MenuScreen::Settings);
+    f.click("cat-1");
+    CHECK(text_of(child_of_class(f.el("ctl-0"), "ctl-text")) == "125%");
+    f.click("ctl-0");  // 150%
+    f.click("btn-apply");
+    REQUIRE(f.applied.size() == 1);
+    CHECK(f.applied[0].ui_scale == 150);
+    CHECK(f.applied[0].master_volume == 30);
+    CHECK(f.menu->settings().ui_scale == 150);
+}
+
+TEST_CASE("menu: the settings fit the window at 1280x720 and in 21:9") {
+    if (!fonts_ok()) {
+        return;
+    }
+    {
+        Fixture f({1280, 720});
+        f.open(MenuScreen::Settings);
+        const float scale = design_ui_scale({1280, 720});
+        Rml::Element* ctl = f.el("ctl-0");
+        CHECK(std::abs(ctl->GetOffsetWidth() - 430 * scale) <= 1.5);
+        CHECK(ctl->GetAbsoluteLeft() + ctl->GetOffsetWidth() <= 1280);
+        Rml::Element* apply = f.el("btn-apply");
+        CHECK(apply->GetAbsoluteLeft() + apply->GetOffsetWidth() <= 1280);
+        CHECK(apply->GetAbsoluteTop() + apply->GetOffsetHeight() <= 720);
+        f.menu->press_tab(pat::ui::SettingsTab::Audio);
+        f.settle();
+        CHECK(std::abs(child_of_class(f.el("ctl-0"), "sl-track")->GetOffsetWidth() - 326 * scale) <= 1.5);
+        f.menu->press_slider(0, 10);
+        f.menu->press_back();
+        f.settle();
+        Rml::Element* dialog = f.el("dialog-save");
+        CHECK(dialog->GetAbsoluteLeft() >= 0);
+        CHECK(dialog->GetAbsoluteLeft() + dialog->GetOffsetWidth() <= 1280);
+        CHECK(std::abs(dialog->GetOffsetWidth() - 760 * scale) <= 1.5);
+    }
+    {
+        Fixture f({2560, 1080});
+        f.open(MenuScreen::Settings);
+        // The stage is centred: the panel keeps its distance from the left edge of the 1920 canvas.
+        CHECK(std::abs(f.el("set-content")->GetAbsoluteLeft() - (320 + 462)) <= 1.5);
+        CHECK(std::abs(f.el("btn-apply")->GetAbsoluteLeft() - (320 + 1362)) <= 1.5);
+        f.menu->press_setting(5);
+        f.settle();
+        CHECK(std::abs(f.el("set-msg")->GetAbsoluteLeft() - (320 + 446)) <= 1.5);
     }
 }
 

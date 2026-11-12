@@ -4,6 +4,7 @@
 #include "pat/engine/ui.hpp"
 #include "pat/loc/localizer.hpp"
 
+#include <array>
 #include <cstddef>
 #include <filesystem>
 #include <functional>
@@ -22,15 +23,17 @@ namespace pat::ui {
 /// The screens of the start menu (UI-D12, #284; boards "МЕНЮ / …"). Part 1: the main menu, "Загрузка", "Об
 /// игре" and the overview page of the mockup. Part 2: "Новая игра" (choice of the house), "Свой род", "Цель
 /// партии" and the world screen ("Подготовка мира" / "Мир готов", also for the restore of a save).
-/// "Настройки" follows in the next part and joins the same stack.
-enum class MenuScreen { Main, Load, About, Overview, NewGame, Custom, Goal, World };
+/// Part 3: "Настройки" (four tabs) joins the same stack.
+enum class MenuScreen { Main, Load, About, Overview, NewGame, Custom, Goal, World, Settings };
 
-/// A dialog over the current screen; the screen below stays but takes neither mouse nor Tab.
-enum class MenuDialog { None, Exit, SaveUnavailable };
+/// A dialog over the current screen; the screen below stays but takes neither mouse nor Tab. `SaveChanges`,
+/// `ResetDefaults` and `Rebind` belong to the settings.
+enum class MenuDialog { None, Exit, SaveUnavailable, SaveChanges, ResetDefaults, Rebind };
 
 /// What Esc did (the screen stack answers it so that the rules can be tested without a window). `Held`: the
-/// screen keeps the key without leaving (the ready world waits for "Вступить в игру").
-enum class MenuBack { Nothing, ClosedDialog, WentBack, AskedExit, Held };
+/// screen keeps the key without leaving (the ready world waits for "Вступить в игру"). `AskedSave`: the
+/// settings have unapplied changes and the dialog "Сохранить изменения?" is open.
+enum class MenuBack { Nothing, ClosedDialog, WentBack, AskedExit, Held, AskedSave };
 
 /// The stack of screens and the dialog on top of it: pure logic, no RmlUi. The root is the screen the menu
 /// was opened with; every other screen is pushed above it and "back" pops it. Esc closes the dialog first,
@@ -159,17 +162,68 @@ enum class MenuWorldKind { NewGame, Restore };
 /// `ui.menu.goal.*` keys. Replace with the scenario data of E12.
 [[nodiscard]] MenuNewGame make_placeholder_new_game(const loc::Localizer& loc);
 
+/// The tabs of "Настройки".
+enum class SettingsTab { Video, Interface, Audio, Controls };
+inline constexpr std::size_t kSettingsTabCount = 4;
+
+/// The actions that have a key binding (the rows of the tab "Управление").
+enum class KeyAction { Pause, Camera, Zoom, Select, Back, MapMode };
+inline constexpr std::size_t kKeyActionCount = 6;
+
+/// The values of "Настройки": plain data, no RmlUi and no files. The window edits a copy and hands it to
+/// `MenuActions::apply_settings` on "Применить"; the host keeps what it applied and gives it back with
+/// `MenuWindow::set_settings()`. Choices from a list are indices (`window_mode`, `map_quality`, `shadows`,
+/// `text_size`, `tooltips`, `output_device`); the lists and their captions belong to the window
+/// (`ui.menu.settings.*`). Most of it is a model-only stub for now: the host applies `ui_scale`, the rest
+/// waits for the systems that read it.
+struct SettingsModel {
+    // "Изображение"
+    int width = 1920;
+    int height = 1080;
+    int window_mode = 0;   ///< 0 borderless, 1 windowed, 2 fullscreen
+    int map_quality = 1;   ///< 0 low, 1 medium, 2 high
+    int shadows = 2;       ///< 0 off, 1 low, 2 medium, 3 high
+    int frame_limit = 60;  ///< 30, 60, 120 or 0 (no limit)
+    bool vsync = true;
+    // "Интерфейс"
+    int ui_scale = 100;  ///< percent, 80..150 (engine::kMinUserUiScale / kMaxUserUiScale)
+    std::string language = "ru";
+    int text_size = 1;  ///< 0 small, 1 standard, 2 large
+    int tooltips = 1;   ///< 0 off, 1 contextual, 2 detailed
+    bool pause_on_events = true;
+    bool reduce_motion = false;
+    // "Звук" (percent)
+    int master_volume = 80;
+    int music_volume = 65;
+    int ambient_volume = 70;
+    int interface_volume = 75;
+    int output_device = 0;  ///< 0: the default device
+    bool mute_unfocused = true;
+    // "Управление": a key id per `KeyAction` ("space", "m", "f5", "left", ...)
+    std::array<std::string, kKeyActionCount> keys = {"space", "wasd", "wheel", "lmb", "rmb_esc", "m"};
+
+    friend bool operator==(const SettingsModel&, const SettingsModel&) = default;
+};
+
+/// True when `a` and `b` differ in a value of `tab`.
+[[nodiscard]] bool settings_differ(const SettingsModel& a, const SettingsModel& b, SettingsTab tab);
+/// Puts the defaults back into the values of `tab` only.
+void reset_settings_tab(SettingsModel& model, SettingsTab tab);
+/// Gives `key` (a key id) to `action`; when another action already has it, that one gets the key `action` had
+/// (the two swap, so that no key serves two actions).
+void rebind_key(SettingsModel& model, KeyAction action, const std::string& key);
+
 /// The actions that need a world; the menu only calls them (the spike logs them). After `start_game`,
 /// `continue_game` and `load_save` the world screen shows the preparation: the host reports it with
-/// `MenuWindow::set_progress()` and `finish_preparation()`. "Настройки" joins in the next part. Every
-/// callback may be empty.
+/// `MenuWindow::set_progress()` and `finish_preparation()`. Every callback may be empty.
 struct MenuActions {
     std::function<void(const MenuStart&)> start_game;   ///< "Начать историю"
     std::function<void()> continue_game;                ///< "Продолжить": the newest save
     std::function<void(const std::string&)> load_save;  ///< "Загрузить историю": the id of a compatible save
     std::function<void()> cancel_prepare;               ///< "Отмена" on the world screen
     std::function<void()> enter_game;                   ///< "Вступить в игру" / "Продолжить игру"
-    std::function<void()> open_settings;
+    /// "Применить" of the settings: the values to apply (a real host also writes them to its options file).
+    std::function<void(const SettingsModel&)> apply_settings;
     std::function<void()> quit;  ///< "Выйти из игры" confirmed
 };
 
@@ -178,7 +232,9 @@ struct MenuActions {
 /// Keys: Up and Down move the highlight (main menu, list of saves); on the grids of cards ("Новая игра",
 /// "Цель партии") the four arrows move the choice; Tab walks the controls, Enter presses, Esc goes back
 /// (closes the dialog, leaves the screen, cancels the preparation of the world, on the main menu asks to
-/// exit).
+/// exit; on the settings with unapplied changes asks to save them). On the settings Up and Down walk the
+/// tabs and the rows, Left and Right change the value of the focused row; while the dialog "Нажмите новую
+/// клавишу" is open every key but Esc, Tab and Enter is the new binding.
 class MenuWindow {
 public:
     /// `icons` is the directory with the SVG icons (assets/ui/patriarch/icons); the art and decor directories
@@ -197,6 +253,10 @@ public:
     void set_new_game(const MenuNewGame& data);
     [[nodiscard]] const MenuNewGame& new_game() const;
     void set_actions(MenuActions actions);
+    /// What is applied now (the host's own values); the edited copy starts from it. Replaces unapplied edits.
+    void set_settings(const SettingsModel& applied);
+    [[nodiscard]] const SettingsModel& settings() const;          ///< what was applied last
+    [[nodiscard]] const SettingsModel& pending_settings() const;  ///< the edited copy shown on the screen
     /// Re-reads every text from the Localizer.
     void relocalize();
 
@@ -238,6 +298,24 @@ public:
     /// inputs does the same); `press_cycle("look" | "faith")` takes the next option of a drop-down.
     void set_field(const std::string& field, const std::string& value);
     void press_cycle(const std::string& field);
+    // ---- settings: the tab, the rows of the tab (6 per tab, top to bottom), the buttons and the dialogs
+    void press_tab(SettingsTab tab);
+    /// A row: a dropdown takes the next option (the last wraps), a toggle flips, a key binding opens the
+    /// dialog "Нажмите новую клавишу"; a slider ignores a press.
+    void press_setting(std::size_t row);
+    /// The arrows on a focused row: a dropdown steps `delta` options, a toggle goes on (`delta` > 0) or off,
+    /// a slider moves by 5 points per step.
+    void press_adjust(std::size_t row, int delta);
+    void press_slider(std::size_t row, int percent);  ///< a slider to `percent` (0..100)
+    void press_apply();                               ///< "Применить"; ignored while nothing changed
+    void press_defaults();                            ///< "По умолчанию": asks first
+    /// The dialog "Нажмите новую клавишу": the key that was pressed (a key id; Esc, Tab and Enter never
+    /// reach it). The badge shows it; "Сохранить" gives it to the action.
+    void capture_key(const std::string& key);
+    [[nodiscard]] SettingsTab settings_tab() const;
+    [[nodiscard]] bool settings_dirty() const;    ///< the edited copy differs from the applied values
+    [[nodiscard]] bool settings_applied() const;  ///< "Изменения применены" is shown
+    [[nodiscard]] const std::string& rebind_pending() const;  ///< the key the open dialog would assign
     [[nodiscard]] MenuStart current_start() const;
     [[nodiscard]] bool next_enabled() const;  ///< false while the own house lacks a required field
     [[nodiscard]] int progress() const;       ///< percent shown on the world screen

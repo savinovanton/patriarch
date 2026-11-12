@@ -299,11 +299,38 @@ const char* mode_name(pat::engine::MapMode m) {
 
 /// Opens the start menu at the screen `name` (--menu-screen; the screenshots of the boards): main, load, about,
 /// overview, new (choice of the house), custom (own house), goal, goal-custom, world (preparation at 68 %),
-/// restore, ready (world ready), saved (save ready). An empty or unknown name opens the main menu.
+/// restore, ready (world ready), saved (save ready); settings (tab "Изображение"), settings-interface,
+/// settings-audio, settings-controls (the tabs), settings-changed ("есть изменения"), settings-saved
+/// ("изменения сохранены"), settings-save (the dialog "Сохранить изменения?"), settings-reset (the dialog
+/// "Вернуть настройки по умолчанию?"), settings-rebind (the dialog "Нажмите новую клавишу"). An empty or
+/// unknown name opens the main menu.
 void open_menu_screen(pat::ui::MenuWindow& menu, const std::string& name) {
     using pat::ui::MenuScreen;
     using pat::ui::MenuWorldKind;
-    if (name == "load") {
+    using pat::ui::SettingsTab;
+    if (name.rfind("settings", 0) == 0) {
+        menu.open(MenuScreen::Settings);
+        if (name == "settings-interface" || name == "settings-changed" || name == "settings-saved" ||
+            name == "settings-save") {
+            menu.press_tab(SettingsTab::Interface);
+        } else if (name == "settings-audio") {
+            menu.press_tab(SettingsTab::Audio);
+        } else if (name == "settings-controls" || name == "settings-rebind") {
+            menu.press_tab(SettingsTab::Controls);
+        }
+        if (name == "settings-changed" || name == "settings-saved" || name == "settings-save") {
+            menu.press_setting(5);  // "Уменьшение анимации" goes on
+        }
+        if (name == "settings-saved") {
+            menu.press_apply();
+        } else if (name == "settings-save") {
+            menu.press_back();
+        } else if (name == "settings-reset") {
+            menu.press_defaults();
+        } else if (name == "settings-rebind") {
+            menu.press_setting(0);
+        }
+    } else if (name == "load") {
         menu.open(MenuScreen::Load);
     } else if (name == "about") {
         menu.open(MenuScreen::About);
@@ -828,6 +855,9 @@ int main(int argc, char** argv) {
                 // PLACEHOLDER saves of the mockup until the save catalogue exists; --menu-first shows the first run.
                 menu->set_snapshot(opt.menu == 2 ? pat::ui::MenuSnapshot{} : pat::ui::make_placeholder_menu(ui_loc));
                 menu->set_new_game(pat::ui::make_placeholder_new_game(ui_loc));  // PLACEHOLDER houses and goals
+                pat::ui::SettingsModel settings;  // the defaults of the boards, with the scale of this run
+                settings.ui_scale = static_cast<int>(std::lround(opt.user_ui_scale * 100.0f));
+                menu->set_settings(settings);
                 pat::ui::MenuActions actions;
                 // The preparation of the world is pretended: a few seconds of progress, then "Мир готов".
                 actions.start_game = [&menu_prepare](const pat::ui::MenuStart& start) {
@@ -850,7 +880,16 @@ int main(int argc, char** argv) {
                     PAT_LOG_INFO("spike", "menu: enter the game (stub)");
                     menu->close();
                 };
-                actions.open_settings = [] { PAT_LOG_INFO("spike", "menu: settings (stub)"); };
+                // Only the UI scale is applied (the multiplier of --ui-scale); the other values are a stub until the
+                // systems that read them exist, and nothing is written to a file yet.
+                actions.apply_settings = [&](const pat::ui::SettingsModel& settings) {
+                    PAT_LOG_INFO("spike", "menu: apply settings, UI scale {}% (the rest is a stub)", settings.ui_scale);
+                    opt.user_ui_scale = static_cast<float>(settings.ui_scale) / 100.0f;
+                    ui_scale = design_ui_scale(renderer->size(), opt.user_ui_scale);
+                    if (ui) {
+                        ui->resize(renderer->size(), ui_scale);
+                    }
+                };
                 actions.quit = [&running] { running = false; };
                 menu->set_actions(std::move(actions));
                 open_menu_screen(*menu, opt.menu == 3 ? "overview" : opt.menu_screen);

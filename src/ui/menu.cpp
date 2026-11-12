@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdlib>
 #include <system_error>
 #include <utility>
@@ -156,8 +157,91 @@ struct CardRow {
     bool enabled = true;
 };
 
+// ---- settings (part 3): the tabs, their rows and the lists the dropdowns walk through
+
+enum class RowKind { Dropdown, Toggle, Slider, Key };
+
+struct RowSpec {
+    const char* id;  // `ui.menu.settings.row.<id>.title` and `.hint`
+    RowKind kind;
+};
+
+constexpr int kSettingRows = 6;       // every tab has six rows (boards "МЕНЮ / Настройки / …")
+constexpr int kSettingRowPitch = 85;  // the rows are 79 high with a divider between them
+constexpr int kSliderWidth = 326;     // the track of a volume slider
+constexpr int kSliderStep = 5;        // points per arrow press
+
+constexpr std::array<const char*, kSettingsTabCount> kTabIds = {"video", "interface", "audio", "controls"};
+
+constexpr std::array<std::array<RowSpec, kSettingRows>, kSettingsTabCount> kRowSpecs = {{
+    {{{"resolution", RowKind::Dropdown},
+      {"window", RowKind::Dropdown},
+      {"quality", RowKind::Dropdown},
+      {"shadows", RowKind::Dropdown},
+      {"fps", RowKind::Dropdown},
+      {"vsync", RowKind::Toggle}}},
+    {{{"scale", RowKind::Dropdown},
+      {"language", RowKind::Dropdown},
+      {"text", RowKind::Dropdown},
+      {"tooltips", RowKind::Dropdown},
+      {"pause", RowKind::Toggle},
+      {"motion", RowKind::Toggle}}},
+    {{{"master", RowKind::Slider},
+      {"music", RowKind::Slider},
+      {"ambient", RowKind::Slider},
+      {"interface", RowKind::Slider},
+      {"device", RowKind::Dropdown},
+      {"mute", RowKind::Toggle}}},
+    {{{"key_pause", RowKind::Key},
+      {"key_camera", RowKind::Key},
+      {"key_zoom", RowKind::Key},
+      {"key_select", RowKind::Key},
+      {"key_back", RowKind::Key},
+      {"key_map", RowKind::Key}}},
+}};
+
+constexpr std::array<std::array<int, 2>, 5> kResolutions = {
+    {{1280, 720}, {1600, 900}, {1920, 1080}, {2560, 1440}, {3840, 2160}}};
+constexpr std::array<int, 4> kFrameLimits = {30, 60, 120, 0};
+constexpr std::array<int, 6> kUiScales = {80, 90, 100, 110, 125, 150};
+constexpr std::array<const char*, 3> kWindowModes = {"borderless", "windowed", "fullscreen"};
+constexpr std::array<const char*, 3> kQualities = {"low", "medium", "high"};
+constexpr std::array<const char*, 4> kShadowLevels = {"off", "low", "medium", "high"};
+constexpr std::array<const char*, 3> kTextSizes = {"small", "standard", "large"};
+constexpr std::array<const char*, 3> kTooltipLevels = {"off", "contextual", "detailed"};
+constexpr std::array<const char*, 1> kLanguages = {"ru"};
+
+struct CatRow {
+    int index = 0;
+    Rml::String label;
+    Rml::String top;  // "360dp"
+};
+
+struct SettingRow {
+    int index = 0;
+    Rml::String kind;  // "dropdown", "toggle", "slider", "key"
+    Rml::String title;
+    Rml::String hint;
+    Rml::String value;          // the caption of the value ("1920 × 1080", "Вкл.", "80%", "Пробел")
+    Rml::String top;            // relative to the content panel
+    Rml::String fill = "0dp";   // slider: width of the filled part of the track
+    Rml::String thumb = "0dp";  // slider: left of the thumb inside the control
+    bool on = false;            // toggle
+    bool dropdown = false;
+    bool toggle = false;
+    bool slider = false;
+    bool key = false;
+};
+
+struct SettingsTexts {
+    Rml::String save_line1;     // "Вы изменили настройки интерфейса."
+    Rml::String rebind_action;  // "Пауза / продолжить"
+    Rml::String rebind_line;    // "Текущее назначение: Пробел"
+    Rml::String rebind_badge;   // "ПРОБЕЛ"
+};
+
 /// What a card of the overview page opens.
-enum class CardTarget { MainFirst, MainSave, Load, LoadEmpty, NewGame, Custom, World, Soon };
+enum class CardTarget { MainFirst, MainSave, Load, LoadEmpty, NewGame, Custom, World, Settings, Soon };
 
 struct CardSpec {
     const char* key;
@@ -172,12 +256,84 @@ constexpr std::array<CardSpec, 8> kCards = {{
     {"custom", CardTarget::Custom},
     {"saves", CardTarget::Load},
     {"empty", CardTarget::LoadEmpty},
-    {"settings", CardTarget::Soon},
+    {"settings", CardTarget::Settings},
     {"world", CardTarget::World},
 }};
 
 std::string dp(int value) {
     return std::to_string(value) + "dp";
+}
+
+int step_index(int current, int delta, int count, bool wrap) {
+    if (count <= 0) {
+        return 0;
+    }
+    const int next = current + delta;
+    return wrap ? ((next % count) + count) % count : std::clamp(next, 0, count - 1);
+}
+
+/// The value after `current` in `list` (`current` that is not in it counts as before the first one).
+template <std::size_t N>
+int step_list(const std::array<int, N>& list, int current, int delta, bool wrap) {
+    int at = delta > 0 ? -1 : static_cast<int>(N);
+    for (std::size_t i = 0; i < N; ++i) {
+        if (list[i] == current) {
+            at = static_cast<int>(i);
+        }
+    }
+    return list[static_cast<std::size_t>(step_index(at, delta, static_cast<int>(N), wrap))];
+}
+
+/// The id of a key for the key bindings; empty for a key that cannot be bound.
+std::string key_id(Rml::Input::KeyIdentifier key) {
+    using K = Rml::Input::KeyIdentifier;
+    const int k = static_cast<int>(key);
+    if (k >= static_cast<int>(K::KI_A) && k <= static_cast<int>(K::KI_Z)) {
+        return std::string(1, static_cast<char>('a' + (k - static_cast<int>(K::KI_A))));
+    }
+    if (k >= static_cast<int>(K::KI_0) && k <= static_cast<int>(K::KI_9)) {
+        return std::string(1, static_cast<char>('0' + (k - static_cast<int>(K::KI_0))));
+    }
+    if (k >= static_cast<int>(K::KI_F1) && k <= static_cast<int>(K::KI_F12)) {
+        return "f" + std::to_string(k - static_cast<int>(K::KI_F1) + 1);
+    }
+    switch (key) {
+        case K::KI_SPACE:
+            return "space";
+        case K::KI_LEFT:
+            return "left";
+        case K::KI_RIGHT:
+            return "right";
+        case K::KI_UP:
+            return "up";
+        case K::KI_DOWN:
+            return "down";
+        case K::KI_HOME:
+            return "home";
+        case K::KI_END:
+            return "end";
+        case K::KI_PRIOR:
+            return "pageup";
+        case K::KI_NEXT:
+            return "pagedown";
+        case K::KI_INSERT:
+            return "insert";
+        case K::KI_DELETE:
+            return "delete";
+        case K::KI_BACK:
+            return "backspace";
+        default:
+            return {};
+    }
+}
+
+std::string ascii_upper(std::string text) {
+    for (char& c : text) {
+        if (c >= 'a' && c <= 'z') {
+            c = static_cast<char>(c - 'a' + 'A');
+        }
+    }
+    return text;
 }
 
 const char* screen_name(MenuScreen screen) {
@@ -198,6 +354,8 @@ const char* screen_name(MenuScreen screen) {
             return "goal";
         case MenuScreen::World:
             return "world";
+        case MenuScreen::Settings:
+            return "settings";
     }
     return "main";
 }
@@ -210,11 +368,86 @@ const char* dialog_name(MenuDialog dialog) {
             return "exit";
         case MenuDialog::SaveUnavailable:
             return "unavailable";
+        case MenuDialog::SaveChanges:
+            return "save";
+        case MenuDialog::ResetDefaults:
+            return "reset";
+        case MenuDialog::Rebind:
+            return "rebind";
     }
     return "";
 }
 
 }  // namespace
+
+// ---- settings model --------------------------------------------------------------------------
+
+bool settings_differ(const SettingsModel& a, const SettingsModel& b, SettingsTab tab) {
+    switch (tab) {
+        case SettingsTab::Video:
+            return a.width != b.width || a.height != b.height || a.window_mode != b.window_mode ||
+                   a.map_quality != b.map_quality || a.shadows != b.shadows ||
+                   a.frame_limit != b.frame_limit || a.vsync != b.vsync;
+        case SettingsTab::Interface:
+            return a.ui_scale != b.ui_scale || a.language != b.language || a.text_size != b.text_size ||
+                   a.tooltips != b.tooltips || a.pause_on_events != b.pause_on_events ||
+                   a.reduce_motion != b.reduce_motion;
+        case SettingsTab::Audio:
+            return a.master_volume != b.master_volume || a.music_volume != b.music_volume ||
+                   a.ambient_volume != b.ambient_volume || a.interface_volume != b.interface_volume ||
+                   a.output_device != b.output_device || a.mute_unfocused != b.mute_unfocused;
+        case SettingsTab::Controls:
+            return a.keys != b.keys;
+    }
+    return false;
+}
+
+void reset_settings_tab(SettingsModel& model, SettingsTab tab) {
+    const SettingsModel defaults;
+    switch (tab) {
+        case SettingsTab::Video:
+            model.width = defaults.width;
+            model.height = defaults.height;
+            model.window_mode = defaults.window_mode;
+            model.map_quality = defaults.map_quality;
+            model.shadows = defaults.shadows;
+            model.frame_limit = defaults.frame_limit;
+            model.vsync = defaults.vsync;
+            break;
+        case SettingsTab::Interface:
+            model.ui_scale = defaults.ui_scale;
+            model.language = defaults.language;
+            model.text_size = defaults.text_size;
+            model.tooltips = defaults.tooltips;
+            model.pause_on_events = defaults.pause_on_events;
+            model.reduce_motion = defaults.reduce_motion;
+            break;
+        case SettingsTab::Audio:
+            model.master_volume = defaults.master_volume;
+            model.music_volume = defaults.music_volume;
+            model.ambient_volume = defaults.ambient_volume;
+            model.interface_volume = defaults.interface_volume;
+            model.output_device = defaults.output_device;
+            model.mute_unfocused = defaults.mute_unfocused;
+            break;
+        case SettingsTab::Controls:
+            model.keys = defaults.keys;
+            break;
+    }
+}
+
+void rebind_key(SettingsModel& model, KeyAction action, const std::string& key) {
+    const auto index = static_cast<std::size_t>(action);
+    if (index >= model.keys.size()) {
+        return;
+    }
+    for (std::size_t i = 0; i < model.keys.size(); ++i) {
+        if (i != index && model.keys[i] == key) {
+            model.keys[i] = model.keys[index];
+        }
+    }
+    model.keys[index] = key;
+}
 
 // ---- navigator -------------------------------------------------------------------------------
 
@@ -409,6 +642,24 @@ struct MenuWindow::Impl {
     CustomSummary cs;
     WorldView wv;
 
+    // ---- settings (part 3)
+    SettingsModel applied;  // what the host applies now
+    SettingsModel edit;     // what the screen shows
+    SettingsTab tab = SettingsTab::Video;
+    bool set_saved = false;  // "Изменения применены"
+    std::size_t rebind_action = 0;
+    std::string rebind_id;       // the key the open dialog would assign
+    std::string settings_focus;  // the control that takes the focus when the screen is rebuilt
+    int sel_tab = 0;
+    bool set_dirty = false;
+    Rml::String set_msg;
+    std::vector<CatRow> cats;
+    std::vector<SettingRow> rows;
+    SettingsTexts sd;
+    bool set_show =
+        false;  // the line next to "Применить" ("Есть неприменённые изменения" / "Изменения применены")
+    int drag_row = -1;  // the slider the mouse is dragging, or -1
+
     /// The keys of the menu. Heard in the capture phase on the document, so that Esc also works while a text
     /// input (which keeps the keys it uses) holds the focus.
     struct KeyListener : Rml::EventListener {
@@ -416,11 +667,33 @@ struct MenuWindow::Impl {
         void ProcessEvent(Rml::Event& ev) override { owner->handle_key(ev); }
     } key_listener;
 
+    /// The mouse on the sliders of "Звук": a press sets the value, a drag follows the pointer.
+    struct DragListener : Rml::EventListener {
+        Impl* owner = nullptr;
+        void ProcessEvent(Rml::Event& ev) override { owner->handle_drag(ev); }
+    } drag_listener;
+
     void handle_key(Rml::Event& ev) {
         const auto key = static_cast<Rml::Input::KeyIdentifier>(
             ev.GetParameter<int>("key_identifier", static_cast<int>(Rml::Input::KI_UNKNOWN)));
+        if (nav.dialog() == MenuDialog::Rebind && key != Rml::Input::KI_ESCAPE) {
+            // Every key but the three that run the dialog (Esc cancels, Tab and Enter work its buttons) is
+            // the new binding.
+            if (key != Rml::Input::KI_TAB && key != Rml::Input::KI_RETURN &&
+                key != Rml::Input::KI_NUMPADENTER) {
+                capture(key_id(key));
+                ev.StopPropagation();
+            }
+            return;
+        }
         if (key == Rml::Input::KI_ESCAPE) {
             if (do_back() != MenuBack::Nothing) {
+                ev.StopPropagation();
+            }
+        } else if ((key == Rml::Input::KI_UP || key == Rml::Input::KI_DOWN || key == Rml::Input::KI_LEFT ||
+                    key == Rml::Input::KI_RIGHT) &&
+                   nav.dialog() == MenuDialog::None && nav.top() == MenuScreen::Settings) {
+            if (do_settings_key(key)) {
                 ev.StopPropagation();
             }
         } else if ((key == Rml::Input::KI_UP || key == Rml::Input::KI_DOWN || key == Rml::Input::KI_LEFT ||
@@ -598,6 +871,11 @@ struct MenuWindow::Impl {
             case MenuScreen::World:
                 page_caption =
                     text(wv.ready ? "ui.menu.world.caption.ready" : "ui.menu.world.caption.prepare");
+                break;
+            case MenuScreen::Settings:
+                page_caption = text("ui.menu.settings.caption");
+                page_title = text("ui.menu.settings.title");
+                page_subtitle = settings_subtitle();
                 break;
             default:
                 page_caption = text(empty ? "ui.menu.load.caption.empty" : "ui.menu.load.caption");
@@ -807,43 +1085,28 @@ struct MenuWindow::Impl {
     }
 
     void dirty_all() {
-        for (const char* name : {"rev",
-                                 "screen",
-                                 "dialog",
-                                 "icons",
-                                 "decor",
-                                 "art_deco",
-                                 "preview_deco",
-                                 "lead",
-                                 "show_hint",
-                                 "items",
-                                 "sel",
-                                 "page_caption",
-                                 "page_title",
-                                 "page_subtitle",
-                                 "has_saves",
-                                 "saves",
-                                 "sel_save",
-                                 "has_sel",
-                                 "sum",
-                                 "cards",
-                                 "paged",
-                                 "back_label",
-                                 "next_label",
-                                 "next_icon",
-                                 "next_ok",
-                                 "cust_ok",
-                                 "chosen",
-                                 "has_house",
-                                 "houses",
-                                 "sel_house",
-                                 "hs",
-                                 "goals",
-                                 "sel_goal",
-                                 "gs",
-                                 "cf",
-                                 "cs",
-                                 "wv"}) {
+        for (const char* name : {"rev",          "screen",
+                                 "dialog",       "icons",
+                                 "decor",        "art_deco",
+                                 "preview_deco", "lead",
+                                 "show_hint",    "items",
+                                 "sel",          "page_caption",
+                                 "page_title",   "page_subtitle",
+                                 "has_saves",    "saves",
+                                 "sel_save",     "has_sel",
+                                 "sum",          "cards",
+                                 "paged",        "back_label",
+                                 "next_label",   "next_icon",
+                                 "next_ok",      "cust_ok",
+                                 "chosen",       "has_house",
+                                 "houses",       "sel_house",
+                                 "hs",           "goals",
+                                 "sel_goal",     "gs",
+                                 "cf",           "cs",
+                                 "wv",           "sel_tab",
+                                 "cats",         "rows",
+                                 "set_dirty",    "set_show",
+                                 "set_msg",      "sd"}) {
             handle.DirtyVariable(name);
         }
     }
@@ -876,6 +1139,9 @@ struct MenuWindow::Impl {
             case MenuScreen::World:
                 build_world();
                 break;
+            case MenuScreen::Settings:
+                build_settings();
+                break;
         }
         build_page();
         dirty_all();
@@ -891,6 +1157,18 @@ struct MenuWindow::Impl {
         }
         if (nav.dialog() == MenuDialog::SaveUnavailable) {
             focus("dlg-back");
+            return;
+        }
+        if (nav.dialog() == MenuDialog::SaveChanges) {
+            focus("dlg-save-return");  // the safe answer: stay and look again
+            return;
+        }
+        if (nav.dialog() == MenuDialog::ResetDefaults) {
+            focus("dlg-reset-cancel");
+            return;
+        }
+        if (nav.dialog() == MenuDialog::Rebind) {
+            focus("dlg-rebind-cancel");
             return;
         }
         switch (nav.top()) {
@@ -925,6 +1203,10 @@ struct MenuWindow::Impl {
             case MenuScreen::World:
                 focus(wv.ready ? "btn-enter" : "btn-cancel");
                 break;
+            case MenuScreen::Settings:
+                focus(settings_focus.empty() ? "cat-" + std::to_string(sel_tab) : settings_focus);
+                settings_focus.clear();
+                break;
         }
     }
 
@@ -946,6 +1228,12 @@ struct MenuWindow::Impl {
                     break;
                 }
             }
+        }
+        if (s == MenuScreen::Settings) {
+            edit = applied;  // unapplied edits of an earlier visit are gone
+            tab = SettingsTab::Video;
+            set_saved = false;
+            settings_focus.clear();
         }
         nav.push(s);
         changed();
@@ -1007,7 +1295,7 @@ struct MenuWindow::Impl {
             } else if (id == "load") {
                 enter_screen(MenuScreen::Load);
             } else if (id == "settings") {
-                call(actions.open_settings, "settings");
+                enter_screen(MenuScreen::Settings);
             } else if (id == "about") {
                 enter_screen(MenuScreen::About);
             } else if (id == "exit") {
@@ -1239,6 +1527,9 @@ struct MenuWindow::Impl {
                 world_house.clear();
                 enter_screen(MenuScreen::World);
                 return;
+            case CardTarget::Settings:
+                enter_screen(MenuScreen::Settings);
+                return;
             case CardTarget::Soon:
                 return;
         }
@@ -1253,6 +1544,11 @@ struct MenuWindow::Impl {
                 return MenuBack::Held;  // the world is ready: only "Вступить в игру" leaves
             }
             call(actions.cancel_prepare, "cancel prepare");
+        }
+        if (nav.dialog() == MenuDialog::None && nav.top() == MenuScreen::Settings && dirty()) {
+            nav.open_dialog(MenuDialog::SaveChanges);  // unapplied changes: ask before leaving
+            changed();
+            return MenuBack::AskedSave;
         }
         const MenuBack result = nav.back();
         if (result == MenuBack::Nothing) {
@@ -1340,6 +1636,456 @@ struct MenuWindow::Impl {
         } else if (nav.dialog() == MenuDialog::SaveUnavailable && id == "back") {
             nav.close_dialog();
             changed();
+        } else if (nav.dialog() == MenuDialog::SaveChanges) {
+            if (id == "return") {
+                nav.close_dialog();
+                changed();
+            } else if (id == "apply") {
+                do_apply();
+                nav.close_dialog();
+                leave_settings();
+            } else if (id == "discard") {
+                edit = applied;
+                nav.close_dialog();
+                leave_settings();
+            }
+        } else if (nav.dialog() == MenuDialog::ResetDefaults) {
+            if (id == "cancel") {
+                nav.close_dialog();
+                changed();
+            } else if (id == "reset") {
+                reset_settings_tab(edit, tab);
+                set_saved = false;
+                nav.close_dialog();
+                changed();
+            }
+        } else if (nav.dialog() == MenuDialog::Rebind) {
+            if (id == "cancel") {
+                nav.close_dialog();
+                changed();
+            } else if (id == "commit") {
+                rebind_key(edit, static_cast<KeyAction>(rebind_action), rebind_id);
+                set_saved = false;
+                nav.close_dialog();
+                changed();
+            }
+        }
+    }
+
+    // ---- settings
+
+    [[nodiscard]] bool dirty() const { return edit != applied; }
+    [[nodiscard]] std::size_t tab_index() const { return static_cast<std::size_t>(tab); }
+
+    [[nodiscard]] std::string key_label(const std::string& id) const {
+        const std::string key = "ui.menu.settings.key." + id;
+        return loc->resolves(key) ? text(key) : ascii_upper(id);
+    }
+
+    [[nodiscard]] std::string key_cap(const std::string& id) const {
+        const std::string key = "ui.menu.settings.keycap." + id;
+        return loc->resolves(key) ? text(key) : ascii_upper(id);
+    }
+
+    [[nodiscard]] std::string toggle_text(bool on) const {
+        return text(on ? "ui.menu.settings.on" : "ui.menu.settings.off");
+    }
+
+    template <std::size_t N>
+    [[nodiscard]] std::string
+    choice(const char* group, const std::array<const char*, N>& names, int index) const {
+        const auto at = static_cast<std::size_t>(std::clamp(index, 0, static_cast<int>(N) - 1));
+        return text(std::string("ui.menu.settings.") + group + "." + names[at]);
+    }
+
+    [[nodiscard]] int* slider_ref(std::string_view id) {
+        if (id == "master") {
+            return &edit.master_volume;
+        }
+        if (id == "music") {
+            return &edit.music_volume;
+        }
+        if (id == "ambient") {
+            return &edit.ambient_volume;
+        }
+        if (id == "interface") {
+            return &edit.interface_volume;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] bool* toggle_ref(std::string_view id) {
+        if (id == "vsync") {
+            return &edit.vsync;
+        }
+        if (id == "pause") {
+            return &edit.pause_on_events;
+        }
+        if (id == "motion") {
+            return &edit.reduce_motion;
+        }
+        if (id == "mute") {
+            return &edit.mute_unfocused;
+        }
+        return nullptr;
+    }
+
+    [[nodiscard]] std::string row_value(std::size_t row) {
+        const RowSpec& spec = kRowSpecs[tab_index()][row];
+        const std::string_view id = spec.id;
+        const SettingsModel& m = edit;
+        if (spec.kind == RowKind::Key) {
+            return key_label(m.keys[row]);
+        }
+        if (spec.kind == RowKind::Toggle) {
+            return toggle_text(*toggle_ref(id));
+        }
+        if (spec.kind == RowKind::Slider) {
+            return text("ui.menu.settings.value.percent", {Arg("n", *slider_ref(id))});
+        }
+        if (id == "resolution") {
+            return text("ui.menu.settings.value.resolution", {Arg("w", m.width), Arg("h", m.height)});
+        }
+        if (id == "window") {
+            return choice("window", kWindowModes, m.window_mode);
+        }
+        if (id == "quality") {
+            return choice("quality", kQualities, m.map_quality);
+        }
+        if (id == "shadows") {
+            return choice("shadows", kShadowLevels, m.shadows);
+        }
+        if (id == "fps") {
+            return m.frame_limit == 0 ? text("ui.menu.settings.value.fps.unlimited")
+                                      : text("ui.menu.settings.value.fps", {Arg("n", m.frame_limit)});
+        }
+        if (id == "scale") {
+            return text("ui.menu.settings.value.percent", {Arg("n", m.ui_scale)});
+        }
+        if (id == "language") {
+            const std::string key = "ui.menu.settings.language." + m.language;
+            return loc->resolves(key) ? text(key) : m.language;
+        }
+        if (id == "text") {
+            return choice("text", kTextSizes, m.text_size);
+        }
+        if (id == "tooltips") {
+            return choice("tooltips", kTooltipLevels, m.tooltips);
+        }
+        return text("ui.menu.settings.device.default");  // "device": the only device the stub knows
+    }
+
+    [[nodiscard]] std::string settings_subtitle() const {
+        return text("ui.menu.settings.subtitle",
+                    {Arg("tab", text(std::string("ui.menu.settings.tab.") + kTabIds[tab_index()]))});
+    }
+
+    void build_settings() {
+        sel_tab = static_cast<int>(tab);
+        cats.clear();
+        for (std::size_t i = 0; i < kTabIds.size(); ++i) {
+            CatRow cat;
+            cat.index = static_cast<int>(i);
+            cat.label = text(std::string("ui.menu.settings.tab.") + kTabIds[i]);
+            cat.top = dp(360 + 74 * static_cast<int>(i));
+            cats.push_back(std::move(cat));
+        }
+        rows.clear();
+        for (std::size_t i = 0; i < kRowSpecs[tab_index()].size(); ++i) {
+            const RowSpec& spec = kRowSpecs[tab_index()][i];
+            const std::string id = spec.id;
+            SettingRow row;
+            row.index = static_cast<int>(i);
+            row.title = text("ui.menu.settings.row." + id + ".title");
+            row.hint = text("ui.menu.settings.row." + id + ".hint");
+            row.value = row_value(i);
+            row.top = dp(kSettingRowPitch * static_cast<int>(i));
+            row.dropdown = spec.kind == RowKind::Dropdown;
+            row.toggle = spec.kind == RowKind::Toggle;
+            row.slider = spec.kind == RowKind::Slider;
+            row.key = spec.kind == RowKind::Key;
+            row.kind = row.dropdown ? "dropdown" : (row.toggle ? "toggle" : (row.slider ? "slider" : "key"));
+            if (row.toggle) {
+                row.on = *toggle_ref(id);
+            }
+            if (row.slider) {
+                const int fill = (*slider_ref(id) * kSliderWidth + 50) / 100;
+                row.fill = dp(fill);
+                row.thumb = dp(fill - 6);
+            }
+            rows.push_back(std::move(row));
+        }
+        set_dirty = dirty();
+        set_show = set_dirty || set_saved;
+        set_msg = text(set_dirty ? "ui.menu.settings.msg.dirty" : "ui.menu.settings.msg.saved");
+
+        int changed_tabs = 0;
+        std::size_t only = 0;
+        for (std::size_t i = 0; i < kSettingsTabCount; ++i) {
+            if (settings_differ(applied, edit, static_cast<SettingsTab>(i))) {
+                ++changed_tabs;
+                only = i;
+            }
+        }
+        sd.save_line1 =
+            changed_tabs == 1
+                ? text("ui.menu.settings.save.line1.tab",
+                       {Arg("section", text(std::string("ui.menu.settings.tab.") + kTabIds[only] + ".gen"))})
+                : text("ui.menu.settings.save.line1");
+        const std::size_t action = std::min<std::size_t>(rebind_action, kKeyActionCount - 1);
+        sd.rebind_action = text(std::string("ui.menu.settings.row.") + kRowSpecs[3][action].id + ".title");
+        sd.rebind_line = text("ui.menu.settings.rebind.current", {Arg("key", key_label(edit.keys[action]))});
+        sd.rebind_badge = key_cap(rebind_id.empty() ? edit.keys[action] : rebind_id);
+    }
+
+    /// Rebuilds what the settings show after a value, the tab or a flag changed, without touching the focus.
+    void refresh_settings() {
+        build_settings();
+        page_subtitle = settings_subtitle();
+        for (const char* name :
+             {"sel_tab", "cats", "rows", "set_dirty", "set_show", "set_msg", "sd", "page_subtitle"}) {
+            handle.DirtyVariable(name);
+        }
+    }
+
+    void edited() {
+        set_saved = false;
+        refresh_settings();
+    }
+
+    void select_tab(int index, bool move_focus) {
+        if (nav.top() != MenuScreen::Settings || nav.dialog() != MenuDialog::None || index < 0 ||
+            index >= static_cast<int>(kSettingsTabCount) || index == static_cast<int>(tab)) {
+            return;
+        }
+        tab = static_cast<SettingsTab>(index);
+        refresh_settings();
+        if (move_focus) {
+            focus("cat-" + std::to_string(index));
+        }
+    }
+
+    /// Steps the dropdown `id` by `delta` options; false when the value did not change.
+    bool step_dropdown(std::string_view id, int delta, bool wrap) {
+        SettingsModel& m = edit;
+        const SettingsModel before = m;
+        if (id == "resolution") {
+            int at = delta > 0 ? -1 : static_cast<int>(kResolutions.size());
+            for (std::size_t i = 0; i < kResolutions.size(); ++i) {
+                if (kResolutions[i][0] == m.width && kResolutions[i][1] == m.height) {
+                    at = static_cast<int>(i);
+                }
+            }
+            at = step_index(at, delta, static_cast<int>(kResolutions.size()), wrap);
+            m.width = kResolutions[static_cast<std::size_t>(at)][0];
+            m.height = kResolutions[static_cast<std::size_t>(at)][1];
+        } else if (id == "window") {
+            m.window_mode = step_index(m.window_mode, delta, static_cast<int>(kWindowModes.size()), wrap);
+        } else if (id == "quality") {
+            m.map_quality = step_index(m.map_quality, delta, static_cast<int>(kQualities.size()), wrap);
+        } else if (id == "shadows") {
+            m.shadows = step_index(m.shadows, delta, static_cast<int>(kShadowLevels.size()), wrap);
+        } else if (id == "fps") {
+            m.frame_limit = step_list(kFrameLimits, m.frame_limit, delta, wrap);
+        } else if (id == "scale") {
+            m.ui_scale = step_list(kUiScales, m.ui_scale, delta, wrap);
+        } else if (id == "text") {
+            m.text_size = step_index(m.text_size, delta, static_cast<int>(kTextSizes.size()), wrap);
+        } else if (id == "tooltips") {
+            m.tooltips = step_index(m.tooltips, delta, static_cast<int>(kTooltipLevels.size()), wrap);
+        }
+        // "language" and "device" have one option each: nothing to step to.
+        return m != before;
+    }
+
+    /// A press (`press`) or an arrow (`delta` of -1 or 1) on row `row`; true when something changed.
+    bool change_row(std::size_t row, int delta, bool press) {
+        if (nav.top() != MenuScreen::Settings || nav.dialog() != MenuDialog::None ||
+            row >= kRowSpecs[tab_index()].size()) {
+            return false;
+        }
+        const RowSpec& spec = kRowSpecs[tab_index()][row];
+        switch (spec.kind) {
+            case RowKind::Key:
+                if (press) {
+                    open_rebind(row);
+                }
+                return false;
+            case RowKind::Toggle: {
+                bool* value = toggle_ref(spec.id);
+                const bool next = press ? !*value : delta > 0;
+                if (next == *value) {
+                    return false;
+                }
+                *value = next;
+                break;
+            }
+            case RowKind::Slider: {
+                int* value = slider_ref(spec.id);
+                const int next = std::clamp(*value + (press ? 0 : delta * kSliderStep), 0, 100);
+                if (press || next == *value) {
+                    return false;
+                }
+                *value = next;
+                break;
+            }
+            case RowKind::Dropdown:
+                if (!step_dropdown(spec.id, press ? 1 : delta, press)) {
+                    return false;
+                }
+                break;
+        }
+        edited();
+        return true;
+    }
+
+    bool set_slider(std::size_t row, int percent) {
+        if (nav.top() != MenuScreen::Settings || nav.dialog() != MenuDialog::None ||
+            row >= kRowSpecs[tab_index()].size() || kRowSpecs[tab_index()][row].kind != RowKind::Slider) {
+            return false;
+        }
+        int* value = slider_ref(kRowSpecs[tab_index()][row].id);
+        percent = std::clamp(percent, 0, 100);
+        if (percent == *value) {
+            return false;
+        }
+        *value = percent;
+        edited();
+        return true;
+    }
+
+    void open_rebind(std::size_t row) {
+        rebind_action = row;
+        rebind_id = edit.keys[row];
+        settings_focus = "ctl-" + std::to_string(row);
+        nav.open_dialog(MenuDialog::Rebind);
+        changed();
+    }
+
+    void capture(const std::string& id) {
+        if (nav.dialog() != MenuDialog::Rebind || id.empty()) {
+            return;
+        }
+        rebind_id = id;
+        build_settings();
+        handle.DirtyVariable("sd");
+    }
+
+    bool do_apply() {
+        if (nav.top() != MenuScreen::Settings || !dirty()) {
+            return false;
+        }
+        applied = edit;
+        set_saved = true;
+        if (actions.apply_settings) {
+            actions.apply_settings(applied);
+        } else {
+            PAT_LOG_INFO("menu", "apply settings: no handler yet (stub)");
+        }
+        return true;
+    }
+
+    void do_apply_button() {
+        if (nav.dialog() != MenuDialog::None || !do_apply()) {
+            return;
+        }
+        refresh_settings();
+        focus("cat-" + std::to_string(sel_tab));  // the button is disabled now
+    }
+
+    void do_defaults() {
+        if (nav.top() != MenuScreen::Settings || nav.dialog() != MenuDialog::None) {
+            return;
+        }
+        settings_focus = "btn-defaults";
+        nav.open_dialog(MenuDialog::ResetDefaults);
+        changed();
+    }
+
+    /// Leaves the settings after a dialog answered ("Применить" or "Без сохранения").
+    void leave_settings() {
+        nav.pop();
+        if (nav.top() == MenuScreen::Overview) {
+            preview.reset();
+        }
+        changed();
+    }
+
+    /// The arrows on the settings screen: Up and Down walk the tabs and the rows, Left and Right change the
+    /// focused row. False when the key is not for the screen (the page keeps it).
+    bool do_settings_key(Rml::Input::KeyIdentifier key) {
+        Rml::Element* focused = ui->context()->GetFocusElement();
+        if (focused == nullptr) {
+            return false;
+        }
+        const std::string id = focused->GetId();
+        const bool up = key == Rml::Input::KI_UP;
+        const bool down = key == Rml::Input::KI_DOWN;
+        if (id.rfind("cat-", 0) == 0) {
+            if (up || down) {
+                select_tab(std::clamp(std::atoi(id.c_str() + 4) + (down ? 1 : -1), 0, 3), true);
+                return true;
+            }
+            return false;
+        }
+        if (id.rfind("ctl-", 0) != 0) {
+            return false;
+        }
+        const int row = std::atoi(id.c_str() + 4);
+        if (up || down) {
+            const int last = static_cast<int>(kSettingRows) - 1;
+            if (up && row == 0) {
+                focus("cat-" + std::to_string(sel_tab));
+            } else if (down && row == last) {
+                focus("btn-defaults");
+            } else {
+                focus("ctl-" + std::to_string(row + (down ? 1 : -1)));
+            }
+            return true;
+        }
+        change_row(static_cast<std::size_t>(row), key == Rml::Input::KI_RIGHT ? 1 : -1, false);
+        return true;
+    }
+
+    /// The slider `ctl` follows the mouse at `mouse_x`.
+    void drag_slider(Rml::Element* ctl, float mouse_x) {
+        Rml::ElementList found;
+        ctl->GetElementsByClassName(found, "sl-track");
+        if (found.empty() || found.front()->GetOffsetWidth() <= 0.0f) {
+            return;
+        }
+        Rml::Element* track = found.front();
+        const float ratio = (mouse_x - track->GetAbsoluteLeft()) / track->GetOffsetWidth();
+        set_slider(static_cast<std::size_t>(drag_row), static_cast<int>(std::lround(ratio * 100.0f)));
+    }
+
+    void handle_drag(Rml::Event& ev) {
+        if (nav.top() != MenuScreen::Settings || nav.dialog() != MenuDialog::None) {
+            drag_row = -1;
+            return;
+        }
+        const float x = ev.GetParameter<float>("mouse_x", 0.0f);
+        if (ev.GetId() == Rml::EventId::Mouseup) {
+            drag_row = -1;
+        } else if (ev.GetId() == Rml::EventId::Mousedown) {
+            if (ev.GetParameter<int>("button", 0) != 0) {
+                return;
+            }
+            Rml::Element* e = ev.GetTargetElement();
+            while (e != nullptr && e->GetId().rfind("ctl-", 0) != 0) {
+                e = e->GetParentNode();
+            }
+            if (e == nullptr || !e->IsClassSet("k-slider")) {
+                return;
+            }
+            drag_row = std::atoi(e->GetId().c_str() + 4);
+            drag_slider(e, x);
+        } else if (ev.GetId() == Rml::EventId::Mousemove && drag_row >= 0) {
+            if (Rml::ElementDocument* doc = find_document()) {
+                if (Rml::Element* ctl = doc->GetElementById("ctl-" + std::to_string(drag_row))) {
+                    drag_slider(ctl, x);
+                }
+            }
         }
     }
 };
@@ -1492,6 +2238,34 @@ core::Result<std::unique_ptr<MenuWindow>> MenuWindow::create(engine::UiContext& 
         world.RegisterMember("stage", &WorldView::stage);
         world.RegisterMember("ready", &WorldView::ready);
     }
+    if (auto cat = ctor.RegisterStruct<CatRow>()) {
+        cat.RegisterMember("index", &CatRow::index);
+        cat.RegisterMember("label", &CatRow::label);
+        cat.RegisterMember("top", &CatRow::top);
+    }
+    ctor.RegisterArray<std::vector<CatRow>>();
+    if (auto row = ctor.RegisterStruct<SettingRow>()) {
+        row.RegisterMember("index", &SettingRow::index);
+        row.RegisterMember("kind", &SettingRow::kind);
+        row.RegisterMember("title", &SettingRow::title);
+        row.RegisterMember("hint", &SettingRow::hint);
+        row.RegisterMember("value", &SettingRow::value);
+        row.RegisterMember("top", &SettingRow::top);
+        row.RegisterMember("fill", &SettingRow::fill);
+        row.RegisterMember("thumb", &SettingRow::thumb);
+        row.RegisterMember("on", &SettingRow::on);
+        row.RegisterMember("dropdown", &SettingRow::dropdown);
+        row.RegisterMember("toggle", &SettingRow::toggle);
+        row.RegisterMember("slider", &SettingRow::slider);
+        row.RegisterMember("key", &SettingRow::key);
+    }
+    ctor.RegisterArray<std::vector<SettingRow>>();
+    if (auto texts = ctor.RegisterStruct<SettingsTexts>()) {
+        texts.RegisterMember("save_line1", &SettingsTexts::save_line1);
+        texts.RegisterMember("rebind_action", &SettingsTexts::rebind_action);
+        texts.RegisterMember("rebind_line", &SettingsTexts::rebind_line);
+        texts.RegisterMember("rebind_badge", &SettingsTexts::rebind_badge);
+    }
 
     Impl* m = impl.get();
     ctor.Bind("rev", &m->rev);
@@ -1531,6 +2305,13 @@ core::Result<std::unique_ptr<MenuWindow>> MenuWindow::create(engine::UiContext& 
     ctor.Bind("cf", &m->cf);
     ctor.Bind("cs", &m->cs);
     ctor.Bind("wv", &m->wv);
+    ctor.Bind("sel_tab", &m->sel_tab);
+    ctor.Bind("cats", &m->cats);
+    ctor.Bind("rows", &m->rows);
+    ctor.Bind("set_dirty", &m->set_dirty);
+    ctor.Bind("set_show", &m->set_show);
+    ctor.Bind("set_msg", &m->set_msg);
+    ctor.Bind("sd", &m->sd);
     m->handle = ctor.GetModelHandle();
 
     // `{{ rev | tr('key') }}`: the arguments are the piped value (`rev`, only there as a dependency) and the
@@ -1613,6 +2394,20 @@ core::Result<std::unique_ptr<MenuWindow>> MenuWindow::create(engine::UiContext& 
             m->cycle_field(args[0].Get<Rml::String>());
         }
     });
+    ctor.BindEventCallback("tab", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
+        if (!args.empty()) {
+            m->select_tab(args[0].Get<int>(), false);
+        }
+    });
+    ctor.BindEventCallback("setting", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& args) {
+        if (!args.empty()) {
+            m->change_row(static_cast<std::size_t>(std::max(0, args[0].Get<int>())), 0, true);
+        }
+    });
+    ctor.BindEventCallback(
+        "apply", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList&) { m->do_apply_button(); });
+    ctor.BindEventCallback(
+        "defaults", [m](Rml::DataModelHandle, Rml::Event&, const Rml::VariantList&) { m->do_defaults(); });
     m->rebuild();
 
     Rml::ElementDocument* loaded = ui.load_document(document);
@@ -1624,6 +2419,10 @@ core::Result<std::unique_ptr<MenuWindow>> MenuWindow::create(engine::UiContext& 
     m->source_url = loaded->GetSourceURL();
     m->key_listener.owner = m;
     loaded->AddEventListener(Rml::EventId::Keydown, &m->key_listener, /*in_capture_phase=*/true);
+    m->drag_listener.owner = m;
+    for (const Rml::EventId id : {Rml::EventId::Mousedown, Rml::EventId::Mousemove, Rml::EventId::Mouseup}) {
+        loaded->AddEventListener(id, &m->drag_listener, /*in_capture_phase=*/true);
+    }
     loaded->Hide();  // shown by open()
     return R::ok(std::unique_ptr<MenuWindow>(new MenuWindow(std::move(impl))));
 }
@@ -1653,6 +2452,24 @@ const MenuNewGame& MenuWindow::new_game() const {
 
 void MenuWindow::set_actions(MenuActions actions) {
     impl_->actions = std::move(actions);
+}
+
+void MenuWindow::set_settings(const SettingsModel& applied) {
+    Impl& m = *impl_;
+    m.applied = applied;
+    m.edit = applied;
+    m.set_saved = false;
+    if (m.nav.top() == MenuScreen::Settings) {
+        m.refresh_settings();
+    }
+}
+
+const SettingsModel& MenuWindow::settings() const {
+    return impl_->applied;
+}
+
+const SettingsModel& MenuWindow::pending_settings() const {
+    return impl_->edit;
 }
 
 void MenuWindow::relocalize() {
@@ -1782,6 +2599,50 @@ void MenuWindow::set_field(const std::string& field, const std::string& value) {
 
 void MenuWindow::press_cycle(const std::string& field) {
     impl_->cycle_field(field);
+}
+
+void MenuWindow::press_tab(SettingsTab tab) {
+    impl_->select_tab(static_cast<int>(tab), true);
+}
+
+void MenuWindow::press_setting(std::size_t row) {
+    impl_->change_row(row, 0, true);
+}
+
+void MenuWindow::press_adjust(std::size_t row, int delta) {
+    impl_->change_row(row, delta < 0 ? -1 : 1, false);
+}
+
+void MenuWindow::press_slider(std::size_t row, int percent) {
+    impl_->set_slider(row, percent);
+}
+
+void MenuWindow::press_apply() {
+    impl_->do_apply_button();
+}
+
+void MenuWindow::press_defaults() {
+    impl_->do_defaults();
+}
+
+void MenuWindow::capture_key(const std::string& key) {
+    impl_->capture(key);
+}
+
+SettingsTab MenuWindow::settings_tab() const {
+    return impl_->tab;
+}
+
+bool MenuWindow::settings_dirty() const {
+    return impl_->dirty();
+}
+
+bool MenuWindow::settings_applied() const {
+    return impl_->set_saved && !impl_->dirty();
+}
+
+const std::string& MenuWindow::rebind_pending() const {
+    return impl_->rebind_id;
 }
 
 MenuStart MenuWindow::current_start() const {
