@@ -172,6 +172,10 @@ inline constexpr std::uint16_t kOutputTotal = 4009;            // the root of an
 inline constexpr std::uint16_t kOutputValue = 4010;
 inline constexpr std::uint16_t kOutputOwnerShare = 4011;
 inline constexpr std::uint16_t kOutputIncome = 4012;  // the root of a holding income breakdown
+// 4013..4015: the buildings multiplier of one good (E9-T17, explain_modifier): the root is the multiplier
+inline constexpr std::uint16_t kOutputBuildingsTotal = 4013;
+inline constexpr std::uint16_t kOutputBuildingsBase = 4014;   // the 1000 every province starts from
+inline constexpr std::uint16_t kOutputBuildingsLimit = 4015;  // the clamp to 0..kMaxMultiplierPermille
 // 5000: consumption, stock and wealth (F5)
 inline constexpr std::uint16_t kConsumptionNeed = 5001;
 inline constexpr std::uint16_t kConsumptionStock = 5002;
@@ -183,6 +187,9 @@ inline constexpr std::uint16_t kWealthBase = 5010;
 inline constexpr std::uint16_t kWealthShortage = 5011;
 inline constexpr std::uint16_t kWealthBuildings = 5014;
 inline constexpr std::uint16_t kWealthTarget = 5015;  // the root of a wealth breakdown: the target
+// 5016, 5017: the famine protection of buildings (E9-T17, explain_modifier): the root is the share
+inline constexpr std::uint16_t kWealthFamineTotal = 5016;
+inline constexpr std::uint16_t kWealthFamineLimit = 5017;  // the clamp to 0..1000
 // 6000: control and corruption (F7)
 inline constexpr std::uint16_t kControlAdministrator = 6001;
 inline constexpr std::uint16_t kControlBuildings = 6002;
@@ -190,12 +197,17 @@ inline constexpr std::uint16_t kControlUnrest = 6003;
 inline constexpr std::uint16_t kControlBase = 6004;
 inline constexpr std::uint16_t kControlTarget = 6005;  // the root of a control breakdown: the target
 inline constexpr std::uint16_t kControlLimit = 6006;   // the clamp to 0..100
+// 6007: the control points of buildings (E9-T17, explain_modifier): the root is the sum (Points)
+inline constexpr std::uint16_t kControlBuildingsTotal = 6007;
 inline constexpr std::uint16_t kCorruptionBase = 6101;
 inline constexpr std::uint16_t kCorruptionIntegrity = 6102;
 inline constexpr std::uint16_t kCorruptionOversight = 6103;
 inline constexpr std::uint16_t kCorruptionLowControl = 6104;
 inline constexpr std::uint16_t kCorruptionTarget = 6105;  // the root of a corruption breakdown: the target
 inline constexpr std::uint16_t kCorruptionLimit = 6106;   // the clamp to 0..1
+// 6107, 6108: the oversight of buildings (E9-T17, explain_modifier): the root is the sum
+inline constexpr std::uint16_t kCorruptionOversightTotal = 6107;
+inline constexpr std::uint16_t kCorruptionOversightLimit = 6108;  // the clamp to 0..1000
 // 7000: recruits (F11)
 inline constexpr std::uint16_t kRecruitBase = 7001;
 inline constexpr std::uint16_t kRecruitPolicy = 7002;
@@ -204,6 +216,11 @@ inline constexpr std::uint16_t kRecruitQuota = 7004;
 inline constexpr std::uint16_t kRecruitRegen = 7005;    // reserved: the monthly gain (not in the cap's tree)
 inline constexpr std::uint16_t kRecruitCap = 7006;      // the root of a recruit breakdown: the potential
 inline constexpr std::uint16_t kRecruitAnarchy = 7007;  // a step to zero: a province in turmoil
+inline constexpr std::uint16_t kRecruitBuildings = 7008;  // the multiplier of the buildings (a step), E9-T17
+// 7009..7011: the recruit multiplier of buildings (E9-T17, explain_modifier): the root is the multiplier
+inline constexpr std::uint16_t kRecruitBuildingsTotal = 7009;
+inline constexpr std::uint16_t kRecruitBuildingsBase = 7010;
+inline constexpr std::uint16_t kRecruitBuildingsLimit = 7011;  // the clamp to 0..kMaxMultiplierPermille
 // 8000: loan limit (F13)
 inline constexpr std::uint16_t kLoanBase = 8001;
 inline constexpr std::uint16_t kLoanHonor = 8002;
@@ -214,6 +231,21 @@ inline constexpr std::uint16_t kUnrestControl = 9020;
 inline constexpr std::uint16_t kUnrestEvents = 9021;
 inline constexpr std::uint16_t kUnrestLimit = 9022;   // the clamp to 0..100
 inline constexpr std::uint16_t kUnrestTarget = 9023;  // the root of an unrest breakdown: the target
+
+// 4101..4355: the contribution of the building type with `slot` 1..255 to a modifier of its province
+// (the children of the roots above). The type is data, so these codes have no row in term_key():
+// presentation takes the name of the building from its definition (BuildingDef::key).
+inline constexpr std::uint16_t kBuildingTermFirst = 4100;
+[[nodiscard]] constexpr std::uint16_t building_term(std::uint8_t slot) noexcept {
+    return static_cast<std::uint16_t>(kBuildingTermFirst + slot);
+}
+[[nodiscard]] constexpr bool is_building_term(std::uint16_t code) noexcept {
+    return code > kBuildingTermFirst && code <= kBuildingTermFirst + 255;
+}
+/// The slot (type number) a building term stands for; 0 when `code` is not one.
+[[nodiscard]] constexpr std::uint8_t building_of_term(std::uint16_t code) noexcept {
+    return is_building_term(code) ? static_cast<std::uint8_t>(code - kBuildingTermFirst) : std::uint8_t{0};
+}
 
 }  // namespace term
 

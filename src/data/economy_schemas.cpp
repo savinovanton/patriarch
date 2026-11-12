@@ -313,6 +313,8 @@ ObjectSchema building_schema() {
         .describe("Срок постройки, дней.")
         .required("upkeep_kop_month", kopecks())
         .describe("Содержание в месяц, копеек.")
+        .optional("desc_key", Type::string())
+        .describe("Ключ строки локализации с описанием эффектов здания (E9-T17); пропуск — без описания.")
         .optional("output_permille", Type::map(Type::integer(0, kMaxMultiplier)))
         .describe("Множитель выпуска по товарам, промилле: `товар = число` (id объекта `good`); пропущенные "
                   "товары — 1000, то есть без эффекта.")
@@ -324,7 +326,17 @@ ObjectSchema building_schema() {
                   "пропуск — в любых.")
         .optional("max_per_province", Type::integer(1, 6))
         .describe("Требование: не больше стольких зданий этого типа в провинции (готовых и строящихся "
-                  "вместе); по умолчанию 1.");
+                  "вместе); по умолчанию 1.")
+        .optional("control_points", Type::integer(-50, 50))
+        .describe("Эффект: очки, добавляемые к цели контроля воеводы (F7); пропуск — 0.")
+        .optional("oversight_permille", Type::integer(0, 1000))
+        .describe("Эффект: промилле, снимаемые с цели коррупции (F7); пропуск — 0.")
+        .optional("recruit_permille", Type::integer(0, kMaxMultiplier))
+        .describe(
+            "Эффект: множитель рекрутского потенциала провинции (F11), промилле; пропуск — 1000, то есть "
+            "без эффекта.")
+        .optional("famine_protect_permille", Type::integer(0, 1000))
+        .describe("Эффект: доля нехватки хлеба, которой население не ощущает (F5), промилле; пропуск — 0.");
     return s;
 }
 

@@ -673,7 +673,10 @@ TEST_CASE("unrest: raising the rate raises the unrest, lowering it brings it bac
     const Fixed32 usual_mood = sim.world().economy().groups.mood[group_row(0, Group::Peasants)];
     CHECK(unrest_state(r.unrest, usual_unrest) == UnrestState::Calm);
 
-    edit(sim, [](World& w) { w.economy_columns_mut().tax_policy[0] = 3; });  // excessive
+    edit(sim, [](World& w) {
+        w.economy_columns_mut().tax_policy[0] = 3;  // excessive
+        w.invalidate_province_modifiers(ProvinceId(0));
+    });
     Fixed32 previous_unrest = usual_unrest;
     for (int month = 0; month < 48; ++month) {
         run_months(sim, 1);
@@ -686,7 +689,10 @@ TEST_CASE("unrest: raising the rate raises the unrest, lowering it brings it bac
     CHECK(previous_unrest.raw() < 100 * kOne);
     CHECK(unrest_state(r.unrest, previous_unrest) >= UnrestState::Riot);  // the GDD: "N months, then 50"
 
-    edit(sim, [](World& w) { w.economy_columns_mut().tax_policy[0] = 1; });  // back to the usual
+    edit(sim, [](World& w) {
+        w.economy_columns_mut().tax_policy[0] = 1;  // back to the usual
+        w.invalidate_province_modifiers(ProvinceId(0));
+    });
     run_months(sim, 96);
     CHECK(unrest_state(r.unrest, sim.world().economy().provinces.unrest[0]) == UnrestState::Calm);
     CHECK(sim.world().economy().provinces.unrest[0].raw() <= usual_unrest.raw() + kOne);

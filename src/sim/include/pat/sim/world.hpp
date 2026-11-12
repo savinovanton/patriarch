@@ -10,6 +10,7 @@
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/date.hpp"
 #include "pat/sim/economy/ledger.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/money.hpp"
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/entity_ids.hpp"
@@ -568,6 +569,16 @@ public:
     /// Writable views of the plain numeric columns for systems; empty spans without economy. Values
     /// are not clamped here, see economy::EconomyColumnsMut.
     [[nodiscard]] economy::EconomyColumnsMut economy_columns_mut() noexcept;
+    /// The cache of the province modifiers (E9-T17, economy/modifiers.hpp): DERIVED data, not part of the
+    /// save, the hash or any copy-comparison; empty (everything dirty) in a new or a loaded world. The
+    /// mutators below mark it where its inputs change; the functions of modifiers.hpp read and refill it.
+    [[nodiscard]] const economy::ModifierCache& modifier_cache() const noexcept { return modifier_cache_; }
+    [[nodiscard]] economy::ModifierCache& modifier_cache_mut() noexcept { return modifier_cache_; }
+    /// Marks the modifiers of one province / of every province dirty. For writers the World cannot see:
+    /// the `tax_policy` / `recruit_policy` columns of a PROVINCE written through economy_columns_mut(), a
+    /// change of the rules. No effect on the state or the hash.
+    void invalidate_province_modifiers(ProvinceId province) noexcept;
+    void invalidate_all_province_modifiers() noexcept;
     /// Hash of the rules the world was built with. Saved with the economy, but not hashed.
     void set_economy_rules_hash(std::uint64_t rules_hash) noexcept;
     /// The number of levels of the tax and of the recruit policy in the rules of this world (E9-T12):
@@ -791,6 +802,9 @@ private:
     /// people come from its population cache, the owner kind from its owner.
     void economy_add_province_rows(std::size_t index);
     void economy_remove_administrator(CharacterId id) noexcept;
+    /// A skill or a trait of a character changed: the provinces he administers get their modifiers marked
+    /// dirty (E9-T17; his profile may have changed).
+    void economy_note_character_change(CharacterId id) noexcept;
     /// After the owner (or the kind of ownership) of a province changed: drops the administrator unless he
     /// belongs to the house of the new dynasty owner (E9 #242; the rule of AssignProvinceAdministrator).
     void economy_release_foreign_administrator(ProvinceId province) noexcept;
@@ -818,6 +832,7 @@ private:
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
     std::vector<StandingHistory> standing_history_;  // nonempty histories, ascending dynasty id
     economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
+    economy::ModifierCache modifier_cache_;          // E9-T17: derived, never saved, hashed or compared
 };
 
 }  // namespace pat::sim

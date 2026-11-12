@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/administrator.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/mood.hpp"
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/population.hpp"
@@ -72,6 +73,15 @@ public:
             return;
         }
         bind_policy_levels(world, rules_);  // the range of the policy commands follows the rules (E9-T12)
+        // The cache of the province modifiers (E9-T17): entries made under other rules (hot reload) are
+        // dropped; what the mutators of the World marked dirty - or everything, after a load - is
+        // recomputed here, once, before any province reads it. One comparison when nothing changed.
+        const std::uint64_t stamp = modifier_rules_stamp(rules_);
+        if (world.modifier_cache().stamp() != stamp) {
+            world.modifier_cache_mut().mark_all();
+            world.modifier_cache_mut().set_stamp(stamp);
+        }
+        (void)refresh_modifier_cache(world, rules_, administrators_.get());
         const int day = context.date.day();
         if (day > kStaggerDays) {
             return;  // days 29..31 select nobody (is_monthly_slot)

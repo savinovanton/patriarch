@@ -220,6 +220,8 @@ struct LoanRules {
 struct BuildingDef {
     std::uint8_t slot = 0;  ///< 1...255; 0 means "no building" in a province slot
     std::string_view key;   ///< localisation key
+    /// Key of the description of the effects (E9-T17); empty = none.
+    std::string_view desc_key;
     Kopecks cost_kop = 0;
     std::int32_t build_days = 1;
     Kopecks upkeep_kop_month = 0;
@@ -232,6 +234,17 @@ struct BuildingDef {
     std::uint32_t allowed_kinds = 0;
     /// and may hold at most this many buildings of the type, finished and under construction together.
     std::int32_t max_per_province = 1;
+
+    /// Effects (E9-T17, GDD 03 section 8.2: a building is a set of modifiers; economy/modifiers.hpp
+    /// adds them up per province). Besides `output_permille` above:
+    /// control points added to the target of control (F7), -50...50,
+    std::int32_t control_points = 0;
+    /// per-mille taken off the corruption target (F7), 0...1000 (the oversight of an office),
+    std::int32_t oversight_permille = 0;
+    /// multiplier of the recruit potential (F11), per-mille, 1000 = no effect,
+    std::int32_t recruit_permille = kPermilleOne;
+    /// and the share of a grain shortage the people do not feel (F5), per-mille, 0...1000.
+    std::int32_t famine_protect_permille = 0;
 
     [[nodiscard]] bool operator==(const BuildingDef&) const = default;
 };

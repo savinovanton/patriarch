@@ -364,6 +364,7 @@ TEST_CASE("ECO-A1: raising the rate of a province in the simulation moves the mo
     {
         World edited = sim.world();
         edited.economy_columns_mut().tax_policy[0] = 3;
+        edited.invalidate_province_modifiers(ProvinceId(0));  // the decree is a column the world cannot see
         sim.restore_state(std::move(edited), {});
     }
     Fixed32 previous = settled;

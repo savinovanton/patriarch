@@ -21,7 +21,8 @@
 //   base   = sum over peasants, cossacks, townsfolk of size[g] x share_permille[g] / 1000
 //            (each group truncated: it is a number of people)
 //   policy = base x recruit_permille[level] / 1000       the recruit policy the province is processed at
-//   control = policy x control_permille(control) / 1000  a province that does not obey gives few recruits
+//   buildings = policy x buildings_permille / 1000       the ready buildings (an ostrog), E9-T17
+//   control = buildings x control_permille(control) / 1000  a province that does not obey gives few recruits
 //   anarchy: control < control.anarchy_threshold -> 0    (control_state: a province in turmoil gives none)
 //   quota  = minus the recruit quota still unpaid        hook of E9-T14 (`RecruitInput::quota_pending`)
 //   cap    = max(0, ...)
@@ -50,6 +51,8 @@ struct RecruitInput {
     std::array<std::uint32_t, kGroupCount> size{};  ///< people per group
     core::Fixed32 control = core::Fixed32::from_int(100);
     std::uint8_t level = 0;  ///< index into `RecruitRules::levels`
+    /// Multiplier of the ready buildings, per-mille (ProvinceModifiers::recruit_permille; E9-T17).
+    std::int32_t buildings_permille = 1000;
     std::uint32_t pool = 0;  ///< the pool now
     /// Hook of E9-T14: people of the unpaid recruit quota that the potential gives up; 0 for now.
     std::uint32_t quota_pending = 0;
@@ -64,9 +67,9 @@ struct RecruitResult {
 // ---- the formula ---------------------------------------------------------------------------------
 
 /// The potential. Root: term::kRecruitCap (People) = cap; children: kRecruitBase, then one step per
-/// multiplier (kRecruitPolicy, kRecruitControl, with the multiplier in `factor_permille`; a multiplier
-/// of exactly 1000 is left out), kRecruitAnarchy (a step to zero) and kRecruitQuota (negative). A level
-/// index past the table is clamped to the last level.
+/// multiplier (kRecruitPolicy, kRecruitBuildings, kRecruitControl, with the multiplier in `factor_permille`;
+/// a multiplier of exactly 1000 is left out), kRecruitAnarchy (a step to zero) and kRecruitQuota (negative).
+/// A level index past the table is clamped to the last level.
 [[nodiscard]] std::uint32_t
 compute_recruit_cap(const EconomyRules& rules, const RecruitInput& input, Breakdown* breakdown = nullptr);
 
@@ -74,8 +77,9 @@ compute_recruit_cap(const EconomyRules& rules, const RecruitInput& input, Breakd
 /// tooltip of the monthly gain; the cap's tree does not use it.)
 [[nodiscard]] RecruitResult compute_recruit_pool(const EconomyRules& rules, const RecruitInput& input);
 
-/// The highest potential the sizes can give under any policy and control, with no quota: the bound that
-/// holds at every moment after a slot even when a policy or the control changed since (invariant E-R1).
+/// The highest potential the sizes can give under any policy, any legal set of buildings and full control,
+/// with no quota: the bound that holds at every moment after a slot even when a policy, a building or the
+/// control changed since (invariant E-R1).
 [[nodiscard]] std::uint32_t recruit_ceiling(const EconomyRules& rules,
                                             const std::array<std::uint32_t, kGroupCount>& size);
 
@@ -92,7 +96,8 @@ split_conscription(const std::array<std::uint32_t, kGroupCount>& size, std::uint
 // ---- province ------------------------------------------------------------------------------------
 
 /// The input of a province as the World holds it; a default input for a world without economy or an
-/// unknown province. The level is the one the province is processed at (effective_recruit_level).
+/// unknown province. The level and the multiplier of the buildings come from the modifier set of the
+/// province (modifiers.hpp; the level is the one the province is processed at, effective_recruit_level).
 [[nodiscard]] RecruitInput recruit_input(const World& world, const EconomyRules& rules, ProvinceId province);
 
 /// Writes the pool of a result into the column of the province.
