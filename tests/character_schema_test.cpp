@@ -1396,6 +1396,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     CHECK(static_cast<int>(CommandType::Marry) == 7);
     CHECK(static_cast<int>(CommandType::EndMarriage) == 8);
     CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // E7 block 6..31, in order of arrival
+    CHECK(static_cast<int>(CommandType::Birth) == 10);
+    CHECK(static_cast<int>(CommandType::Conceive) == 11);
     CHECK(static_cast<int>(CommandType::TakeLoan) == 38);
     CHECK(static_cast<int>(CommandType::RepayLoan) == 39);
 
@@ -1407,6 +1409,16 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
         {Command{DynastyId(), cmd::AdjustHonor{}}, CommandType::AdjustHonor},
         {Command{DynastyId(), cmd::CreatePerson{}}, CommandType::CreatePerson},
         {Command{DynastyId(), cmd::Die{CharacterId(4), CauseOfDeath::Grief}}, CommandType::Die},
+        {Command{DynastyId(),
+                 cmd::Conceive{CharacterId(5),
+                               CharacterId(4),
+                               Date::from_days(900),
+                               Date::from_days(1180),
+                               PregnancyEnd::Miscarriage,
+                               Legitimacy::Illegitimate}},
+         CommandType::Conceive},
+        {Command{DynastyId(), cmd::Birth{CharacterId(5), BirthOutcome::Stillborn, CharacterInit{}}},
+         CommandType::Birth},
         {Command{DynastyId(), cmd::Marry{CharacterId(1), CharacterId(2)}}, CommandType::Marry},
         {Command{DynastyId(), cmd::EndMarriage{CharacterId(3), MarriageEnd::Tonsure}},
          CommandType::EndMarriage},
@@ -1440,8 +1452,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     }
     // Tags that nobody uses are unknown commands.
     for (const std::uint8_t tag : {std::uint8_t{0},
-                                   std::uint8_t{10},
-                                   std::uint8_t{11},
+                                   std::uint8_t{22},
+                                   std::uint8_t{30},
                                    std::uint8_t{31},
                                    std::uint8_t{63},
                                    std::uint8_t{255}}) {

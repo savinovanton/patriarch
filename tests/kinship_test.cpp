@@ -1064,8 +1064,9 @@ TEST_CASE("kin section: damaged sections are errors, never crashes") {
     REQUIRE(load(with_kin_section({a, b})).has_value());
 
     CHECK(rejected(with_kin_section({a, b}, 3, 2), "unsupported"));  // another version
-    CHECK(rejected(with_kin_section({a, b}, 4), "unsupported"));     // another section
-    CHECK(rejected(with_kin_section({b, a}), "out of order"));       // ids must ascend
+    CHECK(rejected(with_kin_section({a, b}, 9),
+                   "unsupported"));  // another section (4 is pregnancy since schema 11)
+    CHECK(rejected(with_kin_section({b, a}), "out of order"));  // ids must ascend
     CHECK(rejected(with_kin_section({a, a}), "out of order"));
     KinRow far = married(6, 0);
     CHECK(rejected(with_kin_section({a, b, far}), "out of range"));  // id >= capacity

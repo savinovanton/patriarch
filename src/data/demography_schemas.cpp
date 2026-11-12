@@ -14,6 +14,8 @@ constexpr std::int64_t kPermilleOne = 1000;
 constexpr std::int64_t kMaxMultiplier = 10000;
 constexpr std::int64_t kMaxHealth = 100;
 constexpr std::int64_t kMaxAge = 200;
+constexpr std::int64_t kMaxCrowdingLiving = 1048576;
+constexpr std::int64_t kMaxSkillSpread = 20;
 
 Type permille() {
     return Type::integer(0, kPermilleOne);
@@ -94,13 +96,27 @@ ObjectSchema conception_block() {
         .required("max_children_per_woman", Type::integer(1, 100))
         .describe("Потолок числа детей одной женщины (в GDD около 14); после него зачатие невозможно.")
         .required("pregnancy_months", Type::integer(1, 24))
-        .describe("Длительность беременности, месяцев.");
+        .describe("Длительность беременности, месяцев.")
+        .required("crowding_from_living", Type::integer(0, kMaxCrowdingLiving))
+        .describe("Теснота (E7-T12): пока живых персонажей в мире не больше этого числа, шанс зачатия не "
+                  "снижается (в GDD нет, заготовка 3000).")
+        .required("crowding_to_living", Type::integer(1, kMaxCrowdingLiving))
+        .describe("При этом числе живых множитель тесноты падает до `crowding_min_permille` и дальше не "
+                  "меняется; строго больше `crowding_from_living` (заготовка 5000, бюджет NFR-PERF-5).")
+        .required("crowding_min_permille", permille())
+        .describe("Наименьший множитель шанса зачатия при тесноте, промилле (50 = ×0,05; 1000 отключает "
+                  "теснота).")
+        .required("miscarriage_permille", permille())
+        .describe("Доля беременностей, которые заканчиваются выкидышем в месяцы с 1-го до предпоследнего, "
+                  "промилле (заготовка 30; GDD 01 §3.3 включает выкидыши в смертность первого года, "
+                  "наложение снимает E7-T19).");
     return s;
 }
 
 ObjectSchema birth_block() {
     ObjectSchema s("birth");
-    s.describe_kind("Роды (GDD 01 §3.3): соотношение полов и риск смерти матери.");
+    s.describe_kind("Роды (GDD 01 §3.3, §3.4): соотношение полов, риск смерти матери, мертворождения и "
+                    "стартовые значения новорождённого.");
     s.required("boys_per_100_girls", Type::integer(1, 10000))
         .describe("Сколько мальчиков рождается на 100 девочек (в GDD 105).")
         .required("risk_base_permille", permille())
@@ -111,7 +127,18 @@ ObjectSchema birth_block() {
         .describe("Поправка к риску при слабом здоровье матери, промилле (положительная повышает риск).")
         .required("risk_physician_delta_permille", signed_permille())
         .describe("Поправка к риску, если при дворе есть лекарь, промилле. База с поправками остаётся в "
-                  "пределах 0...1000.");
+                  "пределах 0...1000.")
+        .required("stillbirth_permille", permille())
+        .describe("Доля родов в срок, которые заканчиваются мертворождением, промилле (заготовка 20).")
+        .required("newborn_health", Type::integer(0, kMaxHealth))
+        .describe("Здоровье новорождённого до влияния черт, 0...100 (в GDD не задано, заготовка 70: "
+                  "ни «слабый», ни «крепкий»).")
+        .required("skill_inherit_permille", multiplier())
+        .describe("Какую долю среднего навыка живых родителей получает ребёнок при рождении, промилле "
+                  "(GDD 01 §3.4: 300 = 0,3).")
+        .required("skill_spread", Type::integer(0, kMaxSkillSpread))
+        .describe(
+            "Случайный разброс навыка ребёнка при рождении: плюс-минус столько очков (GDD 01 §3.4: 3).");
     return s;
 }
 

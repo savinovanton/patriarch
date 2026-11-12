@@ -107,6 +107,15 @@ struct DemographyRules {
     std::int32_t high_health_fertility_permille = 1000;
     std::int32_t max_children_per_woman = 1;
     std::int32_t pregnancy_months = 9;
+    /// Crowding (E7-T12): the monthly chance is multiplied by a factor that is 1.0 while the number of
+    /// living characters is at most `crowding_from_living` and falls linearly to
+    /// `crowding_min_permille` at `crowding_to_living` (and stays there). A soft brake, not a hard
+    /// cap: the population levels off instead of growing exponentially. 1000 turns it off.
+    std::int32_t crowding_from_living = 0;
+    std::int32_t crowding_to_living = 1;
+    std::int32_t crowding_min_permille = 1000;
+    /// Share of the pregnancies that end early in a miscarriage (somewhere in months 1 ... N-1).
+    std::int32_t miscarriage_permille = 0;
 
     // Birth (GDD 01 section 3.3).
     std::int32_t boys_per_100_girls = 100;
@@ -114,6 +123,14 @@ struct DemographyRules {
     std::int32_t childbirth_risk_high_health_delta_permille = 0;
     std::int32_t childbirth_risk_low_health_delta_permille = 0;
     std::int32_t childbirth_risk_physician_delta_permille = 0;
+    /// Share of the births at term that are stillbirths.
+    std::int32_t stillbirth_permille = 0;
+    /// Health of a newborn (0...100) before traits.
+    std::int32_t newborn_health = 0;
+    /// Skills of a child at birth: this share (per mille) of the average of the living parents'
+    /// skills, plus a spread of up to +-`skill_spread` skill points (GDD 01 section 3.4).
+    std::int32_t skill_inherit_permille = 0;
+    std::int32_t skill_spread = 0;
 
     // Life stages (GDD 01 section 3.1): first age of each stage.
     std::int32_t adolescent_from = 0;
@@ -125,6 +142,9 @@ struct DemographyRules {
 
     /// Largest accepted multiplier (per-mille of one); keeps Fixed32 arithmetic far from overflow.
     static constexpr std::int32_t kMaxMultiplierPermille = 10000;
+    /// Largest accepted number of living characters in the crowding rule, and of skill spread points.
+    static constexpr std::int32_t kMaxCrowdingLiving = 1048576;
+    static constexpr std::int32_t kMaxSkillSpread = 20;
 };
 
 /// The one table of default values. Every number is a [predl.] placeholder from GDD 01 section 3;
@@ -173,6 +193,14 @@ inline constexpr DemographyRules kDefaultDemography{
     // GDD 01 3.3: hard cap ~14 children per woman [predl.]; "births by a 9-month timer"
     .max_children_per_woman = 14,
     .pregnancy_months = 9,
+    // E7-T12: the factor falls from 1.0 at 3000 living to 0.05 at 5000 (NFR-PERF-5), so the number of
+    // living characters levels off near the budget instead of growing exponentially [predl.]
+    .crowding_from_living = 3000,
+    .crowding_to_living = 5000,
+    .crowding_min_permille = 50,
+    // E7-T12: 3 % of the pregnancies end in a miscarriage [predl.]. GDD 01 3.3 counts miscarriages and
+    // stillbirths inside the first-year mortality (220 per mille); E7-T19 settles the overlap.
+    .miscarriage_permille = 30,
 
     // GDD 01 3.3: 105 boys per 100 girls [predl.]
     .boys_per_100_girls = 105,
@@ -182,6 +210,12 @@ inline constexpr DemographyRules kDefaultDemography{
     .childbirth_risk_high_health_delta_permille = -10,
     .childbirth_risk_low_health_delta_permille = 10,
     .childbirth_risk_physician_delta_permille = -10,
+    // E7-T12: 2 % of the births at term are stillbirths; a newborn starts at health 70 (neither "weak"
+    // nor "robust"); GDD 01 3.4: 0.3 x the average of the parents' skills, +-3 [predl.]
+    .stillbirth_permille = 20,
+    .newborn_health = 70,
+    .skill_inherit_permille = 300,
+    .skill_spread = 3,
 
     // GDD 01 3.1: 0-6 child, 7-15 adolescent, 16-50 prime, 51-65 mature, 66+ elder [predl.]
     .adolescent_from = 7,
@@ -200,8 +234,8 @@ enum class RulesErrorCode : std::uint8_t {
     AgeFactorTable,   ///< as above, factor outside 0...kMaxMultiplierPermille
     Multiplier,       ///< a multiplier outside 0...kMaxMultiplierPermille
     HealthThreshold,  ///< thresholds outside 0...100 or low >= high
-    Conception,       ///< base probability outside 0...1000, bad child cap or pregnancy length
-    Birth,            ///< sex ratio or childbirth risk out of range
+    Conception,       ///< base probability, child cap, pregnancy length, crowding or miscarriage chance
+    Birth,            ///< sex ratio, childbirth risk, stillbirth, newborn health or skills out of range
     LifeStages,       ///< stage ages not strictly increasing, or marriage ages outside the stages
 };
 
@@ -237,11 +271,12 @@ struct ConceptionInput {
     std::int32_t trait_permille = 1000;  ///< combined trait multiplier of the couple (1000 = none)
     bool together = true;                ///< spouses live in the same place
     std::int32_t children_born = 0;      ///< children the wife has borne so far
+    std::int32_t living_count = 0;       ///< living characters in the world (for the crowding factor)
 };
 
 /// Monthly conception chance (per mille): base x age factor x health factor x traits x together,
-/// zero once `children_born` reaches the cap. Terms: demography.conception.base / .age / .low_health
-/// / .high_health / .traits / .apart / .child_cap / .clamp.
+/// x crowding factor, zero once `children_born` reaches the cap. Terms: demography.conception.base /
+/// .age / .low_health / .high_health / .traits / .crowding / .apart / .child_cap / .clamp.
 [[nodiscard]] ProbabilityBreakdown conception_permille(const DemographyRules& rules,
                                                        const ConceptionInput& input);
 
@@ -250,6 +285,10 @@ struct ConceptionInput {
 /// .physician / .clamp.
 [[nodiscard]] ProbabilityBreakdown
 childbirth_risk_permille(const DemographyRules& rules, core::Fixed32 health, bool physician_at_court);
+
+/// The crowding factor (per mille of one, `crowding_min_permille` ... 1000) for `living` living
+/// characters; see DemographyRules::crowding_from_living.
+[[nodiscard]] std::int32_t crowding_permille(const DemographyRules& rules, std::int32_t living) noexcept;
 
 /// Chance (per mille, integer) that a newborn is a boy: boys / (boys + 100) from the sex ratio.
 [[nodiscard]] std::int32_t male_birth_permille(const DemographyRules& rules) noexcept;

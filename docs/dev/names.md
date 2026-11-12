@@ -1,6 +1,6 @@
 # Имена, отчества и портреты
 
-> Статус: E7-T09 (готово как данные и чистые функции; вызов из рождений — E7-T12, из UI — E7-T21). Код — `src/sim/names.cpp` (`pat::sim`, `pat/sim/names.hpp`), схемы — `src/data/names_schemas.cpp`, сборщик — `src/content/names_content.cpp`, тесты — `tests/names_test.cpp`, `tests/names_content_test.cpp`. Данные — `data/names/*.pd`, тексты — `data/loc/ru/names.pd`.
+> Статус: E7-T09 (данные и чистые функции; вызов из рождений — E7-T12, **сделано**: `src/sim/conception.cpp`; из UI — E7-T21). Код — `src/sim/names.cpp` (`pat::sim`, `pat/sim/names.hpp`), схемы — `src/data/names_schemas.cpp`, сборщик — `src/content/names_content.cpp`, тесты — `tests/names_test.cpp`, `tests/names_content_test.cpp`. Данные — `data/names/*.pd`, тексты — `data/loc/ru/names.pd`.
 > Связано: GDD 01 §2.1 (имя, отчество, пол, портрет), ADR-0006 (колонки `name`, `portrait`), эпик E7 §3 стр. 8 (поток `demography.names`), [data-authoring.md](data-authoring.md), [localization.md](localization.md), [data-reference.md](data-reference.md) (поля видов `given_name`, `surname`, `portrait`, `naming_rules`).
 
 ## 1. Из чего состоит имя
@@ -67,7 +67,7 @@ naming_rules "main" { parent_bonus = 40  grandparent_bonus = 25 }
 
 ## 5. Как это подключается дальше
 
-- **E7-T12 (рождения):** `Birth` берёт `NamePools` и поток `demography.names`; имя — `choose_given_name`, портрет — `choose_portrait(…, Child)`; затем `set_character_name(id, interner.intern(given_names[i].id))`, `set_character_portrait`. Порядок извлечений из потока фиксирован: сначала имя, потом портрет.
+- **E7-T12 (рождения, сделано):** система `dynasty.conception` берёт `NamePools` и поток `demography.names`; имя — `choose_given_name`, портрет — `choose_portrait(…, Child)`; id имени (`BirthContent::given_name_ids`, результат `intern_given_names` при сборке сценария) и портрет попадают в `CharacterInit` новорождённого внутри команды `Birth`. Порядок извлечений из потока фиксирован: сначала имя, потом портрет.
 - **E7-T21 (мост «снапшот → UI»):** `find_given_name` по колонке `name` персонажа и его отца + `person_name_keys` + `Localizer` дают «Анна Петровна Меншикова».
 - **E30 (сценарий):** исторически заданные персонажи получают `name` как id имени из пула (при необходимости имя добавляют в данные).
 

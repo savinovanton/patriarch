@@ -22,6 +22,34 @@ std::uint64_t checksum(std::span<const std::uint8_t> bytes) {
     return h.value();
 }
 
+// The layout of CreatePerson, shared with the newborn of Birth.
+void write_init(core::ByteWriter& out, const CharacterInit& i) {
+    out.u32(i.dynasty.value());
+    out.i32(i.birth_date.days());
+    out.u8(static_cast<std::uint8_t>(i.sex));
+    out.i32(i.health.raw());
+    out.u32(i.father.value());
+    out.u32(i.mother.value());
+    out.u32(i.name.value());
+    out.u32(i.branch.value());
+    out.u16(i.portrait);
+    out.u8(static_cast<std::uint8_t>(i.legitimacy));
+    for (const core::Fixed32 skill : i.skills) {
+        out.i32(skill.raw());
+    }
+    for (const core::Fixed32 v :
+         {i.fertility, i.stress, i.piety, i.ambition, i.loyalty_head, i.loyalty_emperor}) {
+        out.i32(v.raw());
+    }
+    for (const std::uint16_t trait : i.traits) {
+        out.u16(trait);
+    }
+    out.u8(i.education.focus);
+    out.u32(i.education.tutor.value());
+    out.u8(i.education.level);
+    out.i32(i.planned_death.days());
+}
+
 struct Writer {
     core::ByteWriter& out;
 
@@ -53,32 +81,19 @@ struct Writer {
         out.u32(c.character.value());
         out.u16(c.trait);
     }
-    void operator()(const cmd::CreatePerson& c) const {
-        const CharacterInit& i = c.init;
-        out.u32(i.dynasty.value());
-        out.i32(i.birth_date.days());
-        out.u8(static_cast<std::uint8_t>(i.sex));
-        out.i32(i.health.raw());
-        out.u32(i.father.value());
-        out.u32(i.mother.value());
-        out.u32(i.name.value());
-        out.u32(i.branch.value());
-        out.u16(i.portrait);
-        out.u8(static_cast<std::uint8_t>(i.legitimacy));
-        for (const core::Fixed32 skill : i.skills) {
-            out.i32(skill.raw());
-        }
-        for (const core::Fixed32 v :
-             {i.fertility, i.stress, i.piety, i.ambition, i.loyalty_head, i.loyalty_emperor}) {
-            out.i32(v.raw());
-        }
-        for (const std::uint16_t trait : i.traits) {
-            out.u16(trait);
-        }
-        out.u8(i.education.focus);
-        out.u32(i.education.tutor.value());
-        out.u8(i.education.level);
-        out.i32(i.planned_death.days());
+    void operator()(const cmd::CreatePerson& c) const { write_init(out, c.init); }
+    void operator()(const cmd::Conceive& c) const {
+        out.u32(c.mother.value());
+        out.u32(c.father.value());
+        out.i32(c.conceived.days());
+        out.i32(c.due.days());
+        out.u8(static_cast<std::uint8_t>(c.end));
+        out.u8(static_cast<std::uint8_t>(c.legitimacy));
+    }
+    void operator()(const cmd::Birth& c) const {
+        out.u32(c.mother.value());
+        out.u8(static_cast<std::uint8_t>(c.outcome));
+        write_init(out, c.newborn);
     }
     void operator()(const cmd::Die& c) const {
         out.u32(c.character.value());
@@ -152,6 +167,43 @@ struct Writer {
     }
 };
 
+// Reads the layout written by write_init; false for a value the type cannot hold.
+bool read_init(core::ByteReader& in, CharacterInit& i) {
+    i.dynasty = DynastyId(in.u32());
+    i.birth_date = Date::from_days(in.i32());
+    const std::uint8_t sex = in.u8();
+    if (sex > 1) {
+        return false;
+    }
+    i.sex = static_cast<Sex>(sex);
+    i.health = core::Fixed32::from_raw(in.i32());
+    i.father = CharacterId(in.u32());
+    i.mother = CharacterId(in.u32());
+    i.name = core::StringId(in.u32());
+    i.branch = BranchId(in.u32());
+    i.portrait = in.u16();
+    const std::uint8_t legitimacy = in.u8();
+    if (legitimacy >= kLegitimacyCount) {
+        return false;
+    }
+    i.legitimacy = static_cast<Legitimacy>(legitimacy);
+    for (core::Fixed32& skill : i.skills) {
+        skill = core::Fixed32::from_raw(in.i32());
+    }
+    for (core::Fixed32* v :
+         {&i.fertility, &i.stress, &i.piety, &i.ambition, &i.loyalty_head, &i.loyalty_emperor}) {
+        *v = core::Fixed32::from_raw(in.i32());
+    }
+    for (std::uint16_t& trait : i.traits) {
+        trait = in.u16();
+    }
+    i.education.focus = in.u8();
+    i.education.tutor = CharacterId(in.u32());
+    i.education.level = in.u8();
+    i.planned_death = Date::from_days(in.i32());
+    return true;
+}
+
 }  // namespace
 
 void write_command(core::ByteWriter& out, const Command& command) {
@@ -217,39 +269,36 @@ bool read_command(core::ByteReader& in, Command& out) {
         }
         case CommandType::CreatePerson: {
             cmd::CreatePerson c;
-            CharacterInit& i = c.init;
-            i.dynasty = DynastyId(in.u32());
-            i.birth_date = Date::from_days(in.i32());
-            const std::uint8_t sex = in.u8();
-            if (sex > 1) {
+            if (!read_init(in, c.init)) {
                 return false;
             }
-            i.sex = static_cast<Sex>(sex);
-            i.health = core::Fixed32::from_raw(in.i32());
-            i.father = CharacterId(in.u32());
-            i.mother = CharacterId(in.u32());
-            i.name = core::StringId(in.u32());
-            i.branch = BranchId(in.u32());
-            i.portrait = in.u16();
+            out.payload = c;
+            break;
+        }
+        case CommandType::Conceive: {
+            cmd::Conceive c;
+            c.mother = CharacterId(in.u32());
+            c.father = CharacterId(in.u32());
+            c.conceived = Date::from_days(in.i32());
+            c.due = Date::from_days(in.i32());
+            const std::uint8_t end = in.u8();
             const std::uint8_t legitimacy = in.u8();
-            if (legitimacy >= kLegitimacyCount) {
+            if (end >= kPregnancyEndCount || legitimacy >= kLegitimacyCount) {
                 return false;
             }
-            i.legitimacy = static_cast<Legitimacy>(legitimacy);
-            for (core::Fixed32& skill : i.skills) {
-                skill = core::Fixed32::from_raw(in.i32());
+            c.end = static_cast<PregnancyEnd>(end);
+            c.legitimacy = static_cast<Legitimacy>(legitimacy);
+            out.payload = c;
+            break;
+        }
+        case CommandType::Birth: {
+            cmd::Birth c;
+            c.mother = CharacterId(in.u32());
+            const std::uint8_t outcome = in.u8();
+            if (outcome >= kBirthOutcomeCount || !read_init(in, c.newborn)) {
+                return false;
             }
-            for (core::Fixed32* v :
-                 {&i.fertility, &i.stress, &i.piety, &i.ambition, &i.loyalty_head, &i.loyalty_emperor}) {
-                *v = core::Fixed32::from_raw(in.i32());
-            }
-            for (std::uint16_t& trait : i.traits) {
-                trait = in.u16();
-            }
-            i.education.focus = in.u8();
-            i.education.tutor = CharacterId(in.u32());
-            i.education.level = in.u8();
-            i.planned_death = Date::from_days(in.i32());
+            c.outcome = static_cast<BirthOutcome>(outcome);
             out.payload = c;
             break;
         }

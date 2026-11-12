@@ -30,6 +30,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/entity_ids.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
+    include/pat/sim/conception.hpp
     include/pat/sim/mortality.hpp
     include/pat/sim/opinion.hpp
     include/pat/sim/names.hpp
@@ -69,6 +70,7 @@ add_library(patriarch_sim STATIC
     economy/taxes.cpp
     economy/unrest.cpp
     kinship.cpp
+    conception.cpp
     mortality.cpp
     opinion.cpp
     names.cpp
@@ -83,7 +85,8 @@ add_library(patriarch_sim STATIC
     world_economy.cpp
     world_economy_io.cpp
     world_io.cpp
-    world_opinion.cpp)
+    world_opinion.cpp
+    world_pregnancy.cpp)
 add_library(patriarch::sim ALIAS patriarch_sim)
 
 target_include_directories(patriarch_sim PUBLIC

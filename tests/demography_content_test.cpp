@@ -35,7 +35,7 @@ namespace fs = std::filesystem;
 // A field added to DemographyRules changes the size. When this fails: add the field to flatten() below,
 // to the schema (src/data/demography_schemas.cpp), to the builder (src/content/demography_content.cpp),
 // to data/balance/demography.pd and to the tweaks table in this file.
-static_assert(sizeof(DemographyRules) == 352,
+static_assert(sizeof(DemographyRules) == 384,
               "DemographyRules changed: update the schema, the builder and this test");
 
 namespace {
@@ -151,12 +151,20 @@ Flat flatten(const DemographyRules& r) {
     f.emplace_back("high_health_fertility_permille", r.high_health_fertility_permille);
     f.emplace_back("max_children_per_woman", r.max_children_per_woman);
     f.emplace_back("pregnancy_months", r.pregnancy_months);
+    f.emplace_back("crowding_from_living", r.crowding_from_living);
+    f.emplace_back("crowding_to_living", r.crowding_to_living);
+    f.emplace_back("crowding_min_permille", r.crowding_min_permille);
+    f.emplace_back("miscarriage_permille", r.miscarriage_permille);
     f.emplace_back("boys_per_100_girls", r.boys_per_100_girls);
     f.emplace_back("childbirth_risk_base_permille", r.childbirth_risk_base_permille);
     f.emplace_back("childbirth_risk_high_health_delta_permille",
                    r.childbirth_risk_high_health_delta_permille);
     f.emplace_back("childbirth_risk_low_health_delta_permille", r.childbirth_risk_low_health_delta_permille);
     f.emplace_back("childbirth_risk_physician_delta_permille", r.childbirth_risk_physician_delta_permille);
+    f.emplace_back("stillbirth_permille", r.stillbirth_permille);
+    f.emplace_back("newborn_health", r.newborn_health);
+    f.emplace_back("skill_inherit_permille", r.skill_inherit_permille);
+    f.emplace_back("skill_spread", r.skill_spread);
     f.emplace_back("adolescent_from", r.adolescent_from);
     f.emplace_back("prime_from", r.prime_from);
     f.emplace_back("mature_from", r.mature_from);
@@ -392,6 +400,16 @@ std::vector<Tweak> tweaks() {
          "max_children_per_woman = 12",
          {"max_children_per_woman"}},
         {"pregnancy", "pregnancy_months = 9", "pregnancy_months = 8", {"pregnancy_months"}},
+        {"crowding from",
+         "crowding_from_living = 3000",
+         "crowding_from_living = 2500",
+         {"crowding_from_living"}},
+        {"crowding to", "crowding_to_living = 5000", "crowding_to_living = 6000", {"crowding_to_living"}},
+        {"crowding minimum",
+         "crowding_min_permille = 50",
+         "crowding_min_permille = 100",
+         {"crowding_min_permille"}},
+        {"miscarriage", "miscarriage_permille = 30", "miscarriage_permille = 40", {"miscarriage_permille"}},
         {"sex ratio", "boys_per_100_girls = 105", "boys_per_100_girls = 103", {"boys_per_100_girls"}},
         {"childbirth base",
          "risk_base_permille = 50",
@@ -409,6 +427,13 @@ std::vector<Tweak> tweaks() {
          "risk_physician_delta_permille = -10",
          "risk_physician_delta_permille = -5",
          {"childbirth_risk_physician_delta_permille"}},
+        {"stillbirth", "stillbirth_permille = 20", "stillbirth_permille = 25", {"stillbirth_permille"}},
+        {"newborn health", "newborn_health = 70", "newborn_health = 75", {"newborn_health"}},
+        {"skill inheritance",
+         "skill_inherit_permille = 300",
+         "skill_inherit_permille = 350",
+         {"skill_inherit_permille"}},
+        {"skill spread", "skill_spread = 3", "skill_spread = 4", {"skill_spread"}},
         {"adolescent", "adolescent_from = 7", "adolescent_from = 8", {"adolescent_from"}},
         {"prime", "prime_from = 16", "prime_from = 17", {"prime_from"}},
         {"mature", "mature_from = 51", "mature_from = 50", {"mature_from"}},
@@ -668,6 +693,13 @@ TEST_CASE("demography content: the schema corridors agree with validate() at the
         {"from_age = 20, factor_permille = 1000", "from_age = 20, factor_permille", multiplier_max},
         {"noble_child_age_limit = 15", "noble_child_age_limit", 200},
         {"base_permille = 12", "base_permille", 1000},
+        {"crowding_to_living = 5000", "crowding_to_living", 1048576},
+        {"crowding_min_permille = 50", "crowding_min_permille", 1000},
+        {"miscarriage_permille = 30", "miscarriage_permille", 1000},
+        {"stillbirth_permille = 20", "stillbirth_permille", 1000},
+        {"newborn_health = 70", "newborn_health", 100},
+        {"skill_inherit_permille = 300", "skill_inherit_permille", multiplier_max},
+        {"skill_spread = 3", "skill_spread", 20},
         {"pregnancy_months = 9", "pregnancy_months", 24},
         {"boys_per_100_girls = 105", "boys_per_100_girls", 10000},
         {"from_age = 15, permille = 15", "from_age = 15, permille", 1000},
@@ -700,7 +732,9 @@ TEST_CASE("demography content: the schema corridors agree with validate() at the
                         {"boys_per_100_girls = 105", "boys_per_100_girls = 0"},
                         {"permille = 220", "permille = -1"},
                         {"adolescent_from = 7", "adolescent_from = 0"},
-                        {"low_below = 30", "low_below = -1"}};
+                        {"low_below = 30", "low_below = -1"},
+                        {"crowding_from_living = 3000", "crowding_from_living = -1"},
+                        {"crowding_to_living = 5000", "crowding_to_living = 0"}};
     for (const Low& low : lows) {
         CAPTURE(low.to);
         Files files = shipped_files();
@@ -1048,5 +1082,5 @@ TEST_CASE("demography content: the schema offers a field for every number of the
         }
     }
     CHECK(tables == 2);
-    CHECK(scalars == 22);  // the int32 scalars of DemographyRules (352 bytes = 2 tables x 132 + 22 x 4)
+    CHECK(scalars == 30);  // the int32 scalars of DemographyRules (384 bytes = 2 tables x 132 + 30 x 4)
 }

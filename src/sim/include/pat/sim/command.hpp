@@ -35,6 +35,8 @@ enum class CommandType : std::uint8_t {
     Marry = 7,                         // E7-T03
     EndMarriage = 8,                   // E7-T03
     CreatePerson = 9,                  // E7-T02
+    Birth = 10,                        // E7-T12
+    Conceive = 11,                     // E7-T12
     GrantTrait = 14,                   // E7-T08
     RevokeTrait = 15,                  // E7-T08
     PlanDeath = 16,                    // E7-T10
@@ -149,6 +151,40 @@ struct PlanDeath {
     CharacterId character;
     Date date = kNoDate;
     [[nodiscard]] bool operator==(const PlanDeath&) const = default;
+};
+
+/// A pregnancy begins (E7-T12): the system decided at the monthly roll that `mother` conceives. System
+/// only, dynasty mode only. The mother must be a living woman who carries no child, the father a
+/// living man; `due` lies after `conceived` and within kMaxPregnancyDays. `end` says whether the
+/// pregnancy will end at term or early in a miscarriage (decided at conception, so that `due` is the
+/// date of the labour or of the loss either way).
+struct Conceive {
+    CharacterId mother;
+    CharacterId father;
+    Date conceived;
+    Date due;
+    PregnancyEnd end = PregnancyEnd::AtTerm;
+    Legitimacy legitimacy = Legitimacy::Legitimate;
+    [[nodiscard]] bool operator==(const Conceive&) const = default;
+};
+
+/// The labour of `mother` (E7-T12): ends her pregnancy and, for a living child, creates the newborn.
+/// System only, dynasty mode only. EVERYTHING random was decided by the system that emitted the
+/// command (the outcome, sex, name, skills, traits), so applying it is plain bookkeeping and replays and
+/// saves reproduce it exactly. The death of the mother in childbirth is a separate Die{mother,
+/// Childbirth} that the system queues right after Birth, so that the contract of Die (below) holds for
+/// it like for any death.
+///
+/// The pregnancy must exist, be due (`due <= today`) and match the outcome: a pregnancy that was to
+/// end in a miscarriage gives Miscarriage, one at term gives Live or Stillborn. `newborn` matters for
+/// Live only: it is a full CharacterInit like that of CreatePerson (checked the same way), except that
+/// the birth date is today and the parents and the legitimacy are those of the pregnancy, whatever the
+/// payload says. A father who died in the meantime is still the father.
+struct Birth {
+    CharacterId mother;
+    BirthOutcome outcome = BirthOutcome::Live;
+    CharacterInit newborn;
+    [[nodiscard]] bool operator==(const Birth&) const = default;
 };
 
 /// Adds an editorial note to a dynasty's chronicle. Factual entries come from world operations.
@@ -279,6 +315,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::SetDynastyHead,
                                     cmd::AdjustHonor,
                                     cmd::CreatePerson,
+                                    cmd::Conceive,
+                                    cmd::Birth,
                                     cmd::Die,
                                     cmd::Marry,
                                     cmd::EndMarriage,

@@ -205,6 +205,24 @@ core::Result<void, RulesError> validate(const DemographyRules& r) {
                                      std::format("pregnancy_months {} outside 1...24", r.pregnancy_months)));
     }
 
+    if (r.crowding_from_living < 0 || r.crowding_to_living <= r.crowding_from_living ||
+        r.crowding_to_living > DemographyRules::kMaxCrowdingLiving) {
+        return Check::err(make_error(RulesErrorCode::Conception,
+                                     std::format("crowding {}...{} must satisfy 0 <= from < to <= {}",
+                                                 r.crowding_from_living,
+                                                 r.crowding_to_living,
+                                                 DemographyRules::kMaxCrowdingLiving)));
+    }
+    for (const auto& [value, name] : {
+             std::pair{r.crowding_min_permille, "crowding_min_permille"},
+             std::pair{r.miscarriage_permille, "miscarriage_permille"},
+         }) {
+        if (value < 0 || value > kPermilleOne) {
+            return Check::err(make_error(RulesErrorCode::Conception,
+                                         std::format("{} {} outside 0...{}", name, value, kPermilleOne)));
+        }
+    }
+
     if (r.boys_per_100_girls < 1 || r.boys_per_100_girls > 10000) {
         return Check::err(
             make_error(RulesErrorCode::Birth,
@@ -219,6 +237,27 @@ core::Result<void, RulesError> validate(const DemographyRules& r) {
         risk_high < 0 || risk_low > kPermilleOne) {
         return Check::err(
             make_error(RulesErrorCode::Birth, "childbirth risk (base plus deltas) leaves 0...1000"));
+    }
+
+    if (r.stillbirth_permille < 0 || r.stillbirth_permille > kPermilleOne) {
+        return Check::err(make_error(
+            RulesErrorCode::Birth,
+            std::format("stillbirth_permille {} outside 0...{}", r.stillbirth_permille, kPermilleOne)));
+    }
+    if (r.newborn_health < 0 || r.newborn_health > kMaxHealth) {
+        return Check::err(
+            make_error(RulesErrorCode::Birth,
+                       std::format("newborn_health {} outside 0...{}", r.newborn_health, kMaxHealth)));
+    }
+    if (r.skill_inherit_permille < 0 || r.skill_inherit_permille > DemographyRules::kMaxMultiplierPermille ||
+        r.skill_spread < 0 || r.skill_spread > DemographyRules::kMaxSkillSpread) {
+        return Check::err(make_error(RulesErrorCode::Birth,
+                                     std::format("skill inheritance {} per mille and spread {} outside "
+                                                 "0...{} and 0...{}",
+                                                 r.skill_inherit_permille,
+                                                 r.skill_spread,
+                                                 DemographyRules::kMaxMultiplierPermille,
+                                                 DemographyRules::kMaxSkillSpread)));
     }
 
     if (r.adolescent_from <= 0 || r.prime_from <= r.adolescent_from || r.mature_from <= r.prime_from ||
@@ -276,6 +315,7 @@ ProbabilityBreakdown conception_permille(const DemographyRules& rules, const Con
         builder.factor("demography.conception.high_health", rules.high_health_fertility_permille);
     }
     builder.factor("demography.conception.traits", clamp_multiplier(input.trait_permille));
+    builder.factor("demography.conception.crowding", crowding_permille(rules, input.living_count));
     if (!input.together) {
         builder.factor("demography.conception.apart", 0);
     }
@@ -298,6 +338,19 @@ childbirth_risk_permille(const DemographyRules& rules, Fixed32 health, bool phys
         builder.add("demography.childbirth.physician", rules.childbirth_risk_physician_delta_permille);
     }
     return builder.finish("demography.childbirth.clamp");
+}
+
+std::int32_t crowding_permille(const DemographyRules& rules, std::int32_t living) noexcept {
+    if (living <= rules.crowding_from_living || rules.crowding_to_living <= rules.crowding_from_living) {
+        return kPermilleOne;
+    }
+    if (living >= rules.crowding_to_living) {
+        return rules.crowding_min_permille;
+    }
+    const std::int64_t drop = static_cast<std::int64_t>(kPermilleOne - rules.crowding_min_permille) *
+                              (living - rules.crowding_from_living) /
+                              (rules.crowding_to_living - rules.crowding_from_living);
+    return static_cast<std::int32_t>(kPermilleOne - drop);
 }
 
 std::int32_t male_birth_permille(const DemographyRules& rules) noexcept {

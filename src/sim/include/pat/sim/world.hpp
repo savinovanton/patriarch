@@ -336,7 +336,8 @@ struct ArchivedPerson {
 };
 
 /// Reasons for entries of the life-event queue (ADR-0006 D4); the numeric value is also the
-/// priority inside a day. Labour (3) is added by E7-T12.
+/// priority inside a day. Labour is not here: births have a queue of their own (see
+/// World::take_due_labours), so that the system that handles the birthdays never sees them.
 enum class LifeEventKind : std::uint8_t { Birthday = 1, PlannedDeath = 2 };
 
 struct LifeEvent {
@@ -350,6 +351,42 @@ struct DueLifeEvent {
     Date due;
     LifeEvent item;
     [[nodiscard]] bool operator==(const DueLifeEvent&) const = default;
+};
+
+// ---- pregnancy (E7-T12, GDD 01 section 3.3) ---------------------------------------------------------
+/// How a pregnancy is going to end, decided when it starts: at term (the labour then yields a living
+/// child or a stillbirth) or early, by a miscarriage. Stored as one byte; the numbers are part of the
+/// save format.
+enum class PregnancyEnd : std::uint8_t { AtTerm, Miscarriage };
+inline constexpr std::uint8_t kPregnancyEndCount = 2;
+
+/// What a labour brought: a living child, a stillbirth, or (for a pregnancy that ended early) a
+/// miscarriage. A command payload, not stored in the world.
+enum class BirthOutcome : std::uint8_t { Live, Stillborn, Miscarriage };
+inline constexpr std::uint8_t kBirthOutcomeCount = 3;
+
+/// A pregnancy takes at most this many days (24 months of 31 days is the corridor of the rules).
+inline constexpr std::int32_t kMaxPregnancyDays = 24 * 31;
+
+/// One woman carries at most one child at a time. The row lives from the Conceive command until the
+/// Birth command (or the mother's death), and it is the whole state: the labour queue is derived from
+/// `due`. The father is the man the child belongs to; he may die before the birth.
+struct Pregnancy {
+    CharacterId mother;
+    CharacterId father;
+    Date conceived;
+    Date due;  // when the labour (or the miscarriage) takes place
+    PregnancyEnd end = PregnancyEnd::AtTerm;
+    Legitimacy legitimacy = Legitimacy::Legitimate;
+
+    [[nodiscard]] bool operator==(const Pregnancy&) const = default;
+};
+
+/// A labour that has come due (World::take_due_labours).
+struct DueLabour {
+    Date due;
+    CharacterId mother;
+    [[nodiscard]] bool operator==(const DueLabour&) const = default;
 };
 
 /// Stable numbers of the extended hash parts (ADR-0006 D7). Part `n` lives in `WorldHash::ext[n]`.
@@ -723,6 +760,24 @@ public:
     /// empty outside dynasty mode. Not saved and not hashed; rebuilt on load.
     [[nodiscard]] const ScheduledQueue<LifeEvent>& life_queue() const noexcept { return life_queue_; }
 
+    // ---- pregnancies (E7-T12) ----
+    /// Pregnancies by ascending mother id. Dynasty mode only (empty otherwise).
+    [[nodiscard]] std::span<const Pregnancy> pregnancies() const noexcept { return pregnancies_; }
+    [[nodiscard]] std::optional<Pregnancy> pregnancy_of(CharacterId mother) const;
+    [[nodiscard]] bool is_pregnant(CharacterId mother) const noexcept;
+    /// Starts a pregnancy and queues its labour. False (nothing changed) outside dynasty mode, when
+    /// the mother is not a living woman, already carries a child, the father is not a living man (the
+    /// father must exist at conception), or the dates are not sane: `conceived` not after today, `due`
+    /// after `conceived` and at most kMaxPregnancyDays later.
+    bool begin_pregnancy(const Pregnancy& pregnancy);
+    /// Ends the pregnancy of `mother` (the Birth command, or the mother's death) and hands the row out.
+    std::optional<Pregnancy> end_pregnancy(CharacterId mother);
+    /// Takes the labours with `due <= today` out of the queue, oldest first and by mother id inside a
+    /// day, dropping stale entries (the pregnancy ended or has another due date). A labour that was
+    /// taken is not offered again: the caller issues the Birth command, and until it is applied the row
+    /// stays. After loading a saved world the queue is rebuilt from the rows.
+    [[nodiscard]] std::vector<DueLabour> take_due_labours(Date today);
+
     /// Drain due events in (date, kind, character) order, discarding stale entries. Reschedule
     /// birthdays and keep active death plans indexed until the next boundary applies Die.
     [[nodiscard]] std::vector<DueLifeEvent> take_due_life_events(Date today);
@@ -754,7 +809,8 @@ public:
     ///   8  + section 7 "dynasty_standing" (E7-T14); older files start with default prestige
     ///   9  + section 40 "economy policy" (E9-T12): policies of the dynasties; older files: all default
     ///  10  loan interest carries use denominator 12,000,000; older carries are multiplied by 12
-    static constexpr std::uint32_t kStateSchema = 10;
+    ///  11  + section 4 "pregnancy" (E7-T12); older files start without pregnancies
+    static constexpr std::uint32_t kStateSchema = 11;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -808,6 +864,8 @@ private:
     void link_child(CharacterId child);
     void rebuild_child_lists();
     void check_kinship_invariants(std::vector<std::string>& bad) const;
+    void check_pregnancy_invariants(std::vector<std::string>& bad) const;
+    [[nodiscard]] std::uint64_t pregnancy_hash() const;
     // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
     struct StateSection {
         std::uint16_t id = 0;
@@ -853,6 +911,8 @@ private:
     std::vector<core::SparseSet<ProvinceId>> owned_provinces_;  // per dynasty
     std::vector<CharacterId> living_;                           // derived, ascending
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
+    std::vector<Pregnancy> pregnancies_;                        // by ascending mother id
+    ScheduledQueue<CharacterId> labour_queue_;                  // derived: (due, mother) of the rows above
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
