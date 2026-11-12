@@ -51,6 +51,9 @@
 // i32 delta raw value. Rows are sorted by dynasty id and omitted when prestige and history both
 // have their defaults. Older saves default to initial prestige and empty history.
 //
+// Schema 10 (E9-T15) keeps the byte layout and changes the unit of loan interest carries from
+// millionths to twelve-millionths of a kopeck. Older carries are validated and multiplied by 12.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -812,6 +815,15 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     if (schema < 9) {
         world.economy_migrate_policies();  // 8 -> 9: the policies of the dynasties are all "default"
+    }
+    if (schema < 10) {
+        // 9 -> 10: keep the fractional kopecks while annual ppm use an exact monthly denominator.
+        for (std::int32_t& carry : world.economy_.loans.interest_carry) {
+            if (carry < 0 || carry > 999'999) {
+                return fail("old loan interest carry is out of range");
+            }
+            carry *= 12;
+        }
     }
     world.rebuild_derived_indexes();
     const std::vector<std::string> problems = world.check_invariants();

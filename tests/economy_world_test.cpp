@@ -1099,7 +1099,7 @@ TEST_CASE("economy invariants E-L1: loans") {
     expect_violation(
         [&](World& w) {
             lend(w, 0);
-            state(w).loans.interest_carry[0] = 1'000'000;
+            state(w).loans.interest_carry[0] = kMaxInterestCarry + 1;
         },
         "interest carry");
     expect_violation(

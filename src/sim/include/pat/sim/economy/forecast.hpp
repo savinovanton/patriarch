@@ -21,9 +21,10 @@
 // changed (population, wealth, control, corruption, policies and prices as they are now), by the same
 // functions the simulation uses (compute_province_production, compute_province_income) and the same
 // split between the owner and the crown (post_province_income), plus the flat expenses of the
-// settlement (upkeep of the buildings, the ExpenseSources). That month repeats twelve times; the
-// balance after month `k` is the treasury plus `k` times the net, kept within the bounds of an account.
-// Growth, harvests, riots, new buildings and loans are not predicted (they are not "current rates").
+// settlement (upkeep of the buildings, the ExpenseSources) and interest on outstanding loans. The
+// recurring month repeats twelve times; loan carry advances each month using the settlement formula.
+// Balances stay within the bounds of an account. Growth, harvests, riots, new buildings, new loans
+// and voluntary repayments are not predicted (they are not "current rates").
 //
 // The forecast reads the whole province table once: O(provinces), a few microseconds per province
 // that belongs to the account; it is meant to be asked a few times per frame at most, never per tick.
@@ -41,10 +42,10 @@ inline constexpr std::size_t kForecastMonths = kLedgerRingMonths;
 struct TreasuryForecast {
     /// The balance now.
     Kopecks treasury = 0;
-    /// The expected lines of one month, by the dense index of the ledger code (income positive,
+    /// The expected lines of the next month, by the dense index of the ledger code (income positive,
     /// expense negative) - the same layout as a month of the statement.
     std::array<Kopecks, kLedgerLineCount> monthly_lines{};
-    /// The sum of `monthly_lines`: what the balance changes by in a month.
+    /// The sum of `monthly_lines`: what the balance changes by in the next month.
     Kopecks monthly_net = 0;
     /// The balance at the end of month 1, 2, ..., kForecastMonths from now.
     std::array<Kopecks, kForecastMonths> balance{};

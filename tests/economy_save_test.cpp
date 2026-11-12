@@ -537,6 +537,52 @@ TEST_CASE("migration: a world loaded from an old schema can switch the economy o
     CHECK(again.value().economy().accounts.size() == world.economy().accounts.size() + 1);
 }
 
+TEST_CASE("migration 9 -> 10: loan carries keep their fractional kopecks and migrate only once") {
+    World old = rich_world();
+    // Section 38 keeps its byte layout in schema 10. These are valid schema-9 bytes: its carries
+    // counted millionths of a kopeck, including the largest value the old reader admitted.
+    std::vector<std::uint8_t> fixture = state_bytes(old);
+    put32(fixture, 0, 9);
+    auto migrated = load(fixture);
+    REQUIRE(migrated.has_value());
+    CHECK(migrated.value().economy().loans.interest_carry[0] == 148'140);
+    CHECK(migrated.value().economy().loans.interest_carry[1] == 11'999'988);
+
+    World expected = old;
+    for (std::int32_t& carry : state(expected).loans.interest_carry) {
+        carry *= 12;
+    }
+    CHECK(migrated.value().economy() == expected.economy());
+    CHECK(migrated.value().compute_hash() == expected.compute_hash());
+    require_valid(migrated.value());
+
+    const std::vector<std::uint8_t> current = state_bytes(migrated.value());
+    CHECK(get32(current, 0) == World::kStateSchema);
+    CHECK(current == state_bytes(expected));
+    auto again = load(current);
+    REQUIRE(again.has_value());
+    CHECK(again.value().compute_hash() == expected.compute_hash());
+    CHECK(state_bytes(again.value()) == current);
+}
+
+TEST_CASE("save: loan interest carry bounds follow the declared schema") {
+    World world = rich_world();
+    state(world).loans.interest_carry[0] = kMaxInterestCarry;
+    auto current = load(state_bytes(world));
+    REQUIRE(current.has_value());
+    CHECK(current.value().economy().loans.interest_carry[0] == kMaxInterestCarry);
+
+    // A value admitted by the new unit is still corrupt when a file declares the old unit.
+    for (const std::int32_t invalid : {std::int32_t{-1}, std::int32_t{1'000'000}, kMaxInterestCarry}) {
+        state(world).loans.interest_carry[0] = invalid;
+        std::vector<std::uint8_t> old = state_bytes(world);
+        put32(old, 0, 9);
+        expect_refused(old, "old loan interest carry");
+    }
+    state(world).loans.interest_carry[0] = kMaxInterestCarry + 1;
+    expect_refused(state_bytes(world), "interest carry");
+}
+
 // =================================================================================================
 // the round trip
 // =================================================================================================

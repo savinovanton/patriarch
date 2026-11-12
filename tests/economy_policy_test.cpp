@@ -532,7 +532,7 @@ std::vector<std::uint8_t> as_schema_8(const World& world) {
 }  // namespace
 
 TEST_CASE("migration 8 -> 9: an older save has no choices, so every dynasty is at the default") {
-    REQUIRE(World::kStateSchema == 9);
+    REQUIRE(World::kStateSchema >= 9);
     World world = make_world(8);
     world.economy_columns_mut().tax_policy[2] = 2;  // a decree is a column of the provinces: it is kept
     const std::vector<std::uint8_t> old = as_schema_8(world);

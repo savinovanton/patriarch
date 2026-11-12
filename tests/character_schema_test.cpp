@@ -1396,6 +1396,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     CHECK(static_cast<int>(CommandType::Marry) == 7);
     CHECK(static_cast<int>(CommandType::EndMarriage) == 8);
     CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // E7 block 6..31, in order of arrival
+    CHECK(static_cast<int>(CommandType::TakeLoan) == 38);
+    CHECK(static_cast<int>(CommandType::RepayLoan) == 39);
 
     const std::vector<std::pair<Command, CommandType>> cases = {
         {Command{DynastyId(), cmd::SetProvinceOwner{}}, CommandType::SetProvinceOwner},
@@ -1414,6 +1416,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
         {Command{DynastyId(), cmd::ConscriptRecruits{ProvinceId(5), 250}}, CommandType::ConscriptRecruits},
         {Command{DynastyId(), cmd::StartConstruction{ProvinceId(6), 3}}, CommandType::StartConstruction},
         {Command{DynastyId(), cmd::CancelConstruction{ProvinceId(7), 2}}, CommandType::CancelConstruction},
+        {Command{DynastyId(2), cmd::TakeLoan{12'345'678'901}}, CommandType::TakeLoan},
+        {Command{DynastyId(2), cmd::RepayLoan{7, 87'654'321}}, CommandType::RepayLoan},
     };
     for (const auto& [command, tag] : cases) {
         CHECK(type_of(command) == tag);
@@ -1439,7 +1443,7 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
                                    std::uint8_t{10},
                                    std::uint8_t{11},
                                    std::uint8_t{31},
-                                   std::uint8_t{38},
+                                   std::uint8_t{63},
                                    std::uint8_t{255}}) {
         std::vector<std::uint8_t> bytes(40, 0);
         bytes[0] = tag;

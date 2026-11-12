@@ -51,8 +51,9 @@ inline constexpr std::uint32_t kMaxProvincePersons = 32'000'000;
 /// Bounds of the growth columns (section 4.5).
 inline constexpr std::int32_t kMaxGrowthModifierPpm = 1'000'000;
 inline constexpr std::int32_t kMaxGrowthCarry = 999'999;
-/// Bound of the interest remainder of a loan (section 4.7).
-inline constexpr std::int32_t kMaxInterestCarry = 999'999;
+/// Exact monthly denominator for annual ppm interest, and the bound of its remainder (section 4.7).
+inline constexpr std::int32_t kInterestCarryDenominator = 12'000'000;
+inline constexpr std::int32_t kMaxInterestCarry = kInterestCarryDenominator - 1;
 
 // ---- bounds of the Fixed32 columns ---------------------------------------------------------------
 inline constexpr core::Fixed32 kMoodMax = core::Fixed32::from_int(100);  // mood: -100..100
@@ -300,7 +301,7 @@ struct LoanTable {
     std::vector<std::int32_t> rate_ppm_year;
     std::vector<Date> issued;
     std::vector<Date> due;
-    std::vector<std::int32_t> interest_carry;  ///< 0..999999
+    std::vector<std::int32_t> interest_carry;  ///< 0..kMaxInterestCarry, annual ppm * kopecks
     std::vector<std::uint8_t> overdue;         ///< 0 / 1
     std::vector<ProvinceId> collateral;        ///< reserved (Q3), invalid in M1
 

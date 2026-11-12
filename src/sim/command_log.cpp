@@ -127,6 +127,11 @@ struct Writer {
         out.u32(c.province.value());
         out.u8(c.slot);
     }
+    void operator()(const cmd::TakeLoan& c) const { out.i64(c.amount_kop); }
+    void operator()(const cmd::RepayLoan& c) const {
+        out.u32(c.loan_id);
+        out.i64(c.amount_kop);
+    }
     void operator()(const cmd::AdjustOpinion& c) const {
         out.u32(c.from.value());
         out.u32(c.to.value());
@@ -329,6 +334,14 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::CancelConstruction: {
             const ProvinceId province(in.u32());
             out.payload = cmd::CancelConstruction{province, in.u8()};
+            break;
+        }
+        case CommandType::TakeLoan:
+            out.payload = cmd::TakeLoan{in.i64()};
+            break;
+        case CommandType::RepayLoan: {
+            const std::uint32_t loan_id = in.u32();
+            out.payload = cmd::RepayLoan{loan_id, in.i64()};
             break;
         }
         case CommandType::AdjustUnity:

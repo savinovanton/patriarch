@@ -85,7 +85,7 @@ economy_rules "main" {
         quota_penalty_honor = 5
     }
 
-    # F12-F14: займы у казны (GDD 03 §7.3). Q3 (#138) открыт: простой заём, лимит от чести,
+    # F12-F14: займы у казны (GDD 03 §7.3). Решение Q3 (#138): простой заём, лимит от чести,
     # фиксированный процент.
     loans {
         rate_ppm_year = 100000           # 10 % в год
@@ -95,6 +95,8 @@ economy_rules "main" {
         bankruptcy_threshold_kop = 5000000
         bankruptcy_exit_kop = 2500000
         max_loans_per_dynasty = 3
+        overdue_penalty_honor = 20        # [предл.] один раз за просрочку займа
+        bankruptcy_penalty_honor = 100    # [предл.] один раз при входе в банкротство
     }
 
     # F15-F16: общие правила строительства. Здания — buildings.pd.

@@ -105,6 +105,8 @@ constexpr std::array kTermKeys{
     TermKey{term::kLoanBase, "economy.loan.base"},
     TermKey{term::kLoanHonor, "economy.loan.honor"},
     TermKey{term::kLoanDebt, "economy.loan.debt"},
+    TermKey{term::kLoanTotal, "economy.loan.total"},
+    TermKey{term::kLoanClamp, "economy.loan.clamp"},
 
     TermKey{term::kUnrestGroupFirst + 0, "economy.unrest.nobility"},
     TermKey{term::kUnrestGroupFirst + 1, "economy.unrest.clergy"},
