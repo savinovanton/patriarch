@@ -8,12 +8,12 @@
 <!-- Start menu (UI-D12, boards "МЕНЮ / ..."): one full-screen document that shows the current screen of the
      MenuNavigator. Fixed captions are `{{ rev | tr('key') }}`: `tr` reads the string table, `rev` changes when the
      language does (it only makes the expression depend on something). -->
-<body data-model="menu" data-event-keydown="key()">
+<body data-model="menu">
 <div id="menu">
 
     <div id="menu-paper" data-if="screen == 'overview'"></div>
     <div id="menu-art" data-if="screen != 'overview'" data-style-decorator="art_deco"></div>
-    <div id="menu-shade" data-if="screen != 'overview'" data-class-dim="screen != 'main'"></div>
+    <div id="menu-shade" data-if="screen != 'overview'" data-class-dim="screen != 'main'" data-class-world="screen == 'world'" data-class-ready="wv.ready"></div>
     <div id="menu-contrast" data-if="screen == 'main'"></div>
     <div id="menu-contrast-left" data-if="screen == 'main'"></div>
 
@@ -48,11 +48,15 @@
             </div>
         </div>
 
-        <!-- ================= page frame of the load and about screens ================= -->
-        <div id="screen-page" class="screen" data-if="screen == 'load' || screen == 'about'">
+        <!-- ================= header of every screen but the main menu and the overview ================= -->
+        <div id="screen-head" class="screen" data-if="screen != 'main' &amp;&amp; screen != 'overview'">
             <svg id="page-shield" data-attr-src="icons + '/shield@gold.svg'"/>
             <div id="page-brand">{{ rev | tr('ui.menu.brand') }}</div>
             <div id="page-caption">{{ page_caption }}</div>
+        </div>
+
+        <!-- ================= page frame of the load, about, new game, own house and goal screens ================= -->
+        <div id="screen-page" class="screen" data-if="paged">
             <div id="panel"></div>
             <div id="panel-rule"></div>
             <div id="page-eyebrow">{{ rev | tr('ui.menu.eyebrow') }}</div>
@@ -60,7 +64,7 @@
             <div id="page-subtitle">{{ page_subtitle }}</div>
             <div class="page-divider" id="page-divider-top"></div>
             <div class="page-divider" id="page-divider-bottom"></div>
-            <button id="btn-main" class="btn" data-event-click="back()">{{ rev | tr('ui.menu.button.main') }}</button>
+            <button id="btn-main" class="btn" data-event-click="back()"><span class="btn-text">{{ back_label }}</span></button>
         </div>
 
         <!-- ================= load (boards 07, 08) ================= -->
@@ -95,16 +99,14 @@
                 </div>
             </div>
             <button id="btn-load" class="btn btn-primary" data-if="has_saves" data-event-click="load()">
-                <svg data-attr-src="icons + '/play@gold.svg'"/>{{ rev | tr('ui.menu.load.button') }}
-            </button>
+                <svg data-attr-src="icons + '/play@gold.svg'"/><span class="btn-text">{{ rev | tr('ui.menu.load.button') }}</span></button>
 
             <div id="load-empty" data-if="!has_saves">
                 <svg id="load-empty-icon" data-attr-src="icons + '/scroll@muted.svg'"/>
                 <div id="load-empty-title">{{ rev | tr('ui.menu.load.empty.title') }}</div>
                 <div id="load-empty-text">{{ rev | tr('ui.menu.load.empty.line1') }}<br/>{{ rev | tr('ui.menu.load.empty.line2') }}</div>
                 <button id="btn-new" class="btn btn-primary" data-event-click="item('new')">
-                    <svg data-attr-src="icons + '/quill@gold.svg'"/>{{ rev | tr('ui.menu.item.new') }}
-                </button>
+                    <svg data-attr-src="icons + '/quill@gold.svg'"/><span class="btn-text">{{ rev | tr('ui.menu.item.new') }}</span></button>
             </div>
         </div>
 
@@ -136,6 +138,139 @@
             </div>
         </div>
 
+        <!-- ================= new game: choice of the house (board 03) ================= -->
+        <div id="screen-newgame" class="screen" data-if="screen == 'newgame'">
+            <button class="house" data-for="h : houses" data-attr-id="'house-' + h.index"
+                    data-style-left="h.left" data-style-top="h.top"
+                    data-class-selected="sel_house == h.index" data-class-custom="h.custom"
+                    data-event-click="house(h.index)" data-event-focus="house_focus(h.index)">
+                <div class="house-frame"></div>
+                <svg class="house-icon" data-attr-src="h.icon"/>
+                <div class="house-badge">{{ sel_house == h.index ? chosen : h.badge }}</div>
+                <div class="house-name">{{ h.name }}</div>
+                <div class="house-line">{{ h.line }}</div>
+                <div class="house-note" data-class-custom="h.custom">{{ h.note }}</div>
+            </button>
+            <div id="house-summary" data-if="has_house">
+                <div id="hsum-portrait" data-style-decorator="hs.portrait"></div>
+                <div id="hsum-name">{{ hs.name }}</div>
+                <div id="hsum-head">{{ hs.head }}</div>
+                <div id="hsum-head-line">{{ hs.head_line }}</div>
+                <div id="hsum-members">{{ hs.members }}</div>
+                <div class="page-divider" id="hsum-divider"></div>
+                <div class="hsum-key" id="hsum-key-0">{{ rev | tr('ui.menu.newgame.sum.treasury') }}</div>
+                <div class="hsum-value" id="hsum-value-0">{{ hs.treasury }}</div>
+                <div class="hsum-key" id="hsum-key-1">{{ rev | tr('ui.menu.newgame.sum.prestige') }}</div>
+                <div class="hsum-value" id="hsum-value-1">{{ hs.prestige }}</div>
+                <div class="hsum-key" id="hsum-key-2">{{ rev | tr('ui.menu.newgame.sum.heir') }}</div>
+                <div class="hsum-value" id="hsum-value-2">{{ hs.heir }}</div>
+                <div id="hsum-blurb">{{ rev | tr('ui.menu.newgame.blurb.line1') }}<br/>{{ rev | tr('ui.menu.newgame.blurb.line2') }}</div>
+            </div>
+        </div>
+
+        <!-- ================= own house (board 04) ================= -->
+        <div id="screen-custom" class="screen" data-if="screen == 'custom'">
+            <div class="cl" style="left: 128dp; top: 344dp; width: 508dp;" id="cl-surname">{{ rev | tr('ui.menu.custom.field.surname') }}</div>
+            <input type="text" id="in-surname" class="cfield" style="left: 128dp; top: 374dp; width: 508dp;" maxlength="24"
+                   data-attr-value="cf.surname" data-event-change="edit('surname')"/>
+            <div class="cl" style="left: 664dp; top: 344dp; width: 508dp;" id="cl-house">{{ rev | tr('ui.menu.custom.field.house') }}</div>
+            <input type="text" id="in-house" class="cfield" style="left: 664dp; top: 374dp; width: 508dp;" maxlength="24"
+                   data-attr-value="cf.house" data-event-change="edit('house')"/>
+            <div class="cl" style="left: 128dp; top: 454dp; width: 508dp;" id="cl-name">{{ rev | tr('ui.menu.custom.field.name') }}</div>
+            <input type="text" id="in-name" class="cfield" style="left: 128dp; top: 484dp; width: 508dp;" maxlength="24"
+                   data-attr-value="cf.name" data-event-change="edit('name')"/>
+            <div class="cl" style="left: 664dp; top: 454dp; width: 508dp;" id="cl-patronymic">{{ rev | tr('ui.menu.custom.field.patronymic') }}</div>
+            <input type="text" id="in-patronymic" class="cfield" style="left: 664dp; top: 484dp; width: 508dp;" maxlength="24"
+                   data-attr-value="cf.patronymic" data-event-change="edit('patronymic')"/>
+            <div class="cl" style="left: 128dp; top: 564dp; width: 1044dp;" id="cl-motto">{{ rev | tr('ui.menu.custom.field.motto') }}</div>
+            <input type="text" id="in-motto" class="cfield" style="left: 128dp; top: 594dp; width: 1044dp;" maxlength="48"
+                   data-attr-value="cf.motto" data-event-change="edit('motto')"/>
+            <div class="cl" style="left: 128dp; top: 691dp; width: 508dp;" id="cl-look">{{ rev | tr('ui.menu.custom.field.look') }}</div>
+            <button id="sel-look" class="cselect" style="left: 128dp; top: 722dp;" data-event-click="cycle('look')">
+                <div class="cselect-text">{{ cf.look }}</div>
+                <svg class="cselect-chevron" data-attr-src="icons + '/chevron@muted.svg'"/>
+            </button>
+            <div class="cl" style="left: 664dp; top: 691dp; width: 508dp;" id="cl-faith">{{ rev | tr('ui.menu.custom.field.faith') }}</div>
+            <button id="sel-faith" class="cselect" style="left: 664dp; top: 722dp;" data-event-click="cycle('faith')">
+                <div class="cselect-text">{{ cf.faith }}</div>
+                <svg class="cselect-chevron" data-attr-src="icons + '/chevron@muted.svg'"/>
+            </button>
+            <div id="cust-reason" class="reason" data-if="!cust_ok">{{ rev | tr('ui.menu.custom.reason') }}</div>
+
+            <div id="custom-summary">
+                <div id="csum-portrait" data-style-decorator="cs.portrait"></div>
+                <div id="csum-name">{{ cs.line1 }}<br/>{{ cs.line2 }}</div>
+                <div id="csum-role">{{ rev | tr('ui.menu.custom.role') }}</div>
+                <div id="csum-badge">{{ rev | tr('ui.menu.custom.badge') }}</div>
+                <div class="page-divider" id="csum-divider"></div>
+                <div id="csum-caption">{{ rev | tr('ui.menu.custom.heraldry') }}</div>
+                <svg id="csum-shield" data-attr-src="icons + '/shield@green.svg'"/>
+                <div id="csum-heraldry">{{ rev | tr('ui.menu.custom.heraldry.name') }}</div>
+                <div id="csum-motto">{{ cs.motto }}</div>
+                <div class="csum-colour" id="csum-green"></div>
+                <div class="csum-colour" id="csum-gold"></div>
+                <div id="csum-note">{{ rev | tr('ui.menu.custom.note') }}</div>
+            </div>
+        </div>
+
+        <!-- ================= goal of the game (boards 05, 06) ================= -->
+        <div id="screen-goal" class="screen" data-if="screen == 'goal'">
+            <button class="goal" data-for="g : goals" data-attr-id="'goal-' + g.index"
+                    data-style-left="g.left" data-style-top="g.top" data-style-width="g.width"
+                    data-class-selected="sel_goal == g.index"
+                    data-event-click="goal(g.index)" data-event-focus="goal(g.index)">
+                <div class="goal-frame"></div>
+                <svg class="goal-icon" data-attr-src="g.icon"/>
+                <div class="goal-title">{{ g.title }}</div>
+                <div class="goal-line">{{ g.line }}</div>
+                <div class="goal-badge" data-if="sel_goal == g.index">{{ chosen }}</div>
+            </button>
+            <div id="goal-summary">
+                <div id="gsum-caption">{{ rev | tr('ui.menu.goal.summary') }}</div>
+                <div id="gsum-house">{{ gs.house }}</div>
+                <div id="gsum-head">{{ gs.head }}</div>
+                <div class="page-divider" id="gsum-divider-top"></div>
+                <div id="gsum-keys">
+                    <div>{{ rev | tr('ui.menu.goal.key.date') }}</div>
+                    <div>{{ rev | tr('ui.menu.goal.key.goal') }}</div>
+                    <div>{{ rev | tr('ui.menu.goal.key.mode') }}</div>
+                    <div>{{ rev | tr('ui.menu.goal.key.treasury') }}</div>
+                </div>
+                <div id="gsum-values">
+                    <div>{{ gs.date }}</div>
+                    <div>{{ gs.goal }}</div>
+                    <div>{{ gs.mode }}</div>
+                    <div>{{ gs.treasury }}</div>
+                </div>
+                <div class="page-divider" id="gsum-divider-bottom"></div>
+                <div id="gsum-blurb">{{ rev | tr('ui.menu.goal.blurb.line1') }}<br/>{{ rev | tr('ui.menu.goal.blurb.line2') }}<br/>{{ rev | tr('ui.menu.goal.blurb.line3') }}</div>
+                <div id="gsum-paused">{{ rev | tr('ui.menu.goal.paused') }}</div>
+            </div>
+        </div>
+
+        <!-- ================= next step of the start flow (boards 03 to 05) ================= -->
+        <div id="screen-next" class="screen" data-if="screen == 'newgame' || screen == 'custom' || screen == 'goal'">
+            <button id="btn-next" class="btn btn-primary" data-class-is-disabled="!next_ok" data-event-click="next()">
+                <svg data-attr-src="next_icon"/><span class="btn-text">{{ next_label }}</span></button>
+        </div>
+
+        <!-- ================= world: preparation and "Мир готов" (boards "Подготовка мира", "Мир готов") ================= -->
+        <div id="screen-world" class="screen" data-if="screen == 'world'">
+            <div id="wd-title" data-class-ready="wv.ready">{{ wv.title }}</div>
+            <div id="wd-house" data-class-ready="wv.ready">{{ wv.house_line }}</div>
+            <div class="wd-stage" id="wd-s0" data-if="!wv.ready" data-class-active="wv.stage == 0">{{ wv.stage0 }}</div>
+            <div class="wd-stage" id="wd-s1" data-if="!wv.ready" data-class-active="wv.stage == 1">{{ wv.stage1 }}</div>
+            <div class="wd-stage" id="wd-s2" data-if="!wv.ready" data-class-active="wv.stage == 2">{{ wv.stage2 }}</div>
+            <div id="wd-ready-text" data-if="wv.ready">{{ rev | tr('ui.menu.world.ready.line1') }}<br/>{{ rev | tr('ui.menu.world.ready.line2') }}</div>
+            <div id="wd-track"><div id="wd-bar" data-style-width="wv.bar"></div></div>
+            <div id="wd-percent">{{ wv.percent }}</div>
+            <div id="wd-hint" data-if="!wv.ready">{{ rev | tr('ui.menu.world.hint') }}</div>
+            <div id="wd-note" data-if="wv.ready">{{ rev | tr('ui.menu.world.ready.note') }}</div>
+            <button id="btn-cancel" class="btn" data-if="!wv.ready" data-event-click="back()"><span class="btn-text">{{ rev | tr('ui.menu.world.cancel') }}</span></button>
+            <button id="btn-enter" class="btn btn-primary" data-if="wv.ready" data-event-click="enter()">
+                <svg data-attr-src="icons + '/play@gold.svg'"/><span class="btn-text">{{ wv.enter }}</span></button>
+        </div>
+
         <!-- ================= overview of the start screens (board "Обзор стартовых экранов") ================= -->
         <div id="screen-overview" class="screen" data-if="screen == 'overview'">
             <div id="ov-eyebrow">{{ rev | tr('ui.menu.overview.caption') }}</div>
@@ -161,15 +296,15 @@
             <div class="dialog-rule"></div>
             <div class="dialog-title">{{ rev | tr('ui.menu.exit.title') }}</div>
             <div class="dialog-text" id="dialog-exit-text">{{ rev | tr('ui.menu.exit.text') }}</div>
-            <button id="dlg-stay" class="btn" data-event-click="dialog('stay')">{{ rev | tr('ui.menu.exit.stay') }}</button>
-            <button id="dlg-exit" class="btn btn-primary" data-event-click="dialog('exit')">{{ rev | tr('ui.menu.item.exit') }}</button>
+            <button id="dlg-stay" class="btn" data-event-click="dialog('stay')"><span class="btn-text">{{ rev | tr('ui.menu.exit.stay') }}</span></button>
+            <button id="dlg-exit" class="btn btn-primary" data-event-click="dialog('exit')"><span class="btn-text">{{ rev | tr('ui.menu.item.exit') }}</span></button>
         </div>
         <div id="dialog-unavailable" class="dialog" data-if="dialog == 'unavailable'">
             <div class="dialog-frame"></div>
             <div class="dialog-rule"></div>
             <div class="dialog-title">{{ rev | tr('ui.menu.unavailable.title') }}</div>
             <div class="dialog-text" id="dialog-unavailable-text">{{ rev | tr('ui.menu.unavailable.line1') }}<br/>{{ rev | tr('ui.menu.unavailable.line2') }}<br/>{{ rev | tr('ui.menu.unavailable.line3') }}</div>
-            <button id="dlg-back" class="btn btn-primary" data-event-click="dialog('back')">{{ rev | tr('ui.menu.unavailable.button') }}</button>
+            <button id="dlg-back" class="btn btn-primary" data-event-click="dialog('back')"><span class="btn-text">{{ rev | tr('ui.menu.unavailable.button') }}</span></button>
         </div>
     </div>
 

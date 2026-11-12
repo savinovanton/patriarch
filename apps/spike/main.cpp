@@ -128,6 +128,7 @@ struct Options {
     bool gallery = false;          // --gallery: the page of the shared UI components over everything
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     int menu = 0;                  // --menu: start menu over everything (1 with demo saves, 2 --menu-first, 3 --menu-overview)
+    std::string menu_screen;       // --menu-screen NAME: the screen the menu opens at (screenshots; see open_menu_screen)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
     int offscreen_h = 0;
@@ -199,6 +200,11 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.menu = 2;
         } else if (arg == "--menu-overview") {
             out.menu = 3;
+        } else if (arg == "--menu-screen" && i + 1 < argc) {
+            out.menu_screen = argv[++i];
+            if (out.menu == 0) {
+                out.menu = 1;
+            }
         } else if (arg == "--no-hud") {
             out.no_hud = true;
         } else if (arg == "--no-labels") {
@@ -252,7 +258,7 @@ bool parse_options(int argc, char** argv, Options& out) {
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
                          "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
-                         "                       [--menu | --menu-first | --menu-overview]\n");
+                         "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME]\n");
             return false;
         }
     }
@@ -287,6 +293,41 @@ const char* mode_name(pat::engine::MapMode m) {
         case pat::engine::MapMode::Mood: return "mood";
         case pat::engine::MapMode::Random: return "random";
         default: return "?";
+    }
+}
+
+/// Opens the start menu at the screen `name` (--menu-screen; the screenshots of the boards): main, load, about,
+/// overview, new (choice of the house), custom (own house), goal, goal-custom, world (preparation at 68 %),
+/// restore, ready (world ready), saved (save ready). An empty or unknown name opens the main menu.
+void open_menu_screen(pat::ui::MenuWindow& menu, const std::string& name) {
+    using pat::ui::MenuScreen;
+    using pat::ui::MenuWorldKind;
+    if (name == "load") {
+        menu.open(MenuScreen::Load);
+    } else if (name == "about") {
+        menu.open(MenuScreen::About);
+    } else if (name == "overview") {
+        menu.open(MenuScreen::Overview);
+    } else if (name == "new") {
+        menu.open(MenuScreen::NewGame);
+    } else if (name == "custom") {
+        menu.open(MenuScreen::Custom);
+    } else if (name == "goal" || name == "goal-custom") {
+        menu.set_custom_flow(name == "goal-custom");
+        menu.open(MenuScreen::Goal);
+    } else if (name == "world") {
+        menu.open_world(MenuWorldKind::NewGame, 68);
+    } else if (name == "restore") {
+        menu.open_world(MenuWorldKind::Restore, 68);
+    } else if (name == "ready") {
+        menu.open_world(MenuWorldKind::NewGame, 100);
+    } else if (name == "saved") {
+        menu.open_world(MenuWorldKind::Restore, 100);
+    } else {
+        if (!name.empty() && name != "main") {
+            PAT_LOG_WARN("spike", "menu: unknown screen '{}'", name);
+        }
+        menu.open(MenuScreen::Main);
     }
 }
 
@@ -407,6 +448,7 @@ int main(int argc, char** argv) {
     FrameClock clock;
     std::vector<Event> events;
     bool running = true;
+    float menu_prepare = -1.0f;  // seconds since the start of the pretended world preparation of the menu; <0: idle
     std::uint64_t logic_steps = 0;
     // The layout of the HUD is drawn for 1080p: the UI scale follows the window height (design_ui_scale).
     float ui_scale = design_ui_scale(renderer->size(), opt.user_ui_scale);
@@ -783,14 +825,33 @@ int main(int argc, char** argv) {
                 menu = std::move(menu_result).value();
                 // PLACEHOLDER saves of the mockup until the save catalogue exists; --menu-first shows the first run.
                 menu->set_snapshot(opt.menu == 2 ? pat::ui::MenuSnapshot{} : pat::ui::make_placeholder_menu(ui_loc));
+                menu->set_new_game(pat::ui::make_placeholder_new_game(ui_loc));  // PLACEHOLDER houses and goals
                 pat::ui::MenuActions actions;
-                actions.new_game = [] { PAT_LOG_INFO("spike", "menu: new game (stub)"); };
-                actions.continue_game = [] { PAT_LOG_INFO("spike", "menu: continue (stub)"); };
-                actions.load_save = [](const std::string& id) { PAT_LOG_INFO("spike", "menu: load '{}' (stub)", id); };
+                // The preparation of the world is pretended: a few seconds of progress, then "Мир готов".
+                actions.start_game = [&menu_prepare](const pat::ui::MenuStart& start) {
+                    PAT_LOG_INFO("spike", "menu: start game '{}' goal '{}' (stub)", start.house_id, start.goal_id);
+                    menu_prepare = 0.0f;
+                };
+                actions.continue_game = [&menu_prepare] {
+                    PAT_LOG_INFO("spike", "menu: continue (stub)");
+                    menu_prepare = 0.0f;
+                };
+                actions.load_save = [&menu_prepare](const std::string& id) {
+                    PAT_LOG_INFO("spike", "menu: load '{}' (stub)", id);
+                    menu_prepare = 0.0f;
+                };
+                actions.cancel_prepare = [&menu_prepare] {
+                    PAT_LOG_INFO("spike", "menu: preparation cancelled (stub)");
+                    menu_prepare = -1.0f;
+                };
+                actions.enter_game = [&menu] {
+                    PAT_LOG_INFO("spike", "menu: enter the game (stub)");
+                    menu->close();
+                };
                 actions.open_settings = [] { PAT_LOG_INFO("spike", "menu: settings (stub)"); };
                 actions.quit = [&running] { running = false; };
                 menu->set_actions(std::move(actions));
-                menu->open(opt.menu == 3 ? pat::ui::MenuScreen::Overview : pat::ui::MenuScreen::Main);
+                open_menu_screen(*menu, opt.menu == 3 ? "overview" : opt.menu_screen);
             } else {
                 PAT_LOG_WARN("spike", "menu: {}", menu_result.error().message);
             }
@@ -1329,6 +1390,15 @@ int main(int argc, char** argv) {
                 const std::int64_t ui_t1 = now_ns();
                 ui->update();
                 if (menu) {
+                    if (menu_prepare >= 0.0f && menu->visible()) {
+                        menu_prepare += frame_dt;
+                        constexpr float kPrepareSeconds = 4.0f;
+                        const int percent = std::min(100, static_cast<int>(menu_prepare / kPrepareSeconds * 100.0f));
+                        menu->set_progress(percent, percent < 34 ? 0 : (percent < 67 ? 1 : 2));
+                        if (percent >= 100) {
+                            menu_prepare = -1.0f;
+                        }
+                    }
                     menu->update();
                 }
                 const std::int64_t ui_t2 = now_ns();

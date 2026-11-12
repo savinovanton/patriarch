@@ -387,7 +387,7 @@
     width: 1658dp;
     font-size: $type_17;
     color: $muted;
-    white-space: nowrap;
+    white-space: pre; /* the steps "1  Род    ›    2  Цель партии" keep their spaces */
 }
 
 .page-divider {
@@ -1025,4 +1025,709 @@ scrollbarvertical sliderarrowinc {
     left: 32dp;
     top: 304dp;
     width: 636dp;
+}
+
+/* ---- shade of the world screen: a little lighter than the pages, the art shows through */
+#menu-shade.world {
+    background-color: $ink_a47;
+}
+
+#menu-shade.world.ready {
+    background-color: $ink_a44;
+}
+
+/* ---- new game: the choice of the house (board 03) */
+.house {
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    width: 510dp;
+    height: 236dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper2;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.house.selected {
+    background-color: $paper;
+}
+
+.house-frame,
+.goal-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: $stroke_hairline $line;
+}
+
+.house:hover .house-frame,
+.goal:hover .goal-frame {
+    border-color: $green;
+}
+
+.house.selected .house-frame,
+.goal.selected .goal-frame {
+    border: $stroke_window $green;
+}
+
+.kbd .house:focus .house-frame,
+.kbd .goal:focus .goal-frame {
+    border: $focus_ring $gold;
+}
+
+.house-icon {
+    position: absolute;
+    left: 22dp;
+    top: 24dp;
+    width: 31dp;
+    height: 33dp;
+}
+
+.house-badge {
+    position: absolute;
+    left: 206dp;
+    top: 24dp;
+    width: 282dp;
+    height: $badge_h;
+    background-color: $paper;
+    border-radius: $radius;
+    text-align: center;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 28dp;
+    color: $muted;
+}
+
+.house.selected .house-badge {
+    background-color: $green;
+    color: $light;
+}
+
+.house-name {
+    position: absolute;
+    left: 22dp;
+    top: 87dp;
+    width: 466dp;
+    font-family: $serif;
+    font-size: $type_29;
+    color: $text;
+    white-space: nowrap;
+}
+
+.house-line {
+    position: absolute;
+    left: 24dp;
+    top: 144dp;
+    width: 462dp;
+    font-size: $type_17;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.house-note {
+    position: absolute;
+    left: 24dp;
+    top: 197dp;
+    width: 462dp;
+    font-size: $type_13;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.house-note.custom {
+    color: $green;
+}
+
+#house-summary,
+#custom-summary,
+#goal-summary {
+    position: absolute;
+    left: 1206dp;
+    top: 340dp;
+    width: 590dp;
+    height: 528dp;
+    background-color: $paper2;
+}
+
+#hsum-portrait,
+#csum-portrait {
+    position: absolute;
+    left: 24dp;
+    top: 24dp;
+    width: 156dp;
+    height: 195dp;
+    background-color: $line;
+}
+
+#hsum-name {
+    position: absolute;
+    left: 208dp;
+    top: 25dp;
+    width: 358dp;
+    font-family: $serif;
+    font-size: $type_31;
+    color: $text;
+    white-space: nowrap;
+}
+
+#hsum-head {
+    position: absolute;
+    left: 210dp;
+    top: 88dp;
+    width: 356dp;
+    font-family: $serif;
+    font-size: $type_21;
+    color: $text;
+    white-space: nowrap;
+}
+
+#hsum-head-line {
+    position: absolute;
+    left: 210dp;
+    top: 128dp;
+    width: 356dp;
+    font-size: $type_15;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#hsum-members,
+#csum-badge {
+    position: absolute;
+    left: 210dp;
+    width: 356dp;
+    height: $badge_h;
+    background-color: $paper;
+    border-radius: $radius;
+    text-align: center;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 28dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+#hsum-members {
+    top: 173dp;
+}
+
+#csum-badge {
+    top: 180dp;
+}
+
+#hsum-divider,
+#csum-divider {
+    left: 24dp;
+    top: 252dp;
+    width: 542dp;
+}
+
+.hsum-key,
+.hsum-value {
+    position: absolute;
+    white-space: nowrap;
+}
+
+.hsum-key {
+    left: 24dp;
+    width: 254dp;
+    font-size: $type_17;
+    color: $muted;
+}
+
+.hsum-value {
+    left: 284dp;
+    width: 282dp;
+    font-size: $type_19;
+    font-weight: bold;
+    color: $text;
+}
+
+#hsum-key-0, #hsum-value-0 { top: 278dp; }
+#hsum-key-1, #hsum-value-1 { top: 326dp; }
+#hsum-key-2, #hsum-value-2 { top: 374dp; }
+
+#hsum-blurb {
+    position: absolute;
+    left: 24dp;
+    top: 441dp;
+    width: 542dp;
+    font-family: $serif;
+    font-size: $type_19;
+    color: $text;
+    white-space: nowrap;
+}
+
+/* ---- next step of the start flow */
+#btn-next {
+    position: absolute;
+    left: 1384dp;
+    top: 926dp;
+    width: 408dp;
+    height: 50dp;
+}
+
+/* ---- own house (board 04) */
+.cl {
+    position: absolute;
+    font-size: $type_14;
+    color: $muted;
+    white-space: nowrap;
+}
+
+input.cfield {
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    height: 50dp;
+    padding: 0 15dp;
+    background-color: $paper;
+    border: $stroke_hairline $line;
+    border-radius: $radius;
+    font-family: $sans;
+    font-size: $type_18;
+    line-height: 48dp;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: text;
+}
+
+input.cfield:focus {
+    padding: 0 14dp;
+    border: $focus_ring $gold;
+}
+
+.cselect {
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    width: 508dp;
+    height: 48dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper2;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.cselect:hover {
+    background-color: $line;
+}
+
+.kbd .cselect:focus {
+    border: $focus_ring $gold;
+}
+
+.cselect-text {
+    position: absolute;
+    left: 16dp;
+    top: 12dp;
+    width: 450dp;
+    font-size: $type_17;
+    color: $text;
+    white-space: nowrap;
+}
+
+.cselect-chevron {
+    position: absolute;
+    left: 474dp;
+    top: 12dp;
+    width: $icon_size;
+    height: $icon_size;
+    transform: rotate(90deg);
+}
+
+#cust-reason {
+    position: absolute;
+    left: 420dp;
+    top: 935dp;
+    width: 940dp;
+    white-space: nowrap;
+}
+
+#csum-name {
+    position: absolute;
+    left: 208dp;
+    top: 24dp;
+    width: 358dp;
+    font-family: $serif;
+    font-size: $type_29;
+    color: $text;
+    white-space: nowrap;
+}
+
+#csum-role {
+    position: absolute;
+    left: 210dp;
+    top: 132dp;
+    width: 356dp;
+    font-size: $type_17;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#csum-caption {
+    position: absolute;
+    left: 24dp;
+    top: 279dp;
+    width: 542dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+#csum-shield {
+    position: absolute;
+    left: 54dp;
+    top: 332dp;
+    width: 86dp;
+    height: 112dp;
+}
+
+#csum-heraldry {
+    position: absolute;
+    left: 194dp;
+    top: 337dp;
+    width: 372dp;
+    font-family: $serif;
+    font-size: $type_23;
+    color: $text;
+    white-space: nowrap;
+}
+
+#csum-motto {
+    position: absolute;
+    left: 194dp;
+    top: 390dp;
+    width: 372dp;
+    font-family: $serif;
+    font-size: $type_19;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.csum-colour {
+    position: absolute;
+    top: 449dp;
+    width: 42dp;
+    height: 28dp;
+}
+
+#csum-green {
+    left: 196dp;
+    background-color: $green;
+}
+
+#csum-gold {
+    left: 250dp;
+    background-color: $gold;
+}
+
+#csum-note {
+    position: absolute;
+    left: 24dp;
+    top: 493dp;
+    width: 542dp;
+    font-size: $type_13;
+    color: $muted;
+    white-space: nowrap;
+}
+
+/* ---- goal of the game (boards 05, 06) */
+.goal {
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    height: 150dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper2;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.goal.selected {
+    background-color: $paper;
+}
+
+.goal-icon {
+    position: absolute;
+    left: 20dp;
+    top: 21dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+.goal-title {
+    position: absolute;
+    left: 61dp;
+    right: 22dp;
+    top: 17dp;
+    font-family: $serif;
+    font-size: $type_24;
+    color: $text;
+    white-space: nowrap;
+}
+
+.goal-line {
+    position: absolute;
+    left: 22dp;
+    right: 22dp;
+    top: 72dp;
+    font-size: $type_16;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.goal-badge {
+    position: absolute;
+    left: 22dp;
+    top: 111dp;
+    width: 156dp;
+    height: $badge_h;
+    background-color: $green;
+    border-radius: $radius;
+    text-align: center;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 28dp;
+    color: $light;
+}
+
+#gsum-caption {
+    position: absolute;
+    left: 24dp;
+    top: 26dp;
+    width: 542dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+#gsum-house {
+    position: absolute;
+    left: 22dp;
+    top: 72dp;
+    width: 546dp;
+    font-family: $serif;
+    font-size: $type_33;
+    color: $text;
+    white-space: nowrap;
+}
+
+#gsum-head {
+    position: absolute;
+    left: 24dp;
+    top: 133dp;
+    width: 542dp;
+    font-size: $type_18;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#gsum-divider-top {
+    left: 24dp;
+    top: 183dp;
+    width: 542dp;
+}
+
+#gsum-divider-bottom {
+    left: 24dp;
+    top: 322dp;
+    width: 542dp;
+}
+
+#gsum-keys,
+#gsum-values {
+    position: absolute;
+    top: 215dp;
+    height: 98dp;
+    font-size: $type_18;
+    line-height: 24.5dp;
+    white-space: nowrap;
+}
+
+#gsum-keys {
+    left: 24dp;
+    width: 235dp;
+    color: $muted;
+}
+
+#gsum-values {
+    left: 262dp;
+    width: 304dp;
+    font-weight: bold;
+    color: $text;
+}
+
+#gsum-keys div,
+#gsum-values div {
+    height: 24.5dp;
+}
+
+#gsum-blurb {
+    position: absolute;
+    left: 24dp;
+    top: 354dp;
+    width: 542dp;
+    font-family: $serif;
+    font-size: $type_24;
+    color: $text;
+    white-space: nowrap;
+}
+
+#gsum-paused {
+    position: absolute;
+    left: 24dp;
+    top: 474dp;
+    width: 542dp;
+    font-size: $type_16;
+    color: $green;
+    white-space: nowrap;
+}
+
+/* ---- world: preparation and "Мир готов" */
+#wd-title {
+    position: absolute;
+    left: 124dp;
+    top: 254dp;
+    width: 1672dp;
+    font-family: $serif;
+    font-size: $type_50;
+    color: $light;
+    white-space: nowrap;
+}
+
+#wd-title.ready {
+    font-size: $type_56;
+}
+
+#wd-house {
+    position: absolute;
+    left: 128dp;
+    top: 338dp;
+    width: 1664dp;
+    font-family: $serif;
+    font-size: $type_24;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#wd-house.ready {
+    top: 346dp;
+    font-size: $type_26;
+}
+
+.wd-stage {
+    position: absolute;
+    left: 130dp;
+    width: 1660dp;
+    font-size: $type_19;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+.wd-stage.active {
+    font-size: $type_22;
+    font-weight: bold;
+    color: $light;
+}
+
+#wd-s0 { top: 522dp; }
+#wd-s1 { top: 574dp; }
+#wd-s2 { top: 630dp; }
+
+#wd-ready-text {
+    position: absolute;
+    left: 128dp;
+    top: 468dp;
+    width: 1416dp;
+    font-family: $serif;
+    font-size: $type_34;
+    color: $light;
+    white-space: nowrap;
+}
+
+#wd-track {
+    position: absolute;
+    left: 130dp;
+    top: 740dp;
+    width: 1660dp;
+    height: 7dp;
+    background-color: $raised;
+}
+
+#wd-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 7dp;
+    background-color: $gold;
+}
+
+#wd-percent {
+    position: absolute;
+    left: 1640dp;
+    top: 684dp;
+    width: 150dp;
+    text-align: right;
+    font-family: $serif;
+    font-size: $type_25;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#wd-hint {
+    position: absolute;
+    left: 130dp;
+    top: 815dp;
+    width: 1520dp;
+    font-size: $type_17;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+#wd-note {
+    position: absolute;
+    left: 130dp;
+    top: 815dp;
+    width: 1510dp;
+    font-size: $type_19;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+#btn-cancel {
+    position: absolute;
+    left: 130dp;
+    top: 910dp;
+    width: 256dp;
+    height: 50dp;
+}
+
+#btn-enter {
+    position: absolute;
+    left: 1382dp;
+    top: 910dp;
+    width: 408dp;
+    height: 54dp;
 }
