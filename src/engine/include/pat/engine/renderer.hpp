@@ -76,6 +76,25 @@ struct MapLighting {
     float haze = 1.0f;                ///< Distance haze scale; 0 = clear air.
 };
 
+/// Painterly art direction of the landscape (E5 #269, docs/dev/map-art-direction.md): a season palette,
+/// colour grading and a vignette, all done in the terrain pixel shader (no extra pass). The defaults leave
+/// the picture exactly as it was before the style existed.
+struct MapStyle {
+    float winter =
+        0.0f;  ///< 0 = summer palette, 1 = winter 1703: snow-beige fields, dark conifers, warm-grey haze.
+    float grade = 0.0f;     ///< Colour grading strength: exposure, soft shoulder, split toning, desaturation.
+    float vignette = 0.0f;  ///< Darkening of the screen edges (0 = none).
+};
+
+/// The reference look of the new design (winter terrain concept of board 01): everything on.
+[[nodiscard]] inline MapStyle winter_style_1703() noexcept {
+    MapStyle style;
+    style.winter = 1.0f;
+    style.grade = 1.0f;
+    style.vignette = 0.35f;
+    return style;
+}
+
 struct MapFrame {
     Mat4 view_proj = Mat4::identity();
     Vec3 eye;
@@ -84,6 +103,7 @@ struct MapFrame {
     std::uint16_t selected = 0;  ///< Selected province (0 = none).
     float time_s = 0.0f;
     MapLighting light;
+    MapStyle style;
 };
 
 /// The volumetric landscape with the province layer draped over it (ADR-0003, phase P1).

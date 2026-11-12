@@ -392,6 +392,33 @@ TEST_CASE("Map view: lighting - sun direction, relief shadows and haze change th
     CHECK(differing_pixels(lit(weak), without_shadows) == 0);
 }
 
+TEST_CASE("Map view: art style - off by default, winter palette and grading change the picture") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    const pat::engine::MapFrame plain = fx.frame();
+    const auto neutral = fx.render(plain);
+    CHECK(differing_pixels(neutral, fx.render(plain)) == 0);  // the default style adds nothing and is stable
+
+    pat::engine::MapFrame styled = plain;
+    styled.style = pat::engine::winter_style_1703();
+    CHECK(differing_pixels(neutral, fx.render(styled)) > 5000);
+
+    // The vignette only darkens, and only towards the edges.
+    pat::engine::MapFrame vignette = plain;
+    vignette.style.vignette = 1.0f;
+    const auto dark = fx.render(vignette);
+    std::size_t brighter = 0;
+    std::size_t darker = 0;
+    for (std::size_t i = 0; i + 3 < neutral.size(); i += 4) {
+        const int a = dark[i] + dark[i + 1] + dark[i + 2];
+        const int b = neutral[i] + neutral[i + 1] + neutral[i + 2];
+        brighter += a > b ? 1U : 0U;
+        darker += a + 3 < b ? 1U : 0U;
+    }
+    CHECK(brighter == 0);
+    CHECK(darker > 1000);
+}
+
 TEST_CASE("Map view: the sea is animated and only the water changes with time") {
     MapFixture fx;
     fx.view->set_mode(pat::engine::MapMode::Terrain);

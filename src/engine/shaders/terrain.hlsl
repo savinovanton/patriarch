@@ -21,6 +21,8 @@ cbuffer FrameConstants : register(b0) {
     float4 sun_color;     // rgb = sunlight colour times intensity (0 at night)
     float4 ambient_mul;   // rgb = multiplier of the day ambient light
     float4 haze_color;    // rgb = colour of the haze and the horizon
+    float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette
+    float4 view_info;     // x, y = target size in pixels, z, w = their reciprocals
 };
 
 cbuffer MaterialConstants : register(b1) {
@@ -78,9 +80,26 @@ VsOut vs_main(VsIn input) {
     return o;
 }
 
+// Winter 1703 palette (E5 #269, measured from the winter concept of board 01): fields are warm snow-beige,
+// forests dark desaturated conifer, rock and hills muted. Same order as the Material enum; blended with the
+// summer colours by style_info.x, so 0 reproduces the summer palette exactly.
+static const float3 winter_colors[10] = {
+    float3(0.04, 0.12, 0.26),  // DeepWater (water is drawn by water_color)
+    float3(0.17, 0.36, 0.50),  // ShallowWater
+    float3(0.78, 0.74, 0.66),  // Beach
+    float3(0.84, 0.82, 0.77),  // Plains: open snow
+    float3(0.80, 0.76, 0.66),  // Steppe: snow with dry grass showing through
+    float3(0.17, 0.21, 0.17),  // Forest: dark conifer
+    float3(0.68, 0.63, 0.54),  // Hills
+    float3(0.44, 0.43, 0.40),  // Rock
+    float3(0.90, 0.88, 0.84),  // Snow
+    float3(0.72, 0.71, 0.65),  // Tundra
+};
+
 float3 material_at(int2 texel, int2 size) {
     texel = clamp(texel, int2(0, 0), size - 1);
-    return material_colors[materials.Load(int3(texel, 0)) & 15].rgb;
+    const uint m = materials.Load(int3(texel, 0)) & 15;
+    return lerp(material_colors[m].rgb, winter_colors[min(m, 9u)], style_info.x);
 }
 
 float3 palette_color(uint province) {
@@ -130,13 +149,43 @@ float sun_shadow(float3 p) {
         }
         t *= growth;
     }
-    return lerp(1.0, lit, light_info.x);
+    return lerp(1.0, lit, light_info.x * (1.0 - 0.4 * style_info.x));  // winter light is softer: shadows are shallower
 }
 
 float3 apply_haze(float3 c, float3 world) {
     const float d = distance(eye_zoom.xyz, world);
     const float amount = (1.0 - exp(-pow(d / (0.9 * map_info.x), 1.6) * 0.9)) * 0.55 * light_info.z;
-    return lerp(c, haze_color.rgb, saturate(amount));
+    // Winter haze is a warm grey instead of blue (the concept's horizon), of the same brightness.
+    const float haze_luma = dot(haze_color.rgb, float3(0.3333, 0.3333, 0.3333));
+    const float3 haze = lerp(haze_color.rgb, haze_luma * float3(1.04, 0.99, 0.90), style_info.x * 0.8);
+    return lerp(c, haze, saturate(amount));
+}
+
+// Colour grading and vignette (E5 #269): the low winter sun leaves the lit scene dim, so the picture is
+// brightened, passed through a soft shoulder (no clipped snow), toned cool in the shadows and warm in the
+// lights and desaturated towards the muted painterly look of the concept; the vignette darkens the edges so
+// the UI panels read on top. Identity when both strengths are 0.
+float3 apply_style(float3 c, float2 pixel) {
+    const float g = style_info.y;
+    if (g > 0.0) {
+        float3 x = c * lerp(1.0, 2.7, g);
+        const float l = dot(x, float3(0.2126, 0.7152, 0.0722));
+        const float3 tone = lerp(float3(0.94, 0.98, 1.06), float3(1.04, 1.0, 0.94), smoothstep(0.10, 0.65, l));
+        x *= lerp(float3(1, 1, 1), tone, g);
+        x = lerp(dot(x, float3(0.2126, 0.7152, 0.0722)).xxx, x, lerp(1.0, 0.72, g));
+        x = x * (1.0 + x / 2.56) / (1.0 + x);  // extended Reinhard shoulder, white point 1.6
+        x += 0.05 * (1.0 - x);                 // lifted blacks: dark forest stays a colour, not a hole
+        c = lerp(c, x, g);
+    }
+    if (style_info.z > 0.0) {
+        const float2 q = (pixel * view_info.zw - 0.5) * float2(1.8, 2.0);
+        c *= 1.0 - style_info.z * smoothstep(0.35, 1.6, dot(q, q));
+    }
+    return c;
+}
+
+float4 finish(float3 c, float3 world, float2 pixel) {
+    return float4(saturate(apply_style(apply_haze(c, world), pixel)), 1.0);
 }
 
 // Sea surface (phase P3a): two scrolling noise layers give a wave normal that flattens with distance (it
@@ -150,7 +199,8 @@ float wave_height(float2 p, float time) {
 
 float3 water_color(float3 world, float2 uv, float raw) {
     const float depth = saturate((map_info.w - raw) / 0.18);
-    const float3 deep = lerp(float3(0.17, 0.36, 0.50), float3(0.04, 0.12, 0.26), sqrt(depth));
+    float3 deep = lerp(float3(0.17, 0.36, 0.50), float3(0.04, 0.12, 0.26), sqrt(depth));
+    deep = lerp(deep, float3(0.20, 0.25, 0.28) * lerp(1.6, 1.0, sqrt(depth)), style_info.x * 0.75);  // cold steel water
 
     const float time = select_info.w;
     const float2 p = world.xy;
@@ -193,7 +243,7 @@ float4 ps_main(VsOut input) : SV_Target {
     float3 color;
     if (water) {
         color = water_color(input.world, input.uv, raw);
-        return float4(saturate(apply_haze(color, input.world)), 1.0);
+        return finish(color, input.world, input.pos.xy);
     }
 
     // Surface material with bilinear blending so class changes do not show as hard texel edges.
@@ -218,7 +268,7 @@ float4 ps_main(VsOut input) : SV_Target {
     color = lerp(color, float3(0.44, 0.40, 0.35) * (0.85 + 0.3 * noise), rock * 0.85);
     const float high = (raw - map_info.w) / max(1.0 - map_info.w, 0.001);
     const float snow = smoothstep(0.58, 0.78, high + (noise - 0.5) * 0.10) * (1.0 - rock * 0.75);
-    color = lerp(color, float3(0.92, 0.94, 0.97), snow);
+    color = lerp(color, lerp(float3(0.92, 0.94, 0.97), float3(0.93, 0.91, 0.86), style_info.x), snow);
 
     // Political layer: palette colour per province; weaker when close so the landscape shows through.
     const uint prov = provinces.Load(int3(texel, 0));
@@ -232,7 +282,9 @@ float4 ps_main(VsOut input) : SV_Target {
     // Lighting: warm sun with relief shadows plus a sky/ground ambient.
     const float diffuse = saturate(dot(n, sun_dir.xyz));
     const float shadow = diffuse > 0.0 ? sun_shadow(float3(input.world.xy, input.world.z + 0.2)) : 0.0;
-    const float3 ambient = lerp(float3(0.30, 0.28, 0.25), float3(0.40, 0.47, 0.58), n.z * 0.5 + 0.5) * 0.9;
+    const float3 ground_light = lerp(float3(0.30, 0.28, 0.25), float3(0.38, 0.36, 0.33), style_info.x);  // snow bounce
+    const float3 sky_light = lerp(float3(0.40, 0.47, 0.58), float3(0.46, 0.47, 0.50), style_info.x);      // overcast, not blue
+    const float3 ambient = lerp(ground_light, sky_light, n.z * 0.5 + 0.5) * 0.9;
     color *= ambient * ambient_mul.rgb + sun_color.rgb * (diffuse * shadow * 0.95);
 
     // Highlights.
@@ -265,5 +317,5 @@ float4 ps_main(VsOut input) : SV_Target {
             color *= 0.38;
         }
     }
-    return float4(saturate(apply_haze(color, input.world)), 1.0);
+    return finish(color, input.world, input.pos.xy);
 }

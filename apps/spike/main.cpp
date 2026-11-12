@@ -123,6 +123,7 @@ struct Options {
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
+    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter  --grade X  --vignette X
     float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
     float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
     bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
@@ -190,6 +191,20 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
         } else if (arg == "--haze" && i + 1 < argc) {
             out.light.haze = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--style" && i + 1 < argc) {
+            const std::string_view style = argv[++i];
+            if (style == "off") {
+                out.style = pat::engine::MapStyle{};
+            } else if (style == "winter") {
+                out.style = pat::engine::winter_style_1703();
+            } else {
+                std::fprintf(stderr, "--style must be off or winter\n");
+                return false;
+            }
+        } else if (arg == "--grade" && i + 1 < argc) {
+            out.style.grade = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--vignette" && i + 1 < argc) {
+            out.style.vignette = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--gallery-tips") {
             out.gallery = true;
             out.gallery_tips = true;
@@ -1374,7 +1389,10 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        if (renderer->begin_frame({0.04f, 0.05f, 0.08f, 1.0f})) {
+        // Behind the map: dark navy, or the warm grey of the winter horizon when the map is styled.
+        const pat::engine::Color clear = opt.style.winter > 0.0f ? pat::engine::Color{0.46f, 0.44f, 0.41f, 1.0f}
+                                                                 : pat::engine::Color{0.04f, 0.05f, 0.08f, 1.0f};
+        if (renderer->begin_frame(clear)) {
             MapFrame frame;
             frame.view_proj = camera.view_projection(aspect);
             frame.eye = camera.eye();
@@ -1391,6 +1409,7 @@ int main(int argc, char** argv) {
                 light.sun_elevation_deg = sun.elevation_deg;
             }
             frame.light = light;
+            frame.style = opt.style;
             frame.time_s = (static_cast<float>(logic_steps) + step.alpha) / 60.0f;
             renderer->push_marker("map");
             view->draw(frame);
