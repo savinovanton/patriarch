@@ -1,0 +1,7 @@
+format_version = 1
+
+# M1 grouping approved in #137. Slots are stable; prices/trade belong to E19.
+# Procedural provinces are test territories, not historical boundaries.
+trade_node "moscow" { slot = 1 name_key = "trade_node.moscow.name" }
+trade_node "northern" { slot = 2 name_key = "trade_node.northern.name" }
+trade_node "volga" { slot = 3 name_key = "trade_node.volga.name" }

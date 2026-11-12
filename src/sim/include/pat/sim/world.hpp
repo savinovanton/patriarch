@@ -678,6 +678,11 @@ public:
     [[nodiscard]] std::optional<std::size_t> resolve_account(economy::AccountRef account) const noexcept;
     /// Balance of an account in kopecks (0 for an account that does not exist).
     [[nodiscard]] economy::Kopecks treasury(economy::AccountRef account) const noexcept;
+    /// Scenario bootstrap: sets both the opening balance and treasury of a fresh account without
+    /// recording income. False (nothing changed) without economy, for an unknown account, after
+    /// the first tick or month closure, for a nonzero account or any open posting, or when the
+    /// amount is outside +-kMaxTreasuryKop. Existing gameplay money goes through post_money/transfer.
+    bool set_initial_treasury(economy::AccountRef account, economy::Kopecks amount_kop);
     /// THE way to change money (economy-model section 5): adds `amount_kop` to the balance of the
     /// account and to its line `code` of the open month, both by the same applied amount, so that
     /// `treasury == opening + sum(lines)` holds (E-M1). Income is positive. A posting beyond

@@ -4,6 +4,7 @@
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
+#include "pat/content/m1_economy_content.hpp"
 #include "pat/content/names_content.hpp"
 #include "pat/content/traits_content.hpp"
 #include "pat/data/content_loader.hpp"
@@ -254,6 +255,12 @@ Report lint(std::span<const data::ContentSource* const> roots,
             if (!economy) {
                 for (const data::LoadError& error : economy.error())
                     findings.push_back(from_load_error(error));
+            } else {
+                const auto initial = content::build_m1_economy_content(loaded.registry, economy.value());
+                if (!initial) {
+                    for (const data::LoadError& error : initial.error())
+                        findings.push_back(from_load_error(error));
+                }
             }
             const content::DemographyRulesResult demography =
                 content::build_demography_rules(loaded.registry);

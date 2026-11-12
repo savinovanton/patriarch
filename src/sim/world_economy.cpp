@@ -515,6 +515,24 @@ Kopecks World::treasury(economy::AccountRef account) const noexcept {
     return row ? economy_.accounts.treasury_[*row] : 0;
 }
 
+bool World::set_initial_treasury(economy::AccountRef account, Kopecks amount_kop) {
+    const auto row = resolve_account(account);
+    if (!row || calendar().tick_count() != 0 || economy_.meta.closed_months != 0 ||
+        amount_kop < -economy::kMaxTreasuryKop || amount_kop > economy::kMaxTreasuryKop) {
+        return false;
+    }
+    economy::AccountTable& accounts = economy_.accounts;
+    if (accounts.treasury_[*row] != 0 || accounts.opening_[*row] != 0 ||
+        std::any_of(accounts.open_lines(*row).begin(), accounts.open_lines(*row).end(), [](Kopecks line) {
+            return line != 0;
+        })) {
+        return false;
+    }
+    accounts.treasury_[*row] = amount_kop;
+    accounts.opening_[*row] = amount_kop;
+    return true;
+}
+
 Kopecks World::preview_posting(std::size_t account, std::size_t line, Kopecks amount) const noexcept {
     const economy::AccountTable& t = economy_.accounts;
     amount = std::clamp(amount, -economy::kMaxPostingKop, economy::kMaxPostingKop);

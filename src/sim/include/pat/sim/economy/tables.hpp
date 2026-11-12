@@ -157,9 +157,12 @@ struct EconomyMeta {
 // ---- accounts and the statement ------------------------------------------------------------------
 
 /// Accounts and their statement (section 4.2): row 0 is the crown, row `1 + d` is dynasty `d`. The
-/// balance and the lines change ONLY through World::post_money / World::transfer, and the ring only
+/// During play the balance and the lines change only through World::post_money / World::transfer,
+/// and the ring only
 /// through World::close_ledger_month, so that `treasury == opening + sum(open lines)` always holds
 /// (invariant E-M1). The data is private; read through the accessors.
+/// A fresh scenario may seed both balance and opening through World::set_initial_treasury before
+/// the first tick, with no postings or closed months.
 ///
 /// The ring holds the last kLedgerRingMonths closed months, index 0 being the most recent; an entry
 /// beyond `EconomyMeta::closed_months` is all zero. Lines are indexed by the dense index of the

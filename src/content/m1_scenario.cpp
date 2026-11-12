@@ -4,6 +4,7 @@
 #include "pat/content/economy_content.hpp"
 #include "pat/content/load_errors.hpp"
 #include "pat/content/m1_content.hpp"
+#include "pat/content/m1_economy_content.hpp"
 #include "pat/content/province_bindings.hpp"
 #include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
@@ -12,6 +13,7 @@
 #include "pat/data/m1_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_validate.hpp"
+#include "pat/sim/economy/invariants.hpp"
 
 #include <array>
 #include <format>
@@ -68,13 +70,17 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
     if (!bindings) {
         return fail_definition(format_errors(bindings.error()));
     }
-    const auto economy = build_economy_rules(loaded.registry);
-    if (!economy) {
-        return fail_definition(format_errors(economy.error()));
+    auto economy_rules = build_economy_rules(loaded.registry);
+    if (!economy_rules) {
+        return fail_definition(format_errors(economy_rules.error()));
     }
-    if (economy.value().crown_account_mode != sim::economy::CrownAccountMode::Separate) {
+    if (economy_rules.value().crown_account_mode != sim::economy::CrownAccountMode::Separate) {
         return fail_definition(
             "M1 needs a separate crown account until the scenario defines an emperor dynasty");
+    }
+    auto economy = build_m1_economy_content(loaded.registry, economy_rules.value());
+    if (!economy) {
+        return fail_definition(format_errors(economy.error()));
     }
     sim::DemographyRules demography = sim::kDefaultDemography;
     if (const auto* table = loaded.registry.table(data::kDemographyRulesKind); table && !table->empty()) {
@@ -92,10 +98,14 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
         }
         return fail_definition(std::move(messages));
     }
-    constexpr std::array<std::string_view, 5> localized_kinds{
-        "province", "dynasty", "skill", "trait", data::kHonorRankKind};
+    constexpr std::array<std::string_view, 6> localized_kinds{
+        "province", "dynasty", "skill", "trait", data::kHonorRankKind, data::kTradeNodeKind};
     for (const std::string_view kind : localized_kinds) {
-        for (const auto& object : loaded.registry.table(kind)->objects()) {
+        const auto* table = loaded.registry.table(kind);
+        if (table == nullptr) {
+            continue;
+        }
+        for (const auto& object : table->objects()) {
             for (const std::string_view field : {"name_key", "desc_key"}) {
                 if (const auto* value = object.object.body.find(field)) {
                     const auto& key = *value->get_if<std::string>();
@@ -106,11 +116,13 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
                                                            value->pos.column,
                                                            key));
                     }
-                    if (kind == data::kHonorRankKind) {
+                    if (kind == data::kHonorRankKind || kind == data::kTradeNodeKind) {
                         std::string name;
                         if (!localized.localizer.format_to(name, key).ok() || name.empty()) {
-                            return fail_definition(std::format(
-                                "honor rank name '{}' must be a nonempty text without arguments", key));
+                            return fail_definition(
+                                std::format("{} name '{}' must be a nonempty text without arguments",
+                                            kind == data::kHonorRankKind ? "honor rank" : "trade node",
+                                            key));
                         }
                     }
                 }
@@ -130,13 +142,16 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
         }
     }
     auto honor_ranks = build_honor_ranks(loaded.registry);
-    return DefinitionsResult::ok({std::move(loaded.registry),
-                                  std::move(bindings).value(),
-                                  std::move(province_names),
-                                  std::move(localized.localizer),
-                                  demography,
-                                  std::move(honor_ranks),
-                                  std::make_shared<const sim::TraitCatalog>(std::move(traits).value())});
+    return DefinitionsResult::ok(
+        {std::move(loaded.registry),
+         std::move(bindings).value(),
+         std::move(province_names),
+         std::move(localized.localizer),
+         demography,
+         std::move(honor_ranks),
+         std::make_shared<const sim::TraitCatalog>(std::move(traits).value()),
+         std::make_shared<const sim::economy::EconomyRules>(std::move(economy_rules).value()),
+         std::make_shared<const M1EconomyContent>(std::move(economy).value())});
 }
 
 core::Result<M1Scenario>
@@ -164,6 +179,7 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     }
     const auto* provinces = definitions.registry.table("province");
     std::vector<sim::ProvinceId> map_to_world(map.province_list.size() + 1);
+    std::map<std::string_view, sim::ProvinceId, std::less<>> province_ids;
     for (const ProvinceBinding& binding : definitions.bindings) {
         const auto& definition = *provinces->find(binding.definition_id, definitions.registry.ids());
         const auto& fields = definition.object.body;
@@ -183,6 +199,96 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
         const sim::ProvinceId id = world.create_province(definition.id, owner, core::Fixed32::zero());
         world.economy_columns_mut().kind[id.index()] = static_cast<std::uint8_t>(*province_kind);
         map_to_world[binding.map_id] = id;
+        province_ids.emplace(definition.object.id, id);
+    }
+
+    const sim::economy::EconomyRules& rules = *definitions.economy_rules;
+    if (!world.set_economy_policy_levels(static_cast<std::uint8_t>(rules.tax.level_count),
+                                         static_cast<std::uint8_t>(rules.recruit.level_count))) {
+        return fail("cannot initialize M1 policy levels");
+    }
+    for (const auto& [key, dynasty] : dynasties) {
+        (void)key;
+        if (!world.set_dynasty_tax_policy(dynasty, static_cast<std::uint8_t>(rules.tax.default_level)) ||
+            !world.set_dynasty_recruit_policy(dynasty,
+                                              static_cast<std::uint8_t>(rules.recruit.default_level))) {
+            return fail("cannot initialize M1 dynasty policies");
+        }
+    }
+
+    for (const HoldingDef& holding : definitions.economy->holdings) {
+        const auto found = province_ids.find(holding.province);
+        if (found == province_ids.end()) {
+            return fail(std::format("unknown holding province '{}'", holding.province));
+        }
+        const sim::ProvinceId id = found->second;
+        const std::size_t p = id.index();
+        if (holding.owner_kind == sim::economy::OwnerKind::Dynasty) {
+            const auto owner = dynasties.find(holding.owner);
+            if (owner == dynasties.end()) {
+                return fail(std::format("unknown holding owner '{}'", holding.owner));
+            }
+            world.set_province_owner(id, owner->second);
+        } else if (!world.set_province_owner_kind(id, holding.owner_kind)) {
+            return fail(std::format("cannot initialize owner of holding '{}'", holding.province));
+        }
+        world.set_province_development(id, holding.development);
+        auto columns = world.economy_columns_mut();
+        columns.kind[p] = static_cast<std::uint8_t>(holding.kind);
+        columns.slots_total[p] = holding.slots_total;
+        columns.trade_node[p] = holding.trade_node;
+        columns.control[p] = holding.control;
+        columns.corruption[p] = holding.corruption;
+        columns.unrest[p] = holding.unrest;
+        columns.grain_stock[p] = holding.grain_stock;
+        columns.labour_base[p] = holding.population[sim::economy::index_of(sim::economy::Group::Peasants)] +
+                                 holding.population[sim::economy::index_of(sim::economy::Group::Townsfolk)];
+        for (std::size_t g = 0; g < sim::economy::kGroupCount; ++g) {
+            world.set_group_size(id, static_cast<sim::economy::Group>(g), holding.population[g]);
+            columns.mood[p * sim::economy::kGroupCount + g] = holding.mood[g];
+            columns.wealth[p * sim::economy::kGroupCount + g] = holding.wealth[g];
+        }
+        for (std::size_t good = 0; good < sim::economy::kMaxGoods; ++good) {
+            columns.capacity[p * sim::economy::kMaxGoods + good] = holding.capacity[good];
+        }
+        for (std::size_t slot = 0; slot < holding.buildings.size(); ++slot) {
+            if (!world.set_slot_building(id, slot, holding.buildings[slot])) {
+                return fail(std::format("cannot initialize building slot of holding '{}'", holding.province));
+            }
+        }
+        world.invalidate_province_modifiers(id);
+    }
+
+    // Every owner kind starts at the loaded policy defaults. Dynasty setters above also establish
+    // what newly acquired provinces will inherit, but crown, Church and free holdings have no house.
+    auto policy_columns = world.economy_columns_mut();
+    for (std::size_t p = 0; p < world.provinces().size(); ++p) {
+        policy_columns.tax_policy[p] = static_cast<std::uint8_t>(rules.tax.default_level);
+        policy_columns.recruit_policy[p] = static_cast<std::uint8_t>(rules.recruit.default_level);
+    }
+    world.invalidate_all_province_modifiers();
+
+    if (!world.set_initial_treasury(sim::economy::AccountRef::crown(),
+                                    definitions.economy->crown_treasury_kop)) {
+        return fail("cannot initialize M1 crown treasury");
+    }
+    for (const auto& [key, amount] : definitions.economy->dynasty_treasuries) {
+        const auto dynasty = dynasties.find(key);
+        if (dynasty == dynasties.end() ||
+            !world.set_initial_treasury(sim::economy::AccountRef::of(dynasty->second), amount)) {
+            return fail(std::format("cannot initialize treasury of dynasty '{}'", key));
+        }
+    }
+
+    auto problems = world.check_invariants();
+    const auto rules_problems = sim::economy::check_rules_invariants(world, rules);
+    problems.insert(problems.end(), rules_problems.begin(), rules_problems.end());
+    if (!problems.empty()) {
+        std::string message = "invalid M1 initial economy:";
+        for (const auto& problem : problems) {
+            message += '\n' + problem;
+        }
+        return fail(std::move(message));
     }
     return ScenarioResult::ok({std::move(world),
                                replay_id(content_hash),
@@ -192,7 +298,8 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
                                std::move(definitions.registry),
                                definitions.demography,
                                std::move(definitions.honor_ranks),
-                               std::move(definitions.traits)});
+                               std::move(definitions.traits),
+                               std::move(definitions.economy_rules)});
 }
 
 }  // namespace pat::content

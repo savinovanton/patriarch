@@ -11,6 +11,7 @@
 #include "pat/content/credits_content.hpp"
 #include "pat/content/m1_hot_reload.hpp"
 #include "pat/content/m1_scenario.hpp"
+#include "pat/sim/economy/systems.hpp"
 #include "pat/core/log.hpp"
 #include "pat/core/png_writer.hpp"
 #include "pat/core/profile.hpp"
@@ -455,6 +456,7 @@ int main(int argc, char** argv) {
             simulation.add_system(pat::sim::make_mortality_system(m1->demography, m1->traits));
             simulation.add_system(pat::sim::make_opinion_system());
             simulation.add_system(pat::sim::make_dynasty_standing_system());
+            pat::sim::economy::install_economy_systems(simulation, *m1->economy_rules);
             runner = std::make_unique<pat::sim::SimulationRunner>(std::move(simulation));
         } else {
             pat::sim::demo::Config sim_config;
