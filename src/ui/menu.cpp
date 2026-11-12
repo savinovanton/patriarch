@@ -209,7 +209,6 @@ constexpr std::array<const char*, 3> kQualities = {"low", "medium", "high"};
 constexpr std::array<const char*, 4> kShadowLevels = {"off", "low", "medium", "high"};
 constexpr std::array<const char*, 3> kTextSizes = {"small", "standard", "large"};
 constexpr std::array<const char*, 3> kTooltipLevels = {"off", "contextual", "detailed"};
-constexpr std::array<const char*, 1> kLanguages = {"ru"};
 
 struct CatRow {
     int index = 0;
