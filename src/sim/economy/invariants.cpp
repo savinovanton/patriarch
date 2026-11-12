@@ -1,6 +1,7 @@
 #include "pat/sim/economy/invariants.hpp"
 
 #include "pat/sim/economy/construction.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -181,6 +182,23 @@ std::vector<std::string> check_rules_invariants(const World& world, const Econom
                                           static_cast<unsigned>(kind),
                                           b));
             }
+        }
+    }
+
+    // ---- E-R3 (E9-T17): the cache of the province modifiers equals the direct computation ----------
+    // Every CLEAN entry must be what compute_province_modifiers gives now (the profile of the
+    // administrator is left out: it depends on the source the cache was made with); a difference means
+    // an input changed without a dirty flag. Dirty entries are not checked: they are recomputed on use.
+    for (std::size_t p = 0; p < provinces; ++p) {
+        if (!world.modifier_cache().clean(p)) {
+            continue;
+        }
+        const ProvinceModifiers direct =
+            compute_province_modifiers(world, rules, nullptr, ProvinceId(static_cast<std::uint32_t>(p)));
+        if (!world.modifier_cache().value(p).same_without_profile(direct)) {
+            bad.push_back(std::format("province {} has a modifier cache entry that differs from the direct "
+                                      "computation (an input changed without a dirty flag)",
+                                      p));
         }
     }
 

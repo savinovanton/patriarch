@@ -672,7 +672,9 @@ TEST_CASE("the rules invariant E-R1 reports a pool above what the people can giv
     require_valid(sim.world());
     World world = sim.world();
     const std::uint32_t ceiling = recruit_ceiling(rules(), {{0, 0, 1500, 8000, 500, 0}});
-    CHECK(ceiling == 459);  // the heaviest level x1.6 of 287
+    // the heaviest level x1.6 of 287 (459), times the best set of buildings x1.25 (the ostrog, E9-T17),
+    // rounded up
+    CHECK(ceiling == 574);
     // the people of the province now are a little more than at the start: take the ceiling it computes
     std::array<std::uint32_t, kGroupCount> size{};
     for (std::size_t g = 0; g < kGroupCount; ++g) {

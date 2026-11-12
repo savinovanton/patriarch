@@ -18,16 +18,22 @@ constexpr Fixed32 pts(std::int32_t whole) {
 /// but `good` (-1 = none). See the table of the default rules for the meaning of the arguments.
 constexpr BuildingDef default_building(std::uint8_t slot,
                                        std::string_view key,
+                                       std::string_view desc_key,
                                        Kopecks cost_kop,
                                        std::int32_t build_days,
                                        Kopecks upkeep_kop_month,
                                        int good,
                                        std::int32_t permille,
                                        std::int32_t min_development,
-                                       std::uint32_t allowed_kinds) {
+                                       std::uint32_t allowed_kinds,
+                                       std::int32_t control_points = 0,
+                                       std::int32_t oversight_permille = 0,
+                                       std::int32_t recruit_permille = kPermilleOne,
+                                       std::int32_t famine_protect_permille = 0) {
     BuildingDef def;
     def.slot = slot;
     def.key = key;
+    def.desc_key = desc_key;
     def.cost_kop = cost_kop;
     def.build_days = build_days;
     def.upkeep_kop_month = upkeep_kop_month;
@@ -37,6 +43,10 @@ constexpr BuildingDef default_building(std::uint8_t slot,
     def.min_development = min_development;
     def.allowed_kinds = allowed_kinds;
     def.max_per_province = 1;
+    def.control_points = control_points;
+    def.oversight_permille = oversight_permille;
+    def.recruit_permille = recruit_permille;
+    def.famine_protect_permille = famine_protect_permille;
     return def;
 }
 
@@ -244,17 +254,80 @@ constexpr EconomyRules kDefaultEconomyRules{
     // same table (a test compares them). Arguments of default_building: slot, key, cost, build days,
     // upkeep per month, the good the building improves and its multiplier (-1 = none), minimal
     // development, allowed kinds (a bit per ProvinceKind: city 1, border 2, industrial 3, port 4,
-    // steppe 5, northern 6; 0 = any). At most one of a type per province.
+    // steppe 5, northern 6; 0 = any), then the effects of E9-T17 [predl.]: control points, oversight
+    // per-mille (corruption), recruit multiplier per-mille (1000 = none), famine protection per-mille. At
+    // most
+    // one of a type per province.
     .buildings =
         {
-            .defs = {{default_building(1, "building.mill", 400'000, 120, 3'000, 0, 1150, 0, 0),
-                      default_building(2, "building.manufactory", 1'200'000, 240, 10'000, 7, 1200, 3, 0x0A),
-                      default_building(3, "building.works", 2'000'000, 360, 15'000, 5, 1300, 3, 0x08),
-                      default_building(4, "building.tract", 600'000, 180, 4'000, -1, 1000, 0, 0),
-                      default_building(5, "building.wharf", 800'000, 150, 6'000, 8, 1100, 0, 0x10),
-                      default_building(6, "building.ostrog", 1'000'000, 240, 12'000, -1, 1000, 0, 0x64),
-                      default_building(7, "building.church", 500'000, 300, 2'000, -1, 1000, 0, 0),
-                      default_building(8, "building.granary", 300'000, 90, 2'000, -1, 1000, 0, 0)}},
+            .defs = {{default_building(
+                          1, "building.mill", "building.mill.desc", 400'000, 120, 3'000, 0, 1150, 0, 0),
+                      default_building(2,
+                                       "building.manufactory",
+                                       "building.manufactory.desc",
+                                       1'200'000,
+                                       240,
+                                       10'000,
+                                       7,
+                                       1200,
+                                       3,
+                                       0x0A),
+                      default_building(
+                          3,
+                          "building.works",
+                          "building.works.desc",
+                          2'000'000,
+                          360,
+                          15'000,
+                          5,
+                          1300,
+                          3,
+                          0x08),
+                      default_building(
+                          4, "building.tract", "building.tract.desc", 600'000, 180, 4'000, -1, 1000, 0, 0, 3),
+                      default_building(
+                          5, "building.wharf", "building.wharf.desc", 800'000, 150, 6'000, 8, 1100, 0, 0x10),
+                      default_building(
+                          6,
+                          "building.ostrog",
+                          "building.ostrog.desc",
+                          1'000'000,
+                          240,
+                          12'000,
+                          -1,
+                          1000,
+                          0,
+                          0x64,
+                          5,
+                          0,
+                          1250),
+                      default_building(
+                          7,
+                          "building.church",
+                          "building.church.desc",
+                          500'000,
+                          300,
+                          2'000,
+                          -1,
+                          1000,
+                          0,
+                          0,
+                          2,
+                          30),
+                      default_building(8,
+                                       "building.granary",
+                                       "building.granary.desc",
+                                       300'000,
+                                       90,
+                                       2'000,
+                                       -1,
+                                       1000,
+                                       0,
+                                       0,
+                                       0,
+                                       0,
+                                       1000,
+                                       300)}},
             .count = 8,
             // own placeholder: 80 % of the paid cost comes back when a construction is cancelled
             .refund_permille = 800,
@@ -625,6 +698,23 @@ Check check_buildings(const BuildingRules& r) {
                                 def.allowed_kinds,
                                 0,
                                 (std::int64_t{1} << kProvinceKindCount) - 1);
+            !res) {
+            return res;
+        }
+        if (auto res = range_at(Code::Buildings, "control_points", i, def.control_points, -50, 50); !res) {
+            return res;
+        }
+        if (auto res =
+                range_at(Code::Buildings, "oversight_permille", i, def.oversight_permille, 0, kPermilleOne);
+            !res) {
+            return res;
+        }
+        if (auto res = range_at(Code::Buildings, "recruit_permille", i, def.recruit_permille, 0, kMaxMult);
+            !res) {
+            return res;
+        }
+        if (auto res = range_at(
+                Code::Buildings, "famine_protect_permille", i, def.famine_protect_permille, 0, kPermilleOne);
             !res) {
             return res;
         }

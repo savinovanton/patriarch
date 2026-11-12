@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/economy/administrator.hpp"
 #include "pat/sim/economy/ledger.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/world.hpp"
@@ -198,7 +199,7 @@ TaxInput tax_input(const World& world, const EconomyRules& rules, ProvinceId pro
     in.corruption = e.provinces.corruption[p];
     in.kind = static_cast<ProvinceKind>(e.provinces.kind[p]);
     in.owner_kind = static_cast<OwnerKind>(e.provinces.owner_kind[p]);
-    in.tax_level = effective_tax_level(world, rules, province);
+    in.tax_level = province_modifiers(world, rules, nullptr, province).tax_level;
     return in;
 }
 

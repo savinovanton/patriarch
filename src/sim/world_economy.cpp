@@ -101,6 +101,7 @@ void World::economy_add_province_rows(std::size_t index) {
         g.growth_carry.push_back(0);
     }
     refresh_population_cache(ProvinceId(static_cast<std::uint32_t>(index)));
+    modifier_cache_.mark(index);
 }
 
 bool World::enable_economy(DynastyId crown_dynasty) {
@@ -158,6 +159,16 @@ economy::EconomyColumnsMut World::economy_columns_mut() noexcept {
     return out;
 }
 
+void World::invalidate_province_modifiers(ProvinceId province) noexcept {
+    if (exists(province)) {
+        modifier_cache_.mark(province.index());
+    }
+}
+
+void World::invalidate_all_province_modifiers() noexcept {
+    modifier_cache_.mark_all();
+}
+
 void World::set_economy_rules_hash(std::uint64_t rules_hash) noexcept {
     economy_.meta.rules_hash = rules_hash;
 }
@@ -187,6 +198,9 @@ bool World::set_dynasty_tax_policy(DynastyId dynasty, std::uint8_t level) {
         return false;
     }
     economy_.dynasties.tax_policy[dynasty.index()] = level;
+    for (const ProvinceId province : owned_provinces_[dynasty.index()]) {
+        modifier_cache_.mark(province.index());  // the level of every province of the house follows
+    }
     return true;
 }
 
@@ -196,6 +210,9 @@ bool World::set_dynasty_recruit_policy(DynastyId dynasty, std::uint8_t level) {
         return false;
     }
     economy_.dynasties.recruit_policy[dynasty.index()] = level;
+    for (const ProvinceId province : owned_provinces_[dynasty.index()]) {
+        modifier_cache_.mark(province.index());
+    }
     return true;
 }
 
@@ -248,6 +265,7 @@ bool World::set_province_owner_kind(ProvinceId province, economy::OwnerKind kind
     set_province_owner(province,
                        DynastyId());  // drops the dynasty owner, if any (and a foreign administrator)
     economy_.provinces.owner_kind[province.index()] = to_u8(kind);
+    modifier_cache_.mark(province.index());
     if (previous_kind != to_u8(kind)) {
         economy_release_foreign_administrator(province);  // crown to Church and the like: a new holder
     }
@@ -296,6 +314,7 @@ bool World::set_province_administrator(ProvinceId province, CharacterId administ
         return false;
     }
     economy_.provinces.administrator[province.index()] = administrator;
+    modifier_cache_.mark(province.index());
     return true;
 }
 
@@ -303,9 +322,24 @@ void World::economy_remove_administrator(CharacterId id) noexcept {
     if (economy_.meta.present == 0 || !id.valid()) {
         return;
     }
-    for (CharacterId& administrator : economy_.provinces.administrator) {
+    for (std::size_t p = 0; p < economy_.provinces.administrator.size(); ++p) {
+        CharacterId& administrator = economy_.provinces.administrator[p];
         if (administrator == id) {
             administrator = CharacterId();
+            modifier_cache_.mark(p);
+        }
+    }
+}
+
+void World::economy_note_character_change(CharacterId id) noexcept {
+    // the profile of an administrator comes from his skills and traits (E7); a province he governs
+    // has to be read again. One scan of the column: a skill changes a few times in a life.
+    if (economy_.meta.present == 0 || !id.valid()) {
+        return;
+    }
+    for (std::size_t p = 0; p < economy_.provinces.administrator.size(); ++p) {
+        if (economy_.provinces.administrator[p] == id) {
+            modifier_cache_.mark(p);
         }
     }
 }
@@ -327,6 +361,7 @@ void World::economy_release_foreign_administrator(ProvinceId province) noexcept 
         characters_.dynasty[administrator.index()] == provinces_.owner[province.index()];
     if (!owned_by_house) {
         administrator = CharacterId();
+        modifier_cache_.mark(province.index());
     }
 }
 
@@ -336,6 +371,7 @@ bool World::set_slot_building(ProvinceId province, std::size_t slot, std::uint8_
         return false;
     }
     economy_.provinces.slot_building[province.index() * economy::kMaxSlots + slot] = building;
+    modifier_cache_.mark(province.index());
     return true;
 }
 

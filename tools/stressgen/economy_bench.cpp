@@ -3,6 +3,7 @@
 #include "pat/core/bytes.hpp"
 #include "pat/core/telemetry.hpp"
 #include "pat/sim/economy/forecast.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/save.hpp"
@@ -316,6 +317,36 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
         return R::err({5, "the loaded economy world has another hash than the saved one"});
     }
     const Stat sweep_us = summarize(time_us(options.repeats, [&] { sink += sweep_economy(loaded.world); }));
+    // ---- the cache of the province modifiers (E9-T17): a full rebuild is the load-time cost, a refresh
+    // with nothing dirty is the daily cost; the cache must agree with the direct computation everywhere.
+    const sim::economy::EconomyRules modifier_rules = sim::economy::EconomyRules::defaults();
+    const Stat modifier_rebuild_us = summarize(time_us(options.repeats, [&] {
+        sink += sim::economy::rebuild_modifier_cache(loaded.world, modifier_rules, nullptr);
+    }));
+    const Stat modifier_refresh_us = summarize(time_us(options.repeats, [&] {
+        sink += sim::economy::refresh_modifier_cache(loaded.world, modifier_rules, nullptr);
+    }));
+    const std::size_t modifier_provinces = loaded.world.provinces().size();
+    std::uint64_t modifier_mismatches = 0;
+    std::uint64_t buildings_standing = 0;
+    for (std::size_t p = 0; p < loaded.world.provinces().size(); ++p) {
+        const sim::ProvinceId id(static_cast<std::uint32_t>(p));
+        modifier_mismatches +=
+            loaded.world.modifier_cache().clean(p) &&
+                    loaded.world.modifier_cache().value(p) ==
+                        sim::economy::compute_province_modifiers(loaded.world, modifier_rules, nullptr, id)
+                ? 0
+                : 1;
+        for (std::size_t s = 0; s < sim::economy::kMaxSlots; ++s) {
+            buildings_standing +=
+                loaded.world.economy().provinces.slot_building[p * sim::economy::kMaxSlots + s] != 0 ? 1 : 0;
+        }
+    }
+    if (modifier_mismatches != 0) {
+        return R::err({6, "the modifier cache disagrees with the direct computation"});
+    }
+    loaded.world
+        .invalidate_all_province_modifiers();  // the skeleton below starts from a cold cache, like a load
     const EconomyMemory loaded_memory = economy_memory(loaded.world);
 
     // ---- the economy systems on the loaded world -------------------------------------------------
@@ -432,6 +463,13 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
         json_stat(deserialize_us, 1000.0),
         load_ms);
     out += ",\"cache_rebuild_floor_us\":" + json_stat(sweep_us);
+    out += std::format(",\"modifier_cache\":{{\"provinces\":{},\"buildings\":{},\"mismatches\":{},"
+                       "\"rebuild_us\":{},\"refresh_clean_us\":{}}}",
+                       modifier_provinces,
+                       buildings_standing,
+                       modifier_mismatches,
+                       json_stat(modifier_rebuild_us),
+                       json_stat(modifier_refresh_us));
     out += ",\"forecast_us\":{\"crown\":" + json_stat(forecast_crown_us) +
            ",\"all_dynasties\":" + json_stat(forecast_all_us) + "}";
     out += std::format(

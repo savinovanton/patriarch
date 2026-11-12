@@ -49,8 +49,9 @@ TreasuryForecast forecast_treasury(const World& world,
         if (!is_owner && !gives_crown_share) {
             continue;
         }
+        const ProvinceModifiers modifiers = province_modifiers(world, rules, nullptr, province);
         const ProvinceProduction production =
-            compute_province_production(rules, production_input(world, prices, province));
+            compute_province_production(rules, production_input(world, prices, province, &modifiers));
         const ProvinceIncome income =
             compute_province_income(rules, tax_input(world, rules, province), production.holding_income_kop);
         for (std::size_t g = 0; g < kGroupCount; ++g) {

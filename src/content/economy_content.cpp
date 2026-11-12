@@ -430,6 +430,11 @@ private:
                     def.key = stable_key(*text);
                 }
             }
+            if (const TypedValue* key = body.find("desc_key")) {
+                if (const auto* text = key->get_if<std::string>()) {
+                    def.desc_key = stable_key(*text);
+                }
+            }
             def.cost_kop = int_of(body, "cost_kop");
             def.build_days = i32_of(body, "build_days");
             def.upkeep_kop_month = int_of(body, "upkeep_kop_month");
@@ -446,6 +451,12 @@ private:
                     }
                 }
             }
+            // effects of E9-T17: a missing key means "no effect"
+            def.control_points = i32_of(body, "control_points");
+            def.oversight_permille = i32_of(body, "oversight_permille");
+            def.recruit_permille =
+                body.find("recruit_permille") != nullptr ? i32_of(body, "recruit_permille") : kPermilleOne;
+            def.famine_protect_permille = i32_of(body, "famine_protect_permille");
             def.min_development = i32_of(body, "min_development");
             def.max_per_province =
                 body.find("max_per_province") != nullptr ? i32_of(body, "max_per_province") : 1;
