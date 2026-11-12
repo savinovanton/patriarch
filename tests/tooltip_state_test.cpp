@@ -337,3 +337,44 @@ TEST_CASE("tooltip state: close_all drops everything at once and unpins") {
     s.tick(0.05f);
     CHECK(s.levels().empty());
 }
+
+TEST_CASE(
+    "explanation: the board layout of a tooltip (headline, lines, rows, sum row, footer, close button)") {
+    Explanation e{"Казна рода", "+42", "Итоговое значение", {}};
+    e.headline = "1 248";
+    e.lines = {"Первая строка", "Вторая <строка>"};
+    e.total_label = "В месяц";
+    e.footer = "Подпись внизу";
+    e.tone = TipTone::Warning;
+    e.terms.push_back({"Доходы", "+68", "×1,20", {}});
+    e.terms.push_back({"Содержание",
+                       "\xE2\x88\x92"
+                       "26",
+                       "",
+                       {}});
+    const std::string rml = render_tooltip_rml(e, "t:0", 0, TooltipRender{{}, "icons", true});
+    const auto has = [&](const char* needle) { return rml.find(needle) != std::string::npos; };
+    CHECK(has("class=\"tip tip-float pinned\""));
+    CHECK(has("data-tip-close=\"1\""));
+    CHECK(has("icons/close@quiet.svg"));
+    CHECK(has("class=\"tip-title warn\""));
+    CHECK(has("class=\"tip-note\">Итоговое значение"));
+    CHECK(has("class=\"tip-headline\">1 248"));
+    CHECK(has("Вторая &lt;строка&gt;"));
+    CHECK(has("class=\"tip-factor\">×1,20"));
+    CHECK(has("tip-value neg\">\xE2\x88\x92"
+              "26"));  // the true minus sign tints the value like a hyphen
+    CHECK(has("class=\"tip-sum-label\">В месяц"));
+    CHECK(has("tip-sum-value pos\">+42"));
+    CHECK(has("class=\"tip-footer\">Подпись внизу"));
+    CHECK_FALSE(has("class=\"tip-total\""));  // with a sum row the value is not repeated next to the title
+
+    // Without a sum label the value stays next to the title; the wide variant and the unpinned box.
+    Explanation plain{"Навык", "9", "", {}};
+    plain.wide = true;
+    const std::string plain_rml = render_tooltip_rml(plain, "s:0", 0);
+    CHECK(plain_rml.find("class=\"tip-total\">9") != std::string::npos);
+    CHECK(plain_rml.find("tip-wide") != std::string::npos);
+    CHECK(plain_rml.find("pinned") == std::string::npos);
+    CHECK(plain_rml.find("tip-sum") == std::string::npos);
+}

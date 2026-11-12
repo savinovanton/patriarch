@@ -3,6 +3,7 @@
 #include "pat/core/result.hpp"
 #include "pat/engine/ui.hpp"
 #include "pat/loc/localizer.hpp"
+#include "pat/ui/explanation.hpp"
 
 #include <filesystem>
 #include <memory>
@@ -34,6 +35,14 @@ public:
     ComponentGallery& operator=(const ComponentGallery&) = delete;
 
     void relocalize();
+
+    /// The explanation behind a tooltip key of the page ("gallery:cost", "gallery:treasury",
+    /// "gallery:reason", "gallery:skill"); null for other keys. Meant as a TooltipManager provider.
+    [[nodiscard]] const Explanation* explanation(std::string_view key) const;
+
+    /// The page of the gallery: "components" (default) or "tips" (the samples of the tooltip boards).
+    void set_page(std::string_view page);
+    [[nodiscard]] std::string_view page() const;
 
     /// "overview", "income" or "buildings".
     void set_tab(std::string_view tab);
