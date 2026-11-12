@@ -39,6 +39,8 @@ struct FrameCB {
     float sun_color[4];    // rgb = sunlight colour times intensity
     float ambient_mul[4];  // rgb = multiplier of the day ambient light
     float haze_color[4];   // rgb = colour of the haze
+    float style_info[4];   // x = winter palette, y = grading strength, z = vignette
+    float view_info[4];    // x, y = target size in pixels, z, w = their reciprocals
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -231,6 +233,18 @@ public:
             if (el_deg <= 1.0f) {
                 cb.light_info[1] = 0.0f;  // no shadows without sunlight
             }
+        }
+        cb.style_info[0] = std::clamp(frame.style.winter, 0.0f, 1.0f);
+        cb.style_info[1] = std::clamp(frame.style.grade, 0.0f, 1.0f);
+        cb.style_info[2] = std::clamp(frame.style.vignette, 0.0f, 1.0f);
+        {
+            const bool known = shared_.target_size != nullptr;
+            const float w = known ? static_cast<float>(std::max(shared_.target_size->w, 1)) : 1.0f;
+            const float h = known ? static_cast<float>(std::max(shared_.target_size->h, 1)) : 1.0f;
+            cb.view_info[0] = w;
+            cb.view_info[1] = h;
+            cb.view_info[2] = 1.0f / w;
+            cb.view_info[3] = 1.0f / h;
         }
         if (SUCCEEDED(ctx->Map(frame_cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             std::memcpy(mapped.pData, &cb, sizeof(cb));
