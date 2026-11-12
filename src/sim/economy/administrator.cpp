@@ -1,6 +1,7 @@
 #include "pat/sim/economy/administrator.hpp"
 
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/money.hpp"
 #include "pat/sim/economy/taxes.hpp"
 #include "pat/sim/world.hpp"
@@ -163,8 +164,10 @@ Administration compute_administration(const ControlRules& rules, const Administr
 
 // ---- province --------------------------------------------------------------------------------------
 
-AdministrationInput
-administration_input(const World& world, const AdministratorSource* source, ProvinceId province) {
+AdministrationInput administration_input(const World& world,
+                                         const AdministratorSource* source,
+                                         ProvinceId province,
+                                         const ProvinceModifiers* modifiers) {
     AdministrationInput in;
     if (!world.economy_present() || !world.exists(province)) {
         return in;
@@ -174,6 +177,12 @@ administration_input(const World& world, const AdministratorSource* source, Prov
     in.control = e.provinces.control[p];
     in.corruption = e.provinces.corruption[p];
     in.unrest = e.provinces.unrest[p];
+    if (modifiers != nullptr) {
+        in.profile = modifiers->profile();
+        in.building_control = Fixed32::from_int(modifiers->control_points);
+        in.oversight_permille = modifiers->oversight_permille;
+        return in;
+    }
     const CharacterId administrator = e.provinces.administrator[p];
     if (administrator.valid() && world.is_alive(administrator)) {
         in.profile = clamped(source != nullptr ? source->profile(world, administrator)
@@ -198,8 +207,9 @@ Administration step_province_administration(World& world,
     if (!world.economy_present() || !world.exists(province)) {
         return {};
     }
+    const ProvinceModifiers modifiers = province_modifiers(world, rules, source, province);
     const Administration result =
-        compute_administration(rules.control, administration_input(world, source, province));
+        compute_administration(rules.control, administration_input(world, source, province, &modifiers));
     apply_province_administration(world, province, result);
     return result;
 }

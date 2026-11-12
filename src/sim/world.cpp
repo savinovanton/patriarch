@@ -251,6 +251,7 @@ void World::set_province_owner(ProvinceId province, DynastyId owner) {
         if (current != previous) {
             economy_release_foreign_administrator(province);
         }
+        modifier_cache_.mark(province.index());  // the policy of the new owner decides the levels
     }
 }
 
@@ -807,6 +808,7 @@ void World::set_character_skill(CharacterId id, Skill skill, core::Fixed32 value
     PAT_ASSERT(static_cast<std::size_t>(skill) < kSkillCount, "set_character_skill: bad skill");
     if (is_alive(id) && static_cast<std::size_t>(skill) < kSkillCount) {
         characters_.skills[id.index()][static_cast<std::size_t>(skill)] = clamp_skill(value);
+        economy_note_character_change(id);
     }
 }
 
@@ -875,6 +877,7 @@ bool World::set_character_traits(CharacterId id, std::span<const std::uint16_t> 
         }
     }
     characters_.traits[id.index()] = sorted;  // zeros are at the end: sorted holds the entries first
+    economy_note_character_change(id);
     return true;
 }
 

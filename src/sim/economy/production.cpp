@@ -223,22 +223,42 @@ WealthResult compute_wealth(const ConsumptionRules& rules,
                             Fixed32 wealth,
                             const std::array<std::int32_t, kMaxGoods>& shortage,
                             Breakdown* breakdown) {
+    return compute_wealth(rules, group, wealth, shortage, 0, breakdown);
+}
+
+WealthResult compute_wealth(const ConsumptionRules& rules,
+                            Group group,
+                            Fixed32 wealth,
+                            const std::array<std::int32_t, kMaxGoods>& shortage,
+                            std::int32_t famine_protect_permille,
+                            Breakdown* breakdown) {
     const std::size_t g = index_of(group);
     PAT_ASSERT(g < kGroupCount, "wealth of an unknown group");
     const std::int64_t base = static_cast<std::int64_t>(rules.wealth_base[g]) * kOne;
-    // sum of per-mille x points over the goods, then one conversion to Q16.16 points
+    // sum of per-mille x points over the goods, then one conversion to Q16.16 points; once as the
+    // shortage is and once as the people feel it (the buildings shield them from a grain shortage)
+    const std::int32_t felt_permille = kPermilleOne - std::clamp(famine_protect_permille, 0, kPermilleOne);
     std::int64_t weighted = 0;
+    std::int64_t felt = 0;
     for (std::size_t good = 0; good < kMaxGoods; ++good) {
-        weighted += static_cast<std::int64_t>(shortage[good]) * rules.shortage_wealth_points[good];
+        const std::int64_t points =
+            static_cast<std::int64_t>(shortage[good]) * rules.shortage_wealth_points[good];
+        weighted += points;
+        felt += good == kGrainGood ? mul_permille(points, felt_permille) : points;
     }
-    const std::int64_t target =
+    const std::int64_t unshielded =
         std::clamp<std::int64_t>(base - weighted * kOne / kPermilleOne, 0, kWealthMax.raw());
+    const std::int64_t target =
+        std::clamp<std::int64_t>(base - felt * kOne / kPermilleOne, 0, kWealthMax.raw());
 
     if (breakdown != nullptr) {
         breakdown->begin(term::kWealthTarget, Unit::Points, target);
         (void)breakdown->add_term(kRootNode, term::kWealthBase, base);
-        if (target != base) {
-            (void)breakdown->add_term(kRootNode, term::kWealthShortage, target - base);
+        if (unshielded != base) {
+            (void)breakdown->add_term(kRootNode, term::kWealthShortage, unshielded - base);
+        }
+        if (target != unshielded) {
+            (void)breakdown->add_term(kRootNode, term::kWealthBuildings, target - unshielded);
         }
         PAT_ASSERT(breakdown->is_consistent(), "the wealth breakdown must add up to the target");
     }
@@ -250,10 +270,19 @@ WealthResult compute_wealth(const ConsumptionRules& rules,
 
 // ---- province --------------------------------------------------------------------------------------
 
-ProductionInput production_input(const World& world, const PriceSource& prices, ProvinceId province) {
+ProductionInput production_input(const World& world,
+                                 const PriceSource& prices,
+                                 ProvinceId province,
+                                 const ProvinceModifiers* modifiers) {
     ProductionInput in;
     if (!world.economy_present() || !world.exists(province)) {
         return in;
+    }
+    if (modifiers != nullptr) {
+        for (std::size_t good = 0; good < kMaxGoods; ++good) {
+            in.buildings_permille[good] = modifiers->output_permille[good];
+        }
+        in.famine_protect_permille = modifiers->famine_protect_permille;
     }
     const EconomyState& e = world.economy();
     const std::size_t p = province.index();
@@ -302,9 +331,12 @@ ProvinceProduction compute_province_production(const EconomyRules& rules, const 
                                           : economy::shortage_permille(out.need[good], out.output[good]);
     }
     for (std::size_t g = 0; g < kGroupCount; ++g) {
-        out.new_wealth[g] =
-            compute_wealth(rules.consumption, static_cast<Group>(g), in.wealth[g], out.shortage_permille)
-                .next;
+        out.new_wealth[g] = compute_wealth(rules.consumption,
+                                           static_cast<Group>(g),
+                                           in.wealth[g],
+                                           out.shortage_permille,
+                                           in.famine_protect_permille)
+                                .next;
     }
     return out;
 }
@@ -328,8 +360,9 @@ ProvinceProduction step_province_production(World& world,
     if (!world.economy_present() || !world.exists(province)) {
         return {};
     }
+    const ProvinceModifiers modifiers = province_modifiers(world, rules, nullptr, province);
     const ProvinceProduction production =
-        compute_province_production(rules, production_input(world, prices, province));
+        compute_province_production(rules, production_input(world, prices, province, &modifiers));
     apply_province_production(world, province, production);
     return production;
 }
@@ -374,7 +407,12 @@ Breakdown explain_wealth(const EconomyRules& rules, const ProductionInput& input
     const std::size_t g = index_of(group);
     if (g < kGroupCount) {
         const ProvinceProduction production = compute_province_production(rules, input);
-        (void)compute_wealth(rules.consumption, group, input.wealth[g], production.shortage_permille, &out);
+        (void)compute_wealth(rules.consumption,
+                             group,
+                             input.wealth[g],
+                             production.shortage_permille,
+                             input.famine_protect_permille,
+                             &out);
     }
     return out;
 }

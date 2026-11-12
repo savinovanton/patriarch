@@ -3,9 +3,16 @@ format_version = 1
 # Типы зданий M1 (GDD 03 §8, §15). slot — стабильный индекс 1...255, записывается в сейвы. GDD не
 # даёт цен; economy-model §11.1 даёт один пример — мельницу. Остальные семь зданий — собственные
 # значения [предл.] того же порядка; они продублированы в EconomyRules::defaults(), тест следит за
-# совпадением. output_permille — множитель выпуска по id товаров из goods.pd; не названные товары —
-# 1000 (без эффекта). Прочие эффекты зданий (контроль, коррупция, рекруты, защита от голода) и кэш
-# модификаторов — E9-T17.
+# совпадением. Эффекты (E9-T17) — набор модификаторов, их складывают по провинции
+# (src/sim/economy/modifiers.hpp), все числа [предл.]:
+#   output_permille         — множитель выпуска по id товаров из goods.pd; не названные товары — 1000
+#                             (без эффекта); множители нескольких зданий складываются как приращения
+#                             к 1000;
+#   control_points          — очки, добавляемые к цели контроля воеводы (F7), -50...50;
+#   oversight_permille      — промилле, снимаемые с цели коррупции (F7), 0...1000;
+#   recruit_permille        — множитель рекрутского потенциала (F11), 1000 — без эффекта;
+#   famine_protect_permille — доля нехватки хлеба, которой население не ощущает (F5), 0...1000.
+# Пропущенный эффект — без эффекта.
 #
 # Требования к месту (E9-T16, StartConstruction): min_development — наименьшее развитие провинции;
 # allowed_kinds — виды провинции, в которых можно строить (пропуск — в любых); max_per_province —
@@ -15,6 +22,7 @@ format_version = 1
 building "mill" {
     slot = 1
     name_key = "building.mill"
+    desc_key = "building.mill.desc"
     cost_kop = 400000                # 4000 руб. [предл.]
     build_days = 120
     upkeep_kop_month = 3000          # 30 руб. в месяц
@@ -24,6 +32,7 @@ building "mill" {
 building "manufactory" {
     slot = 2
     name_key = "building.manufactory"
+    desc_key = "building.manufactory.desc"
     cost_kop = 1200000               # 12000 руб. [предл.]
     build_days = 240
     upkeep_kop_month = 10000         # 100 руб. в месяц
@@ -35,6 +44,7 @@ building "manufactory" {
 building "works" {
     slot = 3
     name_key = "building.works"
+    desc_key = "building.works.desc"
     cost_kop = 2000000               # 20000 руб. [предл.]
     build_days = 360
     upkeep_kop_month = 15000         # 150 руб. в месяц
@@ -46,14 +56,17 @@ building "works" {
 building "tract" {
     slot = 4
     name_key = "building.tract"
+    desc_key = "building.tract.desc"
     cost_kop = 600000                # 6000 руб. [предл.]
     build_days = 180
     upkeep_kop_month = 4000          # 40 руб. в месяц
+    control_points = 3               # дороги: воевода дотягивается до уезда
 }
 
 building "wharf" {
     slot = 5
     name_key = "building.wharf"
+    desc_key = "building.wharf.desc"
     cost_kop = 800000                # 8000 руб. [предл.]
     build_days = 150
     upkeep_kop_month = 6000          # 60 руб. в месяц
@@ -64,24 +77,32 @@ building "wharf" {
 building "ostrog" {
     slot = 6
     name_key = "building.ostrog"
+    desc_key = "building.ostrog.desc"
     cost_kop = 1000000               # 10000 руб. [предл.]
     build_days = 240
     upkeep_kop_month = 12000         # 120 руб. в месяц
     allowed_kinds = [ border, steppe, northern ]
+    control_points = 5               # гарнизон
+    recruit_permille = 1250
 }
 
 building "church" {
     slot = 7
     name_key = "building.church"
+    desc_key = "building.church.desc"
     cost_kop = 500000                # 5000 руб. [предл.]
     build_days = 300
     upkeep_kop_month = 2000          # 20 руб. в месяц
+    control_points = 2               # приход: учёт и порядок
+    oversight_permille = 30          # исповедь и приходские книги мешают воровству
 }
 
 building "granary" {
     slot = 8
     name_key = "building.granary"
+    desc_key = "building.granary.desc"
     cost_kop = 300000                # 3000 руб. [предл.]
     build_days = 90
     upkeep_kop_month = 2000          # 20 руб. в месяц
+    famine_protect_permille = 300    # хлебный магазин смягчает недород
 }

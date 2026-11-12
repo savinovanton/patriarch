@@ -2,6 +2,7 @@
 
 #include "pat/core/fixed.hpp"
 #include "pat/sim/economy/breakdown.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/money.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -148,11 +149,22 @@ struct WealthResult {
 
 /// F5: one month of the wealth of a group. Root of the breakdown: term::kWealthTarget (Points, Fixed32
 /// raw) = the target; children: kWealthBase and kWealthShortage (what is missing, negative, left out
-/// at 0). The buildings term (kWealthBuildings) is 0 in M1 and left out.
+/// at 0). The buildings term (kWealthBuildings) is what the famine protection of the buildings gives
+/// back (E9-T17, below), left out at 0.
 [[nodiscard]] WealthResult compute_wealth(const ConsumptionRules& rules,
                                           Group group,
                                           core::Fixed32 wealth,
                                           const std::array<std::int32_t, kMaxGoods>& shortage_permille,
+                                          Breakdown* breakdown = nullptr);
+/// The same with the famine protection of the buildings (E9-T17): the people feel only
+/// `1000 - famine_protect_permille` per-mille of a shortage of GRAIN (the only good with a stock). The
+/// breakdown shows the whole shortage in kWealthShortage and what the protection gave back (positive) in
+/// kWealthBuildings, so the two add up to the effect of the shortage as it is felt.
+[[nodiscard]] WealthResult compute_wealth(const ConsumptionRules& rules,
+                                          Group group,
+                                          core::Fixed32 wealth,
+                                          const std::array<std::int32_t, kMaxGoods>& shortage_permille,
+                                          std::int32_t famine_protect_permille,
                                           Breakdown* breakdown = nullptr);
 
 // ---- province ------------------------------------------------------------------------------------
@@ -165,12 +177,16 @@ struct ProductionInput {
     core::Fixed32 control = kDefaultControl;
     ProvinceKind kind = ProvinceKind::Rural;
     std::array<core::Fixed32, kMaxGoods> capacity{};
-    /// Multiplier of the buildings per good: 1000 in M1 (E9-T17 fills it from the modifier cache).
+    /// Multiplier of the buildings per good (E9-T17: ProvinceModifiers::output_permille); 1000 without
+    /// modifiers.
     std::array<std::int32_t, kMaxGoods> buildings_permille = [] {
         std::array<std::int32_t, kMaxGoods> ones{};
         ones.fill(kPermilleOne);
         return ones;
     }();
+    /// Share of a grain shortage the buildings take off the people
+    /// (ProvinceModifiers::famine_protect_permille).
+    std::int32_t famine_protect_permille = 0;
     /// 1000 in M1 (the harvest of M2).
     std::int32_t harvest_permille = kPermilleOne;
     /// Price of a unit of every good, as the PriceSource said (0 where nothing is produced).
@@ -198,8 +214,13 @@ struct ProvinceProduction {
 
 /// The input of a province as the World holds it; the prices come from `prices` (queried for every
 /// good the province can produce). A default input for a world without economy or an unknown province.
-[[nodiscard]] ProductionInput
-production_input(const World& world, const PriceSource& prices, ProvinceId province);
+/// `modifiers` (E9-T17) carries the effect of the buildings of the province: the multipliers of the output
+/// and the famine protection; null means "no buildings" (neutral). `step_province_production` and the
+/// forecast pass the set of the province.
+[[nodiscard]] ProductionInput production_input(const World& world,
+                                               const PriceSource& prices,
+                                               ProvinceId province,
+                                               const ProvinceModifiers* modifiers = nullptr);
 
 /// One month of the province, from the input alone. Pure.
 [[nodiscard]] ProvinceProduction compute_province_production(const EconomyRules& rules,

@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/sim/economy/administrator.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/money.hpp"
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/population.hpp"
@@ -134,8 +135,9 @@ MoodInput mood_input(const World& world, const EconomyRules& rules, ProvinceId p
         in.wealth[g] = e.groups.wealth[first + g];
     }
     in.control = e.provinces.control[p];
-    in.tax_level = effective_tax_level(world, rules, province);
-    in.recruit_level = effective_recruit_level(world, rules, province);
+    const ProvinceModifiers modifiers = province_modifiers(world, rules, nullptr, province);
+    in.tax_level = modifiers.tax_level;
+    in.recruit_level = modifiers.recruit_level;
     return in;
 }
 

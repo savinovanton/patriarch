@@ -3,6 +3,7 @@
 #include "pat/sim/command_log.hpp"
 #include "pat/sim/demography.hpp"
 #include "pat/sim/economy/administrator.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/production.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
@@ -580,7 +581,22 @@ std::string structure_problem(const World& world) {
     if (std::string problem = index_problem(world); !problem.empty()) {
         return problem;
     }
-    return world.economy_present() ? economy_problem(world) : std::string();
+    if (!world.economy_present()) {
+        return {};
+    }
+    // E9-T17: the cache of the province modifiers is derived data; a clean entry must be what the direct
+    // computation gives now (the model's systems use the stub profile, so the whole set is compared).
+    for (std::size_t p = 0; p < world.provinces().size(); ++p) {
+        const ProvinceId id(static_cast<std::uint32_t>(p));
+        const eco::ProvinceModifiers direct = eco::compute_province_modifiers(world, rules(), nullptr, id);
+        if (world.modifier_cache().clean(p) && !(world.modifier_cache().value(p) == direct)) {
+            return std::format("the modifier cache of province {} differs from the direct computation", p);
+        }
+        if (!(eco::province_modifiers(world, rules(), nullptr, id) == direct)) {
+            return std::format("the answer of the modifier cache for province {} is not the direct one", p);
+        }
+    }
+    return economy_problem(world);
 }
 
 // ---- the simplified model ------------------------------------------------------------------------

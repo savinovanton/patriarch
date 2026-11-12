@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/sim/economy/administrator.hpp"
+#include "pat/sim/economy/modifiers.hpp"
 #include "pat/sim/economy/money.hpp"
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/production.hpp"
@@ -51,8 +52,9 @@ compute_recruit_cap(const EconomyRules& rules, const RecruitInput& input, Breakd
         std::uint16_t code;
         std::int32_t permille;
     };
-    const std::array<Step, 2> steps{{
+    const std::array<Step, 3> steps{{
         {term::kRecruitPolicy, level_permille(recruit, input.level)},
+        {term::kRecruitBuildings, input.buildings_permille},
         {term::kRecruitControl, control_permille(input.control)},
     }};
 
@@ -114,6 +116,10 @@ std::uint32_t recruit_ceiling(const EconomyRules& rules, const std::array<std::u
     if (rules.recruit.level_count <= 0) {
         best = kPermilleOne;
     }
+    // rounded UP, so that the bound stays above the chain of truncated multiplications of the formula
+    best = static_cast<std::int32_t>(
+        (static_cast<std::int64_t>(best) * max_building_recruit_permille(rules) + kPermilleOne - 1) /
+        kPermilleOne);
     return to_people(mul_permille(base_people(rules.recruit, size), best));
 }
 
@@ -164,7 +170,9 @@ RecruitInput recruit_input(const World& world, const EconomyRules& rules, Provin
         in.size[g] = e.groups.size[p * kGroupCount + g];
     }
     in.control = e.provinces.control[p];
-    in.level = effective_recruit_level(world, rules, province);
+    const ProvinceModifiers modifiers = province_modifiers(world, rules, nullptr, province);
+    in.level = modifiers.recruit_level;
+    in.buildings_permille = modifiers.recruit_permille;
     in.pool = e.provinces.recruit_pool[p];
     return in;
 }

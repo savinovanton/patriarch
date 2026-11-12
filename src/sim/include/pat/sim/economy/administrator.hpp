@@ -23,12 +23,12 @@
 //
 //   control_target    = control_base
 //                     + steward_gain x (stewardship - neutral)             the administrator
-//                     + building_control                                   hook of E9-T17 (0 so far)
+//                     + building_control                                   the ready buildings (E9-T17)
 //                     - unrest_penalty x unrest                            disorder at home
 //                     clamped to 0..100
 //   corruption_target = corruption_base
 //                     - integrity_gain x (integrity - neutral)             the administrator
-//                     - oversight                                          hook of E9-T17 (0 so far)
+//                     - oversight                                          the ready buildings (E9-T17)
 //                     + low_control_corruption x (low_threshold - control) only while control is low
 //                     clamped to 0..1 (0..1000 per-mille)
 //
@@ -55,6 +55,8 @@ class World;
 }
 
 namespace pat::sim::economy {
+
+struct ProvinceModifiers;  // modifiers.hpp
 
 /// Skills of an administrator as the economy sees them, 0..100 (50 = neutral, no effect).
 struct AdministratorProfile {
@@ -104,8 +106,8 @@ struct AdministrationInput {
     core::Fixed32 unrest;                     ///< 0..100
     /// The profile of the administrator; the neutral one when there is nobody (see the top of the file).
     AdministratorProfile profile;
-    /// Hooks of E9-T17 (the modifiers of buildings): control points added and corruption per-mille
-    /// removed. Zero until buildings have effects.
+    /// The modifiers of the ready buildings (E9-T17): control points added and corruption per-mille
+    /// removed. Zero without buildings.
     core::Fixed32 building_control;
     std::int32_t oversight_permille = 0;
 };
@@ -149,9 +151,14 @@ approach(core::Fixed32 current, core::Fixed32 target, std::int32_t inertia_permi
 // ---- province ------------------------------------------------------------------------------------
 
 /// The input of a province as the World holds it (the profile comes from `source`, which may be
-/// null for the stub); a default input for a world without economy or an unknown province.
-[[nodiscard]] AdministrationInput
-administration_input(const World& world, const AdministratorSource* source, ProvinceId province);
+/// null for the stub); a default input for a world without economy or an unknown province. With
+/// `modifiers` (E9-T17: the set of the province, modifiers.hpp) the profile and the effect of the
+/// buildings come from that set instead - what the system passes, so the formula reads the cache; without
+/// it the buildings have no effect.
+[[nodiscard]] AdministrationInput administration_input(const World& world,
+                                                       const AdministratorSource* source,
+                                                       ProvinceId province,
+                                                       const ProvinceModifiers* modifiers = nullptr);
 
 /// Writes control and corruption of a result into the columns of the province.
 void apply_province_administration(World& world, ProvinceId province, const Administration& result);
