@@ -451,6 +451,23 @@ TEST_CASE("demography: validation rejects out-of-range parameters") {
     require_error(broken([](DemographyRules& r) { r.pregnancy_months = 0; }), RulesErrorCode::Conception);
     require_error(broken([](DemographyRules& r) { r.pregnancy_months = 25; }), RulesErrorCode::Conception);
 
+    require_error(broken([](DemographyRules& r) { r.crowding_from_living = -1; }),
+                  RulesErrorCode::Conception);
+    require_error(broken([](DemographyRules& r) { r.crowding_to_living = r.crowding_from_living; }),
+                  RulesErrorCode::Conception);
+    require_error(broken([](DemographyRules& r) { r.crowding_to_living = 1048577; }),
+                  RulesErrorCode::Conception);
+    require_error(broken([](DemographyRules& r) { r.crowding_min_permille = 1001; }),
+                  RulesErrorCode::Conception);
+    require_error(broken([](DemographyRules& r) { r.miscarriage_permille = -1; }),
+                  RulesErrorCode::Conception);
+
+    require_error(broken([](DemographyRules& r) { r.stillbirth_permille = 1001; }), RulesErrorCode::Birth);
+    require_error(broken([](DemographyRules& r) { r.newborn_health = 101; }), RulesErrorCode::Birth);
+    require_error(broken([](DemographyRules& r) { r.skill_inherit_permille = 10001; }),
+                  RulesErrorCode::Birth);
+    require_error(broken([](DemographyRules& r) { r.skill_spread = 21; }), RulesErrorCode::Birth);
+    require_error(broken([](DemographyRules& r) { r.skill_spread = -1; }), RulesErrorCode::Birth);
     require_error(broken([](DemographyRules& r) { r.boys_per_100_girls = 0; }), RulesErrorCode::Birth);
     require_error(broken([](DemographyRules& r) { r.childbirth_risk_base_permille = 1001; }),
                   RulesErrorCode::Birth);
@@ -458,6 +475,45 @@ TEST_CASE("demography: validation rejects out-of-range parameters") {
                   RulesErrorCode::Birth);  // base 50 - 60 - 10 < 0
     require_error(broken([](DemographyRules& r) { r.childbirth_risk_low_health_delta_permille = 951; }),
                   RulesErrorCode::Birth);  // base 50 + 951 > 1000
+}
+
+TEST_CASE("demography: the crowding factor falls linearly from the start to the end and stays there") {
+    const DemographyRules& rules = defaults();  // 3000 -> 5000, floor 50
+    CHECK(crowding_permille(rules, 0) == 1000);
+    CHECK(crowding_permille(rules, 3000) == 1000);
+    CHECK(crowding_permille(rules, 4000) == 525);  // halfway: 1000 - 950 / 2
+    CHECK(crowding_permille(rules, 4999) == 1000 - 950 * 1999 / 2000);
+    CHECK(crowding_permille(rules, 5000) == 50);
+    CHECK(crowding_permille(rules, 20000) == 50);
+    CHECK(crowding_permille(rules, -5) == 1000);
+    int previous = 1000;
+    for (int living = 0; living <= 6000; living += 7) {
+        const int factor = crowding_permille(rules, living);
+        CHECK(factor <= previous);
+        CHECK(factor >= rules.crowding_min_permille);
+        previous = factor;
+    }
+    DemographyRules off = rules;
+    off.crowding_min_permille = 1000;
+    CHECK(crowding_permille(off, 9999) == 1000);
+}
+
+TEST_CASE("demography: crowding multiplies the monthly chance and is a term of the breakdown") {
+    ConceptionInput input = couple(25);
+    const auto roomy = conception_permille(defaults(), input);
+    CHECK_FALSE(has_term(roomy, "demography.conception.crowding"));  // 0 living: neutral, no term
+
+    input.living_count = 4000;  // x0.525
+    const auto crowded = conception_permille(defaults(), input);
+    CHECK(has_term(crowded, "demography.conception.crowding"));
+    CHECK(well_formed(crowded));
+    CHECK(crowded.total == roomy.total.mul_permille(525));
+
+    input.living_count = 5000;
+    const auto full = conception_permille(defaults(), input);
+    CHECK(well_formed(full));
+    CHECK(full.total == roomy.total.mul_permille(50));
+    CHECK(full.total > Fixed64::zero());  // a soft brake, not a hard cap
 }
 
 TEST_CASE("demography: validation rejects inconsistent life stages") {

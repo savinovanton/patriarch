@@ -154,11 +154,20 @@ struct Validator {
     }
 
     Result<void, CommandError> operator()(const cmd::CreatePerson& c) const {
-        const CharacterInit& init = c.init;
         if (actor.valid()) {
             return reject(Rejection::NotAuthorized, "only the system may create persons directly");
         }
-        if (!world.exists(init.dynasty)) {
+        if (const auto verdict = check_person(c.init); !verdict) {
+            return verdict;
+        }
+        return check_parents(c.init.father, c.init.mother, c.init.birth_date);
+    }
+
+    /// Everything that makes a CharacterInit acceptable except the parents (CreatePerson and Birth). A
+    /// newborn of parents without a house has no dynasty either.
+    Result<void, CommandError> check_person(const CharacterInit& init,
+                                            bool dynasty_may_be_none = false) const {
+        if (!world.exists(init.dynasty) && !(dynasty_may_be_none && !init.dynasty.valid())) {
             return reject(Rejection::UnknownEntity, "unknown dynasty");
         }
         if (!is_sane_date(init.birth_date) || init.birth_date > world.today()) {
@@ -214,7 +223,71 @@ struct Validator {
         if (!planned_death_is_valid(init.birth_date, init.planned_death)) {
             return reject(Rejection::InvalidArgument, "planned death lies outside the lifetime");
         }
-        return check_parents(init.father, init.mother, init.birth_date);
+        return accept();
+    }
+
+    Result<void, CommandError> operator()(const cmd::Conceive& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may start a pregnancy");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "pregnancies need dynasty mode");
+        }
+        if (!world.is_alive(c.mother) || !world.is_alive(c.father)) {
+            return reject(Rejection::UnknownEntity, "the mother or the father does not exist");
+        }
+        const CharacterTable& t = world.characters();
+        if (t.sex[c.mother.index()] != Sex::Female || t.sex[c.father.index()] != Sex::Male) {
+            return reject(Rejection::InvalidArgument, "the mother must be a woman and the father a man");
+        }
+        if (static_cast<std::uint8_t>(c.end) >= kPregnancyEndCount ||
+            static_cast<std::uint8_t>(c.legitimacy) >= kLegitimacyCount) {
+            return reject(Rejection::InvalidArgument, "unknown pregnancy outcome or legitimacy");
+        }
+        if (!is_sane_date(c.conceived) || !is_sane_date(c.due) || c.conceived > world.today() ||
+            c.due <= c.conceived || c.due - c.conceived > kMaxPregnancyDays) {
+            return reject(Rejection::InvalidArgument, "invalid conception or due date");
+        }
+        if (world.is_pregnant(c.mother)) {
+            return reject(Rejection::InvalidState, "the mother already carries a child");
+        }
+        return accept();
+    }
+
+    Result<void, CommandError> operator()(const cmd::Birth& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may deliver a child");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "births need dynasty mode");
+        }
+        if (!world.is_alive(c.mother)) {
+            return reject(Rejection::UnknownEntity, "the mother does not exist or is dead");
+        }
+        const auto pregnancy = world.pregnancy_of(c.mother);
+        if (!pregnancy) {
+            return reject(Rejection::InvalidState, "the mother is not pregnant");
+        }
+        if (pregnancy->due > world.today()) {
+            return reject(Rejection::InvalidState, "the child is not due yet");
+        }
+        if (static_cast<std::uint8_t>(c.outcome) >= kBirthOutcomeCount) {
+            return reject(Rejection::InvalidArgument, "unknown birth outcome");
+        }
+        if ((pregnancy->end == PregnancyEnd::Miscarriage) != (c.outcome == BirthOutcome::Miscarriage)) {
+            return reject(Rejection::InvalidArgument, "the outcome does not match the pregnancy");
+        }
+        if (c.outcome == BirthOutcome::Live) {
+            if (!world.can_create_character()) {
+                return reject(Rejection::InvalidState, "the character table is full");
+            }
+            CharacterInit init = c.newborn;  // checked like CreatePerson, as it will be created
+            init.birth_date = world.today();
+            init.father = CharacterId();
+            init.mother = CharacterId();
+            return check_person(init, true);
+        }
+        return accept();
     }
 
     Result<void, CommandError> trait_command() const {
@@ -627,6 +700,20 @@ struct Applier {
         world.add_honor(c.dynasty, c.delta, c.reason);
     }
     void operator()(const cmd::CreatePerson& c) const { (void)world.create_character(c.init); }
+    void operator()(const cmd::Conceive& c) const {
+        (void)world.begin_pregnancy({c.mother, c.father, c.conceived, c.due, c.end, c.legitimacy});
+    }
+    void operator()(const cmd::Birth& c) const {
+        const auto pregnancy = world.end_pregnancy(c.mother);
+        if (pregnancy && c.outcome == BirthOutcome::Live) {
+            CharacterInit init = c.newborn;
+            init.birth_date = world.today();
+            init.father = pregnancy->father;
+            init.mother = c.mother;
+            init.legitimacy = pregnancy->legitimacy;
+            (void)world.create_character(init);
+        }
+    }
     void operator()(const cmd::Die& c) const { (void)world.die(c.character, c.cause); }
     void operator()(const cmd::PlanDeath& c) const {
         (void)world.set_character_planned_death(c.character, c.date);
@@ -711,6 +798,14 @@ struct CommandTag<cmd::GrantTrait> {
 template <>
 struct CommandTag<cmd::RevokeTrait> {
     static constexpr CommandType value = CommandType::RevokeTrait;
+};
+template <>
+struct CommandTag<cmd::Conceive> {
+    static constexpr CommandType value = CommandType::Conceive;
+};
+template <>
+struct CommandTag<cmd::Birth> {
+    static constexpr CommandType value = CommandType::Birth;
 };
 template <>
 struct CommandTag<cmd::Die> {
@@ -828,6 +923,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustHonor";
         case CommandType::CreatePerson:
             return "CreatePerson";
+        case CommandType::Conceive:
+            return "Conceive";
+        case CommandType::Birth:
+            return "Birth";
         case CommandType::GrantTrait:
             return "GrantTrait";
         case CommandType::RevokeTrait:

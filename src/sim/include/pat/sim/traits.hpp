@@ -107,5 +107,9 @@ skill_breakdown(const World& world, const TraitCatalog& catalog, CharacterId cha
                                                      CharacterAttribute attribute);
 [[nodiscard]] std::int32_t trait_mortality_multiplier(const TraitCatalog& catalog,
                                                       std::span<const std::uint16_t> traits);
+/// The same for the chance to conceive: the product of `fertility_multiplier_permille` of the traits in
+/// the set (per mille of one, 1000 = no effect, bounded like the mortality multiplier).
+[[nodiscard]] std::int32_t trait_fertility_multiplier(const TraitCatalog& catalog,
+                                                      std::span<const std::uint16_t> traits);
 
 }  // namespace pat::sim

@@ -319,4 +319,14 @@ std::int32_t trait_mortality_multiplier(const TraitCatalog& catalog, std::span<c
     return accumulated;
 }
 
+std::int32_t trait_fertility_multiplier(const TraitCatalog& catalog, std::span<const std::uint16_t> traits) {
+    std::int32_t accumulated = 1000;
+    for (const TraitDef& trait : catalog.definitions) {
+        if (std::find(traits.begin(), traits.end(), trait.id) != traits.end()) {
+            accumulated = accumulate_multiplier(accumulated, trait.fertility_multiplier_permille);
+        }
+    }
+    return accumulated;
+}
+
 }  // namespace pat::sim

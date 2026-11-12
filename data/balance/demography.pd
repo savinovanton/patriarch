@@ -58,6 +58,14 @@ demography_rules "main" {
         high_health_factor_permille = 1100
         max_children_per_woman = 14
         pregnancy_months = 9
+        # Теснота (E7-T12): множитель шанса зачатия 1,0 до 3000 живых персонажей в мире и линейно падает до
+        # 0,05 к 5000 (бюджет NFR-PERF-5): число живых выходит на плато, а не растёт экспонентой.
+        crowding_from_living = 3000
+        crowding_to_living = 5000
+        crowding_min_permille = 50
+        # Выкидыши: 3 % беременностей кончаются в месяцы с 1-го до предпоследнего (GDD 01 §3.3 включает их
+        # в смертность первого года; наложение снимет E7-T19)
+        miscarriage_permille = 30
     }
 
     # --- Роды (GDD 01 §3.3) ---
@@ -68,6 +76,12 @@ demography_rules "main" {
         risk_high_health_delta_permille = -10
         risk_low_health_delta_permille = 10
         risk_physician_delta_permille = -10
+        # Мертворождения: 2 % родов в срок; здоровье новорождённого 70 (ни «слабый», ни «крепкий»);
+        # навык ребёнка = 0,3 среднего навыка живых родителей ± 3 очка (GDD 01 §3.4)
+        stillbirth_permille = 20
+        newborn_health = 70
+        skill_inherit_permille = 300
+        skill_spread = 3
     }
 
     # --- Возрастные периоды и брак (GDD 01 §3.1) ---

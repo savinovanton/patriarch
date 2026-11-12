@@ -51,6 +51,10 @@
 // i32 delta raw value. Rows are sorted by dynasty id and omitted when prestige and history both
 // have their defaults. Older saves default to initial prestige and empty history.
 //
+// Schema 11 (E7-T12) adds section 4 "pregnancy": u32 rows | rows x pregnancy row (18 bytes), ascending by
+// mother id: u32 mother | u32 father | i32 conceived | i32 due | u8 end (0 at term, 1 miscarriage) |
+// u8 legitimacy. Absence means no pregnancies. The labour queue is derived and not stored.
+//
 // Schema 10 (E9-T15) keeps the byte layout and changes the unit of loan interest carries from
 // millionths to twelve-millionths of a kopeck. Older carries are validated and multiplied by 12.
 //
@@ -72,6 +76,7 @@ using detail::kSectionDynasty;
 using detail::kSectionKin;
 using detail::kSectionOpinion;
 using detail::kSectionPerson;
+using detail::kSectionPregnancy;
 using detail::kSectionStanding;
 using detail::plausible;
 
@@ -80,6 +85,7 @@ constexpr std::size_t kPersonRowBytes = 90;
 constexpr std::size_t kDynastyRowBytes = 9;
 constexpr std::size_t kBranchRowBytes = 8;
 constexpr std::size_t kKinRowBytes = 4 + 4 + 1 + 4 * kMaxExSpouses + 4 * kGodparentSlots;
+constexpr std::size_t kPregnancyRowBytes = 4 + 4 + 4 + 4 + 1 + 1;
 constexpr std::size_t kChronicleEntryBytes = 17;
 constexpr std::size_t kMinChronicleRowBytes = 6 + kChronicleEntryBytes;
 constexpr std::size_t kOpinionSourceBytes = 2 + 4;
@@ -97,6 +103,7 @@ constexpr SectionInfo kSections[] = {
     {kSectionPerson, 1, 2},
     {kSectionDynasty, 1, 2},
     {kSectionKin, 1, 3},
+    {kSectionPregnancy, 1, 11},
     {kSectionChronicle, 1, 6},
     {kSectionOpinion, 1, 7},
     {kSectionStanding, 1, 8},
@@ -298,6 +305,21 @@ void World::save_state(core::ByteWriter& out) const {
             }
             sections.push_back(std::move(section));
         }
+    }
+
+    if (!pregnancies_.empty()) {
+        Section section{kSectionPregnancy, 1, {}};
+        core::ByteWriter& w = section.body;
+        w.u32(static_cast<std::uint32_t>(pregnancies_.size()));
+        for (const Pregnancy& p : pregnancies_) {
+            w.u32(p.mother.value());
+            w.u32(p.father.value());
+            w.i32(p.conceived.days());
+            w.i32(p.due.days());
+            w.u8(static_cast<std::uint8_t>(p.end));
+            w.u8(static_cast<std::uint8_t>(p.legitimacy));
+        }
+        sections.push_back(std::move(section));
     }
 
     if (!chronicles_.empty()) {
@@ -649,6 +671,37 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     if (chars.marriages[row] > kMaxMarriages) {
                         return fail("invalid marriage counter");
                     }
+                }
+            } else if (id == kSectionPregnancy) {
+                const std::uint32_t rows = sr.u32();
+                if (!world.dynasty_mode() || rows == 0 || rows > capacity ||
+                    !plausible(sr, rows, kPregnancyRowBytes)) {
+                    return fail("invalid pregnancy section");
+                }
+                world.pregnancies_.reserve(rows);
+                std::uint32_t previous_mother = 0;
+                for (std::uint32_t r = 0; r < rows; ++r) {
+                    Pregnancy p;
+                    const std::uint32_t mother = sr.u32();
+                    const std::uint32_t father = sr.u32();
+                    p.conceived = Date::from_days(sr.i32());
+                    p.due = Date::from_days(sr.i32());
+                    const std::uint8_t end = sr.u8();
+                    const std::uint8_t legitimacy = sr.u8();
+                    if (!sr.ok() || mother >= capacity || father >= capacity ||
+                        (r != 0 && mother <= previous_mother)) {
+                        return fail("pregnancy rows are out of range or out of order");
+                    }
+                    if (end >= kPregnancyEndCount || legitimacy >= kLegitimacyCount) {
+                        return fail("invalid pregnancy outcome or legitimacy");
+                    }
+                    previous_mother = mother;
+                    p.mother = CharacterId(mother);
+                    p.father = CharacterId(father);
+                    p.end = static_cast<PregnancyEnd>(end);
+                    p.legitimacy = static_cast<Legitimacy>(legitimacy);
+                    world.pregnancies_.push_back(p);
+                    // Whether the mother is alive and a woman, and the dates, are for check_invariants().
                 }
             } else if (id == kSectionChronicle) {
                 const std::uint32_t rows = sr.u32();

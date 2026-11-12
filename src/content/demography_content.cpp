@@ -198,6 +198,10 @@ private:
             rules_.high_health_fertility_permille = i32_of(*b, "high_health_factor_permille");
             rules_.max_children_per_woman = i32_of(*b, "max_children_per_woman");
             rules_.pregnancy_months = i32_of(*b, "pregnancy_months");
+            rules_.crowding_from_living = i32_of(*b, "crowding_from_living");
+            rules_.crowding_to_living = i32_of(*b, "crowding_to_living");
+            rules_.crowding_min_permille = i32_of(*b, "crowding_min_permille");
+            rules_.miscarriage_permille = i32_of(*b, "miscarriage_permille");
         }
         if (const TypedBlock* b = block_of(body, "birth")) {
             rules_.boys_per_100_girls = i32_of(*b, "boys_per_100_girls");
@@ -205,6 +209,10 @@ private:
             rules_.childbirth_risk_high_health_delta_permille = i32_of(*b, "risk_high_health_delta_permille");
             rules_.childbirth_risk_low_health_delta_permille = i32_of(*b, "risk_low_health_delta_permille");
             rules_.childbirth_risk_physician_delta_permille = i32_of(*b, "risk_physician_delta_permille");
+            rules_.stillbirth_permille = i32_of(*b, "stillbirth_permille");
+            rules_.newborn_health = i32_of(*b, "newborn_health");
+            rules_.skill_inherit_permille = i32_of(*b, "skill_inherit_permille");
+            rules_.skill_spread = i32_of(*b, "skill_spread");
         }
         if (const TypedBlock* b = block_of(body, "life_stages")) {
             rules_.adolescent_from = i32_of(*b, "adolescent_from");

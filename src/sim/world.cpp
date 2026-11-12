@@ -637,6 +637,7 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
 
     // 4. The queue has no business with the dead (birthday and planned death).
     life_queue_.remove_if([id](Date, const LifeEvent& event) { return event.character == id; });
+    (void)end_pregnancy(id);  // a mother who dies loses the child (Birth does this itself, see apply)
 
     // 5. The list of the living and the slot itself. The row is frozen from here on.
     living_.erase(std::lower_bound(living_.begin(), living_.end(), id));
@@ -1025,6 +1026,10 @@ void World::rebuild_derived_indexes() {
 
     rebuild_child_lists();
     life_queue_.clear();
+    labour_queue_.clear();
+    for (const Pregnancy& pregnancy : pregnancies_) {
+        labour_queue_.push(pregnancy.due, pregnancy.mother);
+    }
     if (!dynasty_mode() || !is_sane_date(today())) {
         return;
     }
@@ -1237,6 +1242,10 @@ WorldHash World::compute_hash() const {
 
     if (!opinions_.empty()) {
         out.ext[static_cast<std::size_t>(ExtPart::Opinion)] = nonzero(opinion_hash());
+    }
+
+    if (!pregnancies_.empty()) {
+        out.ext[static_cast<std::size_t>(ExtPart::Pregnancy)] = nonzero(pregnancy_hash());
     }
 
     if (economy_.meta.present != 0) {
@@ -1621,6 +1630,7 @@ std::vector<std::string> World::check_invariants() const {
         fail("province columns differ in size");
         return bad;
     }
+    check_pregnancy_invariants(bad);  // reads the sex column, so after the size checks
 
     if ((flags_ & ~kWorldFlagDynastyMode) != 0) {
         fail("unknown world flags are set");
