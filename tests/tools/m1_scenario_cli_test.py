@@ -63,14 +63,18 @@ with tempfile.TemporaryDirectory(prefix="patriarch-m1-") as directory:
     last_province = 'province "p0020"'
     assert original.count(last_province) == 1
     provinces.write_text(original.replace(last_province, 'province "p0021"'), encoding="utf-8")
+    holdings = changed_data / "scenarios" / "m1" / "holdings.pd"
+    original_holdings = holdings.read_text(encoding="utf-8")
+    holdings.write_text(original_holdings.replace("province:p0020", "province:p0021"), encoding="utf-8")
     invalid_map = run("--seed", seed, "--days", 0, data_dir=changed_data, exit_code=1)
     assert "map province 'p0020' has no content definition" in invalid_map.stderr, invalid_map.stderr
     assert "province definition 'p0021' has no map province" in invalid_map.stderr, invalid_map.stderr
 
     # Start with a valid change, then require loading the old save to fail on the content hash.
-    old_kind = "kind = province_kind:rural"
-    assert old_kind in original
-    provinces.write_text(original.replace(old_kind, "kind = province_kind:city", 1), encoding="utf-8")
+    provinces.write_text(original, encoding="utf-8")
+    old_control = "control = 80"
+    assert old_control in original_holdings
+    holdings.write_text(original_holdings.replace(old_control, "control = 79", 1), encoding="utf-8")
     changed = run("--seed", seed, "--days", 0, data_dir=changed_data)
     assert changed.stdout.strip() != start_hash, changed.stdout
     stale_save = run("--load", save, "--days", 0, data_dir=changed_data, exit_code=4)

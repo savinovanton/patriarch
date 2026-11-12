@@ -43,6 +43,7 @@ add_executable(patriarch_tests
     mapdata_test.cpp
     m1_content_test.cpp
     m1_definitions_test.cpp
+    m1_economy_content_test.cpp
     m1_hot_reload_test.cpp
     mortality_test.cpp
     names_content_test.cpp

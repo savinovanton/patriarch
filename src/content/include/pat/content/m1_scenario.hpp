@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pat/content/m1_content.hpp"
+#include "pat/content/m1_economy_content.hpp"
 #include "pat/content/province_bindings.hpp"
 #include "pat/core/result.hpp"
 #include "pat/data/content_registry.hpp"
@@ -28,6 +29,8 @@ struct M1Definitions {
     sim::DemographyRules demography;
     std::vector<HonorRank> honor_ranks;
     std::shared_ptr<const sim::TraitCatalog> traits;
+    std::shared_ptr<const sim::economy::EconomyRules> economy_rules = {};
+    std::shared_ptr<const M1EconomyContent> economy = {};
 };
 
 struct M1Scenario {
@@ -42,6 +45,7 @@ struct M1Scenario {
     sim::DemographyRules demography;
     std::vector<HonorRank> honor_ranks;
     std::shared_ptr<const sim::TraitCatalog> traits;
+    std::shared_ptr<const sim::economy::EconomyRules> economy_rules = {};
 };
 
 [[nodiscard]] mapdata::GenParams m1_map_params();

@@ -1,3 +1,4 @@
+#include "pat/content/m1_economy_content.hpp"
 #include "pat/content/m1_hot_reload.hpp"
 #include "pat/content/m1_scenario.hpp"
 #include "pat/data/content_source.hpp"
@@ -106,6 +107,9 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     CHECK(notifications.size() == 2);
 
     source.add(provinces_path, replace_first(provinces, "province \"p0020\"", "province \"p0021\""));
+    const std::string holdings_path = "scenarios/m1/holdings.pd";
+    const std::string holdings = read_file(source, holdings_path);
+    source.add(holdings_path, replace_first(holdings, "province:p0020", "province:p0021"));
     const auto mismatch = reload.poll();
     REQUIRE_FALSE(mismatch.has_value());
     CHECK(mismatch.error().message.find("map province 'p0020' has no content definition") !=
@@ -115,6 +119,7 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     CHECK(reload.current() == renamed);
     CHECK(notifications.size() == 2);
 
+    source.add(holdings_path, holdings);
     source.add(provinces_path,
                replace_first(provinces, "kind = province_kind:rural", "kind = province_kind:city"));
     require_publish(reload);
@@ -128,4 +133,40 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     CHECK(first_province_kind(recovered->registry) == "city");
     CHECK(first_province_kind(renamed->registry) == "rural");
     CHECK(initial->province_names.at(1) == "Тестовая провинция 1");
+}
+
+TEST_CASE("M1 hot reload validates economy state before publishing immutable definitions") {
+    const pat::data::DirectorySource shipped{std::string(PATRIARCH_DATA_DIR)};
+    pat::data::MemorySource source("m1-economy-hot-reload");
+    const auto files = shipped.list_files();
+    REQUIRE(files.has_value());
+    for (const auto& path : files.value()) {
+        source.add(path, read_file(shipped, path));
+    }
+    const auto map = pat::mapdata::generate_map(pat::content::m1_map_params());
+    pat::content::M1HotReload reload(source, map);
+    require_publish(reload);
+    const auto initial = reload.current();
+    REQUIRE(initial != nullptr);
+    REQUIRE(initial->economy_rules != nullptr);
+    REQUIRE(initial->economy != nullptr);
+    REQUIRE(initial->economy->holdings.size() == 20);
+    CHECK(initial->economy->holdings.front().control == pat::core::Fixed32::from_int(80));
+    const std::string path = "scenarios/m1/holdings.pd";
+    const std::string holdings = read_file(source, path);
+    source.add(path, replace_first(holdings, "owner_kind = dynasty", "owner_kind = crown"));
+    const auto invalid = reload.poll();
+    REQUIRE_FALSE(invalid.has_value());
+    CHECK(invalid.error().message.find("PD115") != std::string::npos);
+    CHECK(reload.current() == initial);
+
+    source.add(path, replace_first(holdings, "control = 80", "control = 79"));
+    require_publish(reload);
+    const auto changed = reload.current();
+    REQUIRE(changed != nullptr);
+    REQUIRE(changed->economy != nullptr);
+    CHECK(changed != initial);
+    CHECK(changed->economy->holdings.front().control == pat::core::Fixed32::from_int(79));
+    CHECK(initial->economy->holdings.front().control == pat::core::Fixed32::from_int(80));
+    CHECK(changed->registry.content_hash() != initial->registry.content_hash());
 }

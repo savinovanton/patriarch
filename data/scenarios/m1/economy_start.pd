@@ -1,0 +1,13 @@
+format_version = 1
+
+# Synthetic starting endowments [предл.], in kopecks. No player dynasty is selected here.
+# Historical ownership, biographies and the start options belong to E30/Geo.
+economy_start "m1" {
+    crown_treasury_kop = 10000000
+    dynasty_treasuries = {
+        golitsyn = 2000000
+        menshikov = 3000000
+        naryshkin = 1500000
+        sheremetev = 2500000
+    }
+}

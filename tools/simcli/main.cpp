@@ -8,6 +8,7 @@
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/sim/demo_scenario.hpp"
 #include "pat/sim/dynasty_standing.hpp"
+#include "pat/sim/economy/systems.hpp"
 #include "pat/sim/mortality.hpp"
 #include "pat/sim/opinion.hpp"
 #include "pat/sim/replay.hpp"
@@ -295,6 +296,7 @@ struct ScenarioStart {
     std::optional<World> m1_world;
     DemographyRules demography = kDefaultDemography;
     std::shared_ptr<const TraitCatalog> traits;
+    std::shared_ptr<const economy::EconomyRules> economy_rules;
     std::uint64_t replay_id = demo::kScenarioId;
     std::uint64_t content_hash = 0;
 
@@ -306,6 +308,7 @@ struct ScenarioStart {
             simulation.add_system(make_mortality_system(demography, traits));
             simulation.add_system(make_opinion_system());
             simulation.add_system(make_dynasty_standing_system());
+            economy::install_economy_systems(simulation, *economy_rules);
             return simulation;
         }
         return demo::make_simulation(demo_config);
@@ -365,6 +368,7 @@ pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::u
     start.m1_world.emplace(std::move(loaded.value().world));
     start.demography = loaded.value().demography;
     start.traits = loaded.value().traits;
+    start.economy_rules = loaded.value().economy_rules;
     start.replay_id = loaded.value().replay_id;
     start.content_hash = loaded.value().content_hash;
     return Result::ok(std::move(start));

@@ -133,3 +133,7 @@ building.granary.desc = "Общественный запас хлеба: нед�
 
 economy.loan.total = "Свободный лимит займа"
 economy.loan.clamp = "Ограничение лимита"
+
+trade_node.moscow.name = "Московский узел"
+trade_node.northern.name = "Северный узел"
+trade_node.volga.name = "Волжский узел"

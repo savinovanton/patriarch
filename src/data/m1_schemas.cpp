@@ -104,6 +104,73 @@ ObjectSchema honor_rank_schema() {
     return schema;
 }
 
+ObjectSchema holding_schema() {
+    ObjectSchema schema{std::string(kHoldingKind)};
+    schema.describe_kind("Начальное хозяйство сценария M1; баланс и владение — тестовые значения [предл.].");
+    schema.required("province", Type::reference("province"))
+        .describe("Провинция, для которой задаётся начальное хозяйство.")
+        .required("kind", Type::reference("province_kind"))
+        .describe("Вид провинции в этом сценарии; переопределяет базовое определение.")
+        .required("owner_kind", Type::enumeration({"unowned", "dynasty", "crown", "church", "free"}))
+        .describe("Вид начального владельца; dynasty требует поле owner.")
+        .optional("owner", Type::reference("dynasty"))
+        .describe("Род-владелец; допустим только для owner_kind = dynasty.")
+        .required("trade_node", Type::reference(std::string(kTradeNodeKind)))
+        .describe("Торговый узел; пока задаёт только группировку провинций для E19.")
+        .required("development", Type::integer(1, 10))
+        .describe("Начальное развитие провинции, 1…10.")
+        .required("slots_total", Type::integer(0, 6))
+        .describe("Число строительных слотов, 0…6.")
+        .required("population", Type::map(Type::integer(0, 32'000'000)))
+        .describe("Люди по ключам population_group; общая численность не больше 32 000 000.")
+        .required("capacity", Type::map(Type::fixed32(core::Fixed64::zero(), core::Fixed64::from_int(32767))))
+        .describe("Потенциал выпуска по ключам good, 0…32767.")
+        .optional("mood",
+                  Type::map(Type::fixed32(core::Fixed64::from_int(-100), core::Fixed64::from_int(100))))
+        .describe("Начальное настроение по группам; пропущенная группа равна 0.")
+        .optional("wealth", Type::map(Type::fixed32(core::Fixed64::zero(), core::Fixed64::from_int(300))))
+        .describe("Начальный достаток по группам; пропущенная группа равна 100.")
+        .optional("control",
+                  Type::fixed32(core::Fixed64::zero(), core::Fixed64::from_int(100)),
+                  TypedValue::of(core::Fixed32::from_int(100)))
+        .describe("Начальный контроль; при отсутствии 100.")
+        .optional("corruption",
+                  Type::fixed32(core::Fixed64::zero(), core::Fixed64::one()),
+                  TypedValue::of(core::Fixed32::zero()))
+        .describe("Начальная коррупция, 0…1.")
+        .optional("unrest",
+                  Type::fixed32(core::Fixed64::zero(), core::Fixed64::from_int(100)),
+                  TypedValue::of(core::Fixed32::zero()))
+        .describe("Начальная смута, 0…100.")
+        .optional("grain_stock",
+                  Type::fixed32(core::Fixed64::zero(), core::Fixed64::from_int(32767)),
+                  TypedValue::of(core::Fixed32::zero()))
+        .describe("Начальный запас хлеба, единиц товара.")
+        .optional("buildings", Type::list(Type::reference("building")))
+        .describe("Готовые здания в порядке строительных слотов; соблюдают требования к месту.");
+    return schema;
+}
+
+ObjectSchema trade_node_schema() {
+    ObjectSchema schema{std::string(kTradeNodeKind)};
+    schema.describe_kind("Группа провинций M1; торговая симуляция относится к E19.");
+    schema.required("slot", Type::integer(1, 65535))
+        .describe("Стабильный числовой id узла в состоянии провинции; уникален, 0 зарезервирован.")
+        .required("name_key", Type::string())
+        .describe("Ключ названия узла в локализации.");
+    return schema;
+}
+
+ObjectSchema economy_start_schema() {
+    ObjectSchema schema{std::string(kEconomyStartKind)};
+    schema.describe_kind("Начальные казны сценария M1. Один объект; владельцы и числа тестовые [предл.].");
+    schema.required("crown_treasury_kop", Type::integer(0, 1'000'000'000'000'000))
+        .describe("Начальная казна короны, копеек.")
+        .required("dynasty_treasuries", Type::map(Type::integer(0, 1'000'000'000'000'000)))
+        .describe("Начальные казны по id родов; не перечисленные роды начинают с нулём.");
+    return schema;
+}
+
 }  // namespace
 
 void add_m1_schemas(SchemaSet& schemas) {
@@ -112,6 +179,9 @@ void add_m1_schemas(SchemaSet& schemas) {
     schemas.add(trait_schema());
     schemas.add(skill_schema());
     schemas.add(honor_rank_schema());
+    schemas.add(holding_schema());
+    schemas.add(trade_node_schema());
+    schemas.add(economy_start_schema());
 }
 
 }  // namespace pat::data

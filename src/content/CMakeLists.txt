@@ -4,6 +4,7 @@ add_library(patriarch_content STATIC
     include/pat/content/economy_content.hpp
     include/pat/content/load_errors.hpp
     include/pat/content/m1_content.hpp
+    include/pat/content/m1_economy_content.hpp
     include/pat/content/m1_hot_reload.hpp
     include/pat/content/m1_scenario.hpp
     include/pat/content/names_content.hpp
@@ -14,6 +15,7 @@ add_library(patriarch_content STATIC
     economy_content.cpp
     load_errors.cpp
     m1_content.cpp
+    m1_economy_content.cpp
     m1_hot_reload.cpp
     m1_scenario.cpp
     names_content.cpp

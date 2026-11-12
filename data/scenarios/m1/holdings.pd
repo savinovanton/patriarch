@@ -1,0 +1,188 @@
+format_version = 1
+
+# Synthetic economic bootstrap [предл.] for the existing procedural p0001...p0020 map.
+# People, capacities, balances, buildings and owners are test values, not historical claims.
+# Province keys preserve the PMD1 correspondence; E30/Geo supplies historical starting conditions.
+# Omitted groups have zero people/mood and normal wealth (100); all natives are zero in M1.
+
+holding "p0001" {
+    province = province:p0001 kind = province_kind:rural
+    owner_kind = dynasty owner = dynasty:golitsyn trade_node = trade_node:moscow
+    development = 3 slots_total = 3
+    population = { nobility = 120 clergy = 80 townsfolk = 600 peasants = 12000 }
+    capacity = { grain = 2000 timber = 600 }
+    mood = { peasants = 10 townsfolk = 5 }
+    control = 80 corruption = 0.05 grain_stock = 1000
+    buildings = [ building:mill ]
+}
+holding "p0002" {
+    province = province:p0002 kind = province_kind:city
+    owner_kind = dynasty owner = dynasty:menshikov trade_node = trade_node:moscow
+    development = 4 slots_total = 4
+    population = { nobility = 250 clergy = 140 townsfolk = 4500 peasants = 11000 }
+    capacity = { grain = 1600 cloth = 400 timber = 200 }
+    control = 85 corruption = 0.08 grain_stock = 1400
+    buildings = [ building:manufactory building:church ]
+}
+holding "p0003" {
+    province = province:p0003 kind = province_kind:rural
+    owner_kind = dynasty owner = dynasty:naryshkin trade_node = trade_node:moscow
+    development = 2 slots_total = 2
+    population = { nobility = 100 clergy = 70 townsfolk = 400 peasants = 14000 }
+    capacity = { grain = 2300 timber = 400 }
+    control = 78 corruption = 0.06 grain_stock = 1200
+    buildings = [ building:mill ]
+}
+holding "p0004" {
+    province = province:p0004 kind = province_kind:city
+    owner_kind = dynasty owner = dynasty:sheremetev trade_node = trade_node:moscow
+    development = 3 slots_total = 4
+    population = { nobility = 300 clergy = 200 townsfolk = 5000 peasants = 10000 }
+    capacity = { grain = 1800 cloth = 500 timber = 200 }
+    control = 82 corruption = 0.07 grain_stock = 1400
+    buildings = [ building:manufactory ]
+}
+holding "p0005" {
+    province = province:p0005 kind = province_kind:rural
+    owner_kind = dynasty owner = dynasty:golitsyn trade_node = trade_node:moscow
+    development = 2 slots_total = 2
+    population = { nobility = 100 clergy = 100 townsfolk = 500 peasants = 16000 }
+    capacity = { grain = 2600 timber = 500 }
+    control = 80 corruption = 0.04 grain_stock = 1600
+    buildings = [ building:granary ]
+}
+holding "p0006" {
+    province = province:p0006 kind = province_kind:rural
+    owner_kind = dynasty owner = dynasty:menshikov trade_node = trade_node:moscow
+    development = 3 slots_total = 3
+    population = { nobility = 140 clergy = 100 townsfolk = 700 peasants = 15000 }
+    capacity = { grain = 2200 timber = 900 hemp_flax = 400 }
+    control = 83 corruption = 0.06 grain_stock = 1500
+    buildings = [ building:mill building:tract ]
+}
+holding "p0007" {
+    province = province:p0007 kind = province_kind:northern
+    owner_kind = dynasty owner = dynasty:naryshkin trade_node = trade_node:northern
+    development = 2 slots_total = 2
+    population = { nobility = 70 clergy = 80 townsfolk = 900 peasants = 8000 }
+    capacity = { grain = 700 fur = 900 timber = 1800 fish = 500 }
+    control = 72 corruption = 0.08 grain_stock = 1000
+    buildings = [ building:church ]
+}
+holding "p0008" {
+    province = province:p0008 kind = province_kind:port
+    owner_kind = dynasty owner = dynasty:sheremetev trade_node = trade_node:northern
+    development = 3 slots_total = 3
+    population = { nobility = 100 clergy = 150 townsfolk = 4000 peasants = 11000 }
+    capacity = { grain = 1000 timber = 1400 fish = 1500 }
+    control = 80 corruption = 0.10 grain_stock = 1400
+    buildings = [ building:wharf ]
+}
+holding "p0009" {
+    province = province:p0009 kind = province_kind:northern
+    owner_kind = dynasty owner = dynasty:golitsyn trade_node = trade_node:northern
+    development = 2 slots_total = 3
+    population = { nobility = 70 clergy = 90 townsfolk = 140 peasants = 9000 }
+    capacity = { grain = 600 fur = 1300 timber = 2200 }
+    control = 68 corruption = 0.07 grain_stock = 1100
+    buildings = [ building:ostrog building:church ]
+}
+holding "p0010" {
+    province = province:p0010 kind = province_kind:city
+    owner_kind = dynasty owner = dynasty:menshikov trade_node = trade_node:volga
+    development = 4 slots_total = 4
+    population = { nobility = 300 clergy = 200 townsfolk = 6500 peasants = 17000 }
+    capacity = { grain = 2000 iron = 300 cloth = 700 }
+    control = 84 corruption = 0.09 grain_stock = 2000
+    buildings = [ building:manufactory building:granary ]
+}
+holding "p0011" {
+    province = province:p0011 kind = province_kind:city
+    owner_kind = dynasty owner = dynasty:naryshkin trade_node = trade_node:volga
+    development = 3 slots_total = 4
+    population = { nobility = 200 clergy = 180 townsfolk = 5200 peasants = 14000 }
+    capacity = { grain = 2100 salt = 800 cloth = 450 }
+    control = 81 corruption = 0.10 grain_stock = 1800
+    buildings = [ building:church building:granary ]
+}
+holding "p0012" {
+    province = province:p0012 kind = province_kind:border
+    owner_kind = dynasty owner = dynasty:sheremetev trade_node = trade_node:volga
+    development = 2 slots_total = 3
+    population = { nobility = 100 clergy = 60 townsfolk = 800 peasants = 12000 cossacks = 1600 }
+    capacity = { grain = 2300 timber = 700 iron = 250 }
+    control = 70 corruption = 0.08 grain_stock = 1700
+    buildings = [ building:ostrog ]
+}
+holding "p0013" {
+    province = province:p0013 kind = province_kind:steppe
+    owner_kind = dynasty owner = dynasty:golitsyn trade_node = trade_node:volga
+    development = 2 slots_total = 2
+    population = { nobility = 70 clergy = 50 townsfolk = 500 peasants = 9000 cossacks = 2400 }
+    capacity = { grain = 2400 fish = 600 }
+    control = 65 corruption = 0.10 grain_stock = 1500
+    buildings = [ building:ostrog ]
+}
+holding "p0014" {
+    province = province:p0014 kind = province_kind:industrial
+    owner_kind = dynasty owner = dynasty:menshikov trade_node = trade_node:volga
+    development = 4 slots_total = 4
+    population = { nobility = 120 clergy = 80 townsfolk = 3500 peasants = 7000 }
+    capacity = { grain = 1200 iron = 1400 timber = 900 }
+    control = 78 corruption = 0.09 grain_stock = 1300
+    buildings = [ building:works ]
+}
+holding "p0015" {
+    province = province:p0015 kind = province_kind:industrial
+    owner_kind = dynasty owner = dynasty:naryshkin trade_node = trade_node:volga
+    development = 3 slots_total = 3
+    population = { nobility = 100 clergy = 70 townsfolk = 2700 peasants = 6000 }
+    capacity = { grain = 1000 iron = 800 copper_silver = 900 }
+    control = 76 corruption = 0.08 grain_stock = 1100
+    buildings = [ building:works ]
+}
+holding "p0016" {
+    province = province:p0016 kind = province_kind:simplified
+    owner_kind = dynasty owner = dynasty:sheremetev trade_node = trade_node:volga
+    development = 1 slots_total = 2
+    population = { nobility = 60 clergy = 70 townsfolk = 700 peasants = 17000 }
+    capacity = { grain = 800 fur = 2300 timber = 1600 }
+    control = 62 corruption = 0.06 grain_stock = 1700
+    buildings = [ building:church ]
+}
+holding "p0017" {
+    province = province:p0017 kind = province_kind:rural
+    owner_kind = crown trade_node = trade_node:moscow
+    development = 3 slots_total = 3
+    population = { nobility = 200 clergy = 180 townsfolk = 1200 peasants = 20000 }
+    capacity = { grain = 3200 timber = 1000 }
+    control = 90 corruption = 0.04 grain_stock = 2200
+    buildings = [ building:mill building:granary ]
+}
+holding "p0018" {
+    province = province:p0018 kind = province_kind:port
+    owner_kind = crown trade_node = trade_node:northern
+    development = 4 slots_total = 4
+    population = { nobility = 180 clergy = 160 townsfolk = 6000 peasants = 14000 }
+    capacity = { grain = 1500 timber = 1500 fish = 1800 }
+    control = 88 corruption = 0.06 grain_stock = 2000
+    buildings = [ building:wharf building:granary ]
+}
+holding "p0019" {
+    province = province:p0019 kind = province_kind:border
+    owner_kind = crown trade_node = trade_node:volga
+    development = 2 slots_total = 3
+    population = { nobility = 120 clergy = 80 townsfolk = 1000 peasants = 15000 cossacks = 2800 }
+    capacity = { grain = 2600 timber = 700 iron = 300 }
+    control = 75 corruption = 0.05 grain_stock = 1900
+    buildings = [ building:ostrog ]
+}
+holding "p0020" {
+    province = province:p0020 kind = province_kind:northern
+    owner_kind = crown trade_node = trade_node:northern
+    development = 2 slots_total = 3
+    population = { nobility = 80 clergy = 100 townsfolk = 600 peasants = 13000 }
+    capacity = { grain = 900 fur = 1800 timber = 2100 }
+    control = 70 corruption = 0.07 grain_stock = 1500
+    buildings = [ building:ostrog ]
+}
