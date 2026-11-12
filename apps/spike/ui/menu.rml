@@ -248,6 +248,44 @@
             </div>
         </div>
 
+        <!-- ================= settings (boards "МЕНЮ / Настройки / ...") ================= -->
+        <div id="screen-settings" class="screen" data-if="screen == 'settings'">
+            <div id="set-cats"></div>
+            <button class="cat" data-for="c : cats" data-attr-id="'cat-' + c.index" data-style-top="c.top"
+                    data-class-selected="sel_tab == c.index" data-event-click="tab(c.index)">
+                <div class="cat-frame"></div>
+                <div class="cat-text">{{ c.label }}</div>
+            </button>
+            <div id="set-note">{{ rev | tr('ui.menu.settings.note.line1') }}<br/>{{ rev | tr('ui.menu.settings.note.line2') }}</div>
+
+            <div id="set-content">
+                <div class="set-row" data-for="r : rows" data-attr-id="'row-' + r.index" data-style-top="r.top">
+                    <div class="set-title">{{ r.title }}</div>
+                    <div class="set-hint">{{ r.hint }}</div>
+                    <button class="ctl" data-attr-id="'ctl-' + r.index"
+                            data-class-k-dropdown="r.dropdown" data-class-k-toggle="r.toggle"
+                            data-class-k-slider="r.slider" data-class-k-key="r.key" data-class-on="r.on"
+                            data-event-click="setting(r.index)">
+                        <div class="ctl-text">{{ r.value }}</div>
+                        <svg class="ctl-chev" data-attr-src="icons + '/chevron@muted.svg'"/>
+                        <div class="tg-track"></div>
+                        <div class="tg-thumb"></div>
+                        <div class="tg-text">{{ r.value }}</div>
+                        <div class="sl-track"></div>
+                        <div class="sl-value" data-style-width="r.fill"></div>
+                        <div class="sl-thumb" data-style-left="r.thumb"></div>
+                        <div class="sl-text">{{ r.value }}</div>
+                        <div class="ctl-frame"></div>
+                    </button>
+                    <div class="set-div" data-if="r.index &lt; 5"></div>
+                </div>
+            </div>
+
+            <div id="set-msg" data-if="set_show" data-class-ok="!set_dirty">{{ set_msg }}</div>
+            <button id="btn-defaults" class="btn" data-event-click="defaults()"><span class="btn-text">{{ rev | tr('ui.menu.settings.defaults') }}</span></button>
+            <button id="btn-apply" class="btn btn-primary" data-class-is-disabled="!set_dirty" data-event-click="apply()"><span class="btn-text">{{ rev | tr('ui.menu.settings.apply') }}</span></button>
+        </div>
+
         <!-- ================= next step of the start flow (boards 03 to 05) ================= -->
         <div id="screen-next" class="screen" data-if="screen == 'newgame' || screen == 'custom' || screen == 'goal'">
             <button id="btn-next" class="btn btn-primary" data-class-is-disabled="!next_ok" data-event-click="next()">
@@ -305,6 +343,32 @@
             <div class="dialog-title">{{ rev | tr('ui.menu.unavailable.title') }}</div>
             <div class="dialog-text" id="dialog-unavailable-text">{{ rev | tr('ui.menu.unavailable.line1') }}<br/>{{ rev | tr('ui.menu.unavailable.line2') }}<br/>{{ rev | tr('ui.menu.unavailable.line3') }}</div>
             <button id="dlg-back" class="btn btn-primary" data-event-click="dialog('back')"><span class="btn-text">{{ rev | tr('ui.menu.unavailable.button') }}</span></button>
+        </div>
+        <div id="dialog-save" class="dialog" data-if="dialog == 'save'">
+            <div class="dialog-frame"></div>
+            <div class="dialog-rule"></div>
+            <div class="dialog-title">{{ rev | tr('ui.menu.settings.save.title') }}</div>
+            <div class="dialog-text" id="dialog-save-text">{{ sd.save_line1 }}<br/>{{ rev | tr('ui.menu.settings.save.line2') }}</div>
+            <button id="dlg-save-apply" class="btn btn-primary" data-event-click="dialog('apply')"><span class="btn-text">{{ rev | tr('ui.menu.settings.apply') }}</span></button>
+            <button id="dlg-save-discard" class="btn" data-event-click="dialog('discard')"><span class="btn-text">{{ rev | tr('ui.menu.settings.save.discard') }}</span></button>
+            <button id="dlg-save-return" class="btn" data-event-click="dialog('return')"><span class="btn-text">{{ rev | tr('ui.menu.settings.save.return') }}</span></button>
+        </div>
+        <div id="dialog-reset" class="dialog" data-if="dialog == 'reset'">
+            <div class="dialog-frame"></div>
+            <div class="dialog-rule"></div>
+            <div class="dialog-title">{{ rev | tr('ui.menu.settings.reset.title') }}</div>
+            <div class="dialog-text" id="dialog-reset-text">{{ rev | tr('ui.menu.settings.reset.line1') }}<br/>{{ rev | tr('ui.menu.settings.reset.line2') }}</div>
+            <button id="dlg-reset-cancel" class="btn" data-event-click="dialog('cancel')"><span class="btn-text">{{ rev | tr('ui.menu.settings.reset.cancel') }}</span></button>
+            <button id="dlg-reset-do" class="btn btn-primary" data-event-click="dialog('reset')"><span class="btn-text">{{ rev | tr('ui.menu.settings.reset.button') }}</span></button>
+        </div>
+        <div id="dialog-rebind" class="dialog" data-if="dialog == 'rebind'">
+            <div class="dialog-frame"></div>
+            <div class="dialog-rule"></div>
+            <div class="dialog-title">{{ rev | tr('ui.menu.settings.rebind.title') }}</div>
+            <div class="dialog-text" id="dialog-rebind-text">{{ sd.rebind_action }}<br/>{{ sd.rebind_line }}</div>
+            <div id="rebind-badge"><div id="rebind-badge-text">{{ sd.rebind_badge }}</div></div>
+            <button id="dlg-rebind-cancel" class="btn" data-event-click="dialog('cancel')"><span class="btn-text">{{ rev | tr('ui.menu.settings.rebind.cancel') }}</span></button>
+            <button id="dlg-rebind-save" class="btn btn-primary" data-event-click="dialog('commit')"><span class="btn-text">{{ rev | tr('ui.menu.settings.rebind.save') }}</span></button>
         </div>
     </div>
 
