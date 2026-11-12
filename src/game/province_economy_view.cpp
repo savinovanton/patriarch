@@ -179,7 +179,7 @@ ui::ProvinceEconomySnapshot province_economy_snapshot(const loc::Localizer& loc,
         occupied[slot] = true;
         ui::EconomyBuildingSnapshot building;
         building.slot = static_cast<std::uint8_t>(slot);
-        for (std::size_t i = 0; i < rules.buildings.count; ++i) {
+        for (std::size_t i = 0; i < static_cast<std::size_t>(rules.buildings.count); ++i) {
             if (rules.buildings.defs[i].slot == type) {
                 building.key = rules.buildings.defs[i].key;
                 break;
