@@ -243,7 +243,9 @@ TEST_CASE("components: Tab walks the controls in order, the ring follows the key
                                                "card-2",
                                                "search",
                                                "chip-availability",
-                                               "chip-faith"};
+                                               "chip-faith",
+                                               "page-components",  // the page switch is last in the document
+                                               "page-tips"};
     std::vector<std::string> seen;
     for (std::size_t i = 0; i < expected.size(); ++i) {
         f.key(Rml::Input::KI_TAB);
@@ -267,6 +269,8 @@ TEST_CASE("components: Tab walks the controls in order, the ring follows the key
     CHECK(f.focused() == "chip-faith");
     CHECK(f.el("chip-faith")->GetComputedValues().border_top_width() == 1.0f);
     // The keyboard brings it back on the next Tab.
+    f.key(Rml::Input::KI_TAB);
+    f.key(Rml::Input::KI_TAB);
     f.key(Rml::Input::KI_TAB);
     f.key(Rml::Input::KI_TAB);
     CHECK(f.focused() == "btn-secondary");

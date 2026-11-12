@@ -1,8 +1,13 @@
 #include "pat/ui/component_gallery.hpp"
 
+#include "pat/ui/explanation.hpp"
+
 #include <RmlUi/Core.h>
 
+#include <iterator>
 #include <system_error>
+#include <utility>
+#include <vector>
 
 namespace pat::ui {
 
@@ -57,7 +62,42 @@ constexpr const char* kModelName = "gallery";
     X(panel_window)                                                                                          \
     X(panel_light)                                                                                           \
     X(panel_dark_label)                                                                                      \
-    X(panel_dark)
+    X(panel_dark)                                                                                            \
+    X(section_tooltips)                                                                                      \
+    X(tip_cost_title)                                                                                        \
+    X(tip_cost_note)                                                                                         \
+    X(tip_cost_gifts)                                                                                        \
+    X(tip_cost_gifts_value)                                                                                  \
+    X(tip_cost_road)                                                                                         \
+    X(tip_cost_road_value)                                                                                   \
+    X(tip_cost_total)                                                                                        \
+    X(tip_cost_total_value)                                                                                  \
+    X(tip_cost_footer)                                                                                       \
+    X(tip_treasury_title)                                                                                    \
+    X(tip_treasury_before)                                                                                   \
+    X(tip_treasury_after)                                                                                    \
+    X(tip_treasury_income)                                                                                   \
+    X(tip_treasury_income_value)                                                                             \
+    X(tip_treasury_upkeep)                                                                                   \
+    X(tip_treasury_upkeep_value)                                                                             \
+    X(tip_treasury_total)                                                                                    \
+    X(tip_treasury_total_value)                                                                              \
+    X(tip_reason_title)                                                                                      \
+    X(tip_reason_text)                                                                                       \
+    X(tip_reason_footer)                                                                                     \
+    X(tip_skill_title)                                                                                       \
+    X(tip_skill_note)                                                                                        \
+    X(tip_skill_base)                                                                                        \
+    X(tip_skill_education)                                                                                   \
+    X(tip_skill_trait)                                                                                       \
+    X(tip_skill_total)                                                                                       \
+    X(tip_skill_hint)                                                                                        \
+    X(tip_short_title)                                                                                       \
+    X(tip_short_detail)                                                                                      \
+    X(tip_short_total)                                                                                       \
+    X(tip_short_footer)                                                                                      \
+    X(page_components)                                                                                       \
+    X(page_tips)
 
 struct GalleryTexts {
 #define X(name) Rml::String name;
@@ -75,11 +115,13 @@ struct ComponentGallery::Impl {
     GalleryTexts t;
     Rml::String icons;  // directory of the icons relative to the document
     Rml::String tab = "overview";
+    Rml::String page = "components";
     Rml::String search;
     int card = 1;
     int chip = 0;
     int presses = 0;
     int order_percent = 72;
+    std::vector<Explanation> tips;  // cost, treasury (before), treasury (after), reason, skill: the samples
 
     [[nodiscard]] Rml::ElementDocument* find_document() const {
         Rml::Context* ctx = ui->context();
@@ -92,11 +134,73 @@ struct ComponentGallery::Impl {
         return nullptr;
     }
 
+    void build_tips() {
+        tips.clear();
+        Explanation cost{t.tip_cost_title, t.tip_cost_total_value, t.tip_cost_note, {}};
+        cost.terms.push_back({t.tip_cost_gifts, t.tip_cost_gifts_value, "", {}});
+        cost.terms.push_back({t.tip_cost_road, t.tip_cost_road_value, "", {}});
+        cost.total_label = t.tip_cost_total;
+        cost.footer = t.tip_cost_footer;
+        tips.push_back(cost);
+
+        Explanation treasury;
+        treasury.label = t.tip_treasury_title;
+        treasury.headline = t.tip_treasury_before;
+        treasury.value = t.tip_treasury_total_value;
+        treasury.total_label = t.tip_treasury_total;
+        treasury.terms.push_back({t.tip_treasury_income, t.tip_treasury_income_value, "", {}});
+        treasury.terms.push_back({t.tip_treasury_upkeep, t.tip_treasury_upkeep_value, "", {}});
+        tips.push_back(treasury);
+        treasury.headline = t.tip_treasury_after;
+        tips.push_back(treasury);
+
+        Explanation reason;
+        reason.label = t.tip_reason_title;
+        reason.lines.push_back(t.tip_reason_text);
+        reason.footer = t.tip_reason_footer;
+        tips.push_back(reason);
+
+        Explanation skill{t.tip_skill_title, "14", t.tip_skill_note, {}};
+        skill.terms.push_back({t.tip_skill_base, "+10", "", {}});
+        skill.terms.push_back({t.tip_skill_education, "+3", "", {}});
+        skill.terms.push_back({t.tip_skill_trait, "+1", "", {}});
+        skill.total_label = t.tip_skill_total;
+        skill.wide = true;
+        tips.push_back(skill);
+
+        Explanation shortage{t.tip_short_title, t.tip_cost_total_value, "", {}};
+        shortage.tone = TipTone::Warning;
+        shortage.lines.push_back(t.tip_short_detail);
+        shortage.terms.push_back({t.tip_cost_gifts, t.tip_cost_gifts_value, "", {}});
+        shortage.terms.push_back({t.tip_cost_road, t.tip_cost_road_value, "", {}});
+        shortage.total_label = t.tip_short_total;
+        shortage.footer = t.tip_short_footer;
+        tips.push_back(shortage);
+    }
+
+    /// Fills the static tooltip samples of the page with the same markup the live tooltips use.
+    void fill_tips() {
+        static constexpr const char* kIds[] = {
+            "tip-cost", "tip-before", "tip-after", "tip-reason", "tip-skill", "tip-shortage"};
+        Rml::ElementDocument* doc = find_document();
+        if (doc == nullptr) {
+            return;
+        }
+        for (std::size_t i = 0; i < tips.size() && i < std::size(kIds); ++i) {
+            if (Rml::Element* el = doc->GetElementById(kIds[i])) {
+                el->SetClass("tip-wide", tips[i].wide);
+                el->SetInnerRML(render_tooltip_body(tips[i], "", icons));
+            }
+        }
+    }
+
     void refresh_texts() {
 #define X(name) t.name = loc->format("ui.gallery." #name);
         PAT_GALLERY_TEXTS(X)
 #undef X
         handle.DirtyVariable("t");
+        build_tips();
+        fill_tips();
     }
 };
 
@@ -141,6 +245,7 @@ ComponentGallery::create(engine::UiContext& ui,
     ctor.Bind("t", &m->t);
     ctor.Bind("icons", &m->icons);
     ctor.Bind("tab", &m->tab);
+    ctor.Bind("page", &m->page);
     ctor.Bind("search", &m->search);
     ctor.Bind("card", &m->card);
     ctor.Bind("chip", &m->chip);
@@ -154,6 +259,13 @@ ComponentGallery::create(engine::UiContext& ui,
             h.DirtyVariable("tab");
         }
     });
+    ctor.BindEventCallback("set_page",
+                           [m](Rml::DataModelHandle h, Rml::Event&, const Rml::VariantList& args) {
+                               if (!args.empty()) {
+                                   m->page = args[0].Get<Rml::String>();
+                                   h.DirtyVariable("page");
+                               }
+                           });
     ctor.BindEventCallback("select_card",
                            [m](Rml::DataModelHandle h, Rml::Event&, const Rml::VariantList& args) {
                                if (!args.empty()) {
@@ -178,7 +290,22 @@ ComponentGallery::create(engine::UiContext& ui,
         return R::err(core::Error{97, "cannot load the component gallery " + document.generic_string()});
     }
     m->source_url = loaded->GetSourceURL();
+    m->fill_tips();
     return R::ok(std::unique_ptr<ComponentGallery>(new ComponentGallery(std::move(impl))));
+}
+
+const Explanation* ComponentGallery::explanation(std::string_view key) const {
+    static constexpr std::pair<std::string_view, std::size_t> kKeys[] = {{"gallery:cost", 0},
+                                                                         {"gallery:treasury", 1},
+                                                                         {"gallery:reason", 3},
+                                                                         {"gallery:skill", 4},
+                                                                         {"gallery:shortage", 5}};
+    for (const auto& [name, index] : kKeys) {
+        if (key == name && index < impl_->tips.size()) {
+            return &impl_->tips[index];
+        }
+    }
+    return nullptr;
 }
 
 void ComponentGallery::relocalize() {
@@ -190,6 +317,17 @@ void ComponentGallery::set_tab(std::string_view tab) {
         impl_->tab = std::string(tab);
         impl_->handle.DirtyVariable("tab");
     }
+}
+
+void ComponentGallery::set_page(std::string_view page) {
+    if (page == "components" || page == "tips") {
+        impl_->page = std::string(page);
+        impl_->handle.DirtyVariable("page");
+    }
+}
+
+std::string_view ComponentGallery::page() const {
+    return impl_->page;
 }
 
 std::string_view ComponentGallery::tab() const {

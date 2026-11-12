@@ -69,7 +69,8 @@ const char* sign_class(const std::string& value) {
     if (!value.empty() && value.front() == '+') {
         return " pos";
     }
-    if (!value.empty() && value.front() == '-') {
+    // ASCII hyphen or U+2212 (E2 88 92).
+    if (!value.empty() && (value.front() == '-' || value.rfind("−", 0) == 0)) {
         return " neg";
     }
     return "";
@@ -77,22 +78,33 @@ const char* sign_class(const std::string& value) {
 
 }  // namespace
 
-std::string
-render_tooltip_rml(const Explanation& node, std::string_view path, int level, std::string_view inline_style) {
+std::string render_tooltip_body(const Explanation& node, std::string_view path, std::string_view icons) {
     std::string rml;
-    rml += "<rml><head>";
-    if (!inline_style.empty()) {
-        rml += "<style>";
-        rml += inline_style;
-        rml += "</style>";
+    rml += "<div class=\"tip-close\" id=\"tip-close\" data-tip-close=\"1\">";
+    if (!icons.empty()) {
+        rml += "<svg src=\"" + escape_markup(icons) + "/close@quiet.svg\"/>";
     }
-    rml += "</head><body>";
-    rml += "<div class=\"tip\" id=\"tip\" data-tip-level=\"" + std::to_string(level) + "\">";
-    rml += "<div class=\"tip-head\"><span class=\"tip-title\">" + escape_markup(node.label) + "</span>";
-    if (!node.value.empty()) {
+    rml += "</div>";
+    const bool total_row = !node.total_label.empty() && !node.value.empty();
+    rml += "<div class=\"tip-head\"><span class=\"tip-title";
+    rml += node.tone == TipTone::Warning ? " warn" : "";
+    rml += "\">" + escape_markup(node.label) + "</span>";
+    if (!node.value.empty() && !total_row) {
         rml += "<span class=\"tip-total\">" + escape_markup(node.value) + "</span>";
     }
     rml += "</div>";
+    if (!node.note.empty()) {
+        rml += "<div class=\"tip-note\">" + escape_markup(node.note) + "</div>";
+    }
+    if (!node.headline.empty()) {
+        rml += "<div class=\"tip-headline\">" + escape_markup(node.headline) + "</div>";
+    }
+    for (const std::string& line : node.lines) {
+        rml += "<div class=\"tip-line\">" + escape_markup(line) + "</div>";
+    }
+    if (!node.terms.empty()) {
+        rml += "<div class=\"tip-rule\"></div>";
+    }
     for (std::size_t i = 0; i < node.terms.size(); ++i) {
         const Explanation& term = node.terms[i];
         const bool nested = !term.terms.empty();
@@ -103,12 +115,38 @@ render_tooltip_rml(const Explanation& node, std::string_view path, int level, st
             rml += " data-tip=\"" + escape_markup(std::string(path) + "/" + std::to_string(i)) + "\"";
         }
         rml += "><span class=\"tip-label\">" + escape_markup(term.label) + "</span>";
+        if (!term.note.empty()) {
+            rml += "<span class=\"tip-factor\">" + escape_markup(term.note) + "</span>";
+        }
         rml += "<span class=\"tip-value" + std::string(sign_class(term.value)) + "\">" +
                escape_markup(term.value) + "</span></div>";
     }
-    if (!node.note.empty()) {
-        rml += "<div class=\"tip-note\">" + escape_markup(node.note) + "</div>";
+    if (total_row) {
+        rml += "<div class=\"tip-rule\"></div><div class=\"tip-sum\"><span class=\"tip-sum-label\">" +
+               escape_markup(node.total_label) + "</span><span class=\"tip-sum-value" +
+               std::string(sign_class(node.value)) + "\">" + escape_markup(node.value) + "</span></div>";
     }
+    if (!node.footer.empty()) {
+        rml += "<div class=\"tip-footer\">" + escape_markup(node.footer) + "</div>";
+    }
+    return rml;
+}
+
+std::string
+render_tooltip_rml(const Explanation& node, std::string_view path, int level, const TooltipRender& render) {
+    std::string rml;
+    rml += "<rml><head>";
+    if (!render.style.empty()) {
+        rml += "<style>";
+        rml += render.style;
+        rml += "</style>";
+    }
+    rml += "</head><body class=\"tip-doc\">";
+    rml += "<div class=\"tip tip-float";
+    rml += node.wide ? " tip-wide" : "";
+    rml += render.pinned ? " pinned" : "";
+    rml += "\" id=\"tip\" data-tip-level=\"" + std::to_string(level) + "\">";
+    rml += render_tooltip_body(node, path, render.icons);
     rml += "</div></body></rml>";
     return rml;
 }

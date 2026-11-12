@@ -20,7 +20,8 @@ namespace pat::ui {
 /// Nested tooltips over RmlUi (E3-T08, FR-UI-3). Any element with a `data-tip="key"` attribute gets a
 /// tooltip generated from the Explanation the provider returns for `key`; terms that have terms of
 /// their own open the next level when hovered (up to three levels). Tooltips open after a delay, stay
-/// while the cursor is over them, can be pinned with Alt, and are placed inside the screen without
+/// while the cursor is over them, can be pinned with Alt or a click on the tooltip (a close button then
+/// appears; Esc closes too), follow the keyboard focus after Tab, and are placed inside the screen without
 /// covering the cursor or their parent.
 class TooltipManager {
 public:
@@ -35,6 +36,8 @@ public:
     TooltipManager& operator=(const TooltipManager&) = delete;
 
     void set_provider(Provider provider);
+    /// Directory of the SVG icons (assets/ui/patriarch/icons) for the close button of pinned tooltips.
+    void set_icons_directory(const std::filesystem::path& icons);
 
     /// Feed every event (after UiContext::handle_event): tracks the cursor, Alt pins/unpins, Esc closes.
     void handle_event(const engine::Event& event);
@@ -46,6 +49,8 @@ public:
 
     [[nodiscard]] std::size_t open_levels() const;
     [[nodiscard]] bool pinned() const;
+    /// True after Tab / arrow keys until the mouse moves: the focused element gets the tooltip.
+    [[nodiscard]] bool keyboard_mode() const;
     [[nodiscard]] const TooltipState& state() const;
     /// The document of an open level (0 = first), or null.
     [[nodiscard]] Rml::ElementDocument* level_document(std::size_t level) const;

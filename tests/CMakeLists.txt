@@ -100,8 +100,10 @@ if(PATRIARCH_BUILD_ENGINE)
         sky_test.cpp
         ui_images_test.cpp
         ui_theme_test.cpp
+        ui_tooltips_test.cpp
         tooltip_manager_test.cpp
         tooltip_state_test.cpp
+        tooltip_view_test.cpp
         ui_test.cpp
         window_test.cpp)
     target_link_libraries(patriarch_tests PRIVATE patriarch::engine patriarch::ui patriarch::game)

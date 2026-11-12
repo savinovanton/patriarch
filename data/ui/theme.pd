@@ -93,6 +93,10 @@ theme "patriarch-concept-01" {
     rule_window = 4
     rule_panel = 2
     focus_ring = 2
+    tip_w = 366         # tooltip width (boards "Подсказка / ...")
+    tip_w_wide = 410    # tooltip width of the character boards
+    tip_pad = 20        # tooltip inner padding
+    tip_close = 26      # tooltip close button ("Close tooltip")
   }
 
   shell {

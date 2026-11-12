@@ -12,6 +12,11 @@ namespace pat::ui {
 namespace {
 
 constexpr int kScancodeEscape = 41;
+constexpr int kScancodeTab = 43;
+constexpr int kScancodeRight = 79;
+constexpr int kScancodeLeft = 80;
+constexpr int kScancodeDown = 81;
+constexpr int kScancodeUp = 82;
 constexpr int kScancodeLeftAlt = 226;
 constexpr int kScancodeRightAlt = 230;
 
@@ -32,9 +37,11 @@ struct TooltipManager::Impl {
     TooltipState state;
     Provider provider;
     std::filesystem::path
-        stylesheet;  // tooltip.rcss, read whenever a tooltip is created (edits show up live)
+        stylesheet;     // tooltip.rcss, read whenever a tooltip is created (edits show up live)
+    std::string icons;  // directory of the SVG icons (the close button), forward slashes
     float cursor_x = 0.0f;
     float cursor_y = 0.0f;
+    bool keyboard = false;  // the last input was Tab / arrows: the focused element gets the tooltip
     std::uint64_t synced_revision = 0;
 
     struct Open {
@@ -57,7 +64,9 @@ struct TooltipManager::Impl {
 
     [[nodiscard]] HoverInfo find_hover() const {
         HoverInfo hover;
-        for (Rml::Element* el = ui->context()->GetHoverElement(); el != nullptr; el = el->GetParentNode()) {
+        // Keyboard focus (Tab, arrows) shows the tooltip of the focused element, like hovering it does.
+        Rml::Element* start = keyboard ? ui->context()->GetFocusElement() : ui->context()->GetHoverElement();
+        for (Rml::Element* el = start; el != nullptr; el = el->GetParentNode()) {
             if (hover.path.empty() && el->HasAttribute("data-tip")) {
                 const std::string path = el->GetAttribute<Rml::String>("data-tip", "");
                 if (!path.empty() && resolve(path) != nullptr) {
@@ -77,6 +86,26 @@ struct TooltipManager::Impl {
         // Through the UI context, so the theme tokens of the stylesheet are expanded like in linked
         // stylesheets.
         return ui->read_text_file(stylesheet).value_or(std::string());
+    }
+
+    /// The close button is visible while the tooltips are pinned.
+    void sync_pinned() const {
+        for (const Open& o : open) {
+            if (o.document != nullptr) {
+                if (Rml::Element* box = o.document->GetElementById("tip")) {
+                    box->SetClass("pinned", state.pinned());
+                }
+            }
+        }
+    }
+
+    [[nodiscard]] bool hover_is(const char* attribute) const {
+        for (Rml::Element* el = ui->context()->GetHoverElement(); el != nullptr; el = el->GetParentNode()) {
+            if (el->HasAttribute(attribute)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void close_documents_from(std::size_t first) {
@@ -103,7 +132,11 @@ struct TooltipManager::Impl {
                 break;
             }
             Rml::ElementDocument* doc = ui->context()->LoadDocumentFromMemory(
-                render_tooltip_rml(*node, levels[i].path, static_cast<int>(i), read_style()), "[tooltip]");
+                render_tooltip_rml(*node,
+                                   levels[i].path,
+                                   static_cast<int>(i),
+                                   TooltipRender{read_style(), icons, state.pinned()}),
+                "[tooltip]");
             if (doc == nullptr) {
                 break;
             }
@@ -117,6 +150,11 @@ struct TooltipManager::Impl {
             request.viewport = {static_cast<float>(dims.x), static_cast<float>(dims.y)};
             request.cursor_x = cursor_x;
             request.cursor_y = cursor_y;
+            if (keyboard && i == 0) {
+                // No cursor: put the tooltip just below the focused element, flipping at the edges as usual.
+                request.cursor_x = levels[i].anchor.x - 14.0f;
+                request.cursor_y = levels[i].anchor.bottom() - 14.0f;
+            }
             request.anchor = levels[i].anchor;
             request.margin = 8.0f * ui->context()->GetDensityIndependentPixelRatio();
             request.gap = 6.0f * ui->context()->GetDensityIndependentPixelRatio();
@@ -155,6 +193,10 @@ core::Result<std::unique_ptr<TooltipManager>> TooltipManager::create(
     return R::ok(std::unique_ptr<TooltipManager>(new TooltipManager(std::move(impl))));
 }
 
+void TooltipManager::set_icons_directory(const std::filesystem::path& icons) {
+    impl_->icons = icons.generic_string();
+}
+
 void TooltipManager::set_provider(Provider provider) {
     impl_->provider = std::move(provider);
 }
@@ -163,10 +205,29 @@ void TooltipManager::handle_event(const engine::Event& event) {
     if (const auto* move = std::get_if<engine::event::MouseMove>(&event)) {
         impl_->cursor_x = move->x;
         impl_->cursor_y = move->y;
+        impl_->keyboard = false;
+    } else if (const auto* button = std::get_if<engine::event::MouseButton>(&event)) {
+        impl_->keyboard = false;
+        if (button->down && button->button == 1 && impl_->state.levels().size() > 0) {
+            if (impl_->state.pinned() && impl_->hover_is("data-tip-close")) {
+                close_all();  // the close button of a pinned tooltip
+            } else if (impl_->hover_is("data-tip-level")) {
+                impl_->state.set_pinned(true);  // a click on the tooltip pins it
+                impl_->sync_pinned();
+            }
+        }
     } else if (const auto* key = std::get_if<engine::event::Key>(&event)) {
+        if (key->down) {
+            if (key->scancode == kScancodeTab || key->scancode == kScancodeLeft ||
+                key->scancode == kScancodeRight || key->scancode == kScancodeUp ||
+                key->scancode == kScancodeDown) {
+                impl_->keyboard = true;
+            }
+        }
         if (key->down && !key->repeat) {
             if (key->scancode == kScancodeLeftAlt || key->scancode == kScancodeRightAlt) {
                 impl_->state.set_pinned(!impl_->state.pinned());
+                impl_->sync_pinned();
             } else if (key->scancode == kScancodeEscape) {
                 close_all();
             }
@@ -185,6 +246,10 @@ void TooltipManager::update(float dt_seconds) {
 void TooltipManager::close_all() {
     impl_->state.close_all();
     impl_->sync();
+}
+
+bool TooltipManager::keyboard_mode() const {
+    return impl_->keyboard;
 }
 
 std::size_t TooltipManager::open_levels() const {

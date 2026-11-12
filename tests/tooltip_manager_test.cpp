@@ -332,8 +332,8 @@ TEST_CASE("TooltipManager: scaled UI keeps tooltips usable (200%)") {
     CHECK(rect.right() <= 1600.0f);
     CHECK(rect.bottom() <= 900.0f);
     CHECK_FALSE(rect.contains(fx.cursor_x, fx.cursor_y));
-    // 280dp wide at 200% is 560 px.
-    CHECK(rect.w == doctest::Approx(560.0f + 2 * 20.0f + 2 * 2.0f).epsilon(0.1));
+    // 366dp wide (the board width, border included) at 200% is 732 px.
+    CHECK(rect.w == doctest::Approx(2 * 366.0f).epsilon(0.02));
 }
 
 #endif  // _WIN32

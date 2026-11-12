@@ -117,6 +117,7 @@ struct Options {
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
     float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
     float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
+    bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
     bool gallery = false;          // --gallery: the page of the shared UI components over everything
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
     bool no_labels = false;        // no map labels
@@ -179,6 +180,9 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
         } else if (arg == "--haze" && i + 1 < argc) {
             out.light.haze = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--gallery-tips") {
+            out.gallery = true;
+            out.gallery_tips = true;
         } else if (arg == "--gallery") {
             out.gallery = true;
         } else if (arg == "--no-hud") {
@@ -626,7 +630,14 @@ int main(int argc, char** argv) {
             if (tooltip_result) {
                 tooltips = std::move(tooltip_result).value();
                 pat::ui::CharacterWindow* window_ptr = character.get();
-                tooltips->set_provider([window_ptr](std::string_view key) { return window_ptr->explanation(key); });
+                tooltips->set_icons_directory(std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR));
+                // The character window answers its own keys; the component gallery (--gallery) the rest.
+                tooltips->set_provider([window_ptr, &gallery](std::string_view key) -> const pat::ui::Explanation* {
+                    if (const pat::ui::Explanation* e = window_ptr->explanation(key)) {
+                        return e;
+                    }
+                    return gallery ? gallery->explanation(key) : nullptr;
+                });
             } else {
                 PAT_LOG_WARN("spike", "tooltips: {}", tooltip_result.error().message);
             }
@@ -640,6 +651,9 @@ int main(int argc, char** argv) {
                                                   ui_loc);
             if (gallery_result) {
                 gallery = std::move(gallery_result).value();
+                if (opt.gallery_tips) {
+                    gallery->set_page("tips");
+                }
             } else {
                 PAT_LOG_WARN("spike", "component gallery: {}", gallery_result.error().message);
             }

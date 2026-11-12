@@ -122,3 +122,40 @@ body {
     font-size: $type_16;
     color: $quiet;
 }
+
+/* Tooltip samples: the same markup as the live tooltips (tooltip.rcss), shown static with the close button. */
+#page-tabs {
+    position: absolute;
+    left: 1480dp;
+    top: 116dp;
+    width: 400dp;
+}
+
+.off {
+    display: none;
+}
+
+#tips {
+    position: absolute;
+    left: 40dp;
+    top: 208dp;
+    width: 1840dp;
+}
+
+#tips > .tip {
+    float: left;
+    margin: 12dp 24dp 12dp 0;
+}
+
+#tips > #tip-shortage {
+    clear: left;
+}
+
+#tips > .label {
+    margin-bottom: 0;
+}
+
+#tips-hint {
+    clear: both;
+    padding-top: 12dp;
+}

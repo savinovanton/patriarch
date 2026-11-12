@@ -3,6 +3,7 @@
     <title>Components</title>
     <link type="text/rcss" href="theme.rcss"/>
     <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="tooltip.rcss"/>
     <link type="text/rcss" href="gallery.rcss"/>
 </head>
 <body data-model="gallery">
@@ -14,9 +15,11 @@
     </div>
     <div class="divider" id="head-rule"></div>
 
+    <div id="comp-page" data-class-off="page != 'components'">
+
     <div class="col" id="col-a">
         <div class="label">{{ t.section_buttons }}</div>
-        <button class="btn btn-primary" id="btn-primary" data-event-click="press()"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.btn_primary }}</span></button>
+        <button class="btn btn-primary" id="btn-primary" data-tip="gallery:cost" data-event-click="press()"><svg data-attr-src="icons + '/quill@gold.svg'"/><span>{{ t.btn_primary }}</span></button>
         <button class="btn" id="btn-secondary" data-event-click="press()"><span>{{ t.btn_secondary }}</span></button>
         <button class="btn is-disabled" id="btn-disabled"><span>{{ t.btn_disabled }}</span></button>
 
@@ -35,7 +38,7 @@
         </div>
         <div class="state-cell">
             <div class="label">{{ t.state_disabled }}</div>
-            <button class="btn btn-action is-disabled" id="act-disabled"><svg data-attr-src="icons + '/quill@green.svg'"/><span>{{ t.action }}</span></button>
+            <button class="btn btn-action is-disabled" id="act-disabled" data-tip="gallery:shortage"><svg data-attr-src="icons + '/quill@green.svg'"/><span>{{ t.action }}</span></button>
             <div class="reason" id="reason">{{ t.reason }}</div>
         </div>
     </div>
@@ -45,7 +48,7 @@
         <div id="badges">
             <span class="badge" id="badge-light">{{ t.badge_light }}</span>
             <span class="badge badge-green" id="badge-green">{{ t.badge_head }}</span>
-            <span class="badge badge-red" id="badge-red">{{ t.badge_unavailable }}</span>
+            <span class="badge badge-red" id="badge-red" data-tip="gallery:reason">{{ t.badge_unavailable }}</span>
             <span class="badge badge-dark" id="badge-dark">{{ t.badge_pause }}</span>
         </div>
 
@@ -94,6 +97,22 @@
             <div class="label label-dark">{{ t.panel_dark_label }}</div>
             <div class="dark-text">{{ t.panel_dark }}</div>
         </div>
+    </div>
+    </div>
+
+    <div id="tips" data-class-off="page != 'tips'">
+        <div class="label">{{ t.section_tooltips }}</div>
+        <div class="tip pinned" id="tip-cost"></div>
+        <div class="tip pinned" id="tip-before"></div>
+        <div class="tip pinned" id="tip-after"></div>
+        <div class="tip pinned" id="tip-reason"></div>
+        <div class="tip pinned" id="tip-shortage" data-tip="gallery:shortage"></div>
+        <div class="tip pinned" id="tip-skill" data-tip="gallery:skill"></div>
+        <div class="note" id="tips-hint">{{ t.tip_skill_hint }}</div>
+    </div>
+    <div class="tabs" id="page-tabs">
+        <div class="tab" id="page-components" data-class-active="page == 'components'" data-event-click="set_page('components')">{{ t.page_components }}</div>
+        <div class="tab" id="page-tips" data-class-active="page == 'tips'" data-event-click="set_page('tips')">{{ t.page_tips }}</div>
     </div>
 </div>
 </body>
