@@ -26,6 +26,7 @@
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/game/credits_view.hpp"
+#include "pat/game/map_overview.hpp"
 #include "pat/game/world_view.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
@@ -36,9 +37,11 @@
 #include "pat/sim/runner.hpp"
 #include "pat/sim/simulation.hpp"
 #include "pat/ui/character_window.hpp"
+#include "pat/ui/agenda_panel.hpp"
 #include "pat/ui/component_gallery.hpp"
 #include "pat/ui/credits_window.hpp"
 #include "pat/ui/hud_window.hpp"
+#include "pat/ui/map_overlays.hpp"
 #include "pat/ui/theme.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
@@ -62,6 +65,8 @@
 #include <cstdlib>
 #include <memory>
 #include <optional>
+#include <fstream>
+#include <functional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -477,6 +482,13 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
     std::unique_ptr<pat::ui::ComponentGallery> gallery;   // likewise: the page of the shared components (--gallery)
+    std::unique_ptr<pat::ui::AgendaPanel> agenda;    // likewise: "Дела рода" over the map (UI-D05)
+    std::unique_ptr<pat::ui::MapOverlays> overlays;  // likewise: season badge, realm caption, plate, minimap
+    std::string overview_land_fill;                  // SVG fills of the minimap, from the theme tokens
+    std::string overview_owned_fill;
+    std::function<void()> refresh_overlay_map;  // rebuilds the minimap pictures and the realm anchor
+    Vec3 realm_center{};                        // middle of the player's provinces (map pixels)
+    bool has_realm = false;
     pat::content::CreditsList credits_list;               // data/credits, read once (and again on a reload)
     bool hud_visible = true;
     // The map readout of the demo panel (demo_fps.rml); looked up by element id, as a hot reload recreates documents.
@@ -523,6 +535,12 @@ int main(int argc, char** argv) {
         if (!theme) {
             PAT_LOG_ERROR("spike", "{}", theme.error().message);
             return 1;
+        }
+        if (const pat::ui::ThemeColor* land = theme.value().find_color("rule")) {
+            overview_land_fill = pat::ui::color_hex(*land);
+        }
+        if (const pat::ui::ThemeColor* owned = theme.value().find_color("success")) {
+            overview_owned_fill = pat::ui::color_hex(*owned);
         }
         pat::ui::install_theme(*ui, std::make_shared<const pat::ui::Theme>(std::move(theme).value()));
         if (!m1) {
@@ -606,6 +624,91 @@ int main(int argc, char** argv) {
                 });
             } else {
                 PAT_LOG_WARN("spike", "HUD: {}", hud_result.error().message);
+            }
+        }
+        if (hud) {
+            // Overlays of the map screen (UI-D05). The affairs are a PLACEHOLDER snapshot until the dynasty, event
+            // and economy bridges exist; a card opens its section through the navigation (entries without a screen
+            // ignore it).
+            pat::ui::HudWindow* h = hud.get();
+            auto agenda_result = pat::ui::AgendaPanel::create(*ui,
+                                                              std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "agenda.rml",
+                                                              std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                              ui_loc);
+            if (agenda_result) {
+                agenda = std::move(agenda_result).value();
+                agenda->set_snapshot(pat::ui::make_placeholder_agenda());
+                agenda->set_open_handler([h](const std::string& section) { h->press_nav(section); });
+                agenda->set_journal_handler([h] { h->press_nav("chronicle"); });
+            } else {
+                PAT_LOG_WARN("spike", "agenda panel: {}", agenda_result.error().message);
+            }
+            auto overlays_result = pat::ui::MapOverlays::create(*ui,
+                                                                std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "overlays.rml",
+                                                                std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                                ui_loc);
+            if (overlays_result) {
+                overlays = std::move(overlays_result).value();
+                OrbitCamera* cam = &camera;
+                const float map_w = geometry.width;
+                const float map_h = geometry.height;
+                overlays->set_zoom_handler([cam](int direction) {
+                    cam->set_distance(cam->distance() * (direction > 0 ? 0.8f : 1.25f));
+                });
+                overlays->set_jump_handler([cam, map_w, map_h](float fx, float fy) {
+                    cam->set_focus(fx * map_w, fy * map_h);
+                });
+                refresh_overlay_map = [&]() {
+                    // PLACEHOLDER: the player is the owner of the first owned province until the game has a player.
+                    pat::sim::DynastyId player_dynasty;
+                    if (world_snapshot) {
+                        const pat::sim::ProvinceTable& table = world_snapshot->provinces();
+                        for (std::size_t i = 0; i < table.size() && !player_dynasty.valid(); ++i) {
+                            player_dynasty = table.owner[i];
+                        }
+                    }
+                    std::vector<std::uint8_t> owned;
+                    if (world_snapshot) {
+                        owned = pat::game::owned_provinces(*world_snapshot, map.province_list.size(), map_to_world,
+                                                           player_dynasty);
+                    }
+                    double sx = 0.0;
+                    double sy = 0.0;
+                    double sw = 0.0;
+                    for (std::size_t id = 1; id < owned.size(); ++id) {
+                        if (owned[id] != 0) {
+                            if (const auto* p = map.province(static_cast<std::uint16_t>(id))) {
+                                sx += static_cast<double>(p->centroid_x) * p->area_px;
+                                sy += static_cast<double>(p->centroid_y) * p->area_px;
+                                sw += p->area_px;
+                            }
+                        }
+                    }
+                    has_realm = sw > 0.0;
+                    realm_center = has_realm ? Vec3{static_cast<float>(sx / sw), static_cast<float>(sy / sw), 0.0f} : Vec3{};
+                    // The pictures are files in the temporary directory: an SVG of the land and one of the realm.
+                    static int version = 0;
+                    const std::filesystem::path dir = std::filesystem::temp_directory_path() / "patriarch_spike_overview";
+                    std::error_code ec;
+                    std::filesystem::create_directories(dir, ec);
+                    const auto write = [&](const std::filesystem::path& file, const std::string& text) {
+                        std::ofstream out(file, std::ios::binary | std::ios::trunc);
+                        out << text;
+                    };
+                    const std::filesystem::path land = dir / "land.svg";
+                    const std::filesystem::path realm = dir / ("realm_" + std::to_string(++version) + ".svg");
+                    write(land, pat::game::build_overview_svg(map, 444, overview_land_fill));
+                    write(realm, pat::game::build_overview_svg(map, 444, overview_owned_fill, owned));
+                    pat::ui::MinimapOverview overview;
+                    overview.land = land;
+                    overview.owned = realm;
+                    overview.aspect = static_cast<float>(map.width) / static_cast<float>(std::max<std::uint32_t>(1, map.height));
+                    overlays->set_overview(overview);
+                    overlays->set_region(has_realm ? ui_loc.format("ui.overlay.placeholder.region") : std::string());
+                };
+                refresh_overlay_map();
+            } else {
+                PAT_LOG_WARN("spike", "map overlays: {}", overlays_result.error().message);
             }
         }
         if (runner) {
@@ -692,6 +795,12 @@ int main(int argc, char** argv) {
                 ui_loc = std::move(texts.localizer);
                 if (hud) {
                     hud->relocalize();
+                }
+                if (agenda) {
+                    agenda->relocalize();
+                }
+                if (overlays) {
+                    overlays->relocalize();
                 }
                 if (time_bar) {
                     time_bar->relocalize();
@@ -810,6 +919,12 @@ int main(int argc, char** argv) {
                     } else if (key->scancode == scancode::f4 && hud != nullptr) {
                         hud_visible = !hud_visible;
                         hud->show(hud_visible);
+                        if (agenda) {
+                            agenda->show(hud_visible);
+                        }
+                        if (overlays) {
+                            overlays->show(hud_visible);
+                        }
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
                         character->show(character_visible);
@@ -932,6 +1047,9 @@ int main(int argc, char** argv) {
                 if (owners != last_owner_palette) {
                     view->set_palette(MapMode::Owners, owners);
                     last_owner_palette = std::move(owners);
+                    if (refresh_overlay_map) {
+                        refresh_overlay_map();
+                    }
                 }
                 std::vector<std::uint32_t> development =
                     pat::game::development_palette(*world_snapshot, provinces, map_to_world);
@@ -982,6 +1100,52 @@ int main(int argc, char** argv) {
             camera.update(frame_dt);
         }
         camera.set_focus_height(picker.height_at(camera.focus().x, camera.focus().y));
+
+        if (overlays) {
+            // Overlays follow the camera and the date: the view rectangle and the scale of the minimap, the season,
+            // the caption over the realm and the plate of the selected province (placed over their map points).
+            const pat::ui::MinimapView mv = pat::game::minimap_view(camera.focus().x, camera.focus().y,
+                                                                    camera.distance(), camera.fov_y(), aspect,
+                                                                    geometry.width, geometry.height);
+            overlays->set_view(mv);
+            overlays->set_scale_km(pat::game::scale_label_km(mv, pat::game::kPlaceholderMapWidthKm));
+            const pat::sim::Date today = world_snapshot ? world_snapshot->today() : pat::sim::Date::from_ymd(1703, 1, 1);
+            overlays->set_season(pat::game::season_of(today), today.ymd().year);
+            const Mat4 vp = camera.view_projection(aspect);
+            const auto project = [&](float mx, float my, float& sx, float& sy) {
+                const Vec3 ndc = transform_point(vp, Vec3{mx, my, picker.height_at(mx, my)});
+                sx = (ndc.x * 0.5f + 0.5f) * width_px;
+                sy = (0.5f - ndc.y * 0.5f) * height_px;
+                return ndc.z > 0.0f && ndc.z < 1.0f && std::abs(ndc.x) < 1.3f && std::abs(ndc.y) < 1.3f;
+            };
+            float ox = 0.0f;
+            float oy = 0.0f;
+            if (has_realm && project(realm_center.x, realm_center.y, ox, oy)) {
+                overlays->set_region(ui_loc.format("ui.overlay.placeholder.region"));
+                overlays->set_region_anchor(ox, oy);
+            } else {
+                overlays->set_region({});
+            }
+            if (selected != 0) {
+                if (const auto* p = map.province(selected)) {
+                    const auto names = m1 ? m1_province_names() : std::span<const std::string>{};
+                    const std::string name = selected < names.size() && !names[selected].empty()
+                                                 ? names[selected]
+                                                 : ui_loc.format("ui.overlay.province_unnamed",
+                                                                 {pat::loc::Arg("n", static_cast<int>(selected))});
+                    float plate_x = 0.0f;
+                    float plate_y = 0.0f;
+                    if (project(static_cast<float>(p->centroid_x), static_cast<float>(p->centroid_y), plate_x, plate_y)) {
+                        overlays->set_selection(name);
+                        overlays->set_selection_anchor(plate_x, plate_y);
+                    } else {
+                        overlays->set_selection({});
+                    }
+                }
+            } else {
+                overlays->set_selection({});
+            }
+        }
 
         // Hover pick.
         hovered = 0;

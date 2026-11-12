@@ -1,0 +1,38 @@
+<rml>
+<head>
+    <title>Map overlays</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="overlays.rcss"/>
+</head>
+<body data-model="overlays">
+
+<div id="season">{{ t.season }}</div>
+
+<div id="region" data-class-hidden="!has_region">
+    <div id="region-title">{{ t.region_title }}</div>
+    <div id="region-sub">{{ t.region_sub }}</div>
+</div>
+
+<svg id="marker" data-class-hidden="!has_plate" data-attr-src="marker_icon + ''"/>
+<div id="plate" data-class-hidden="!has_plate">
+    <svg id="plate-icon" data-attr-src="castle_icon + ''"/>
+    <div id="plate-name">{{ t.plate }}</div>
+    <div id="plate-line"></div>
+</div>
+
+<div id="minimap" class="panel">
+    <div id="mm-title">{{ t.minimap_title }}</div>
+    <div id="mm-area" data-event-click="jump()">
+        <svg id="mm-land"/>
+        <svg id="mm-owned"/>
+        <div id="mm-view"></div>
+    </div>
+    <div class="mm-rule" id="mm-rule"></div>
+    <div class="mm-btn" id="mm-out" data-attr-title="t.zoom_out" data-event-click="zoom(-1)">−</div>
+    <div id="mm-scale" data-class-hidden="!has_scale">{{ t.scale }}</div>
+    <div class="mm-btn" id="mm-in" data-attr-title="t.zoom_in" data-event-click="zoom(1)">+</div>
+</div>
+
+</body>
+</rml>

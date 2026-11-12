@@ -1,0 +1,202 @@
+/* "Дела рода" over the map (UI-D05; board 01 of the mockup, geometry in data/ui/layout/board_01_map_province.pd,
+   panel "Priority agenda" at 1536,136 of 1920x1080, 352x486, gold rule 2). The panel is anchored to the
+   top-right corner; only the panel takes the mouse (body ignores it), so the map stays operable. */
+#agenda {
+    position: absolute;
+    right: 32dp;
+    top: 136dp;
+    width: 352dp;
+    height: 486dp;
+    box-sizing: border-box;
+    border-radius: $radius;
+}
+
+#agenda-bell {
+    position: absolute;
+    left: 24dp;
+    top: 21dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+#agenda-title {
+    position: absolute;
+    left: 60dp;
+    top: 15dp;
+    font-family: $serif;
+    font-size: $type_28;
+    color: $light;
+    white-space: nowrap;
+}
+
+#agenda-badge {
+    position: absolute;
+    left: 297dp;
+    top: 19dp;
+    width: 31dp;
+    height: $badge_h;
+    line-height: $badge_h;
+    text-align: center;
+    background-color: $raised;
+    border-radius: $radius;
+    font-size: $type_13;
+    font-weight: bold;
+    color: $gold;
+}
+
+#agenda-subtitle {
+    position: absolute;
+    left: 24dp;
+    top: 63dp;
+    font-size: $type_14;
+    color: $quiet;
+}
+
+.agenda-rule {
+    height: $stroke_hairline;
+    background-color: $rule;
+}
+
+#agenda-top-rule {
+    position: absolute;
+    left: 24dp;
+    top: 102dp;
+    width: 304dp;
+}
+
+#agenda-empty {
+    position: absolute;
+    left: 24dp;
+    top: 124dp;
+    width: 304dp;
+    font-size: $type_16;
+    color: $quiet;
+}
+
+.hidden {
+    display: none;
+}
+
+#agenda-list {
+    position: absolute;
+    left: 20dp;
+    top: 117dp;
+    width: 314dp;
+}
+
+.agenda-row {
+    position: relative;
+    width: 314dp;
+    height: 111dp;
+}
+
+/* The hit area of the board ("Hit area / ...": 314 x 92) is the whole card; a button, so that Enter presses it. */
+.agenda-card {
+    box-sizing: border-box;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: transparent;
+    position: relative;
+    width: 314dp;
+    height: 92dp;
+    border-radius: $radius;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.agenda-card:hover {
+    background-color: $raised;
+}
+
+.kbd .agenda-card:focus {
+    border: $focus_ring $gold;
+}
+
+.agenda-row-rule {
+    position: absolute;
+    left: 4dp;
+    top: 99dp;
+    width: 304dp;
+}
+
+.agenda-number {
+    position: absolute;
+    left: 4dp;
+    top: 5dp;
+    font-family: $serif;
+    font-size: $type_16;
+    color: $gold;
+}
+
+.agenda-card.attention .agenda-number {
+    color: $gold;
+}
+
+.agenda-card-title {
+    position: absolute;
+    left: 44dp;
+    top: 3dp;
+    width: 265dp;
+    font-size: $type_18;
+    font-weight: bold;
+    color: $light;
+    white-space: nowrap;
+}
+
+.agenda-card-detail {
+    position: absolute;
+    left: 44dp;
+    top: 34dp;
+    width: 264dp;
+    font-size: $type_13;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+.agenda-chip-icon {
+    position: absolute;
+    left: 45dp;
+    top: 68dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+.agenda-chip {
+    position: absolute;
+    left: 71dp;
+    top: 67dp;
+    font-size: $type_12;
+    color: $gold;
+}
+
+#agenda-journal {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: transparent;
+    text-align: left;
+    height: 21dp;
+    position: absolute;
+    left: 24dp;
+    top: 455dp;
+    width: 305dp;
+    font-size: $type_14;
+    font-weight: bold;
+    color: $gold;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+#agenda-journal:hover {
+    text-decoration: underline;
+}
+
+.kbd #agenda-journal:focus {
+    text-decoration: underline;
+    color: $light;
+}

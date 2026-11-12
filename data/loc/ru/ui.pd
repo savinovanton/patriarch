@@ -269,3 +269,31 @@ ui.gallery.tip_short_total = "Списать сейчас"
 ui.gallery.tip_short_footer = "Причина остаётся рядом с действием."
 ui.gallery.page_components = "Компоненты"
 ui.gallery.page_tips = "Подсказки"
+
+# ---- Наложения карты (UI-D05, #260: доски 01 и 07 макета) ------------------------------------
+
+ui.agenda.title = "Дела рода"
+ui.agenda.subtitle = "Требуют вашего внимания"
+ui.agenda.journal = "Открыть журнал"
+ui.agenda.empty = "Сейчас дел нет"
+# ЗАГЛУШКА: тексты трёх дел с доски 01, пока нет моста династии, событий и казны (E7/E8/E9).
+ui.agenda.placeholder.heir.title = "Наследник не обручён"
+ui.agenda.placeholder.heir.detail = "Заключите союз с другим родом"
+ui.agenda.placeholder.letter.title = "Письмо из Москвы"
+ui.agenda.placeholder.letter.detail = "При дворе ждут вашего ответа"
+ui.agenda.placeholder.taxes.title = "Зимний сбор податей"
+ui.agenda.placeholder.taxes.detail = "До поступления дохода: {n} {n:plural(день|дня|дней)}"
+
+ui.overlay.season = "{season} · {year}"
+ui.overlay.season.winter = "ЗИМА"
+ui.overlay.season.spring = "ВЕСНА"
+ui.overlay.season.summer = "ЛЕТО"
+ui.overlay.season.autumn = "ОСЕНЬ"
+ui.overlay.owned = "ВЛАДЕНИЯ ВАШЕГО РОДА"
+ui.overlay.minimap = "ОБЗОР ВЛАДЕНИЙ"
+ui.overlay.scale = "{km:group} км"
+ui.overlay.zoom_in = "Приблизить карту"
+ui.overlay.zoom_out = "Отдалить карту"
+# ЗАГЛУШКА: название области владений, пока его не даёт контент (до E9-T20).
+ui.overlay.placeholder.region = "Новгородская земля"
+ui.overlay.province_unnamed = "Провинция {n}"
