@@ -1,6 +1,7 @@
 add_library(patriarch_ui STATIC
     include/pat/ui/agenda_panel.hpp
     include/pat/ui/character_snapshot.hpp
+    include/pat/ui/economy_snapshot.hpp
     include/pat/ui/character_window.hpp
     include/pat/ui/component_gallery.hpp
     include/pat/ui/credits_window.hpp

@@ -96,6 +96,14 @@ std::string format_factor(const loc::Localizer& loc, std::int32_t factor_permill
 
 namespace {
 
+std::int64_t displayed_units(Unit unit, std::int64_t value) {
+    return unit == Unit::Ppm ? round_div(value, 1000) : round_div(value * 10, 65536);
+}
+
+std::int64_t display_adjustment_raw(Unit unit, std::int64_t value) {
+    return unit == Unit::Ppm ? value * 1000 : value * 65536 / 10;
+}
+
 ui::Explanation
 node_explanation(const loc::Localizer& loc, const Breakdown& b, NodeIndex index, bool signed_value) {
     const BreakdownNode& node = b.node(index);
@@ -109,6 +117,25 @@ node_explanation(const loc::Localizer& loc, const Breakdown& b, NodeIndex index,
     for (std::size_t i = 1; i < b.size(); ++i) {
         if (b.node(static_cast<NodeIndex>(i)).parent == index) {
             e.terms.push_back(node_explanation(loc, b, static_cast<NodeIndex>(i), true));
+        }
+    }
+    if (!e.terms.empty() &&
+        (node.unit == Unit::Points || node.unit == Unit::Pieces || node.unit == Unit::Ppm) &&
+        b.children_sum(index) == node.value) {
+        std::int64_t displayed_sum = 0;
+        for (std::size_t i = 1; i < b.size(); ++i) {
+            const auto child = static_cast<NodeIndex>(i);
+            if (b.node(child).parent == index) {
+                displayed_sum += displayed_units(node.unit, b.node(child).value);
+            }
+        }
+        const std::int64_t correction = displayed_units(node.unit, node.value) - displayed_sum;
+        if (correction != 0) {
+            e.terms.push_back(
+                {loc.format("ui.explain.rounding"),
+                 format_breakdown_value(loc, node.unit, display_adjustment_raw(node.unit, correction), true),
+                 "",
+                 {}});
         }
     }
     return e;
