@@ -1,0 +1,201 @@
+/* Things over the map (UI-D05; boards 01 and 07 of the mockup, geometry in data/ui/layout/board_01_map_province.pd
+   at 1920x1080). The season badge sits under the top bar on the left, the minimap in the bottom-right corner; the
+   caption over the realm and the plate of the selected province are placed by the application over the screen
+   position of a point of the map. Only the minimap takes the mouse, the rest of the document does not. */
+.hidden {
+    display: none;
+}
+
+#season {
+    position: absolute;
+    left: 129dp;
+    top: 115dp;
+    height: $badge_h;
+    min-width: 145dp;
+    box-sizing: border-box;
+    padding: 0 8dp;
+    text-align: center;
+    line-height: $badge_h;
+    background-color: $ink;
+    border-radius: $radius;
+    font-size: $type_13;
+    font-weight: bold;
+    color: $light;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ---- caption over the realm: 760 x 70 dp block, centred on the anchor */
+#region {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 760dp;
+    height: 70dp;
+    text-align: center;
+    pointer-events: none;
+}
+
+#region-title {
+    font-family: $serif;
+    font-size: $type_28;
+    letter-spacing: 5dp;
+    color: $text;
+    white-space: nowrap;
+}
+
+#region-sub {
+    margin-top: 6dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 3dp;
+    color: $text;
+    white-space: nowrap;
+}
+
+/* ---- plate of the selected province: "Map label / Новгород" 207 x 58, castle, name, gold line */
+#marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: $icon_size;
+    height: $icon_size;
+    pointer-events: none;
+}
+
+#plate {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 207dp;
+    height: 58dp;
+    background-color: $ink;
+    border-radius: $radius;
+    pointer-events: none;
+}
+
+#plate-icon {
+    position: absolute;
+    left: 14dp;
+    top: 16dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+#plate-name {
+    position: absolute;
+    left: 51dp;
+    top: 9dp;
+    width: 150dp;
+    font-family: $serif;
+    font-size: $type_25;
+    color: $light;
+    white-space: nowrap;
+}
+
+#plate-line {
+    position: absolute;
+    left: 0;
+    top: 56dp;
+    width: 207dp;
+    height: $rule_panel;
+    background-color: $gold;
+}
+
+/* ---- minimap "Обзор владений": 260 x 212 at 1628,800 of the board, bottom-right corner */
+#minimap {
+    position: absolute;
+    right: 32dp;
+    bottom: 68dp;
+    width: 260dp;
+    height: 212dp;
+    box-sizing: border-box;
+}
+
+#mm-title {
+    position: absolute;
+    left: 17dp;
+    top: 15dp;
+    font-size: $type_11;
+    font-weight: bold;
+    letter-spacing: 1.5dp;
+    color: $quiet;
+}
+
+#mm-area {
+    position: absolute;
+    left: 18dp;
+    top: 52dp;
+    width: 222dp;
+    height: 104dp;
+    cursor: pointer;
+}
+
+#mm-land,
+#mm-owned {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 222dp;
+    height: 104dp;
+}
+
+#mm-view {
+    box-sizing: border-box;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 222dp;
+    height: 104dp;
+    border: $focus_ring $gold;
+    pointer-events: none;
+}
+
+.mm-rule {
+    position: absolute;
+    left: 17dp;
+    top: 173dp;
+    width: 224dp;
+    height: $stroke_hairline;
+    background-color: $rule;
+}
+
+.mm-btn {
+    position: absolute;
+    top: 179dp;
+    width: 29dp;
+    height: 33dp;
+    line-height: 33dp;
+    text-align: center;
+    font-size: $type_22;
+    color: $light;
+    border-radius: $radius;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.mm-btn:hover {
+    background-color: $raised;
+}
+
+.kbd .mm-btn:focus {
+    border: $focus_ring $gold;
+}
+
+#mm-out {
+    left: 17dp;
+}
+
+#mm-in {
+    left: 206dp;
+}
+
+#mm-scale {
+    position: absolute;
+    left: 73dp;
+    top: 185dp;
+    width: 110dp;
+    text-align: center;
+    font-size: $type_13;
+    color: $quiet;
+}

@@ -1,4 +1,5 @@
 add_library(patriarch_ui STATIC
+    include/pat/ui/agenda_panel.hpp
     include/pat/ui/character_snapshot.hpp
     include/pat/ui/character_window.hpp
     include/pat/ui/component_gallery.hpp
@@ -7,11 +8,13 @@ add_library(patriarch_ui STATIC
     include/pat/ui/focus_visibility.hpp
     include/pat/ui/hud_snapshot.hpp
     include/pat/ui/hud_window.hpp
+    include/pat/ui/map_overlays.hpp
     include/pat/ui/text.hpp
     include/pat/ui/theme.hpp
     include/pat/ui/tooltip_manager.hpp
     include/pat/ui/time_bar.hpp
     include/pat/ui/tooltip_state.hpp
+    agenda_panel.cpp
     character_snapshot.cpp
     character_window.cpp
     component_gallery.cpp
@@ -19,6 +22,7 @@ add_library(patriarch_ui STATIC
     explanation.cpp
     focus_visibility.cpp
     hud_window.cpp
+    map_overlays.cpp
     text.cpp
     theme.cpp
     time_bar.cpp

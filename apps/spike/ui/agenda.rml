@@ -1,0 +1,32 @@
+<rml>
+<head>
+    <title>Agenda</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="agenda.rcss"/>
+</head>
+<body data-model="agenda">
+<div id="agenda" class="panel panel-rule">
+    <svg id="agenda-bell" data-attr-src="bell + ''"/>
+    <div id="agenda-title">{{ t.title }}</div>
+    <div id="agenda-badge" data-class-hidden="count == 0">{{ count_text }}</div>
+    <div id="agenda-subtitle">{{ t.subtitle }}</div>
+    <div class="agenda-rule" id="agenda-top-rule"></div>
+    <div id="agenda-empty" data-class-hidden="shown != 0">{{ t.empty }}</div>
+    <div id="agenda-list">
+        <div class="agenda-row" data-for="row : rows" data-attr-id="'agenda-row-' + row.index">
+            <button class="agenda-card" data-attr-id="'agenda-card-' + row.index" data-class-attention="row.attention"
+                 data-event-click="open(row.index)">
+                <div class="agenda-number">{{ row.number }}</div>
+                <div class="agenda-card-title">{{ row.title }}</div>
+                <div class="agenda-card-detail">{{ row.detail }}</div>
+                <svg class="agenda-chip-icon" data-attr-src="row.icon + ''"/>
+                <div class="agenda-chip">{{ row.section_name }}</div>
+            </button>
+            <div class="agenda-rule agenda-row-rule"></div>
+        </div>
+    </div>
+    <button id="agenda-journal" data-event-click="journal()">{{ t.journal }}</button>
+</div>
+</body>
+</rml>
