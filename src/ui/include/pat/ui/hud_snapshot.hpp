@@ -27,15 +27,32 @@ struct HudResource {
     HudNote note = HudNote::Delta;
 };
 
+/// A province of the player's house (list of holdings).
+struct HudHolding {
+    std::uint32_t id = 0;         // province number of the simulation; the window names an unnamed one by it
+    std::string name;             // as content gives it; empty when the content has no name yet
+    std::int64_t population = 0;  // thousands of people, shown as "94 т" (ui.fmt.thousands)
+};
+
+/// The grain of the house: the sum of the granaries of its provinces. Not a block of the top bar (its five
+/// places are the resources of the board); the economy windows show it.
+struct HudGrain {
+    std::int64_t stock = 0;  // units
+    std::int64_t delta = 0;  // change per month, units (signed)
+};
+
 /// Everything the heads-up display shows: plain data, no pointers into the simulation.
 struct HudSnapshot {
     std::string
         house;  // the player's house in the genitive, as content gives it: "Голицыных" ("РОД ГОЛИЦЫНЫХ")
     std::vector<HudResource> resources;
+    HudGrain grain;
+    std::vector<HudHolding> holdings;
 };
 
-/// Placeholder content matching the mockup (board 01), until the economy and court bridge exists (E9-T20):
-/// five resources with the numbers of the board and the house of the mockup.
+/// Placeholder content matching the mockup (board 01): five resources with the numbers of the board and the
+/// house of the mockup. game::make_hud (E9-T20) returns it for a world without the economy; prestige,
+/// influence and piety stay these numbers until E7/E31.
 [[nodiscard]] HudSnapshot make_test_hud();
 
 }  // namespace pat::ui
