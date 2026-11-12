@@ -1,9 +1,11 @@
 add_library(patriarch_game STATIC
     include/pat/game/credits_view.hpp
+    include/pat/game/hud_view.hpp
     include/pat/game/map_overview.hpp
     include/pat/game/tooltip_view.hpp
     include/pat/game/world_view.hpp
     credits_view.cpp
+    hud_view.cpp
     map_overview.cpp
     tooltip_view.cpp
     world_view.cpp)

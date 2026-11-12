@@ -26,6 +26,7 @@
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/game/credits_view.hpp"
+#include "pat/game/hud_view.hpp"
 #include "pat/game/map_overview.hpp"
 #include "pat/game/world_view.hpp"
 #include "pat/loc/localizer.hpp"
@@ -591,7 +592,7 @@ int main(int argc, char** argv) {
                                                          ui_loc);
             if (hud_result) {
                 hud = std::move(hud_result).value();
-                // Placeholder resources of the mockup until the economy bridge exists (E9-T20, issue 164).
+                // Placeholder resources of the mockup until the first snapshot of the world arrives (make_hud, E9-T20).
                 hud->set_snapshot(pat::ui::make_test_hud());
                 pat::ui::HudWindow* h = hud.get();
                 pat::ui::CreditsWindow* credits_window = credits.get();
@@ -1059,6 +1060,21 @@ int main(int argc, char** argv) {
                 }
                 if (time_bar) {
                     time_bar->set_date(pat::game::format_date(ui_loc, world_snapshot->today()));
+                }
+                if (hud && m1) {
+                    // The top bar shows the numbers of the world (E9-T20); PLACEHOLDER player: the first owner.
+                    pat::game::HudOptions hud_options;
+                    hud_options.province_name = [&](pat::sim::ProvinceId province) -> std::string {
+                        const auto names = m1_province_names();
+                        for (std::size_t raster = 1; raster < map_to_world.size() && raster < names.size(); ++raster) {
+                            if (map_to_world[raster] == province) {
+                                return names[raster];
+                            }
+                        }
+                        return {};
+                    };
+                    hud->set_snapshot(
+                        pat::game::make_hud(*world_snapshot, pat::game::first_owner(*world_snapshot), hud_options));
                 }
             }
             if (time_bar && runner) {
