@@ -43,6 +43,7 @@
 #include "pat/ui/credits_window.hpp"
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/map_overlays.hpp"
+#include "pat/ui/menu.hpp"
 #include "pat/ui/theme.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
@@ -126,6 +127,7 @@ struct Options {
     bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
     bool gallery = false;          // --gallery: the page of the shared UI components over everything
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
+    int menu = 0;                  // --menu: start menu over everything (1 with demo saves, 2 --menu-first, 3 --menu-overview)
     bool no_labels = false;        // no map labels
     int offscreen_w = 0;           // --offscreen WxH: render to an offscreen target on the real GPU (measurements)
     int offscreen_h = 0;
@@ -191,6 +193,12 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.gallery_tips = true;
         } else if (arg == "--gallery") {
             out.gallery = true;
+        } else if (arg == "--menu") {
+            out.menu = 1;
+        } else if (arg == "--menu-first") {
+            out.menu = 2;
+        } else if (arg == "--menu-overview") {
+            out.menu = 3;
         } else if (arg == "--no-hud") {
             out.no_hud = true;
         } else if (arg == "--no-labels") {
@@ -243,7 +251,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n");
+                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
+                         "                       [--menu | --menu-first | --menu-overview]\n");
             return false;
         }
     }
@@ -483,6 +492,7 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
     std::unique_ptr<pat::ui::ComponentGallery> gallery;   // likewise: the page of the shared components (--gallery)
+    std::unique_ptr<pat::ui::MenuWindow> menu;            // likewise: the start menu (--menu), UI-D12
     std::unique_ptr<pat::ui::AgendaPanel> agenda;    // likewise: "Дела рода" over the map (UI-D05)
     std::unique_ptr<pat::ui::MapOverlays> overlays;  // likewise: season badge, realm caption, plate, minimap
     std::string overview_land_fill;                  // SVG fills of the minimap, from the theme tokens
@@ -762,6 +772,29 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "component gallery: {}", gallery_result.error().message);
             }
         }
+        if (opt.menu != 0) {
+            // The start menu (UI-D12): loaded last, so it covers the other documents; it is modal. The actions that
+            // need a world only log (new game, load, settings), the exit asks the loop to stop.
+            auto menu_result = pat::ui::MenuWindow::create(*ui,
+                                                           std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "menu.rml",
+                                                           std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                                                           ui_loc);
+            if (menu_result) {
+                menu = std::move(menu_result).value();
+                // PLACEHOLDER saves of the mockup until the save catalogue exists; --menu-first shows the first run.
+                menu->set_snapshot(opt.menu == 2 ? pat::ui::MenuSnapshot{} : pat::ui::make_placeholder_menu(ui_loc));
+                pat::ui::MenuActions actions;
+                actions.new_game = [] { PAT_LOG_INFO("spike", "menu: new game (stub)"); };
+                actions.continue_game = [] { PAT_LOG_INFO("spike", "menu: continue (stub)"); };
+                actions.load_save = [](const std::string& id) { PAT_LOG_INFO("spike", "menu: load '{}' (stub)", id); };
+                actions.open_settings = [] { PAT_LOG_INFO("spike", "menu: settings (stub)"); };
+                actions.quit = [&running] { running = false; };
+                menu->set_actions(std::move(actions));
+                menu->open(opt.menu == 3 ? pat::ui::MenuScreen::Overview : pat::ui::MenuScreen::Main);
+            } else {
+                PAT_LOG_WARN("spike", "menu: {}", menu_result.error().message);
+            }
+        }
     }
 
     // Sun by the clock (phase P5): fixed with --time, cycling with --day-seconds or the N key.
@@ -888,6 +921,9 @@ int main(int argc, char** argv) {
                     continue;
                 }
                 const bool down = key->down;
+                if (menu && menu->visible() && key->scancode != scancode::escape && key->scancode != scancode::f11) {
+                    continue;  // the menu is modal: the game keys sleep (an Esc it did not handle still ends the spike)
+                }
                 if (key->scancode == kScancodeW || key->scancode == kScancodeUp) key_w = down;
                 if (key->scancode == kScancodeS || key->scancode == kScancodeDown) key_s = down;
                 if (key->scancode == kScancodeA || key->scancode == kScancodeLeft) key_a = down;
@@ -1292,6 +1328,9 @@ int main(int argc, char** argv) {
                 }
                 const std::int64_t ui_t1 = now_ns();
                 ui->update();
+                if (menu) {
+                    menu->update();
+                }
                 const std::int64_t ui_t2 = now_ns();
                 ui->render();
                 const std::int64_t ui_t3 = now_ns();

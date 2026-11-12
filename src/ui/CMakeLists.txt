@@ -9,6 +9,7 @@ add_library(patriarch_ui STATIC
     include/pat/ui/hud_snapshot.hpp
     include/pat/ui/hud_window.hpp
     include/pat/ui/map_overlays.hpp
+    include/pat/ui/menu.hpp
     include/pat/ui/text.hpp
     include/pat/ui/theme.hpp
     include/pat/ui/tooltip_manager.hpp
@@ -23,6 +24,7 @@ add_library(patriarch_ui STATIC
     focus_visibility.cpp
     hud_window.cpp
     map_overlays.cpp
+    menu.cpp
     text.cpp
     theme.cpp
     time_bar.cpp
