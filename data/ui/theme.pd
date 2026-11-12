@@ -71,6 +71,10 @@ theme "patriarch-concept-01" {
     type_42 = 42
     type_43 = 43
     type_48 = 48
+    type_34 = 34
+    type_50 = 50
+    type_56 = 56
+    type_21 = 21
     type_90 = 90
   }
 
