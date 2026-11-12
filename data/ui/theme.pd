@@ -59,8 +59,19 @@ theme "patriarch-concept-01" {
     type_22 = 22
     type_25 = 25
     type_28 = 28
+    type_19 = 19
+    type_23 = 23
+    type_26 = 26
+    type_27 = 27
+    type_29 = 29
+    type_31 = 31
+    type_33 = 33
+    type_36 = 36
     type_38 = 38
+    type_42 = 42
+    type_43 = 43
     type_48 = 48
+    type_90 = 90
   }
 
   # Not Penpot tokens: values read from the layers (the file has no library typographies or styles).

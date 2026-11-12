@@ -1,0 +1,1028 @@
+/* Start menu (UI-D12, issue 284; geometry in data/ui/layout/menu_boards.pd, boards "МЕНЮ / ..." at 1920x1080: 1dp = 1
+   design pixel). The art, the shade and the contrast strip cover the whole window; everything else sits on the
+   `stage`, a 1920x1080dp canvas centred horizontally, so the layout is the drawn one at every aspect ratio.
+   The document is modal and full screen: it takes the mouse everywhere (pointer-events is inherited). */
+#menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: $ink;
+    pointer-events: auto;
+}
+
+#menu-paper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: $paper;
+}
+
+/* The concept art is a temporary placeholder (issue 254): the image of the mockup, fitted to cover the window. */
+#menu-art {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#menu-shade {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: $ink_a8;
+}
+
+#menu-shade.dim {
+    background-color: $ink_a72;
+}
+
+/* The strip of the board (0..910 of the canvas) and its continuation to the left edge of a wider window. */
+#menu-contrast,
+#menu-contrast-left {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background-color: $ink_a33;
+}
+
+#menu-contrast {
+    left: 50%;
+    margin-left: -960dp;
+    width: 910dp;
+}
+
+#menu-contrast-left {
+    left: 0;
+    margin-left: -960dp;
+    width: 50%;
+}
+
+#stage {
+    position: absolute;
+    left: 50%;
+    margin-left: -960dp;
+    top: 0;
+    width: 1920dp;
+    height: 1080dp;
+}
+
+.screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920dp;
+    height: 1080dp;
+    /* The screens overlap each other: only the controls (buttons, the list) take the mouse, so that a control of
+       one screen is never covered by the empty box of the next. */
+    pointer-events: none;
+}
+
+/* A dialog is open: the screen behind takes no Tab (the backdrop also covers the mouse). */
+#stage.blocked button {
+    tab-index: none;
+}
+
+#menu-copyright {
+    position: absolute;
+    left: 54dp;
+    top: 1036dp;
+    width: 1160dp;
+    font-size: $type_12;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+#menu-region {
+    position: absolute;
+    left: 1510dp;
+    top: 1033dp;
+    width: 350dp;
+    font-family: $serif;
+    font-size: $type_15;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#menu-copyright.overview,
+#menu-region.overview {
+    color: $muted;
+}
+
+/* ---- main menu */
+#menu-shield {
+    position: absolute;
+    left: 145dp;
+    top: 86dp;
+    width: 42dp;
+    height: 49dp;
+}
+
+#menu-title {
+    position: absolute;
+    left: 138dp;
+    top: 158dp;
+    width: 1160dp;
+    font-family: $serif;
+    font-size: $type_90;
+    letter-spacing: 6dp;
+    color: $light;
+    white-space: nowrap;
+}
+
+#menu-tagline {
+    position: absolute;
+    left: 147dp;
+    top: 284dp;
+    width: 1000dp;
+    font-size: $type_14;
+    font-weight: bold;
+    letter-spacing: 4dp;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#menu-title-rule {
+    position: absolute;
+    left: 146dp;
+    top: 325dp;
+    width: 580dp;
+    height: 26dp;
+}
+
+#menu-title-rule svg {
+    position: absolute;
+    left: 0;
+    top: 4dp;
+    width: 580dp;
+    height: 18dp;
+}
+
+#menu-lead {
+    position: absolute;
+    left: 145dp;
+    top: 366dp;
+    width: 890dp;
+    font-family: $serif;
+    font-size: $type_29;
+    color: $light;
+    white-space: nowrap;
+}
+
+#menu-hint {
+    position: absolute;
+    left: 147dp;
+    top: 416dp;
+    width: 800dp;
+    font-size: $type_19;
+    color: $quiet;
+}
+
+.mi {
+    display: block;
+    position: absolute;
+    left: 146dp;
+    width: 548dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $ink_a86;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.mi.is-disabled {
+    background-color: $ink_a52;
+    tab-index: none;
+    cursor: default;
+}
+
+.mi.selected {
+    background-color: $paper;
+}
+
+.mi-edge {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4dp;
+    height: 100%;
+    background-color: $gold;
+}
+
+.mi.selected .mi-edge {
+    display: block;
+}
+
+.mi-text {
+    position: absolute;
+    left: 0;
+    top: 9dp;
+    width: 484dp;
+    font-family: $serif;
+    font-size: $type_26;
+    color: $light;
+    white-space: nowrap;
+}
+
+.mi.primary .mi-text {
+    top: 16dp;
+}
+
+.mi.is-disabled .mi-text {
+    color: $quiet;
+}
+
+.mi.selected .mi-text {
+    left: 24dp;
+    color: $ink;
+}
+
+.mi-chevron {
+    display: none;
+    position: absolute;
+    left: 504dp;
+    top: 15dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+.mi.primary .mi-chevron {
+    top: 22dp;
+}
+
+.mi.selected .mi-chevron {
+    display: block;
+}
+
+.mi-note {
+    position: absolute;
+    left: 3dp;
+    width: 660dp;
+    font-size: $type_13;
+    color: $quiet;
+    white-space: nowrap;
+}
+
+.mi-note.note-save {
+    width: 740dp;
+    font-size: $type_14;
+}
+
+/* The language selector is a caption for now: the language is chosen in the settings (part 3). */
+#menu-lang {
+    position: absolute;
+    left: 1778dp;
+    top: 38dp;
+    width: 88dp;
+    height: 40dp;
+    background-color: $ink;
+}
+
+#menu-lang svg {
+    position: absolute;
+    left: 12dp;
+    top: 10dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+#menu-lang-text {
+    position: absolute;
+    left: 43dp;
+    top: 10dp;
+    width: 36dp;
+    font-size: $type_15;
+    font-weight: bold;
+    color: $light;
+}
+
+/* ---- page frame of "Загрузка" and "Об игре" */
+#page-shield {
+    position: absolute;
+    left: 54dp;
+    top: 35dp;
+    width: 31dp;
+    height: 38dp;
+}
+
+#page-brand {
+    position: absolute;
+    left: 108dp;
+    top: 32dp;
+    width: 700dp;
+    font-family: $serif;
+    font-size: $type_29;
+    letter-spacing: 3dp;
+    color: $light;
+    white-space: nowrap;
+}
+
+#page-caption {
+    position: absolute;
+    left: 1160dp;
+    top: 42dp;
+    width: 700dp;
+    font-size: $type_13;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $gold;
+    white-space: nowrap;
+}
+
+#panel {
+    position: absolute;
+    left: 96dp;
+    top: 126dp;
+    width: 1728dp;
+    height: 878dp;
+    background-color: $paper;
+}
+
+#panel-rule {
+    position: absolute;
+    left: 96dp;
+    top: 126dp;
+    width: 1728dp;
+    height: $rule_window;
+    background-color: $gold;
+}
+
+#page-eyebrow {
+    position: absolute;
+    left: 128dp;
+    top: 148dp;
+    width: 1500dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 1.5dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+#page-title {
+    position: absolute;
+    left: 126dp;
+    top: 182dp;
+    width: 1658dp;
+    font-family: $serif;
+    font-size: $type_42;
+    color: $text;
+    white-space: nowrap;
+}
+
+#page-subtitle {
+    position: absolute;
+    left: 128dp;
+    top: 250dp;
+    width: 1658dp;
+    font-size: $type_17;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.page-divider {
+    position: absolute;
+    height: $stroke_hairline;
+    background-color: $line;
+}
+
+#page-divider-top {
+    left: 128dp;
+    top: 304dp;
+    width: 1664dp;
+}
+
+#page-divider-bottom {
+    left: 128dp;
+    top: 900dp;
+    width: 1664dp;
+}
+
+#btn-main {
+    position: absolute;
+    left: 128dp;
+    top: 926dp;
+    width: 260dp;
+    height: 50dp;
+}
+
+/* ---- load */
+#save-list {
+    position: absolute;
+    left: 128dp;
+    top: 340dp;
+    width: 1044dp;
+    height: 528dp;
+    overflow-y: auto;
+    pointer-events: auto;
+}
+
+scrollbarvertical {
+    width: 12dp;
+}
+
+scrollbarvertical slidertrack {
+    background-color: $paper2;
+}
+
+scrollbarvertical sliderbar {
+    width: 12dp;
+    min-height: 24dp;
+    background-color: $line;
+    border-radius: $radius;
+}
+
+scrollbarvertical sliderarrowdec,
+scrollbarvertical sliderarrowinc {
+    width: 0;
+    height: 0;
+}
+
+.save {
+    display: block;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    height: 150dp;
+    margin: 0 0 21dp 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper2;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.save.selected {
+    background-color: $paper;
+}
+
+/* The frame is a child: its width changes with the state while the texts keep their places. */
+.save-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: $stroke_hairline $line;
+}
+
+.save:hover .save-frame {
+    border-color: $green;
+}
+
+.save.selected .save-frame {
+    border: $stroke_window $green;
+}
+
+.kbd .save:focus .save-frame {
+    border: $focus_ring $gold;
+}
+
+.save-icon {
+    position: absolute;
+    left: 24dp;
+    top: 26dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+.save-name {
+    position: absolute;
+    left: 77dp;
+    top: 21dp;
+    width: 712dp;
+    font-family: $serif;
+    font-size: $type_27;
+    color: $text;
+    white-space: nowrap;
+}
+
+.save-badge {
+    position: absolute;
+    left: 814dp;
+    top: 22dp;
+    width: 208dp;
+    height: $badge_h;
+    background-color: $green;
+    border-radius: $radius;
+    text-align: center;
+    font-size: $type_13;
+    font-weight: bold;
+    line-height: 28dp;
+    color: $light;
+}
+
+.save-badge.bad {
+    background-color: $paper;
+    color: $red;
+}
+
+.save-line {
+    position: absolute;
+    left: 78dp;
+    top: 76dp;
+    width: 944dp;
+    font-size: $type_17;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.save-sub {
+    position: absolute;
+    left: 78dp;
+    top: 115dp;
+    width: 944dp;
+    font-size: $type_13;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.save-sub.bad {
+    color: $red;
+}
+
+#save-summary {
+    position: absolute;
+    left: 1206dp;
+    top: 340dp;
+    width: 590dp;
+    height: 528dp;
+    background-color: $paper2;
+}
+
+#save-preview {
+    position: absolute;
+    left: 24dp;
+    top: 24dp;
+    width: 542dp;
+    height: 206dp;
+    background-color: $line;
+}
+
+#save-house {
+    position: absolute;
+    left: 22dp;
+    top: 257dp;
+    width: 546dp;
+    font-family: $serif;
+    font-size: $type_31;
+    color: $text;
+    white-space: nowrap;
+}
+
+#save-date {
+    position: absolute;
+    left: 24dp;
+    top: 312dp;
+    width: 542dp;
+    font-size: $type_19;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#save-divider {
+    left: 24dp;
+    top: 360dp;
+    width: 542dp;
+}
+
+#save-keys,
+#save-values {
+    position: absolute;
+    top: 389dp;
+    height: 69dp;
+    font-size: $type_17;
+    line-height: 23dp;
+    white-space: nowrap;
+}
+
+#save-keys {
+    left: 24dp;
+    width: 236dp;
+    color: $muted;
+}
+
+#save-values {
+    left: 264dp;
+    width: 302dp;
+    font-weight: bold;
+    color: $text;
+}
+
+#save-keys div,
+#save-values div {
+    height: 23dp;
+}
+
+#btn-load {
+    position: absolute;
+    left: 1384dp;
+    top: 926dp;
+    width: 408dp;
+    height: 50dp;
+}
+
+#load-empty-icon {
+    position: absolute;
+    left: 901dp;
+    top: 391dp;
+    width: 86dp;
+    height: 88dp;
+}
+
+#load-empty-title {
+    position: absolute;
+    left: 326dp;
+    top: 533dp;
+    width: 1268dp;
+    text-align: center;
+    font-family: $serif;
+    font-size: $type_43;
+    color: $text;
+    white-space: nowrap;
+}
+
+#load-empty-text {
+    position: absolute;
+    left: 326dp;
+    top: 611dp;
+    width: 1268dp;
+    text-align: center;
+    font-size: $type_20;
+    color: $muted;
+}
+
+#btn-new {
+    position: absolute;
+    left: 712dp;
+    top: 724dp;
+    width: 496dp;
+    height: $btn_h_action;
+}
+
+/* ---- about */
+#about-story,
+#about-credits {
+    position: absolute;
+    top: 340dp;
+    height: 528dp;
+    background-color: $paper2;
+}
+
+#about-story {
+    left: 128dp;
+    width: 1000dp;
+}
+
+#about-credits {
+    left: 1160dp;
+    width: 632dp;
+}
+
+#about-story-title {
+    position: absolute;
+    left: 28dp;
+    top: 32dp;
+    width: 944dp;
+    font-family: $serif;
+    font-size: $type_36;
+    color: $text;
+    white-space: nowrap;
+}
+
+#about-story-text {
+    position: absolute;
+    left: 30dp;
+    top: 117dp;
+    width: 940dp;
+    font-family: $serif;
+    font-size: $type_23;
+    color: $text;
+    white-space: nowrap;
+}
+
+#about-divider {
+    left: 30dp;
+    top: 282dp;
+    width: 940dp;
+}
+
+.about-key,
+.about-value {
+    position: absolute;
+    white-space: nowrap;
+}
+
+.about-key {
+    left: 30dp;
+    width: 250dp;
+    font-size: $type_17;
+    color: $muted;
+}
+
+.about-value {
+    left: 294dp;
+    width: 676dp;
+    font-size: $type_20;
+    color: $text;
+}
+
+#about-key-era { top: 312dp; }
+#about-value-era { top: 312dp; }
+#about-key-mode { top: 372dp; }
+#about-value-mode { top: 372dp; }
+#about-key-people { top: 432dp; }
+#about-value-people { top: 432dp; }
+
+#about-credits-caption {
+    position: absolute;
+    left: 26dp;
+    top: 28dp;
+    width: 580dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+.credit-key,
+.credit-value {
+    position: absolute;
+    left: 26dp;
+    width: 580dp;
+    white-space: nowrap;
+}
+
+.credit-key {
+    font-size: $type_14;
+    color: $muted;
+}
+
+.credit-value {
+    font-family: $serif;
+    font-size: $type_22;
+    color: $text;
+}
+
+#credit-key-author { top: 82dp; }
+#credit-value-author { top: 111dp; }
+#credit-key-look { top: 165dp; }
+#credit-value-look { top: 194dp; }
+#credit-key-type { top: 248dp; }
+#credit-value-type { top: 277dp; }
+#credit-key-art { top: 331dp; }
+#credit-value-art { top: 360dp; }
+
+#credits-divider {
+    left: 26dp;
+    top: 430dp;
+    width: 580dp;
+}
+
+#credits-link {
+    position: absolute;
+    left: 26dp;
+    top: 457dp;
+    width: 580dp;
+    font-size: $type_17;
+    color: $green;
+    white-space: nowrap;
+}
+
+/* ---- overview of the start screens */
+#ov-eyebrow {
+    position: absolute;
+    left: 40dp;
+    top: 40dp;
+    width: 1840dp;
+    font-size: $type_13;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $green;
+}
+
+#ov-title {
+    position: absolute;
+    left: 38dp;
+    top: 88dp;
+    width: 1840dp;
+    font-family: $serif;
+    font-size: $type_48;
+    color: $text;
+    white-space: nowrap;
+}
+
+#ov-subtitle {
+    position: absolute;
+    left: 40dp;
+    top: 165dp;
+    width: 1840dp;
+    font-size: $type_18;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.ov-divider {
+    position: absolute;
+    left: 40dp;
+    top: 218dp;
+    width: 1840dp;
+    height: $stroke_hairline;
+    background-color: $line;
+}
+
+.ov-card {
+    display: block;
+    position: absolute;
+    box-sizing: border-box;
+    width: 442dp;
+    height: 184dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper2;
+    text-align: left;
+    tab-index: auto;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.ov-card:hover {
+    background-color: $paper;
+}
+
+.kbd .ov-card:focus {
+    border: $focus_ring $gold;
+}
+
+.ov-card.is-disabled,
+.ov-card.is-disabled:hover {
+    background-color: $paper2;
+    tab-index: none;
+    cursor: default;
+}
+
+.ov-card.is-disabled .ov-card-title,
+.ov-card.is-disabled .ov-number {
+    color: $muted;
+}
+
+.ov-number {
+    position: absolute;
+    left: 20dp;
+    top: 18dp;
+    width: 402dp;
+    font-family: $serif;
+    font-size: $type_16;
+    color: $green;
+}
+
+.ov-card-title {
+    position: absolute;
+    left: 20dp;
+    top: 58dp;
+    width: 402dp;
+    font-family: $serif;
+    font-size: $type_29;
+    color: $text;
+    white-space: nowrap;
+}
+
+.ov-card-caption {
+    position: absolute;
+    left: 20dp;
+    top: 117dp;
+    width: 402dp;
+    font-size: $type_16;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#ov-discuss {
+    position: absolute;
+    left: 40dp;
+    top: 744dp;
+    width: 1840dp;
+    font-size: $type_13;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $green;
+}
+
+#ov-note {
+    position: absolute;
+    left: 40dp;
+    top: 789dp;
+    width: 1840dp;
+    font-size: $type_18;
+    color: $muted;
+    white-space: nowrap;
+}
+
+/* ---- dialogs: 700 wide, centred on the window over a dim backdrop */
+#dialog-backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: $ink_a72;
+}
+
+.dialog {
+    position: absolute;
+    left: 50%;
+    margin-left: -350dp;
+    top: 50%;
+    width: 700dp;
+    background-color: $paper;
+}
+
+#dialog-exit {
+    height: 350dp;
+    margin-top: -175dp;
+}
+
+#dialog-unavailable {
+    height: 394dp;
+    margin-top: -197dp;
+}
+
+.dialog-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: $stroke_window $gold;
+}
+
+.dialog-rule {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 5dp;
+    background-color: $green;
+}
+
+.dialog-title {
+    position: absolute;
+    left: 30dp;
+    top: 35dp;
+    width: 640dp;
+    font-family: $serif;
+    font-size: $type_33;
+    color: $text;
+    white-space: nowrap;
+}
+
+.dialog-text {
+    position: absolute;
+    left: 32dp;
+    top: 104dp;
+    width: 636dp;
+    font-size: $type_18;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#dialog-exit .btn,
+#dialog-unavailable .btn {
+    position: absolute;
+    height: 54dp;
+    justify-content: center;
+}
+
+#dlg-stay {
+    left: 32dp;
+    top: 250dp;
+    width: 300dp;
+}
+
+#dlg-exit {
+    left: 354dp;
+    top: 250dp;
+    width: 314dp;
+}
+
+#dlg-back {
+    left: 32dp;
+    top: 304dp;
+    width: 636dp;
+}

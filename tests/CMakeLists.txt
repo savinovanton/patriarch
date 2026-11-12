@@ -97,6 +97,7 @@ if(PATRIARCH_BUILD_ENGINE)
         labels_test.cpp
         map_overlays_test.cpp
         map_overview_test.cpp
+        menu_test.cpp
         renderer_test.cpp
         time_bar_test.cpp
         ui_components_test.cpp

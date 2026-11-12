@@ -1,0 +1,178 @@
+<rml>
+<head>
+    <title>Menu</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="menu.rcss"/>
+</head>
+<!-- Start menu (UI-D12, boards "МЕНЮ / ..."): one full-screen document that shows the current screen of the
+     MenuNavigator. Fixed captions are `{{ rev | tr('key') }}`: `tr` reads the string table, `rev` changes when the
+     language does (it only makes the expression depend on something). -->
+<body data-model="menu" data-event-keydown="key()">
+<div id="menu">
+
+    <div id="menu-paper" data-if="screen == 'overview'"></div>
+    <div id="menu-art" data-if="screen != 'overview'" data-style-decorator="art_deco"></div>
+    <div id="menu-shade" data-if="screen != 'overview'" data-class-dim="screen != 'main'"></div>
+    <div id="menu-contrast" data-if="screen == 'main'"></div>
+    <div id="menu-contrast-left" data-if="screen == 'main'"></div>
+
+    <div id="stage" data-class-blocked="dialog != ''">
+
+        <div id="menu-copyright" data-class-overview="screen == 'overview'">{{ rev | tr('ui.menu.copyright') }}</div>
+        <div id="menu-region" data-class-overview="screen == 'overview'">{{ rev | tr('ui.menu.region') }}</div>
+
+        <!-- ================= main menu (boards 01 and 02) ================= -->
+        <div id="screen-main" class="screen" data-if="screen == 'main'">
+            <svg id="menu-shield" data-attr-src="icons + '/shield@gold.svg'"/>
+            <div id="menu-title">{{ rev | tr('ui.menu.brand') }}</div>
+            <div id="menu-tagline">{{ rev | tr('ui.menu.main.tagline') }}</div>
+            <div id="menu-title-rule"><svg data-attr-src="decor + '/engraved_title_rule@gold.svg'"/></div>
+            <div id="menu-lead">{{ lead }}</div>
+            <div id="menu-hint" data-if="show_hint">{{ rev | tr('ui.menu.main.hint.line1') }}<br/>{{ rev | tr('ui.menu.main.hint.line2') }}</div>
+
+            <button class="mi" data-for="it : items" data-attr-id="'mi-' + it.id"
+                    data-style-top="it.top" data-style-height="it.height"
+                    data-class-primary="it.primary" data-class-selected="sel == it.index"
+                    data-class-is-disabled="!it.enabled"
+                    data-event-click="item(it.id)" data-event-mouseover="hover(it.index)" data-event-focus="hover(it.index)">
+                <div class="mi-edge"></div>
+                <div class="mi-text">{{ it.label }}</div>
+                <svg class="mi-chevron" data-attr-src="icons + '/chevron@ink.svg'"/>
+                <div class="mi-note" data-if="it.note != ''" data-class-note-save="it.note_save" data-style-top="it.note_top">{{ it.note }}</div>
+            </button>
+
+            <div id="menu-lang">
+                <svg data-attr-src="icons + '/globe@light.svg'"/>
+                <div id="menu-lang-text">{{ rev | tr('ui.menu.lang') }}</div>
+            </div>
+        </div>
+
+        <!-- ================= page frame of the load and about screens ================= -->
+        <div id="screen-page" class="screen" data-if="screen == 'load' || screen == 'about'">
+            <svg id="page-shield" data-attr-src="icons + '/shield@gold.svg'"/>
+            <div id="page-brand">{{ rev | tr('ui.menu.brand') }}</div>
+            <div id="page-caption">{{ page_caption }}</div>
+            <div id="panel"></div>
+            <div id="panel-rule"></div>
+            <div id="page-eyebrow">{{ rev | tr('ui.menu.eyebrow') }}</div>
+            <div id="page-title">{{ page_title }}</div>
+            <div id="page-subtitle">{{ page_subtitle }}</div>
+            <div class="page-divider" id="page-divider-top"></div>
+            <div class="page-divider" id="page-divider-bottom"></div>
+            <button id="btn-main" class="btn" data-event-click="back()">{{ rev | tr('ui.menu.button.main') }}</button>
+        </div>
+
+        <!-- ================= load (boards 07, 08) ================= -->
+        <div id="screen-load" class="screen" data-if="screen == 'load'">
+            <div id="save-list" data-if="has_saves">
+                <button class="save" data-for="s : saves" data-attr-id="'save-' + s.index"
+                        data-class-selected="sel_save == s.index" data-class-bad="!s.ok"
+                        data-event-click="pick(s.index)" data-event-dblclick="open_save(s.index)"
+                        data-event-focus="pick(s.index)">
+                    <div class="save-frame"></div>
+                    <svg class="save-icon" data-attr-src="s.icon"/>
+                    <div class="save-name">{{ s.name }}</div>
+                    <div class="save-badge" data-class-bad="!s.ok">{{ s.badge }}</div>
+                    <div class="save-line">{{ s.line1 }}</div>
+                    <div class="save-sub" data-class-bad="!s.ok">{{ s.line2 }}</div>
+                </button>
+            </div>
+            <div id="save-summary" data-if="has_saves &amp;&amp; has_sel">
+                <div id="save-preview" data-style-decorator="preview_deco"></div>
+                <div id="save-house">{{ sum.house }}</div>
+                <div id="save-date">{{ sum.date }}</div>
+                <div class="page-divider" id="save-divider"></div>
+                <div id="save-keys">
+                    <div>{{ rev | tr('ui.menu.load.summary.head') }}</div>
+                    <div>{{ rev | tr('ui.menu.load.summary.kind') }}</div>
+                    <div>{{ rev | tr('ui.menu.load.summary.treasury') }}</div>
+                </div>
+                <div id="save-values">
+                    <div>{{ sum.head }}</div>
+                    <div>{{ sum.kind }}</div>
+                    <div>{{ sum.treasury }}</div>
+                </div>
+            </div>
+            <button id="btn-load" class="btn btn-primary" data-if="has_saves" data-event-click="load()">
+                <svg data-attr-src="icons + '/play@gold.svg'"/>{{ rev | tr('ui.menu.load.button') }}
+            </button>
+
+            <div id="load-empty" data-if="!has_saves">
+                <svg id="load-empty-icon" data-attr-src="icons + '/scroll@muted.svg'"/>
+                <div id="load-empty-title">{{ rev | tr('ui.menu.load.empty.title') }}</div>
+                <div id="load-empty-text">{{ rev | tr('ui.menu.load.empty.line1') }}<br/>{{ rev | tr('ui.menu.load.empty.line2') }}</div>
+                <button id="btn-new" class="btn btn-primary" data-event-click="item('new')">
+                    <svg data-attr-src="icons + '/quill@gold.svg'"/>{{ rev | tr('ui.menu.item.new') }}
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= about ================= -->
+        <div id="screen-about" class="screen" data-if="screen == 'about'">
+            <div id="about-story">
+                <div id="about-story-title">{{ rev | tr('ui.menu.about.story.title') }}</div>
+                <div id="about-story-text">{{ rev | tr('ui.menu.about.story.line1') }}<br/>{{ rev | tr('ui.menu.about.story.line2') }}<br/>{{ rev | tr('ui.menu.about.story.line3') }}<br/>{{ rev | tr('ui.menu.about.story.line4') }}</div>
+                <div class="page-divider" id="about-divider"></div>
+                <div class="about-key" id="about-key-era">{{ rev | tr('ui.menu.about.era') }}</div>
+                <div class="about-value" id="about-value-era">{{ rev | tr('ui.menu.about.era.value') }}</div>
+                <div class="about-key" id="about-key-mode">{{ rev | tr('ui.menu.about.mode') }}</div>
+                <div class="about-value" id="about-value-mode">{{ rev | tr('ui.menu.about.mode.value') }}</div>
+                <div class="about-key" id="about-key-people">{{ rev | tr('ui.menu.about.people') }}</div>
+                <div class="about-value" id="about-value-people">{{ rev | tr('ui.menu.about.people.value') }}</div>
+            </div>
+            <div id="about-credits">
+                <div id="about-credits-caption">{{ rev | tr('ui.menu.about.credits.caption') }}</div>
+                <div class="credit-key" id="credit-key-author">{{ rev | tr('ui.menu.about.author') }}</div>
+                <div class="credit-value" id="credit-value-author">{{ rev | tr('ui.menu.about.author.value') }}</div>
+                <div class="credit-key" id="credit-key-look">{{ rev | tr('ui.menu.about.look') }}</div>
+                <div class="credit-value" id="credit-value-look">{{ rev | tr('ui.menu.about.look.value') }}</div>
+                <div class="credit-key" id="credit-key-type">{{ rev | tr('ui.menu.about.type') }}</div>
+                <div class="credit-value" id="credit-value-type">{{ rev | tr('ui.menu.about.type.value') }}</div>
+                <div class="credit-key" id="credit-key-art">{{ rev | tr('ui.menu.about.art') }}</div>
+                <div class="credit-value" id="credit-value-art">{{ rev | tr('ui.menu.about.art.value') }}</div>
+                <div class="page-divider" id="credits-divider"></div>
+                <div id="credits-link">{{ rev | tr('ui.menu.about.link') }}</div>
+            </div>
+        </div>
+
+        <!-- ================= overview of the start screens (board "Обзор стартовых экранов") ================= -->
+        <div id="screen-overview" class="screen" data-if="screen == 'overview'">
+            <div id="ov-eyebrow">{{ rev | tr('ui.menu.overview.caption') }}</div>
+            <div id="ov-title">{{ rev | tr('ui.menu.overview.title') }}</div>
+            <div id="ov-subtitle">{{ rev | tr('ui.menu.overview.subtitle') }}</div>
+            <div class="ov-divider"></div>
+            <button class="ov-card" data-for="c : cards" data-attr-id="'card-' + c.index"
+                    data-style-left="c.left" data-style-top="c.top" data-class-is-disabled="!c.enabled"
+                    data-attr-title="c.hint" data-event-click="card(c.index)">
+                <div class="ov-number">{{ c.number }}</div>
+                <div class="ov-card-title">{{ c.title }}</div>
+                <div class="ov-card-caption">{{ c.caption }}</div>
+            </button>
+            <div id="ov-discuss">{{ rev | tr('ui.menu.overview.discuss') }}</div>
+            <div id="ov-note">{{ rev | tr('ui.menu.overview.note.line1') }}<br/>{{ rev | tr('ui.menu.overview.note.line2') }}<br/>{{ rev | tr('ui.menu.overview.note.line3') }}</div>
+        </div>
+    </div>
+
+    <!-- ================= dialogs (boards "МЕНЮ / Диалог / ...") ================= -->
+    <div id="dialog-backdrop" data-if="dialog != ''">
+        <div id="dialog-exit" class="dialog" data-if="dialog == 'exit'">
+            <div class="dialog-frame"></div>
+            <div class="dialog-rule"></div>
+            <div class="dialog-title">{{ rev | tr('ui.menu.exit.title') }}</div>
+            <div class="dialog-text" id="dialog-exit-text">{{ rev | tr('ui.menu.exit.text') }}</div>
+            <button id="dlg-stay" class="btn" data-event-click="dialog('stay')">{{ rev | tr('ui.menu.exit.stay') }}</button>
+            <button id="dlg-exit" class="btn btn-primary" data-event-click="dialog('exit')">{{ rev | tr('ui.menu.item.exit') }}</button>
+        </div>
+        <div id="dialog-unavailable" class="dialog" data-if="dialog == 'unavailable'">
+            <div class="dialog-frame"></div>
+            <div class="dialog-rule"></div>
+            <div class="dialog-title">{{ rev | tr('ui.menu.unavailable.title') }}</div>
+            <div class="dialog-text" id="dialog-unavailable-text">{{ rev | tr('ui.menu.unavailable.line1') }}<br/>{{ rev | tr('ui.menu.unavailable.line2') }}<br/>{{ rev | tr('ui.menu.unavailable.line3') }}</div>
+            <button id="dlg-back" class="btn btn-primary" data-event-click="dialog('back')">{{ rev | tr('ui.menu.unavailable.button') }}</button>
+        </div>
+    </div>
+
+</div>
+</body>
+</rml>

@@ -7,6 +7,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -32,8 +33,12 @@ inline double layout_number(const pat::data::Value& v) {
 }
 
 /// The first layer called `name` in the layout file `file` (the n key; text layers are named by their own
-/// text only when they have no n, so pass `by_text` for those).
-inline Layer find_layer(const char* file, const std::string& name, bool by_text = false) {
+/// text only when they have no n, so pass `by_text` for those). `board` limits the search to the board of
+/// that name (files with many boards, like menu_boards.pd, repeat layer names).
+inline Layer find_layer(const char* file,
+                        const std::string& name,
+                        bool by_text = false,
+                        const std::string& board_name = std::string()) {
     std::ifstream in(std::filesystem::path(PATRIARCH_DATA_DIR) / "ui" / "layout" / file, std::ios::binary);
     REQUIRE_MESSAGE(in.good(), "cannot open layout " << file);
     std::ostringstream buffer;
@@ -41,6 +46,9 @@ inline Layer find_layer(const char* file, const std::string& name, bool by_text 
     const pat::data::ParseResult parsed = pat::data::parse_pd(buffer.str());
     REQUIRE(parsed.ok());
     for (const pat::data::Entry& board : parsed.file.entries) {
+        if (!board_name.empty() && board.label.value_or(std::string()) != board_name) {
+            continue;
+        }
         for (const pat::data::Entry& field : board.value.entries) {
             if (field.key != "el") {
                 continue;
