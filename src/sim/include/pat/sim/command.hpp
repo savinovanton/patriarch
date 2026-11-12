@@ -49,6 +49,8 @@ enum class CommandType : std::uint8_t {
     AssignProvinceAdministrator = 35,  // E9-T10
     StartConstruction = 36,            // E9-T16
     CancelConstruction = 37,           // E9-T16
+    TakeLoan = 38,                     // E9-T15
+    RepayLoan = 39,                    // E9-T15
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -239,6 +241,22 @@ struct CancelConstruction {
     [[nodiscard]] bool operator==(const CancelConstruction&) const = default;
 };
 
+/// Borrows from the crown on behalf of the actor dynasty (E9-T15). The actor must be valid because
+/// the payload has no borrower. Needs the configured economy rules. The positive amount must fit
+/// the remaining honor-based limit and the account bounds; bankrupt dynasties cannot borrow.
+struct TakeLoan {
+    economy::Kopecks amount_kop = 0;
+    [[nodiscard]] bool operator==(const TakeLoan&) const = default;
+};
+
+/// Repays a positive amount of the loan's remaining principal from the borrower's treasury (E9-T15).
+/// The actor must be the borrower, or the system. Overpayment and an unaffordable payment are refused.
+struct RepayLoan {
+    std::uint32_t loan_id = 0;
+    economy::Kopecks amount_kop = 0;
+    [[nodiscard]] bool operator==(const RepayLoan&) const = default;
+};
+
 /// Marries two living, unmarried characters (E7-T03). System only, dynasty mode only: the rules of
 /// marriage (consent, age, blood relationship, the Church) are checked by E8 before it emits this.
 struct Marry {
@@ -277,7 +295,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::RevokeTrait,
                                     cmd::ConscriptRecruits,
                                     cmd::StartConstruction,
-                                    cmd::CancelConstruction>;
+                                    cmd::CancelConstruction,
+                                    cmd::TakeLoan,
+                                    cmd::RepayLoan>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
@@ -311,7 +331,7 @@ struct CommandError {
 
 /// Checks the command against the world without changing it.
 /// `traits` and `economy` are the content the command needs besides the world (the trait catalogue of
-/// E7; the economy rules of E9, for StartConstruction); null where the command needs none.
+/// E7; the economy rules of E9, for construction and loans); null where the command needs none.
 [[nodiscard]] core::Result<void, CommandError> validate(const World& world,
                                                         const Command& command,
                                                         const TraitCatalog* traits = nullptr,

@@ -168,7 +168,7 @@ ObjectSchema recruit_block() {
 
 ObjectSchema loans_block() {
     ObjectSchema s("loans");
-    s.describe_kind("Займы у казны (формулы F12-F14, GDD 03 §7.3). Принято на время (вопрос Q3, #138): "
+    s.describe_kind("Займы у казны (формулы F12-F14, GDD 03 §7.3). Решение владельца Q3 (#138): "
                     "простой заём, лимит от чести, фиксированный процент.");
     s.required("rate_ppm_year", rate_ppm())
         .describe("Годовая ставка займа, ppm (100000 = 10 %).")
@@ -183,7 +183,11 @@ ObjectSchema loans_block() {
         .required("bankruptcy_exit_kop", treasury_kopecks())
         .describe("Долг, ниже которого банкротство снимается, копеек; строго меньше порога банкротства.")
         .required("max_loans_per_dynasty", Type::integer(0, 64))
-        .describe("Наибольшее число одновременных займов рода.");
+        .describe("Наибольшее число одновременных займов рода.")
+        .required("overdue_penalty_honor", Type::integer(0, 1000))
+        .describe("Потеря чести один раз при первой просрочке займа.")
+        .required("bankruptcy_penalty_honor", Type::integer(0, 1000))
+        .describe("Потеря чести один раз при переходе рода в банкротство.");
     return s;
 }
 

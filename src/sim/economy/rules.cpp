@@ -233,7 +233,7 @@ constexpr EconomyRules kDefaultEconomyRules{
         },
 
     // ---- F12-F14 loans ----------------------------------------------------------------------
-    // Q3 (#138) is OPEN. Interim decision (economy-model s.15.2): a simple loan from the crown, a
+    // Owner decision Q3 (#138): a simple loan from the crown, a
     // limit tied to honor, a fixed rate. Every number is an own placeholder.
     .loans =
         {
@@ -245,6 +245,8 @@ constexpr EconomyRules kDefaultEconomyRules{
             .bankruptcy_exit_kop = 2'500'000,
             // economy-model s.4.7: at most 3 loans per dynasty [predl.]
             .max_loans_per_dynasty = 3,
+            .overdue_penalty_honor = 20,
+            .bankruptcy_penalty_honor = 100,
         },
 
     // ---- F15-F16 buildings ------------------------------------------------------------------
@@ -647,7 +649,13 @@ Check check_loans(const LoanRules& r) {
         !res) {
         return res;
     }
-    return range(Code::Loans, "max_loans_per_dynasty", r.max_loans_per_dynasty, 0, 64);
+    if (auto res = range(Code::Loans, "max_loans_per_dynasty", r.max_loans_per_dynasty, 0, 64); !res) {
+        return res;
+    }
+    if (auto res = range(Code::Loans, "overdue_penalty_honor", r.overdue_penalty_honor, 0, 1000); !res) {
+        return res;
+    }
+    return range(Code::Loans, "bankruptcy_penalty_honor", r.bankruptcy_penalty_honor, 0, 1000);
 }
 
 Check check_buildings(const BuildingRules& r) {

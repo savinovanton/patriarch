@@ -2,6 +2,7 @@
 
 #include "pat/sim/command_log.hpp"
 #include "pat/sim/economy/construction.hpp"
+#include "pat/sim/economy/loans.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/traits.hpp"
@@ -47,6 +48,33 @@ Result<void, CommandError> trait_verdict(TraitStatus status) {
             return reject(Rejection::InvalidArgument, "the trait set is not valid");
     }
     return reject(Rejection::InvalidArgument, "unknown trait status");
+}
+
+Result<void, CommandError> loan_verdict(economy::LoanStatus status) {
+    using economy::LoanStatus;
+    switch (status) {
+        case LoanStatus::Ok:
+            return accept();
+        case LoanStatus::NoEconomy:
+            return reject(Rejection::InvalidState, "the world has no economy");
+        case LoanStatus::UnknownDynasty:
+            return reject(Rejection::UnknownEntity, "unknown borrower");
+        case LoanStatus::UnknownLoan:
+            return reject(Rejection::UnknownEntity, "unknown loan");
+        case LoanStatus::InvalidAmount:
+            return reject(Rejection::InvalidArgument, "the loan amount is invalid");
+        case LoanStatus::LimitExceeded:
+            return reject(Rejection::InvalidArgument, "the amount exceeds the remaining loan limit");
+        case LoanStatus::TooManyLoans:
+            return reject(Rejection::InvalidState, "the borrower has the maximum number of loans");
+        case LoanStatus::Bankrupt:
+            return reject(Rejection::InvalidState, "a bankrupt dynasty cannot borrow");
+        case LoanStatus::InsufficientFunds:
+            return reject(Rejection::InvalidState, "the borrower cannot afford the repayment");
+        case LoanStatus::InvalidState:
+            return reject(Rejection::InvalidState, "the loan transaction cannot be applied");
+    }
+    return reject(Rejection::InvalidState, "unknown loan status");
 }
 
 /// The system (invalid actor) may do anything that is otherwise valid; a dynasty may act only for itself.
@@ -466,6 +494,36 @@ struct Validator {
         return construction_verdict(economy::check_cancel_construction(world, actor, c.province, c.slot));
     }
 
+    Result<void, CommandError> operator()(const cmd::TakeLoan& c) const {
+        if (!world.economy_present()) {
+            return loan_verdict(economy::LoanStatus::NoEconomy);
+        }
+        if (economy == nullptr) {
+            return reject(Rejection::InvalidState, "the simulation has no economy rules");
+        }
+        if (!actor.valid()) {
+            return reject(Rejection::NotAuthorized, "taking a loan requires a borrower dynasty");
+        }
+        return loan_verdict(economy::check_take_loan(world, economy->loans, actor, c.amount_kop));
+    }
+
+    Result<void, CommandError> operator()(const cmd::RepayLoan& c) const {
+        if (!world.economy_present()) {
+            return loan_verdict(economy::LoanStatus::NoEconomy);
+        }
+        if (economy == nullptr) {
+            return reject(Rejection::InvalidState, "the simulation has no economy rules");
+        }
+        const auto row = economy::find_loan(world, c.loan_id);
+        if (!row) {
+            return loan_verdict(economy::LoanStatus::UnknownLoan);
+        }
+        if (!may_act_for(actor, world.economy().loans.borrower[*row])) {
+            return reject(Rejection::NotAuthorized, "only the borrower may repay the loan");
+        }
+        return loan_verdict(economy::check_repay_loan(world, c.loan_id, c.amount_kop));
+    }
+
     Result<void, CommandError> operator()(const cmd::KillCharacter& c) const {
         if (world.dynasty_mode()) {
             return reject(Rejection::InvalidState, "characters do not disappear in dynasty mode (use Die)");
@@ -601,6 +659,16 @@ struct Applier {
             (void)economy::cancel_construction(world, *economy, actor, c.province, c.slot);
         }
     }
+    void operator()(const cmd::TakeLoan& c) const {
+        if (economy != nullptr) {
+            (void)world.take_loan(actor, c.amount_kop, economy->loans);
+        }
+    }
+    void operator()(const cmd::RepayLoan& c) const {
+        if (economy != nullptr) {
+            (void)world.repay_loan(c.loan_id, c.amount_kop, economy->loans);
+        }
+    }
     void operator()(const cmd::Marry& c) const { (void)world.marry(c.a, c.b); }
     void operator()(const cmd::EndMarriage& c) const { (void)world.end_marriage(c.a); }
 };
@@ -706,6 +774,14 @@ template <>
 struct CommandTag<cmd::CancelConstruction> {
     static constexpr CommandType value = CommandType::CancelConstruction;
 };
+template <>
+struct CommandTag<cmd::TakeLoan> {
+    static constexpr CommandType value = CommandType::TakeLoan;
+};
+template <>
+struct CommandTag<cmd::RepayLoan> {
+    static constexpr CommandType value = CommandType::RepayLoan;
+};
 
 template <class Variant>
 struct TagTable;
@@ -780,6 +856,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "StartConstruction";
         case CommandType::CancelConstruction:
             return "CancelConstruction";
+        case CommandType::TakeLoan:
+            return "TakeLoan";
+        case CommandType::RepayLoan:
+            return "RepayLoan";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

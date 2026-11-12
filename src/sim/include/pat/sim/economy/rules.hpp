@@ -200,7 +200,7 @@ struct RecruitRules {
     std::int32_t quota_penalty_honor = 0;
 };
 
-/// F12-F14 loans from the crown (GDD 03 section 7.3; open question Q3, #138).
+/// F12-F14 loans from the crown (GDD 03 section 7.3; owner decision #138).
 struct LoanRules {
     [[nodiscard]] bool operator==(const LoanRules&) const = default;
 
@@ -213,6 +213,9 @@ struct LoanRules {
     Kopecks bankruptcy_threshold_kop = 0;
     Kopecks bankruptcy_exit_kop = 0;
     std::int32_t max_loans_per_dynasty = 0;
+    /// Honor lost once when a loan first becomes overdue / a dynasty enters bankruptcy.
+    std::int32_t overdue_penalty_honor = 0;
+    std::int32_t bankruptcy_penalty_honor = 0;
 };
 
 /// One building type (GDD 03 section 8). Costs and effects come from data; the code only knows

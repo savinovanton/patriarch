@@ -21,7 +21,8 @@
 //   1. posts the flat expenses of the closing month to every account, ascending by row: the upkeep of
 //      the buildings of its provinces (`building_upkeep`), then the lines of the registered
 //      ExpenseSources in ascending order of the ledger code;
-//   2. (later tasks: quotas and loans that fall due - E9-T14, E9-T15; interest - E9-T15);
+//   2. posts the interest of crown loans, marks overdue loans and refreshes bankruptcy; quotas are
+//      reserved for E9-T14;
 //   3. rotates the ring of the statement (World::close_ledger_month): the open lines become the newest
 //      closed month, the balance becomes the opening balance, the open lines restart at zero.
 // Every posting goes through World::post_money; nothing here writes a balance. An expense is NEVER
@@ -100,6 +101,7 @@ struct SettlementReport {
     Date closed_month_start;      ///< first day of the month that was closed (when `closed`)
     Kopecks building_upkeep = 0;  ///< what was really posted for buildings, all accounts, positive
     Kopecks other_expenses = 0;   ///< what was really posted from the ExpenseSources, positive
+    Kopecks loan_interest = 0;    ///< what borrowers really paid the crown in interest, positive
     /// What the accounts refused of the expenses (requested minus posted, positive; the balance of an
     /// account saturates at -kMaxTreasuryKop): 0 unless a saturation happened, so it never passes unseen.
     Kopecks refused_kop = 0;

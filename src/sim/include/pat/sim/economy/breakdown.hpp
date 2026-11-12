@@ -225,6 +225,8 @@ inline constexpr std::uint16_t kRecruitBuildingsLimit = 7011;  // the clamp to 0
 inline constexpr std::uint16_t kLoanBase = 8001;
 inline constexpr std::uint16_t kLoanHonor = 8002;
 inline constexpr std::uint16_t kLoanDebt = 8003;
+inline constexpr std::uint16_t kLoanTotal = 8004;
+inline constexpr std::uint16_t kLoanClamp = 8005;
 // 9000: unrest (F9). The contribution of group g is kUnrestGroupFirst + g.
 inline constexpr std::uint16_t kUnrestGroupFirst = 9010;
 inline constexpr std::uint16_t kUnrestControl = 9020;

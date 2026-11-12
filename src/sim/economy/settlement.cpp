@@ -1,6 +1,7 @@
 #include "pat/sim/economy/settlement.hpp"
 
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/loans.hpp"
 #include "pat/sim/economy/taxes.hpp"
 #include "pat/sim/world.hpp"
 
@@ -155,7 +156,10 @@ settle_month(World& world, const EconomyRules& rules, const ExpenseSources& sour
         }
     }
 
-    // Step 2 (quotas and loans that fall due, interest): E9-T14 and E9-T15 insert themselves here.
+    // Step 2: interest and first overdue dates, in stable loan-id order. Quotas belong to E9-T14.
+    const LoanSettlementReport loans = world.settle_loans(rules.loans, month_start);
+    report.loan_interest = loans.interest_kop;
+    report.refused_kop = saturating_add(report.refused_kop, loans.refused_kop);
 
     // Step 3: rotation of the ring; the month's lines become history, the open ones restart at zero.
     const bool rotated = world.close_ledger_month(month_start);

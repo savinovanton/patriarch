@@ -1,9 +1,11 @@
 #include "pat/sim/economy/forecast.hpp"
 
+#include "pat/sim/economy/loans.hpp"
 #include "pat/sim/economy/taxes.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -99,12 +101,37 @@ TreasuryForecast forecast_treasury(const World& world,
         }
     }
 
+    // Outstanding principal stays unchanged in the forecast; carry still advances exactly, so a
+    // kopeck due in a later month appears in that month's balance rather than being rounded away.
+    std::array<Kopecks, kForecastMonths> interest_net{};
+    const LoanTable& loans = world.economy().loans;
+    for (std::size_t loan = 0; loan < loans.size(); ++loan) {
+        const auto borrower_row = world.resolve_account(AccountRef::of(loans.borrower[loan]));
+        const bool pays_interest = borrower_row == row;
+        if ((!is_crown_row && !pays_interest) || (is_crown_row && pays_interest)) {
+            continue;
+        }
+        std::int32_t carry = loans.interest_carry[loan];
+        for (std::size_t month = 0; month < kForecastMonths; ++month) {
+            const LoanInterest interest =
+                compute_loan_interest(loans.principal[loan], loans.rate_ppm_year[loan], carry);
+            carry = interest.carry;
+            const Kopecks delta = is_crown_row ? interest.amount_kop : -interest.amount_kop;
+            interest_net[month] = saturating_add(interest_net[month], delta);
+            if (month == 0) {
+                add_line(out, is_crown_row ? LedgerCode::InterestCollected : LedgerCode::Interest, delta);
+            }
+        }
+    }
+
     for (const Kopecks line : out.monthly_lines) {
         out.monthly_net = saturating_add(out.monthly_net, line);
     }
     Kopecks balance = out.treasury;
     for (std::size_t month = 0; month < kForecastMonths; ++month) {
-        balance = std::clamp(saturating_add(balance, out.monthly_net), -kMaxTreasuryKop, kMaxTreasuryKop);
+        const Kopecks net =
+            saturating_add(saturating_sub(out.monthly_net, interest_net[0]), interest_net[month]);
+        balance = std::clamp(saturating_add(balance, net), -kMaxTreasuryKop, kMaxTreasuryKop);
         out.balance[month] = balance;
     }
     return out;

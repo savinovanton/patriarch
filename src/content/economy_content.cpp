@@ -609,6 +609,8 @@ private:
             l.bankruptcy_threshold_kop = int_of(b, "bankruptcy_threshold_kop");
             l.bankruptcy_exit_kop = int_of(b, "bankruptcy_exit_kop");
             l.max_loans_per_dynasty = i32_of(b, "max_loans_per_dynasty");
+            l.overdue_penalty_honor = i32_of(b, "overdue_penalty_honor");
+            l.bankruptcy_penalty_honor = i32_of(b, "bankruptcy_penalty_honor");
         });
         with_block(object, "buildings", [&](const TypedBlock& b) {
             rules_.buildings.refund_permille = i32_of(b, "refund_permille");

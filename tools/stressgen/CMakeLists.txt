@@ -34,4 +34,8 @@ if(PATRIARCH_BUILD_TESTS)
         COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/smoke_test.py"
             "$<TARGET_FILE:stressgen>" "$<TARGET_FILE:simcli>")
     set_tests_properties(stressgen_unit stressgen_cli PROPERTIES LABELS stressgen TIMEOUT 60)
+    if(PATRIARCH_SANITIZE_ADDRESS)
+        # The unit suite includes fifty simulated years on 400 provinces under instrumentation.
+        set_tests_properties(stressgen_unit PROPERTIES TIMEOUT 180)
+    endif()
 endif()

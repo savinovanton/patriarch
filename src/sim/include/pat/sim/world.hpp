@@ -32,6 +32,11 @@
 
 namespace pat::sim {
 
+namespace economy {
+struct LoanRules;
+struct LoanSettlementReport;
+}  // namespace economy
+
 enum class Sex : std::uint8_t { Male, Female };
 
 /// How a person came into the world (GDD 01 section 2.1). Stored as one byte.
@@ -167,6 +172,8 @@ enum class StandingMetric : std::uint8_t { Honor = 1, Unity = 2, Prestige = 3 };
 using StandingReason = std::uint16_t;
 inline constexpr StandingReason kStandingReasonUnspecified = 0;
 inline constexpr StandingReason kStandingReasonMonthlyDrift = 1;
+inline constexpr StandingReason kStandingReasonLoanOverdue = 2;
+inline constexpr StandingReason kStandingReasonBankruptcy = 3;
 inline constexpr std::size_t kMaxStandingChanges = 32;
 
 struct StandingChange {
@@ -652,6 +659,19 @@ public:
     /// O(1) when the queue is empty or nothing is due.
     std::size_t finish_due_constructions();
 
+    /// Issues a crown loan after checking the rules and the room on both ledger sides. The amount
+    /// moves in full or nothing changes. Terms are fixed at issue; ids increase and are never reused.
+    std::optional<std::uint32_t>
+    take_loan(DynastyId borrower, economy::Kopecks amount_kop, const economy::LoanRules& rules);
+    /// Repays principal from the borrower's treasury. Rejects a non-positive amount, overpayment,
+    /// insufficient funds or an unrepresentable transfer. Full repayment removes the row stably.
+    std::optional<economy::Kopecks>
+    repay_loan(std::uint32_t loan_id, economy::Kopecks amount_kop, const economy::LoanRules& rules);
+    /// Called by monthly settlement before rotating the ledger: posts one month's interest for
+    /// loans issued before `month_start`, marks first overdue dates and refreshes bankruptcy flags.
+    /// The caller must rotate the ledger afterwards; calling twice before rotation charges twice.
+    economy::LoanSettlementReport settle_loans(const economy::LoanRules& rules, Date month_start);
+
     /// Row of an account in the account table: the crown is row 0 (or the row of the crown dynasty
     /// in the "one treasury" mode), dynasty `d` is row `1 + d`. nullopt without economy or for an
     /// unknown dynasty.
@@ -728,7 +748,8 @@ public:
     ///   7  + section 6 "opinion" (E7-T17); older files start without stored opinions
     ///   8  + section 7 "dynasty_standing" (E7-T14); older files start with default prestige
     ///   9  + section 40 "economy policy" (E9-T12): policies of the dynasties; older files: all default
-    static constexpr std::uint32_t kStateSchema = 9;
+    ///  10  loan interest carries use denominator 12,000,000; older carries are multiplied by 12
+    static constexpr std::uint32_t kStateSchema = 10;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
