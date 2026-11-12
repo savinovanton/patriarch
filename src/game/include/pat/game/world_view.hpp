@@ -47,6 +47,18 @@ development_palette(const sim::World& world,
                     std::size_t map_province_count,
                     std::span<const sim::ProvinceId> map_to_world = {});
 
+/// Current unrest, green at 0 points and red at 100. Uses the owner palette's map binding contract.
+/// Missing economy, unknown provinces and provinces with no people use kUnownedColor.
+[[nodiscard]] std::vector<std::uint32_t> unrest_palette(const sim::World& world,
+                                                        std::size_t map_province_count,
+                                                        std::span<const sim::ProvinceId> map_to_world = {});
+
+/// Population-weighted current mood of nonempty groups, red at -100 points and green at +100.
+/// Empty provinces are neutral, even if their empty groups have nonzero stored mood.
+[[nodiscard]] std::vector<std::uint32_t> mood_palette(const sim::World& world,
+                                                      std::size_t map_province_count,
+                                                      std::span<const sim::ProvinceId> map_to_world = {});
+
 /// Window data for a character. The character must be alive. Role, health and the phrases of the
 /// family and relation lines come from `loc` (the lines keep the language they were built in).
 [[nodiscard]] ui::CharacterSnapshot character_snapshot(const loc::Localizer& loc,

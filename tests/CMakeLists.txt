@@ -95,6 +95,8 @@ if(PATRIARCH_BUILD_ENGINE)
         credits_window_test.cpp
         frame_clock_test.cpp
         game_bridge_test.cpp
+        economy_palette_test.cpp
+        economy_snapshot_test.cpp
         labels_test.cpp
         map_overlays_test.cpp
         map_overview_test.cpp

@@ -196,6 +196,14 @@ std::vector<std::uint32_t> province_palette(const sim::World& world,
     return palette;
 }
 
+/// Integer interpolation keeps each channel monotone after quantization to RGBA8.
+std::uint32_t economy_color(std::int64_t good, std::int64_t range) {
+    good = std::clamp<std::int64_t>(good, 0, range);
+    const auto red = static_cast<std::uint32_t>(217 - 166 * good / range);
+    const auto green = static_cast<std::uint32_t>(64 + 140 * good / range);
+    return red | (green << 8U) | (56U << 16U) | 0xFF000000U;
+}
+
 }  // namespace
 
 std::string format_date(const loc::Localizer& loc, sim::Date date) {
@@ -268,6 +276,50 @@ std::vector<std::uint32_t> development_palette(const sim::World& world,
         world, map_province_count, map_to_world, [](const sim::ProvinceTable& provinces, std::size_t index) {
             const float v = std::clamp(static_cast<float>(provinces.development[index]) / 10.0f, 0.0f, 1.0f);
             return rgba(0.85f - 0.65f * v, 0.25f + 0.55f * v, 0.22f);
+        });
+}
+
+std::vector<std::uint32_t> unrest_palette(const sim::World& world,
+                                          std::size_t map_province_count,
+                                          std::span<const sim::ProvinceId> map_to_world) {
+    if (!world.economy_present()) {
+        return std::vector<std::uint32_t>(map_province_count + 1, kUnownedColor);
+    }
+    constexpr std::int64_t kRange = 100LL * core::Fixed32::one_raw;
+    return province_palette(
+        world, map_province_count, map_to_world, [&world](const sim::ProvinceTable&, std::size_t index) {
+            if (world.population_persons(sim::ProvinceId(static_cast<std::uint32_t>(index))) == 0) {
+                return kUnownedColor;
+            }
+            const std::int64_t unrest = world.economy().provinces.unrest[index].raw();
+            return economy_color(kRange - unrest, kRange);
+        });
+}
+
+std::vector<std::uint32_t> mood_palette(const sim::World& world,
+                                        std::size_t map_province_count,
+                                        std::span<const sim::ProvinceId> map_to_world) {
+    if (!world.economy_present()) {
+        return std::vector<std::uint32_t>(map_province_count + 1, kUnownedColor);
+    }
+    constexpr std::int64_t kHalfRange = 100LL * core::Fixed32::one_raw;
+    return province_palette(
+        world, map_province_count, map_to_world, [&world](const sim::ProvinceTable&, std::size_t index) {
+            const auto& groups = world.economy().groups;
+            const std::size_t first = index * sim::economy::kGroupCount;
+            std::int64_t weighted = 0;
+            std::uint64_t people = 0;
+            for (std::size_t group = 0; group < sim::economy::kGroupCount; ++group) {
+                const std::uint32_t size = groups.size[first + group];
+                weighted += static_cast<std::int64_t>(size) * groups.mood[first + group].raw();
+                people += size;
+            }
+            if (people == 0) {
+                return kUnownedColor;
+            }
+            // Even at kMaxProvincePersons the full weighted numerator fits int64.
+            const std::int64_t mood = weighted / static_cast<std::int64_t>(people);
+            return economy_color(mood + kHalfRange, 2 * kHalfRange);
         });
 }
 
