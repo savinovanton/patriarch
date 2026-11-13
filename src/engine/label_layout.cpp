@@ -29,7 +29,8 @@ struct Candidate {
     float size;
     float alpha;
     float width;
-    float rank;  // larger = placed first
+    float spacing;  // letter-spacing, em
+    float rank;     // larger = placed first
 };
 
 /// Uniform grid over the screen holding the rectangles accepted so far.
@@ -96,6 +97,9 @@ LabelLayoutStats layout_labels(std::span<const MapLabel> labels,
 
     std::vector<Candidate> candidates;
     candidates.reserve(labels.size());
+    bool have_plate = false;
+    float plate_x = 0.0f;
+    float plate_y = 0.0f;
     for (const MapLabel& label : labels) {
         const Vec4 clip = in.view_proj * Vec4{label.anchor.x, label.anchor.y, label.anchor.z, 1.0f};
         if (clip.w <= 1e-4f) {
@@ -105,6 +109,14 @@ LabelLayoutStats layout_labels(std::span<const MapLabel> labels,
         const float inv_w = 1.0f / clip.w;
         const float sx = (clip.x * inv_w * 0.5f + 0.5f) * in.viewport_w;
         const float sy = (0.5f - clip.y * inv_w * 0.5f) * in.viewport_h;
+
+        if (in.selected_id != 0 && label.kind == LabelKind::Province && label.id == in.selected_id) {
+            ++stats.hidden_selected;
+            have_plate = true;
+            plate_x = sx;
+            plate_y = sy;
+            continue;
+        }
 
         const float dist = std::max(length(in.eye - label.anchor), 1e-3f);
         const float extent_px = label.world_extent * in.pixels_per_unit_at_one / dist;
@@ -128,13 +140,16 @@ LabelLayoutStats layout_labels(std::span<const MapLabel> labels,
             ++stats.hidden_zoom;
             continue;
         }
-        const float width = label.width_per_px * size;
+        const float spacing =
+            label.kind == LabelKind::Province ? style.province_spacing_em : style.region_spacing_em;
+        const float gaps = label.text.size() > 1 ? static_cast<float>(label.text.size() - 1) : 0.0f;
+        const float width = (label.width_per_px + gaps * spacing) * size;
         if (sx + width * 0.5f < 0.0f || sx - width * 0.5f > in.viewport_w || sy + size < 0.0f ||
             sy - size > in.viewport_h) {
             ++stats.hidden_offscreen;
             continue;
         }
-        candidates.push_back({&label, sx, sy, size, alpha, width, priority * 1.0e6f + extent_px});
+        candidates.push_back({&label, sx, sy, size, alpha, width, spacing, priority * 1.0e6f + extent_px});
     }
 
     // Most important first; ties broken by id so the result is stable between frames.
@@ -146,16 +161,28 @@ LabelLayoutStats layout_labels(std::span<const MapLabel> labels,
     });
 
     RectGrid grid(in.viewport_w, in.viewport_h);
+    if (have_plate) {
+        const float s = in.viewport_h / 1080.0f;
+        grid.add({plate_x - style.plate_half_width * s - style.padding,
+                  plate_y + style.plate_top * s - style.padding,
+                  plate_x + style.plate_half_width * s + style.padding,
+                  plate_y + style.plate_bottom * s + style.padding});
+    }
     for (const Candidate& c : candidates) {
-        const float half_w = c.width * 0.5f + style.padding;
-        const float half_h = c.size * 0.6f + style.padding;
-        const Rect rect{c.x - half_w, c.y - half_h, c.x + half_w, c.y + half_h};
+        const bool marker = style.province_marker && c.label->kind == LabelKind::Province;
+        const float marker_px = marker ? c.size * style.marker_em : 0.0f;
+        const float text_y = marker ? c.y + c.size * style.marker_dy_em : c.y;
+        const float half_w = std::max(c.width, marker_px) * 0.5f + style.padding;
+        const Rect rect{c.x - half_w,
+                        (marker ? c.y - marker_px * 0.5f : text_y - c.size * 0.6f) - style.padding,
+                        c.x + half_w,
+                        text_y + c.size * 0.6f + style.padding};
         if (grid.overlaps_any(rect)) {
             ++stats.hidden_overlap;
             continue;
         }
         grid.add(rect);
-        out.push_back({c.label, c.x, c.y, c.size, c.alpha, c.width});
+        out.push_back({c.label, c.x, c.y, c.size, c.alpha, c.width, text_y, marker_px, c.spacing});
     }
     stats.placed = out.size();
     return stats;

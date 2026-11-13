@@ -7,6 +7,7 @@
 #include FT_MODULE_H
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <iterator>
 
@@ -52,6 +53,42 @@ struct PendingGlyph {
     int x = 0;
     int y = 0;
 };
+
+/// The synthetic city marker: an outlined diamond as a signed distance field (the distance to a ring, which
+/// the shader fills like any other glyph). Dimensions are fractions of the em size (`font_px`).
+PendingGlyph make_marker_glyph(int font_px, int spread) {
+    constexpr float kHalfDiagonal = 0.42f;  // of the em: the diamond is 0.84 em across
+    constexpr float kHalfStroke = 0.04f;    // of the em: a stroke of 0.08 em
+    const float em = static_cast<float>(font_px);
+    const float half_diag = kHalfDiagonal * em;
+    const float half_stroke = kHalfStroke * em;
+    const float reach = half_diag + half_stroke * 1.4143f + static_cast<float>(spread);
+    const int size = static_cast<int>(std::ceil(reach * 2.0f)) + 1;
+    PendingGlyph pg;
+    pg.glyph.codepoint = kMarkerGlyph;
+    pg.glyph.advance = 0.0f;
+    pg.bitmap_w = size;
+    pg.bitmap_h = size;
+    pg.bitmap.resize(static_cast<std::size_t>(size) * static_cast<std::size_t>(size));
+    const float centre = static_cast<float>(size) * 0.5f;
+    for (int y = 0; y < size; ++y) {
+        for (int x = 0; x < size; ++x) {
+            const float dx = std::fabs(static_cast<float>(x) + 0.5f - centre);
+            const float dy = std::fabs(static_cast<float>(y) + 0.5f - centre);
+            const float to_edge = (dx + dy - half_diag) * 0.70711f;  // signed distance to the diamond outline
+            const float ring = std::fabs(to_edge) - half_stroke;     // negative inside the stroke
+            const float v = 0.5f - ring / (2.0f * static_cast<float>(spread));
+            pg.bitmap[static_cast<std::size_t>(y) * static_cast<std::size_t>(size) +
+                      static_cast<std::size_t>(x)] =
+                static_cast<std::uint8_t>(std::clamp(v, 0.0f, 1.0f) * 255.0f + 0.5f);
+        }
+    }
+    pg.glyph.width = static_cast<float>(size);
+    pg.glyph.height = static_cast<float>(size);
+    pg.glyph.bearing_x = -centre;
+    pg.glyph.bearing_y = centre;
+    return pg;
+}
 
 int next_pow2(int v) {
     int p = 1;
@@ -125,6 +162,9 @@ core::Result<SdfAtlas> build_sdf_atlas(const std::filesystem::path& font_file,
             }
             pending.push_back(std::move(pg));
         }
+    }
+    if (options.marker_glyph && !pending.empty()) {
+        pending.push_back(make_marker_glyph(options.font_px, options.spread));
     }
     if (pending.empty()) {
         return R::err(core::Error{104, "the font contains none of the requested glyphs"});
@@ -224,13 +264,32 @@ std::u32string utf8_to_utf32(std::string_view text) {
     return out;
 }
 
-float measure_text(const SdfAtlas& atlas, std::u32string_view text, float size_px) {
+std::u32string to_upper(std::u32string_view text) {
+    std::u32string out(text);
+    for (char32_t& cp : out) {
+        if (cp >= U'a' && cp <= U'z') {
+            cp -= 0x20;
+        } else if (cp >= 0x0430 && cp <= 0x044F) {  // Cyrillic а-я
+            cp -= 0x20;
+        } else if (cp == 0x0451) {  // ё
+            cp = 0x0401;
+        }
+    }
+    return out;
+}
+
+float measure_text(const SdfAtlas& atlas, std::u32string_view text, float size_px, float letter_spacing_em) {
     const float scale = size_px / atlas.font_px;
     float width = 0.0f;
+    int glyphs = 0;
     for (const char32_t cp : text) {
         if (const SdfGlyph* g = atlas.find(cp)) {
             width += g->advance * scale;
+            ++glyphs;
         }
+    }
+    if (glyphs > 1) {
+        width += static_cast<float>(glyphs - 1) * letter_spacing_em * size_px;
     }
     return width;
 }
@@ -240,9 +299,11 @@ void layout_text(const SdfAtlas& atlas,
                  float size_px,
                  float center_x,
                  float baseline_y,
-                 std::vector<TextQuadGeometry>& out) {
+                 std::vector<TextQuadGeometry>& out,
+                 float letter_spacing_em) {
     const float scale = size_px / atlas.font_px;
-    float pen = center_x - measure_text(atlas, text, size_px) * 0.5f;
+    const float spacing = letter_spacing_em * size_px;
+    float pen = center_x - measure_text(atlas, text, size_px, letter_spacing_em) * 0.5f;
     for (const char32_t cp : text) {
         const SdfGlyph* g = atlas.find(cp);
         if (g == nullptr) {
@@ -260,7 +321,7 @@ void layout_text(const SdfAtlas& atlas,
             q.v1 = g->v1;
             out.push_back(q);
         }
-        pen += g->advance * scale;
+        pen += g->advance * scale + spacing;
     }
 }
 
