@@ -34,7 +34,7 @@ src/engine/    движок: окно SDL3, рендерер D3D11 за IRendere
 src/ui/        игровые окна на RmlUi (data model над снапшотами, тексты из таблиц через loc; зависит от engine, loc и core, не от sim)
 src/game/      мост «снапшот мира → UI» (палитры карты, данные окон, форматирование дат); читает World, не меняет его
 apps/spike/    приложение-спайк E3 (окно + рендер; дальше карта и UI)
-tools/         simcli (headless-раннер), mapgen (генератор/инспектор карт), скрипты: format.ps1, check_assets.py, gen_tables.py
+tools/         simcli (headless-раннер), mapgen (генератор/инспектор карт), скрипты: format.ps1, check_assets.py, gen_tables.py, penpot_export.py (снимок Penpot → `data/ui/layout/*.pd`, без токена: docs/dev/ui-design.md §12.5)
 tests/         doctest (C++) + tests/tools (Python unittest)
 assets/        ассеты + LICENSES.csv (реестр лицензий — обязателен)
 docs/          вся документация
