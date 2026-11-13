@@ -29,6 +29,7 @@
 #include "pat/game/credits_view.hpp"
 #include "pat/game/hud_view.hpp"
 #include "pat/game/map_overview.hpp"
+#include "pat/game/province_view.hpp"
 #include "pat/game/world_view.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
@@ -46,6 +47,7 @@
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/map_overlays.hpp"
 #include "pat/ui/menu.hpp"
+#include "pat/ui/province_window.hpp"
 #include "pat/ui/theme.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
@@ -578,6 +580,11 @@ int main(int argc, char** argv) {
     bool character_visible = true;
     std::unique_ptr<pat::ui::TooltipManager> tooltips;  // after `character`: destroyed first
     std::unique_ptr<pat::ui::CharacterWindow> character;  // declared after `ui`: destroyed first
+    std::unique_ptr<pat::ui::ProvinceWindow> province;    // selected holding, likewise
+    bool province_open = false;
+    bool province_dirty = true;
+    std::uint64_t province_seen_version = ~static_cast<std::uint64_t>(0);
+    const auto province_default_rules = pat::sim::economy::EconomyRules::defaults();
     std::unique_ptr<pat::ui::TimeBar> time_bar;           // likewise
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
@@ -667,6 +674,24 @@ int main(int argc, char** argv) {
                     [](const std::string& id) { PAT_LOG_INFO("spike", "character command: {}", id); });
             } else {
                 PAT_LOG_WARN("spike", "character window: {}", window_result.error().message);
+            }
+        }
+        {
+            auto province_result = pat::ui::ProvinceWindow::create(
+                *ui,
+                std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "province.rml",
+                std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR),
+                ui_loc);
+            if (province_result) {
+                province = std::move(province_result).value();
+                province->set_close_handler([&province_open, &tooltips] {
+                    province_open = false;
+                    if (tooltips) {
+                        tooltips->close_all();
+                    }
+                });
+            } else {
+                PAT_LOG_WARN("spike", "province window: {}", province_result.error().message);
             }
         }
         {
@@ -831,16 +856,24 @@ int main(int argc, char** argv) {
                 PAT_LOG_WARN("spike", "time bar: {}", bar.error().message);
             }
         }
-        if (character) {
+        if (character || province) {
             auto tooltip_result = pat::ui::TooltipManager::create(*ui, PATRIARCH_SPIKE_UI_DIR);
             if (tooltip_result) {
                 tooltips = std::move(tooltip_result).value();
                 pat::ui::CharacterWindow* window_ptr = character.get();
+                pat::ui::ProvinceWindow* province_ptr = province.get();
                 tooltips->set_icons_directory(std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR));
-                // The character window answers its own keys; the component gallery (--gallery) the rest.
-                tooltips->set_provider([window_ptr, &gallery, &event_window](std::string_view key) -> const pat::ui::Explanation* {
-                    if (const pat::ui::Explanation* e = window_ptr->explanation(key)) {
-                        return e;
+                tooltips->set_provider([window_ptr, province_ptr, &gallery, &event_window](
+                                           std::string_view key) -> const pat::ui::Explanation* {
+                    if (province_ptr != nullptr && province_ptr->visible()) {
+                        if (const pat::ui::Explanation* e = province_ptr->explanation(key)) {
+                            return e;
+                        }
+                    }
+                    if (window_ptr != nullptr) {
+                        if (const pat::ui::Explanation* e = window_ptr->explanation(key)) {
+                            return e;
+                        }
                     }
                     if (event_window) {
                         if (const pat::ui::Explanation* e = event_window->explanation(key)) {
@@ -999,6 +1032,10 @@ int main(int argc, char** argv) {
                 if (character) {
                     character->relocalize();
                 }
+                if (province) {
+                    province->relocalize();
+                    province_dirty = true;
+                }
                 if (credits) {
                     pat::content::CreditsResult reloaded_credits = pat::content::load_credits_content(*reload_source);
                     if (reloaded_credits) {
@@ -1067,6 +1104,8 @@ int main(int argc, char** argv) {
 
         for (const Event& e : events) {
             // The UI sees every event first; what it consumes (hover over UI, text focus) the game ignores.
+            const bool tooltip_was_open = tooltips && tooltips->open_levels() != 0;
+            const bool event_was_open = event_window && event_window->visible();
             const bool ui_consumed = ui != nullptr && ui->handle_event(e);
             if (tooltips) {
                 tooltips->handle_event(e);
@@ -1074,6 +1113,18 @@ int main(int argc, char** argv) {
             if (std::holds_alternative<event::Quit>(e)) {
                 running = false;
             } else if (const auto* key = std::get_if<event::Key>(&e)) {
+                if (tooltip_was_open && key->scancode == scancode::escape) {
+                    continue;  // Escape closes a tooltip before its inspector.
+                }
+                if (province && province_open && key->down && !key->repeat &&
+                    key->scancode == scancode::escape && !event_was_open && !(menu && menu->visible())) {
+                    province_open = false;
+                    province->show(false);
+                    if (tooltips) {
+                        tooltips->close_all();
+                    }
+                    continue;
+                }
                 if (ui_consumed) {
                     continue;
                 }
@@ -1121,6 +1172,12 @@ int main(int argc, char** argv) {
                         }
                         if (overlays) {
                             overlays->show(hud_visible);
+                        }
+                        if (province) {
+                            province->show(hud_visible && province_open);
+                            if (!hud_visible && province_open && tooltips) {
+                                tooltips->close_all();
+                            }
                         }
                     } else if (key->scancode == scancode::f3 && character != nullptr) {
                         character_visible = !character_visible;
@@ -1184,8 +1241,14 @@ int main(int argc, char** argv) {
                     camera.rotate(move->dx * 0.005f, move->dy * 0.004f);
                 }
             } else if (const auto* button = std::get_if<event::MouseButton>(&e)) {
-                if (ui_consumed && button->down) {
-                    continue;  // pressed on a UI element
+                if (ui_consumed) {
+                    if (!button->down && button->button == 1) {
+                        left_down = false;
+                        camera.release_pan();
+                    } else if (!button->down && button->button == 3) {
+                        right_down = false;
+                    }
+                    continue;
                 }
                 if (button->button == 1) {
                     if (button->down) {
@@ -1195,12 +1258,21 @@ int main(int argc, char** argv) {
                         press_y = button->y;
                         camera.begin_pan();
                     } else {
+                        const bool map_press = left_down;
                         left_down = false;
                         camera.release_pan();
-                        if (!dragged) {
+                        if (map_press && !dragged) {
                             // A click: select the province under the cursor (clicking water deselects).
                             Vec3 p;
                             selected = ground_at(button->x, button->y, p) ? picker.province_at(p.x, p.y) : 0;
+                            province_open = selected != 0;
+                            province_dirty = true;
+                            if (province) {
+                                province->show(hud_visible && province_open);
+                            }
+                            if (tooltips) {
+                                tooltips->close_all();
+                            }
                             if (character && world_snapshot && selected != 0) {
                                 // Show the head of the dynasty that owns the province.
                                 const auto head =
@@ -1210,7 +1282,7 @@ int main(int argc, char** argv) {
                                     character_refresh = 1.0e9f;  // refresh the window now
                                 }
                             }
-                                        }
+                        }
                     }
                 } else if (button->button == 3) {
                     right_down = button->down;
@@ -1236,6 +1308,35 @@ int main(int argc, char** argv) {
         if (world_snapshot) {
             day_of_year = world_snapshot->today().day_of_year();
             const std::uint64_t version = runner ? runner->snapshot_version() : 0;
+            if (province && province_open && hud_visible &&
+                (province_dirty || province_seen_version != version)) {
+                const pat::sim::ProvinceId id =
+                    map_to_world.empty()
+                        ? pat::sim::ProvinceId(static_cast<std::uint32_t>(selected - 1))
+                        : (selected < map_to_world.size() ? map_to_world[selected] : pat::sim::ProvinceId{});
+                pat::game::EconomyViewOptions options;
+                options.province_name = [&](pat::sim::ProvinceId province_id) -> std::string {
+                    if (m1) {
+                        const auto names = m1_province_names();
+                        for (std::size_t raster = 1; raster < map_to_world.size() && raster < names.size();
+                             ++raster) {
+                            if (map_to_world[raster] == province_id) {
+                                return names[raster];
+                            }
+                        }
+                    }
+                    return {};
+                };
+                // Use the rules installed in the simulation; --dev presentation reloads cannot replace them.
+                const auto& rules = m1 ? *m1->economy_rules : province_default_rules;
+                province->set_snapshot(
+                    pat::game::province_snapshot(ui_loc, *world_snapshot, id, rules, options));
+                if (tooltips) {
+                    tooltips->refresh();
+                }
+                province_seen_version = version;
+                province_dirty = false;
+            }
             if (version != seen_version) {
                 seen_version = version;
                 const std::size_t provinces = map.province_list.size();

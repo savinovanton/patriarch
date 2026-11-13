@@ -15,6 +15,7 @@
 
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "test_fonts.hpp"
 #include "ui_theme_fixture.hpp"
@@ -269,6 +270,77 @@ TEST_CASE("TooltipManager: Alt pins tooltips, Esc closes them") {
     fx.run(0.5f);
     REQUIRE(fx.tooltips->open_levels() == 1);
     fx.key(41);
+    CHECK(fx.tooltips->open_levels() == 0);
+}
+
+TEST_CASE("TooltipManager: refresh updates pinned content and preserves unchanged documents") {
+    if (!have_font()) {
+        return;
+    }
+    Fixture fx("patriarch_tip_refresh");
+    fx.hover_class(fx.window->document(), "skill", fx.skill_with_depth);
+    fx.run(0.5f);
+    REQUIRE(fx.tooltips->open_levels() == 1);
+    fx.key(226);
+    REQUIRE(fx.tooltips->pinned());
+    const auto levels = fx.tooltips->state().levels();
+    const RectF rect = fx.tooltips->level_rect(0);
+    Rml::ElementDocument* original = fx.tooltips->level_document(0);
+
+    fx.move_cursor(5.0f, 700.0f);
+    fx.tooltips->refresh();
+    CHECK(fx.tooltips->level_document(0) == original);
+    CHECK(fx.tooltips->level_rect(0) == rect);
+    CHECK(fx.tooltips->state().levels() == levels);
+
+    auto& explanation = fx.snapshot.skill_explanations[fx.skill_with_depth];
+    explanation.value = "84721";
+    explanation.terms.emplace_back("Updated levy", "+91000", "", std::vector<Explanation>{});
+    fx.window->set_snapshot(fx.snapshot);
+    fx.tooltips->refresh();
+    fx.ui->update();
+
+    REQUIRE(fx.tooltips->open_levels() == 1);
+    CHECK(fx.tooltips->pinned());
+    CHECK(fx.tooltips->state().levels() == levels);
+    Rml::ElementDocument* refreshed = fx.tooltips->level_document(0);
+    REQUIRE(refreshed != nullptr);
+    const std::string html = fx.text_of(refreshed);
+    CHECK(html.find("84721") != std::string::npos);
+    CHECK(html.find("Updated levy") != std::string::npos);
+    CHECK(html.find("+91000") != std::string::npos);
+    Rml::ElementList rows;
+    refreshed->GetElementsByClassName(rows, "tip-row");
+    CHECK(rows.size() == explanation.terms.size());
+
+    fx.tooltips->refresh();
+    CHECK(fx.tooltips->level_document(0) == refreshed);
+    CHECK(fx.tooltips->pinned());
+    CHECK(fx.tooltips->state().levels() == levels);
+}
+
+TEST_CASE("TooltipManager: refresh closes a pinned stack whose nested path no longer exists") {
+    if (!have_font()) {
+        return;
+    }
+    Fixture fx("patriarch_tip_refresh_missing");
+    fx.hover_class(fx.window->document(), "skill", fx.skill_with_depth);
+    fx.run(0.5f);
+    REQUIRE(fx.tooltips->open_levels() == 1);
+    fx.hover_class(fx.tooltips->level_document(0), "tip-row", 0, /*nested_only=*/true);
+    fx.run(0.3f);
+    REQUIRE(fx.tooltips->open_levels() == 2);
+    fx.key(226);
+    REQUIRE(fx.tooltips->pinned());
+
+    fx.snapshot.skill_explanations[fx.skill_with_depth].terms.clear();
+    fx.window->set_snapshot(fx.snapshot);
+    fx.tooltips->refresh();
+    fx.ui->update();
+    CHECK(fx.tooltips->open_levels() == 0);
+    CHECK(fx.tooltips->state().levels().empty());
+    CHECK_FALSE(fx.tooltips->pinned());
+    fx.tooltips->refresh();
     CHECK(fx.tooltips->open_levels() == 0);
 }
 
