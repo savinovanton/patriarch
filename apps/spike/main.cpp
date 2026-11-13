@@ -42,6 +42,7 @@
 #include "pat/ui/agenda_panel.hpp"
 #include "pat/ui/component_gallery.hpp"
 #include "pat/ui/credits_window.hpp"
+#include "pat/ui/event_window.hpp"
 #include "pat/ui/hud_window.hpp"
 #include "pat/ui/map_overlays.hpp"
 #include "pat/ui/menu.hpp"
@@ -128,6 +129,7 @@ struct Options {
     bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
     bool gallery = false;          // --gallery: the page of the shared UI components over everything
     bool no_hud = false;           // do not create the heads-up display (F4 toggles it)
+    bool event = false;            // --event: the window of an important event (placeholder, UI-D07) over the map
     int menu = 0;                  // --menu: start menu over everything (1 with demo saves, 2 --menu-first, 3 --menu-overview)
     std::string menu_screen;       // --menu-screen NAME: the screen the menu opens at (screenshots; see open_menu_screen)
     bool no_labels = false;        // no map labels
@@ -195,6 +197,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.gallery_tips = true;
         } else if (arg == "--gallery") {
             out.gallery = true;
+        } else if (arg == "--event") {
+            out.event = true;
         } else if (arg == "--menu") {
             out.menu = 1;
         } else if (arg == "--menu-first") {
@@ -259,7 +263,7 @@ bool parse_options(int argc, char** argv, Options& out) {
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
                          "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
-                         "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME]\n");
+                         "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME] [--event]\n");
             return false;
         }
     }
@@ -563,6 +567,8 @@ int main(int argc, char** argv) {
     std::unique_ptr<pat::ui::HudWindow> hud;              // likewise
     std::unique_ptr<pat::ui::CreditsWindow> credits;      // likewise: the "Титры" window, opened from the menu
     std::unique_ptr<pat::ui::ComponentGallery> gallery;   // likewise: the page of the shared components (--gallery)
+    std::unique_ptr<pat::ui::EventWindow> event_window;   // likewise: the important event (--event), UI-D07
+    int speed_before_event = 0;                           // the speed the open event paused the game at (0: it did not)
     std::unique_ptr<pat::ui::MenuWindow> menu;            // likewise: the start menu (--menu), UI-D12
     std::unique_ptr<pat::ui::AgendaPanel> agenda;    // likewise: "Дела рода" over the map (UI-D05)
     std::unique_ptr<pat::ui::MapOverlays> overlays;  // likewise: season badge, realm caption, plate, minimap
@@ -817,9 +823,14 @@ int main(int argc, char** argv) {
                 pat::ui::CharacterWindow* window_ptr = character.get();
                 tooltips->set_icons_directory(std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR));
                 // The character window answers its own keys; the component gallery (--gallery) the rest.
-                tooltips->set_provider([window_ptr, &gallery](std::string_view key) -> const pat::ui::Explanation* {
+                tooltips->set_provider([window_ptr, &gallery, &event_window](std::string_view key) -> const pat::ui::Explanation* {
                     if (const pat::ui::Explanation* e = window_ptr->explanation(key)) {
                         return e;
+                    }
+                    if (event_window) {
+                        if (const pat::ui::Explanation* e = event_window->explanation(key)) {
+                            return e;
+                        }
                     }
                     return gallery ? gallery->explanation(key) : nullptr;
                 });
@@ -841,6 +852,35 @@ int main(int argc, char** argv) {
                 }
             } else {
                 PAT_LOG_WARN("spike", "component gallery: {}", gallery_result.error().message);
+            }
+        }
+        if (opt.event && ui != nullptr) {
+            // The important event (UI-D07): a PLACEHOLDER event of the mockup until the event engine (E11) delivers
+            // them. Modal; the game is paused while it is open (the autopause) and resumes at the choice.
+            auto event_result = pat::ui::EventWindow::create(
+                *ui, std::filesystem::path(PATRIARCH_SPIKE_UI_DIR) / "event.rml",
+                std::filesystem::path(PATRIARCH_SPIKE_ICONS_DIR), ui_loc);
+            if (event_result) {
+                event_window = std::move(event_result).value();
+                pat::ui::TimeBar* tb = time_bar.get();
+                pat::sim::SimulationRunner* r = runner.get();
+                int* before = &speed_before_event;
+                event_window->set_event_shown_handler([tb, r, before](const pat::ui::EventView& shown) {
+                    if (shown.autopause && tb != nullptr && r != nullptr && r->speed() != pat::sim::Speed::Paused) {
+                        *before = r->speed() == pat::sim::Speed::Unlimited ? 5 : static_cast<int>(r->speed());
+                        tb->press_speed(0);
+                    }
+                });
+                event_window->set_choice_handler([tb, before](std::size_t index) {
+                    PAT_LOG_INFO("spike", "event: option {} chosen (stub)", index + 1);
+                    if (*before != 0 && tb != nullptr) {
+                        tb->press_speed(*before);
+                    }
+                    *before = 0;
+                });
+                event_window->show_event(pat::ui::make_placeholder_event(ui_loc));
+            } else {
+                PAT_LOG_WARN("spike", "event window: {}", event_result.error().message);
             }
         }
         if (opt.menu != 0) {
@@ -1023,6 +1063,9 @@ int main(int argc, char** argv) {
                     continue;
                 }
                 const bool down = key->down;
+                if (event_window && event_window->visible() && key->scancode != scancode::f11) {
+                    continue;  // an important event is modal: the game keys sleep until it is answered (Esc does nothing)
+                }
                 if (menu && menu->visible() && key->scancode != scancode::escape && key->scancode != scancode::f11) {
                     continue;  // the menu is modal: the game keys sleep (an Esc it did not handle still ends the spike)
                 }

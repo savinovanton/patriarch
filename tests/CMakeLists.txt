@@ -97,6 +97,7 @@ if(PATRIARCH_BUILD_ENGINE)
         game_bridge_test.cpp
         economy_palette_test.cpp
         economy_snapshot_test.cpp
+        event_window_test.cpp
         labels_test.cpp
         map_overlays_test.cpp
         map_overview_test.cpp
