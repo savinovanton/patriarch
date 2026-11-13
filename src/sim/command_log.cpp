@@ -1,5 +1,6 @@
 #include "pat/sim/command_log.hpp"
 
+#include "pat/core/assert.hpp"
 #include "pat/core/hash_stream.hpp"
 
 #include <algorithm>
@@ -216,14 +217,46 @@ bool read_init(core::ByteReader& in, CharacterInit& i) {
 
 }  // namespace
 
+void write_command_tag(core::ByteWriter& out, std::uint16_t tag) {
+    PAT_ASSERT(tag >= 1 && tag <= kMaxCommandTag, "command tag {} is out of the wire range", tag);
+    if (tag < 0x80U) {
+        out.u8(static_cast<std::uint8_t>(tag));
+    } else {
+        out.u8(static_cast<std::uint8_t>((tag & 0x7FU) | 0x80U));
+        out.u8(static_cast<std::uint8_t>(tag >> 7));
+    }
+}
+
+bool read_command_tag(core::ByteReader& in, std::uint16_t& tag) {
+    const std::uint8_t first = in.u8();
+    if (!in.ok()) {
+        return false;
+    }
+    if ((first & 0x80U) == 0) {
+        tag = first;
+        return first != 0;
+    }
+    const std::uint8_t second = in.u8();
+    // A set continuation bit would mean a third byte (tag >= 16384); a zero second byte is the
+    // overlong spelling of a one-byte tag. Both are errors: there is exactly one encoding per tag.
+    if (!in.ok() || (second & 0x80U) != 0 || second == 0) {
+        return false;
+    }
+    tag = static_cast<std::uint16_t>((first & 0x7FU) | (static_cast<std::uint16_t>(second) << 7));
+    return true;
+}
+
 void write_command(core::ByteWriter& out, const Command& command) {
-    out.u8(static_cast<std::uint8_t>(type_of(command)));
+    write_command_tag(out, static_cast<std::uint16_t>(type_of(command)));
     out.u32(command.actor.value());
     std::visit(Writer{out}, command.payload);
 }
 
 bool read_command(core::ByteReader& in, Command& out) {
-    const std::uint8_t tag = in.u8();
+    std::uint16_t tag = 0;
+    if (!read_command_tag(in, tag)) {
+        return false;
+    }
     out.actor = DynastyId(in.u32());
     switch (static_cast<CommandType>(tag)) {
         case CommandType::SetProvinceOwner: {

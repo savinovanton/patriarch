@@ -1,3 +1,4 @@
+#include "pat/sim/state_test_hooks.hpp"
 #include "pat/sim/world.hpp"
 
 #include <string>
@@ -80,7 +81,10 @@ using detail::kSectionPregnancy;
 using detail::kSectionStanding;
 using detail::plausible;
 
-constexpr std::uint16_t kMaxSections = 32;
+// The limit of the section count of one file: a sanity check of the header, not the size of a
+// registry. 96 is the first id that no epic has been given yet (docs/dev/save-format.md section 5.1,
+// raised from 32 in E13-T03; the layout of existing files is unchanged).
+constexpr std::uint16_t kMaxSections = 96;
 constexpr std::size_t kPersonRowBytes = 90;
 constexpr std::size_t kDynastyRowBytes = 9;
 constexpr std::size_t kBranchRowBytes = 8;
@@ -118,6 +122,24 @@ constexpr SectionInfo kSections[] = {
     {detail::kSectionEconomyPolicy, 1, 9},
 };
 
+constexpr bool section_ids_fit_the_limit() {
+    for (const SectionInfo& info : kSections) {
+        if (info.id == 0 || info.id >= kMaxSections) {
+            return false;
+        }
+    }
+    return true;
+}
+static_assert(section_ids_fit_the_limit(), "every section id must be in 1..kMaxSections-1");
+
+// The range of the test-only sections (state_test_hooks.hpp); count 0 = none.
+testing::TestSections g_test_sections;
+
+bool is_test_section(std::uint16_t id) {
+    return g_test_sections.count != 0 && id >= g_test_sections.first_id &&
+           id - g_test_sections.first_id < g_test_sections.count;
+}
+
 const SectionInfo* find_section(std::uint16_t id) {
     for (const SectionInfo& info : kSections) {
         if (info.id == id) {
@@ -138,6 +160,18 @@ void write_section(core::ByteWriter& out,
 }
 
 }  // namespace
+
+namespace testing {
+
+void set_test_sections(TestSections range) noexcept {
+    g_test_sections = range;
+}
+
+TestSections test_sections() noexcept {
+    return g_test_sections;
+}
+
+}  // namespace testing
 
 void World::save_state(core::ByteWriter& out) const {
     out.u32(kStateSchema);
@@ -400,7 +434,12 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
-    economy_write_sections(sections);  // ids 32..40, after the sections above
+    economy_write_sections(sections);                            // ids 32..40, after the sections above
+    for (std::uint16_t i = 0; i < g_test_sections.count; ++i) {  // test-only, ids above 40
+        Section section{static_cast<std::uint16_t>(g_test_sections.first_id + i), 1, {}};
+        section.body.u32(section.id);
+        sections.push_back(std::move(section));
+    }
 
     out.u16(static_cast<std::uint16_t>(sections.size()));
     for (const Section& section : sections) {
@@ -572,7 +611,8 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         world.flags_ = flags;
 
         const std::uint16_t section_count = in.u16();
-        if (!in.ok() || section_count > kMaxSections) {
+        // Every section has a header of 8 bytes, so a count the rest of the file cannot hold is damage.
+        if (!in.ok() || section_count > kMaxSections || !plausible(in, section_count, 8)) {
             return fail("invalid section count");
         }
         std::uint16_t previous_id = 0;
@@ -584,8 +624,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 return fail("world state sections are malformed or out of order");
             }
             previous_id = id;
-            const SectionInfo* info = find_section(id);
-            if (info == nullptr || info->version != version || info->min_schema > schema) {
+            const bool test_section = is_test_section(id);
+            const SectionInfo* info = test_section ? nullptr : find_section(id);
+            if (test_section ? version != 1
+                             : (info == nullptr || info->version != version || info->min_schema > schema)) {
                 return fail("unknown or unsupported world state section");
             }
             const std::span<const std::uint8_t> bytes = in.bytes(length);
@@ -594,7 +636,11 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             }
             core::ByteReader sr(bytes);
 
-            if (id == kSectionPerson) {
+            if (test_section) {
+                if (sr.u32() != id) {
+                    return fail("invalid test section");
+                }
+            } else if (id == kSectionPerson) {
                 const std::uint32_t rows = sr.u32();
                 if (!plausible(sr, rows, kPersonRowBytes)) {
                     return fail("invalid person section");

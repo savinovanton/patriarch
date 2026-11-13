@@ -980,7 +980,9 @@ constexpr auto kTagByAlternative = TagTable<CommandPayload>::value;
 
 constexpr bool tags_are_valid_and_unique() {
     for (std::size_t i = 0; i < kTagByAlternative.size(); ++i) {
-        if (static_cast<std::uint8_t>(kTagByAlternative[i]) == 0) {
+        // 0 is not a tag; kMaxCommandTag is the largest value the two-byte varint can carry
+        if (static_cast<std::uint16_t>(kTagByAlternative[i]) == 0 ||
+            static_cast<std::uint16_t>(kTagByAlternative[i]) > kMaxCommandTag) {
             return false;
         }
         for (std::size_t j = i + 1; j < kTagByAlternative.size(); ++j) {

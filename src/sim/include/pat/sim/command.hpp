@@ -23,9 +23,11 @@ struct EconomyRules;
 
 /// Stable numeric tags: these values are written to replay files and must never change. They are
 /// NOT the position of the command in CommandPayload: the table in command.cpp maps each payload
-/// type to its tag, so that epics can reserve blocks (ADR-0006 D5):
-///   1..5 E1   6..31 E7 (characters and dynasties)   32..63 E9   64..95 E8   96..255 later epics
-enum class CommandType : std::uint8_t {
+/// type to its tag, so that epics can reserve blocks (ADR-0006 D5, docs/dev/save-format.md section 6):
+///   1..5 E1   6..31 E7 (characters and dynasties)   32..63 E9   64..95 E8   96..127 E11
+///   128.. E10, E12, E30 and later epics. Tags are `u16` in memory and a varint on the wire (E13-T03,
+///   ADR-0011): 1..127 take one byte, 128..16383 two (kMaxCommandTag in command_log.hpp).
+enum class CommandType : std::uint16_t {
     SetProvinceOwner = 1,
     CreateCharacter = 2,
     KillCharacter = 3,

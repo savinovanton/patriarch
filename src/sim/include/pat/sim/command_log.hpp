@@ -10,6 +10,18 @@
 
 namespace pat::sim {
 
+/// The largest command tag the wire format can carry (E13-T03, docs/dev/save-format.md section 6.1):
+/// two varint bytes of 7 bits each.
+inline constexpr std::uint16_t kMaxCommandTag = 16383;
+
+/// Command tag on the wire: LEB128 varint, canonical form only. Tags 1..127 take ONE byte (the same
+/// byte as the old `u8` tag, so earlier PRP1/PCL1/PSV files read unchanged), 128..16383 take two.
+/// `tag` must be in 1..kMaxCommandTag.
+void write_command_tag(core::ByteWriter& out, std::uint16_t tag);
+/// Returns false on truncated data, tag 0, an overlong (non-canonical) form such as `0x81 0x00`, and
+/// a tag above kMaxCommandTag (a third byte).
+[[nodiscard]] bool read_command_tag(core::ByteReader& in, std::uint16_t& tag);
+
 /// Binary encoding of single commands (used by the log and by replays).
 void write_command(core::ByteWriter& out, const Command& command);
 /// Returns false (and leaves `out` unspecified) on truncated data or an unknown command tag.
