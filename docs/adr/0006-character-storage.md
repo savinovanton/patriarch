@@ -233,7 +233,7 @@
 | 1…5 | E1 (`SetProvinceOwner`, `CreateCharacter`, `KillCharacter`, `SetDynastyHead`, `AdjustHonor`) |
 | **6…31** | **E7** (ниже) |
 | 32…63 | E9 (занято в E9-T01, `economy-model.md` §8.1) |
-| 64…95 | E8 (рекомендация, подтверждается E8-T01) |
+| 64…95 | E8 (подтверждено E8-T01: выпущены 64…83, 84…95 резерв — [marriage-succession-model.md](../dev/marriage-succession-model.md) §7.1) |
 | 96…255 | остальные эпики, блоками по 32 по порядку обращения |
 
 Команды E7 (вариант variant и порядок в файле — любые, теги — эти):
@@ -321,7 +321,7 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 5 `chronicle` | T16 | записи по родам, с ограничением объёма | 1 |
 | 6 `opinion` | T17 | мнения: держатель, цель, значение, причина, срок | 1 |
 | 7…15 | резерв E7 | | |
-| 16…31 | E8 (рекомендация) | | |
+| 16…31 | E8 (подтверждено E8-T01: выпущены 16…23 `family_counters`, `negotiations`, `betrothals`, `marriages`, `person_status`, `succession`, `regency`, `dispute`; 24…31 резерв — [marriage-succession-model.md](../dev/marriage-succession-model.md) §13.1; части хеша `ExtPart` 8…14) | | |
 | 32 `economy` | E9-T03 | заголовок экономики: `present`, `rules_hash`, `crown_dynasty`, ведомость (даты), счётчики | 1 |
 | 33 `economy_dynasty` … 39 `economy_incidents` | E9-T03 | роды, провинции, население, счета с кольцами ведомости, очередь стройки, займы/квоты/итоги, журнал происшествий; раскладка — `economy-model.md` §13.5 и комментарий в `src/sim/world_economy_io.cpp` | 1 |
 | 40…47 | резерв E9 | | |
