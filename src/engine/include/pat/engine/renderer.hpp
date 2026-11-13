@@ -84,6 +84,8 @@ struct MapStyle {
         0.0f;  ///< 0 = summer palette, 1 = winter 1703: snow-beige fields, dark conifers, warm-grey haze.
     float grade = 0.0f;     ///< Colour grading strength: exposure, soft shoulder, split toning, desaturation.
     float vignette = 0.0f;  ///< Darkening of the screen edges (0 = none).
+    bool borders =
+        false;  ///< Painted borders: smooth thin ink lines, gold contour and fill of the selected province.
 };
 
 /// The reference look of the new design (winter terrain concept of board 01): everything on.
@@ -92,6 +94,7 @@ struct MapStyle {
     style.winter = 1.0f;
     style.grade = 1.0f;
     style.vignette = 0.35f;
+    style.borders = true;
     return style;
 }
 

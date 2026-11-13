@@ -47,10 +47,20 @@ if(WIN32)
         string(SUBSTRING "${shader}" 0 1 _first)
         string(TOUPPER "${_first}" _first)
         string(SUBSTRING "${shader}" 1 -1 _rest)
-        # Raw string literals have a length limit in MSVC; split large sources into chunks if this ever fails.
+        # A string literal is limited to about 16 KB in MSVC (C2026): emit the source as adjacent raw literals of
+        # at most 8000 bytes (they are concatenated by the compiler, the text stays byte-exact).
+        string(LENGTH "${PATRIARCH_HLSL_TEXT}" _hlsl_length)
+        set(_hlsl_literal "")
+        set(_hlsl_pos 0)
+        while(_hlsl_pos LESS _hlsl_length)
+            string(SUBSTRING "${PATRIARCH_HLSL_TEXT}" ${_hlsl_pos} 8000 _hlsl_chunk)
+            string(APPEND _hlsl_literal "R\"HLSLSRC(${_hlsl_chunk})HLSLSRC\"
+")
+            math(EXPR _hlsl_pos "${_hlsl_pos} + 8000")
+        endwhile()
         string(APPEND PATRIARCH_EMBEDDED_SHADERS
             "extern const char* const k${_first}${_rest}Hlsl;
-const char* const k${_first}${_rest}Hlsl = R\"HLSLSRC(${PATRIARCH_HLSL_TEXT})HLSLSRC\";
+const char* const k${_first}${_rest}Hlsl = ${_hlsl_literal};
 ")
     endforeach()
     file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/embedded_shaders.cpp"

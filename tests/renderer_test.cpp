@@ -9,8 +9,10 @@
 
 #include <array>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <set>
 #include <sstream>
 #include <string>
 
@@ -417,6 +419,81 @@ TEST_CASE("Map view: art style - off by default, winter palette and grading chan
     }
     CHECK(brighter == 0);
     CHECK(darker > 1000);
+}
+
+TEST_CASE("Map view: painted borders - thin ink lines, soft gold contour and fill of the selected province") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    pat::engine::MapFrame legacy = fx.frame();
+    legacy.style = pat::engine::winter_style_1703();
+    legacy.style.borders = false;
+    pat::engine::MapFrame painted = legacy;
+    painted.style.borders = true;
+    CHECK(pat::engine::winter_style_1703().borders);  // the reference look paints the borders
+
+    const auto old_px = fx.render(legacy);
+    const auto base = fx.render(painted);
+    CHECK(differing_pixels(base, fx.render(painted)) == 0);  // stable
+    // The thin lines change a modest part of the picture.
+    CHECK(differing_pixels(old_px, base) > 300);
+    CHECK(differing_pixels(old_px, base) < 640U * 360U / 3U);
+
+    // Gold contour #d2b77d: counted as "close to gold" so the sky/snow cannot fake it.
+    const auto gold_pixels = [](const std::vector<std::uint8_t>& px) {
+        std::size_t n = 0;
+        for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+            n += (std::abs(px[i] - 210) <= 22 && std::abs(px[i + 1] - 183) <= 22 &&
+                  std::abs(px[i + 2] - 125) <= 26)
+                     ? 1U
+                     : 0U;
+        }
+        return n;
+    };
+
+    // A province near the middle of the view.
+    std::uint16_t middle = 0;
+    float best = 1.0e9f;
+    for (const pat::mapdata::Province& p : fx.map.province_list) {
+        const float dx = static_cast<float>(p.centroid_x) - 128.0f;
+        const float dy = static_cast<float>(p.centroid_y) - 64.0f;
+        if (dx * dx + dy * dy < best) {
+            best = dx * dx + dy * dy;
+            middle = p.id;
+        }
+    }
+    REQUIRE(middle != 0);
+    const auto selected = fx.render([&] {
+        auto f = painted;
+        f.selected = middle;
+        return f;
+    }());
+    CHECK(gold_pixels(selected) > gold_pixels(base) + 60);
+
+    // The contour has a soft edge: the pixels it changes take many different values (a hard line would take
+    // few).
+    std::set<std::uint32_t> levels;
+    std::size_t changed = 0;
+    for (std::size_t i = 0; i + 3 < base.size(); i += 4) {
+        if (base[i] != selected[i] || base[i + 1] != selected[i + 1] || base[i + 2] != selected[i + 2]) {
+            ++changed;
+            levels.insert(static_cast<std::uint32_t>(selected[i]) << 16 |
+                          static_cast<std::uint32_t>(selected[i + 1]) << 8 | selected[i + 2]);
+        }
+    }
+    CHECK(changed > 200);
+    CHECK(levels.size() > 40);
+
+    // Hover is only a highlight: it never draws a gold contour.
+    auto hover_frame = painted;
+    hover_frame.hovered = middle;
+    const auto hovered = fx.render(hover_frame);
+    CHECK(differing_pixels(base, hovered) > 100);
+    CHECK(gold_pixels(hovered) <= gold_pixels(base) + 5);
+
+    // Without painted borders the old look is untouched: the selection is the old yellow tint, no gold line.
+    auto old_selected = legacy;
+    old_selected.selected = middle;
+    CHECK(differing_pixels(old_px, fx.render(old_selected)) > 100);
 }
 
 TEST_CASE("Map view: the sea is animated and only the water changes with time") {
