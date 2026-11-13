@@ -280,6 +280,68 @@ core::Result<void, RulesError> validate(const DemographyRules& r) {
                 std::format("{} {} must lie in [{}, {})", name, age, r.adolescent_from, r.mature_from)));
         }
     }
+
+    // E7-T11: health and stress
+    for (const auto& [value, name] : {
+             std::pair{r.health_drift[0], "health_drift.child"},
+             std::pair{r.health_drift[1], "health_drift.adolescent"},
+             std::pair{r.health_drift[2], "health_drift.prime"},
+             std::pair{r.health_drift[3], "health_drift.mature"},
+             std::pair{r.health_drift[4], "health_drift.elder"},
+             std::pair{r.low_health_drift, "low_health_drift"},
+         }) {
+        if (value < -DemographyRules::kMaxVitalsStep || value > DemographyRules::kMaxVitalsStep) {
+            return Check::err(make_error(RulesErrorCode::HealthDrift,
+                                         std::format("{} {} outside {}...{}",
+                                                     name,
+                                                     value,
+                                                     -DemographyRules::kMaxVitalsStep,
+                                                     DemographyRules::kMaxVitalsStep)));
+        }
+    }
+    if (r.health_noise < 0 || r.health_noise > DemographyRules::kMaxVitalsStep) {
+        return Check::err(make_error(
+            RulesErrorCode::HealthDrift,
+            std::format("health_noise {} outside 0...{}", r.health_noise, DemographyRules::kMaxVitalsStep)));
+    }
+    if (r.stress_high_from < 0 || r.stress_critical_from <= r.stress_high_from ||
+        r.stress_critical_from > kMaxHealth) {
+        return Check::err(
+            make_error(RulesErrorCode::Stress,
+                       std::format("stress thresholds high>={} critical>={} must satisfy 0 <= high < "
+                                   "critical <= {}",
+                                   r.stress_high_from,
+                                   r.stress_critical_from,
+                                   kMaxHealth)));
+    }
+    for (const auto& [value, name] : {
+             std::pair{r.stress_high_health_drift, "stress_high_health_drift"},
+             std::pair{r.stress_critical_health_drift, "stress_critical_health_drift"},
+         }) {
+        if (value < -DemographyRules::kMaxVitalsStep || value > DemographyRules::kMaxVitalsStep) {
+            return Check::err(make_error(RulesErrorCode::Stress,
+                                         std::format("{} {} outside {}...{}",
+                                                     name,
+                                                     value,
+                                                     -DemographyRules::kMaxVitalsStep,
+                                                     DemographyRules::kMaxVitalsStep)));
+        }
+    }
+    for (const auto& [value, name] : {
+             std::pair{r.stress_gain_low_health, "stress_gain_low_health"},
+             std::pair{r.stress_gain_head, "stress_gain_head"},
+         }) {
+        if (value < 0 || value > DemographyRules::kMaxVitalsStep) {
+            return Check::err(make_error(
+                RulesErrorCode::Stress,
+                std::format("{} {} outside 0...{}", name, value, DemographyRules::kMaxVitalsStep)));
+        }
+    }
+    if (r.stress_decay_permille < 0 || r.stress_decay_permille > kPermilleOne) {
+        return Check::err(make_error(
+            RulesErrorCode::Stress,
+            std::format("stress_decay_permille {} outside 0...{}", r.stress_decay_permille, kPermilleOne)));
+    }
     return Check::ok();
 }
 
@@ -372,6 +434,109 @@ LifeStage life_stage(const DemographyRules& rules, std::int32_t age) noexcept {
         return LifeStage::Mature;
     }
     return LifeStage::Elder;
+}
+
+// ---- health, stress and fertility of a month (E7-T11) ------------------------------------------
+
+namespace {
+
+/// `amount` hundredths of a point as a Fixed32 (truncated toward zero, the same on every platform).
+Fixed32 hundredths(std::int32_t amount) noexcept {
+    return Fixed32::from_ratio(amount, 100);
+}
+
+void add_term(VitalsChange& change, std::string_view key, Fixed32 value) {
+    if (value != Fixed32::zero()) {
+        change.terms.push_back({key, value});
+        change.total += value;
+    }
+}
+
+}  // namespace
+
+Fixed32 VitalsChange::sum_of_terms() const noexcept {
+    Fixed32 sum = Fixed32::zero();
+    for (const VitalsTerm& term : terms) {
+        sum += term.value;
+    }
+    return sum;
+}
+
+StressLevel stress_level(const DemographyRules& rules, Fixed32 effective_stress) noexcept {
+    if (!(effective_stress < Fixed32::from_int(rules.stress_critical_from))) {
+        return StressLevel::Breaking;
+    }
+    if (!(effective_stress < Fixed32::from_int(rules.stress_high_from))) {
+        return StressLevel::Strained;
+    }
+    return StressLevel::Calm;
+}
+
+VitalsChange monthly_health_change(const DemographyRules& rules,
+                                   std::int32_t age,
+                                   Fixed32 effective_health,
+                                   Fixed32 effective_stress,
+                                   std::uint32_t noise_roll) {
+    VitalsChange change;
+    const auto stage = static_cast<std::size_t>(life_stage(rules, age));
+    add_term(change, "demography.health.age", hundredths(rules.health_drift[stage]));
+    if (health_below(effective_health, rules.low_health_below)) {
+        add_term(change, "demography.health.low_health", hundredths(rules.low_health_drift));
+    }
+    switch (stress_level(rules, effective_stress)) {
+        case StressLevel::Breaking:
+            add_term(change, "demography.health.stress", hundredths(rules.stress_critical_health_drift));
+            break;
+        case StressLevel::Strained:
+            add_term(change, "demography.health.stress", hundredths(rules.stress_high_health_drift));
+            break;
+        case StressLevel::Calm:
+            break;
+    }
+    // Uniform over the 2 * noise + 1 integer hundredths of [-noise, +noise] (multiply-high, no rejection).
+    const std::int32_t noise = std::max(rules.health_noise, 0);
+    const std::uint64_t span = 2 * static_cast<std::uint64_t>(noise) + 1;
+    const auto swing =
+        static_cast<std::int32_t>((static_cast<std::uint64_t>(noise_roll) * span) >> 32) - noise;
+    add_term(change, "demography.health.noise", hundredths(swing));
+    return change;
+}
+
+VitalsChange monthly_stress_change(const DemographyRules& rules,
+                                   Fixed32 stored_stress,
+                                   Fixed32 effective_health,
+                                   bool dynasty_head) {
+    VitalsChange change;
+    Fixed32 running = stored_stress;
+    if (health_below(effective_health, rules.low_health_below)) {
+        const Fixed32 gain = hundredths(rules.stress_gain_low_health);
+        add_term(change, "demography.stress.low_health", gain);
+        running += gain;
+    }
+    if (dynasty_head) {
+        const Fixed32 gain = hundredths(rules.stress_gain_head);
+        add_term(change, "demography.stress.head", gain);
+        running += gain;
+    }
+    const Fixed32 rested = running.mul_permille(kPermilleOne - rules.stress_decay_permille);
+    add_term(change, "demography.stress.decay", rested - running);
+    running = rested;
+    const Fixed32 clamped = core::clamp(running, Fixed32::zero(), Fixed32::from_int(kMaxHealth));
+    add_term(change, "demography.stress.clamp", clamped - running);
+    return change;
+}
+
+Fixed32 derived_fertility(const DemographyRules& rules, std::int32_t age, Fixed32 effective_health) noexcept {
+    std::int32_t health_factor = kPermilleOne;
+    if (health_below(effective_health, rules.low_health_below)) {
+        health_factor = rules.low_health_fertility_permille;
+    } else if (health_at_least(effective_health, rules.high_health_from)) {
+        health_factor = rules.high_health_fertility_permille;
+    }
+    const Fixed32 value = Fixed32::from_int(kMaxHealth)
+                              .mul_permille(rules.age_factor.lookup(std::max<std::int32_t>(age, 0)))
+                              .mul_permille(health_factor);
+    return core::clamp(value, Fixed32::zero(), Fixed32::from_int(kMaxHealth));
 }
 
 }  // namespace pat::sim

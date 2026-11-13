@@ -819,6 +819,12 @@ void World::set_character_fertility(CharacterId id, core::Fixed32 value) {
     }
 }
 
+void World::set_character_health(CharacterId id, core::Fixed32 value) {
+    if (is_alive(id)) {
+        characters_.health[id.index()] = clamp_scale(value);
+    }
+}
+
 void World::set_character_stress(CharacterId id, core::Fixed32 value) {
     if (is_alive(id)) {
         characters_.stress[id.index()] = clamp_scale(value);

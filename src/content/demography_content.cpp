@@ -214,6 +214,24 @@ private:
             rules_.skill_inherit_permille = i32_of(*b, "skill_inherit_permille");
             rules_.skill_spread = i32_of(*b, "skill_spread");
         }
+        if (const TypedBlock* b = block_of(body, "health_drift")) {
+            rules_.health_drift = {i32_of(*b, "child"),
+                                   i32_of(*b, "adolescent"),
+                                   i32_of(*b, "prime"),
+                                   i32_of(*b, "mature"),
+                                   i32_of(*b, "elder")};
+            rules_.health_noise = i32_of(*b, "noise");
+            rules_.low_health_drift = i32_of(*b, "low_health");
+        }
+        if (const TypedBlock* b = block_of(body, "stress")) {
+            rules_.stress_high_from = i32_of(*b, "high_from");
+            rules_.stress_critical_from = i32_of(*b, "critical_from");
+            rules_.stress_high_health_drift = i32_of(*b, "high_health_drift");
+            rules_.stress_critical_health_drift = i32_of(*b, "critical_health_drift");
+            rules_.stress_gain_low_health = i32_of(*b, "gain_low_health");
+            rules_.stress_gain_head = i32_of(*b, "gain_head");
+            rules_.stress_decay_permille = i32_of(*b, "decay_permille");
+        }
         if (const TypedBlock* b = block_of(body, "life_stages")) {
             rules_.adolescent_from = i32_of(*b, "adolescent_from");
             rules_.prime_from = i32_of(*b, "prime_from");
@@ -260,6 +278,10 @@ private:
                 return "birth";
             case RulesErrorCode::LifeStages:
                 return "life_stages";
+            case RulesErrorCode::HealthDrift:
+                return "health_drift";
+            case RulesErrorCode::Stress:
+                return "stress";
         }
         return {};
     }
