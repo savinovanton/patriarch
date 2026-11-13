@@ -126,7 +126,7 @@ struct Options {
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
-    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter  --grade X  --vignette X
+    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter  --grade X  --vignette X  --borders on|off
     float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
     float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
     bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
@@ -144,6 +144,7 @@ struct Options {
     bool bench = false;            // scripted camera path, prints frame statistics, then exits
     std::int64_t bench_frames = 900;
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
+    int select_id = 0;             // --select ID: start with this province selected (for --shot)
     float view_fx = 0.5f, view_fy = 0.5f, view_dist = -1.0f, view_yaw = 0.0f;  // --view start camera
     ScenarioKind scenario = ScenarioKind::Demo;
     std::filesystem::path data_root = PATRIARCH_M1_DATA_DIR;
@@ -209,6 +210,10 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.style.grade = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--vignette" && i + 1 < argc) {
             out.style.vignette = static_cast<float>(std::atof(argv[++i]));
+        } else if (arg == "--borders" && i + 1 < argc) {
+            out.style.borders = std::string_view(argv[++i]) != "off";
+        } else if (arg == "--select" && i + 1 < argc) {
+            out.select_id = std::atoi(argv[++i]);
         } else if (arg == "--gallery-tips") {
             out.gallery = true;
             out.gallery_tips = true;
@@ -279,7 +284,7 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
+                         "                       [--select ID] [--borders on|off] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
                          "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME] [--event]\n");
             return false;
         }
@@ -1000,7 +1005,7 @@ int main(int argc, char** argv) {
     float press_y = 0.0f;
     bool dragged = false;
     std::uint16_t hovered = 0;
-    std::uint16_t selected = 0;
+    std::uint16_t selected = static_cast<std::uint16_t>(std::clamp(opt.select_id, 0, 65535));
     bool key_w = false, key_a = false, key_s = false, key_d = false, key_q = false, key_e = false;
 
     std::optional<pat::data::DirectorySource> reload_source;

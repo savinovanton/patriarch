@@ -21,7 +21,7 @@ cbuffer FrameConstants : register(b0) {
     float4 sun_color;     // rgb = sunlight colour times intensity (0 at night)
     float4 ambient_mul;   // rgb = multiplier of the day ambient light
     float4 haze_color;    // rgb = colour of the haze and the horizon
-    float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette
+    float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette, w = painted borders (0/1)
     float4 view_info;     // x, y = target size in pixels, z, w = their reciprocals
 };
 
@@ -188,6 +188,13 @@ float4 finish(float3 c, float3 world, float2 pixel) {
     return float4(saturate(apply_style(apply_haze(c, world), pixel)), 1.0);
 }
 
+// Same, then the border layer (rgb + coverage) is laid over the graded picture, so its inks and golds keep
+// the exact colours of the design instead of going through exposure and tone mapping.
+float4 finish(float3 c, float3 world, float2 pixel, float4 overlay) {
+    const float3 graded = saturate(apply_style(apply_haze(c, world), pixel));
+    return float4(lerp(graded, overlay.rgb, overlay.a), 1.0);
+}
+
 // Sea surface (phase P3a): two scrolling noise layers give a wave normal that flattens with distance (it
 // would alias), Fresnel blends the depth colour with the sky, the sun leaves a glint and the shallows near
 // the coast carry foam.
@@ -233,6 +240,115 @@ float3 water_color(float3 world, float2 uv, float raw) {
     return color;
 }
 
+// Province borders without a staircase (E5-A2). The id texture is a hard mask, so the border is rebuilt as a
+// smooth field: the indicator "texel belongs to province P" on a 3x3 grid is interpolated with a quadratic
+// B-spline (C1, so a one-texel staircase is rounded off) and the 0.5 iso-line of that field is the border.
+// Away from the iso-line the raw field is not a distance (its gradient dies out), so the distance is read off
+// the known profile of the spline across a straight edge, f ~ 0.5 + 0.5 tanh(1.7 x) with x in grid cells,
+// and converted to screen pixels with the steepest per-pixel change of the texel position along the edge
+// normal (this also handles the foreshortening of a tilted view). The sign is positive inside P. The grid
+// spacing is a whole number of texels and grows with the texel footprint, so the field is sampled at pixel
+// rate far away (no shimmering) and the samples of neighbouring pixels line up (no noise on the line).
+static const float kFarFromBorder = 1.0e4;  // pixels; "no border within the support of the field"
+
+float3 border_weights(float d, out float3 deriv) {
+    // d in [-0.5, 0.5] is the offset from the nearest grid node; weights of the nodes -1, 0, +1 (xyz).
+    deriv = float3(d - 0.5, -2.0 * d, d + 0.5);
+    return float3(0.5 * (0.5 - d) * (0.5 - d), 0.75 - d * d, 0.5 * (0.5 + d) * (0.5 + d));
+}
+
+float distance_to_edge(float field[9], float3 wx, float3 dwx, float3 wy, float3 dwy, float stride,
+                       float2 dtex_dx, float2 dtex_dy) {
+    float f = 0.0;
+    float2 g = float2(0.0, 0.0);
+    [unroll] for (int j = 0; j < 3; ++j) {
+        [unroll] for (int i = 0; i < 3; ++i) {
+            const float v = field[j * 3 + i];
+            f += v * wx[i] * wy[j];
+            g += v * float2(dwx[i] * wy[j], wx[i] * dwy[j]);
+        }
+    }
+    const float2 normal = g / max(length(g), 1e-6);
+    const float texels_per_pixel = max(length(float2(dot(normal, dtex_dx), dot(normal, dtex_dy))), 1e-3);
+    const float x = clamp(2.0 * f - 1.0, -0.97, 0.97);
+    return 0.5 * log((1.0 + x) / (1.0 - x)) * (1.0 / 1.7) * stride / texels_per_pixel;
+}
+
+// Signed distances in pixels to the edge of the pixel's own province (sea counts as inside) and to the edge
+// of the selected province (large negative when nothing is selected), from one set of 3x3 id taps.
+void border_distances(float2 texf, int2 size, uint own_id, uint selected, float stride, float2 dtex_dx,
+                      float2 dtex_dy, out float own_distance, out float selected_distance) {
+    const float2 grid = texf / stride - 0.5;
+    const float2 node = floor(grid + 0.5);
+    const float2 d = grid - node;
+    float3 dwx;
+    float3 dwy;
+    const float3 wx = border_weights(d.x, dwx);
+    const float3 wy = border_weights(d.y, dwy);
+
+    // Most pixels are far from any border. A line through the middle of the support separates at least one of
+    // its four corners from the centre, so five taps are enough to see that all agree and the field is
+    // constant, which is much cheaper than loading all nine and evaluating the spline.
+    float own[9];
+    float sel[9];
+    [unroll] for (int k = 0; k < 9; ++k) {
+        own[k] = 0.0;
+        sel[k] = 0.0;
+    }
+    float own_sum = 0.0;
+    float sel_sum = 0.0;
+    [unroll] for (int t = 0; t < 5; ++t) {
+        const int i = t < 4 ? (t & 1) * 2 : 1;
+        const int j = t < 4 ? (t >> 1) * 2 : 1;
+        const uint id = province_at(int2(floor((node + float2(i - 1, j - 1) + 0.5) * stride)), size);
+        own[j * 3 + i] = (id == own_id || id == 0) ? 1.0 : 0.0;
+        sel[j * 3 + i] = (selected != 0 && id == selected) ? 1.0 : 0.0;
+        own_sum += own[j * 3 + i];
+        sel_sum += sel[j * 3 + i];
+    }
+    if (own_sum > 4.5 && (sel_sum < 0.5 || sel_sum > 4.5)) {
+        own_distance = kFarFromBorder;
+        selected_distance = sel_sum > 4.5 ? kFarFromBorder : -kFarFromBorder;
+        return;
+    }
+    [unroll] for (int e = 0; e < 4; ++e) {
+        const int i = e < 2 ? e * 2 : 1;
+        const int j = e < 2 ? 1 : (e - 2) * 2;
+        const uint id = province_at(int2(floor((node + float2(i - 1, j - 1) + 0.5) * stride)), size);
+        own[j * 3 + i] = (id == own_id || id == 0) ? 1.0 : 0.0;
+        sel[j * 3 + i] = (selected != 0 && id == selected) ? 1.0 : 0.0;
+    }
+    own_distance = distance_to_edge(own, wx, dwx, wy, dwy, stride, dtex_dx, dtex_dy);
+    selected_distance = distance_to_edge(sel, wx, dwx, wy, dwy, stride, dtex_dx, dtex_dy);
+}
+
+// "Over" compositing of a colour with coverage onto a layer (rgb + coverage, not premultiplied).
+float4 layer_over(float4 dst, float3 rgb, float coverage) {
+    const float a = coverage + dst.a * (1.0 - coverage);
+    return float4((rgb * coverage + dst.rgb * dst.a * (1.0 - coverage)) / max(a, 1e-4), a);
+}
+
+// The layer over the graded picture. Everything is sized in screen pixels of the 1080p design layout (scaled
+// with the target height, so a 4K frame keeps the proportions): a thin ink line (#242e29) in the tone of the
+// land, weaker when far away; the selected province gets a light fill (#365847 at 12 %), an inner light line
+// (#eee5d2 at 38 %, 1.3 px, about 3 px inside) and a gold contour (#d2b77d, 3 px, soft edge) centred on its
+// border, which is why the field of the selected province is used rather than the pixel's own (half of the
+// contour lies on the neighbour's side). `inner` is the same distance from a coarser grid, which can see
+// far enough inside for the inner line.
+float4 border_overlay(float own_distance, float selected_distance, float inner_distance, bool has_selection,
+                      float scale) {
+    float4 layer = float4(0.141, 0.180, 0.161,
+                          lerp(0.56, 0.36, eye_zoom.w) * saturate(0.5 * scale + 0.5 - abs(own_distance)));
+    if (has_selection) {
+        layer = layer_over(layer, float3(0.212, 0.345, 0.278), 0.12 * saturate(selected_distance + 0.5));
+        layer = layer_over(layer, float3(0.933, 0.898, 0.824),
+                           0.38 * saturate(0.65 * scale + 0.5 - abs(inner_distance - 3.2 * scale)));
+        layer = layer_over(layer, float3(0.824, 0.718, 0.490),
+                           1.0 - smoothstep(0.9 * scale, 2.1 * scale, abs(selected_distance)));
+    }
+    return layer;
+}
+
 float4 ps_main(VsOut input) : SV_Target {
     const int2 size = int2(map_info.xy);
     const float2 texf = input.uv * map_info.xy;
@@ -257,7 +373,9 @@ float4 ps_main(VsOut input) : SV_Target {
     // Normal of the relief (also used for the slope).
     const float2 n2 = normals.SampleLevel(linear_clamp, input.uv, 0);
     const float3 n = float3(n2, sqrt(saturate(1.0 - dot(n2, n2))));
-    const float footprint = max(length(ddx(texf)), length(ddy(texf)));  // texels per pixel
+    const float2 dtex_dx = ddx(texf);
+    const float2 dtex_dy = ddy(texf);
+    const float footprint = max(length(dtex_dx), length(dtex_dy));  // texels per pixel
 
     // Albedo variation fades out with distance (it would alias), rock on steep slopes, snow on high ground.
     const float detail = saturate(1.6 - footprint * 0.45);
@@ -288,10 +406,33 @@ float4 ps_main(VsOut input) : SV_Target {
     color *= ambient * ambient_mul.rgb + sun_color.rgb * (diffuse * shadow * 0.95);
 
     // Highlights.
-    if (prov != 0 && prov == selected) {
+    // (With painted borders the selection is drawn by the border layer below, the hover is a plain lift.)
+    const bool painted = style_info.w > 0.5;
+    if (prov != 0 && prov == selected && !painted) {
         color = lerp(color, float3(1.0, 0.93, 0.62), 0.32);
-    } else if (prov != 0 && prov == hovered) {
+    } else if (prov != 0 && prov == hovered && prov != selected) {
         color = lerp(color, float3(1.0, 1.0, 1.0), 0.16);
+    }
+
+    if (painted) {
+        if (prov == 0) {
+            return finish(color, input.world, input.pos.xy);
+        }
+        const float scale = clamp(view_info.y * (1.0 / 1080.0), 0.75, 4.0);
+        const float stride = ceil(max(1.0, footprint));
+        const bool has_selection = selected != 0;
+        float own_distance;
+        float selected_distance;
+        border_distances(texf, size, prov, selected, stride, dtex_dx, dtex_dy, own_distance, selected_distance);
+        float inner_distance = selected_distance;
+        if (has_selection && prov == selected) {
+            // Coarser grid (about 3 px per cell) for the inner line, which lies deeper than the fine one sees.
+            float ignored;
+            border_distances(texf, size, prov, selected, ceil(max(stride, 3.0 * scale * footprint)), dtex_dx, dtex_dy,
+                             ignored, inner_distance);
+        }
+        return finish(color, input.world, input.pos.xy,
+                      border_overlay(own_distance, selected_distance, inner_distance, has_selection, scale));
     }
 
     // Province borders with constant width in screen pixels: the sample offset follows the texel footprint.
