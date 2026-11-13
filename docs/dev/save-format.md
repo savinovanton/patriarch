@@ -167,7 +167,15 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 6 | `opinion` | E7-T17 | 7 | 1 | в коде |
 | 7 | `standing` | E7-T14 | 8 | 1 | в коде |
 | 8…15 | — | **E7** | | | резерв (8 id) |
-| 16…31 | — | **E8** (браки, регентство, спор, приданое; E8-T03) | | | резерв (16 id) |
+| 16 | `family_counters` | E8-T03 ([marriage-succession-model.md](marriage-succession-model.md) §13.1) | схема E8-T03 | 1 | спецификация E8-T01 |
+| 17 | `negotiations` | E8-T03 (идущие переговоры и кольцо итогов) | схема E8-T03 | 1 | спецификация |
+| 18 | `betrothals` | E8-T03 | схема E8-T03 | 1 | спецификация |
+| 19 | `marriages` | E8-T03 (записи браков: приданое, вдовья доля) | схема E8-T03 | 1 | спецификация |
+| 20 | `person_status` | E8-T03 (пострижен, лишён прав, дата овдовения) | схема E8-T03 | 1 | спецификация |
+| 21 | `succession` | E8-T03 (наследник, опекун, курсор крёстных, уделы) | схема E8-T03 | 1 | спецификация |
+| 22 | `regency` | E8-T03 | схема E8-T03 | 1 | спецификация |
+| 23 | `dispute` | E8-T03 | схема E8-T03 | 1 | спецификация |
+| 24…31 | — | **E8** (24 — резерв M2 «контрпредложения»; 25…31 свободны) | | | резерв (8 id) |
 | 32 | `economy` | E9-T03 | 5 | 1 | в коде |
 | 33 | `economy_dynasty` | E9-T03 | 5 | 1 | в коде |
 | 34 | `economy_province` | E9-T03 | 5 | 1 | в коде |
@@ -211,7 +219,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 1…5 | E1 | 1…5 (`SetProvinceOwner`, `CreateCharacter`, `KillCharacter`, `SetDynastyHead`, `AdjustHonor`) | — |
 | 6…31 | E7 | 6 `Die`, 7 `Marry`, 8 `EndMarriage`, 9 `CreatePerson`, **10 `Birth`, 11 `Conceive`, 12 `SetEducation`, 13 `ComeOfAge`**, 14 `GrantTrait`, 15 `RevokeTrait`, 16 `PlanDeath`, 17 `AdjustUnity`, 18 `RecordChronicle`, 19 `AdjustOpinion`, 20 `AdjustPrestige`, 21 `AdjustHonorWithReason` | 22…31 |
 | 32…63 | E9 | 32 `SetTaxPolicy`, 33 `SetRecruitPolicy`, 34 `ConscriptRecruits`, 35 `AssignProvinceAdministrator`, 36 `StartConstruction`, 37 `CancelConstruction`, 38 `TakeLoan`, 39 `RepayLoan` | 40…63 |
-| 64…95 | E8 | — | 64…95 |
+| 64…95 | E8 | выпущены спецификацией E8-T01 ([marriage-succession-model.md](marriage-succession-model.md) §7.1): 64 `SendMarriageEnvoy`, 65 `WithdrawMarriageEnvoy`, 66 `RespondMarriage`, 67 `Betroth`, 68 `BreakBetrothal`, 69 `Tonsure`, 70 `SetHeir`, 71 `ChangeSuccessionLaw`, 72 `Disown`, 73 `AssignRegent`, 74 `DismissRegent`, 75 `ResolveSuccessionDispute`, 76 `GrantLand`, 77 `AssignGodparents`, 78 `Wed`, 79 `OpenSuccessionDispute`, 80 `Succeed`, 81 `SettleWidowhood`, 82 `RegencyCheck`, 83 `PartitionEstate` (в коде пока нет) | 84…95 |
 | 96…127 | E11 | — | 96…127 |
 | 128…143 | E10 | — | 128…143 |
 | 144…167 | E12 | — | 144…167 |

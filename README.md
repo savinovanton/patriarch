@@ -29,6 +29,8 @@ ctest --preset win-msvc-debug
 | [docs/dev/e2-spike-report.md](docs/dev/e2-spike-report.md) | Итоги E2: измеренные факты, решения по исполнению/событиям/снапшотам и открытые риски |
 | [docs/adr/0003-3d-terrain-map.md](docs/adr/0003-3d-terrain-map.md) | Объёмная 3D-карта-ландшафт (стиль Victoria 3) |
 | [docs/dev/save-format.md](docs/dev/save-format.md) | Формат сохранений: контейнер, реестры разделов и тегов команд, политика версий и совместимости ([ADR-0011](docs/adr/0011-saves.md)) |
+| [docs/dev/marriage-succession-model.md](docs/dev/marriage-succession-model.md) | Модель данных браков и наследования (E8): таблицы, команды 64…83, формулы, регентство, спор, мост UI |
+| [docs/dev/economy-model.md](docs/dev/economy-model.md) | Модель данных экономики (E9): таблицы, проводки, ведомость, формулы |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
 | [docs/dev/store-pages.md](docs/dev/store-pages.md) | Путь к вишлисту: чеклист страниц Steam, VK Play, EGS (условия, ассеты, сроки, ИИ-отметка, статусы) |
 | [docs/dev/agents-workflow.md](docs/dev/agents-workflow.md) | Работа двух агентов (Claude, Codex) через Issues, метки, вехи, PR |
