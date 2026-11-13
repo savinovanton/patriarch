@@ -134,7 +134,7 @@ TEST_CASE("province view: content names and an assigned administrator are preser
     const auto snapshot = game::province_snapshot(loc, holding.world, holding.province, rules, options);
     CHECK(snapshot.economy.name == "Вотчина из контента");
     CHECK(snapshot.economy.owner == "Тестовы");
-    CHECK(snapshot.subtitle == "Владение рода Тестовы");
+    CHECK(snapshot.subtitle == "Род: Тестовы");
     CHECK(snapshot.owner_name == "Иван Иванович Тестов");
     CHECK(snapshot.owner_detail == "Род Тестовы · 23 года");
     CHECK(snapshot.owner_portrait);
