@@ -16,6 +16,7 @@ constexpr std::int64_t kMaxHealth = 100;
 constexpr std::int64_t kMaxAge = 200;
 constexpr std::int64_t kMaxCrowdingLiving = 1048576;
 constexpr std::int64_t kMaxSkillSpread = 20;
+constexpr std::int64_t kMaxVitalsStep = 10000;  // hundredths of a point per month
 
 Type permille() {
     return Type::integer(0, kPermilleOne);
@@ -142,6 +143,59 @@ ObjectSchema birth_block() {
     return s;
 }
 
+Type vitals_step() {
+    return Type::integer(-kMaxVitalsStep, kMaxVitalsStep);
+}
+Type vitals_gain() {
+    return Type::integer(0, kMaxVitalsStep);
+}
+
+ObjectSchema health_drift_block() {
+    ObjectSchema s("health_drift");
+    s.describe_kind("Дрейф здоровья по месяцам (E7-T11, GDD 01 §3.1): прирост или потеря сохранённого "
+                    "здоровья за месяц по возрастным периодам, случайный размах и добавка за слабое "
+                    "здоровье. Все числа в сотых долях очка шкалы 0...100 за месяц (100 = одно очко).");
+    s.required("child", vitals_step())
+        .describe("Месячный дрейф здоровья в детстве (младше `life_stages.adolescent_from`); заготовка +15.")
+        .required("adolescent", vitals_step())
+        .describe("Месячный дрейф в отрочестве; заготовка +10.")
+        .required("prime", vitals_step())
+        .describe("Месячный дрейф в расцвете сил; заготовка 0 (здоровье держится).")
+        .required("mature", vitals_step())
+        .describe("Месячный дрейф в зрелости; заготовка -10 (около -1,2 очка в год).")
+        .required("elder", vitals_step())
+        .describe("Месячный дрейф в старости; заготовка -40 (около -4,8 очка в год): старик теряет здоровье "
+                  "быстрее человека в расцвете.")
+        .required("noise", vitals_gain())
+        .describe("Случайный размах здоровья за месяц: равномерно от `-noise` до `+noise` сотых очка "
+                  "(заготовка 20). Бросок берётся всегда, 0 отключает размах.")
+        .required("low_health", vitals_step())
+        .describe("Добавка к дрейфу, пока здоровье (с чертами) ниже `health.low_below` (заготовка -10).");
+    return s;
+}
+
+ObjectSchema stress_block() {
+    ObjectSchema s("stress");
+    s.describe_kind("Стресс (E7-T11, GDD 01 §2.1): пороги, влияние на здоровье, источники и спад. Суммы в "
+                    "сотых долях очка шкалы 0...100 за месяц. Пороги — крючки для событий E11.");
+    s.required("high_from", Type::integer(0, kMaxHealth))
+        .describe("С какого стресса (с чертами) персонаж «напряжён»: здоровье страдает, в летопись рода "
+                  "пишется заметка (заготовка 60).")
+        .required("critical_from", Type::integer(0, kMaxHealth))
+        .describe("С какого стресса персонаж «на грани срыва» (заготовка 90); строго больше `high_from`.")
+        .required("high_health_drift", vitals_step())
+        .describe("Добавка к месячному дрейфу здоровья при напряжении (заготовка -20).")
+        .required("critical_health_drift", vitals_step())
+        .describe("Добавка к дрейфу при срыве: заменяет добавку напряжения (заготовка -60).")
+        .required("gain_low_health", vitals_gain())
+        .describe("Месячный прирост стресса, пока здоровье ниже `health.low_below` (заготовка 100).")
+        .required("gain_head", vitals_gain())
+        .describe("Месячный прирост стресса у главы рода: бремя дома (заготовка 30).")
+        .required("decay_permille", permille())
+        .describe("Какая доля стресса уходит каждый месяц, промилле (заготовка 100 = 10 %).");
+    return s;
+}
+
 ObjectSchema life_stages_block() {
     ObjectSchema s("life_stages");
     s.describe_kind(
@@ -166,7 +220,8 @@ ObjectSchema demography_rules_schema() {
     ObjectSchema s{std::string(kDemographyRulesKind)};
     s.describe_kind(
         "Баланс демографии рода (E7, `docs/gdd/01-dynasty.md` §3): смертность, зачатие, роды, возрастные "
-        "периоды. В контенте должен быть ровно один объект этого вида; мод заменяет его целиком, повторив "
+        "периоды, здоровье и стресс. В контенте должен быть ровно один объект этого вида; мод заменяет его "
+        "целиком, повторив "
         "тот "
         "же id. Значения по умолчанию в `data/balance/demography.pd` равны запасным `kDefaultDemography`. "
         "Все "
@@ -180,7 +235,11 @@ ObjectSchema demography_rules_schema() {
         .required("birth", Type::block(birth_block()))
         .describe("Роды: полы и риск для матери.")
         .required("life_stages", Type::block(life_stages_block()))
-        .describe("Возрастные периоды и брачный возраст.");
+        .describe("Возрастные периоды и брачный возраст.")
+        .required("health_drift", Type::block(health_drift_block()))
+        .describe("Дрейф здоровья по возрастам.")
+        .required("stress", Type::block(stress_block()))
+        .describe("Стресс: пороги, источники, спад.");
     return s;
 }
 

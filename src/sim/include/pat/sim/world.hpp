@@ -565,6 +565,7 @@ public:
     bool set_character_branch(CharacterId id, BranchId branch);
     void set_character_skill(CharacterId id, Skill skill, core::Fixed32 value);
     void set_character_fertility(CharacterId id, core::Fixed32 value);
+    void set_character_health(CharacterId id, core::Fixed32 value);
     void set_character_stress(CharacterId id, core::Fixed32 value);
     void set_character_piety(CharacterId id, core::Fixed32 value);
     void set_character_ambition(CharacterId id, core::Fixed32 value);

@@ -86,6 +86,15 @@ enum class LifeStage : std::uint8_t {
     Mature,      ///< rising illness risk, falling fertility
     Elder,       ///< fast health decline, high mortality
 };
+inline constexpr std::size_t kLifeStageCount = 5;
+
+/// How strained a character is (E7-T11): the thresholds of the stress scale. Ordered, so that a
+/// system can tell a rise by comparing the levels before and after a step.
+enum class StressLevel : std::uint8_t {
+    Calm,      ///< below `stress_high_from`
+    Strained,  ///< from `stress_high_from`: health suffers; a hook for events of E11
+    Breaking,  ///< from `stress_critical_from`: breakdowns and illness; a hook for events of E11
+};
 
 struct DemographyRules {
     // Mortality (GDD 01 section 3.2): base yearly death chance by age bucket, per mille.
@@ -140,11 +149,37 @@ struct DemographyRules {
     std::int32_t marriage_age_male = 0;
     std::int32_t marriage_age_female = 0;
 
+    // Health and stress (E7-T11, GDD 01 sections 2.1 and 3). Every amount below is in HUNDREDTHS of a
+    // point per month (100 = one point of the 0...100 scale), signed where a loss is meant.
+    /// Monthly change of the stored health by life stage (indexed by LifeStage): growth in childhood,
+    /// nothing in the prime, loss from maturity on, fast loss in old age.
+    std::array<std::int32_t, kLifeStageCount> health_drift{};
+    /// Random monthly swing of the health: uniform in [-noise, +noise] (always one draw per person).
+    std::int32_t health_noise = 0;
+    /// Extra monthly change while the effective health is below `low_health_below` (a sickly body
+    /// recovers badly).
+    std::int32_t low_health_drift = 0;
+    /// Effective stress from which a character is strained / breaking (0...100, strictly increasing).
+    std::int32_t stress_high_from = 99;
+    std::int32_t stress_critical_from = 100;
+    /// Extra monthly change of the health while strained / breaking (the worse level replaces the
+    /// milder one).
+    std::int32_t stress_high_health_drift = 0;
+    std::int32_t stress_critical_health_drift = 0;
+    /// Monthly stress gained while the effective health is below `low_health_below` (illness is a
+    /// worry), and by the head of a dynasty (the burden of the house).
+    std::int32_t stress_gain_low_health = 0;
+    std::int32_t stress_gain_head = 0;
+    /// Share of the stress that fades every month, per mille (rest).
+    std::int32_t stress_decay_permille = 0;
+
     /// Largest accepted multiplier (per-mille of one); keeps Fixed32 arithmetic far from overflow.
     static constexpr std::int32_t kMaxMultiplierPermille = 10000;
     /// Largest accepted number of living characters in the crowding rule, and of skill spread points.
     static constexpr std::int32_t kMaxCrowdingLiving = 1048576;
     static constexpr std::int32_t kMaxSkillSpread = 20;
+    /// Largest accepted monthly amount of the health and stress rules, in hundredths of a point.
+    static constexpr std::int32_t kMaxVitalsStep = 10000;
 };
 
 /// The one table of default values. Every number is a [predl.] placeholder from GDD 01 section 3;
@@ -225,6 +260,22 @@ inline constexpr DemographyRules kDefaultDemography{
     // GDD 01 3.1: may marry from 16 (men) / 15 (women) [predl.]
     .marriage_age_male = 16,
     .marriage_age_female = 15,
+
+    // E7-T11, in hundredths of a point per month [predl.]. GDD 01 3.1 gives the stages in words: childhood
+    // and adolescence build the body (+0.15 / +0.10 a month), the prime holds it, maturity "raises the
+    // risk of illness" (-0.10, about -1.2 a year), old age "falls fast" (-0.40, about -4.8 a year).
+    .health_drift = {15, 10, 0, -10, -40},
+    // a swing of +-0.2 a month; an unwell body (< 30) loses 0.1 more; strain costs 0.2, a breakdown 0.6
+    .health_noise = 20,
+    .low_health_drift = -10,
+    .stress_high_from = 60,
+    .stress_critical_from = 90,
+    .stress_high_health_drift = -20,
+    .stress_critical_health_drift = -60,
+    // illness adds a point of stress a month, leading a house 0.3; a tenth of the stress fades monthly
+    .stress_gain_low_health = 100,
+    .stress_gain_head = 30,
+    .stress_decay_permille = 100,
 };
 
 // ---- validation --------------------------------------------------------------------------------
@@ -237,6 +288,8 @@ enum class RulesErrorCode : std::uint8_t {
     Conception,       ///< base probability, child cap, pregnancy length, crowding or miscarriage chance
     Birth,            ///< sex ratio, childbirth risk, stillbirth, newborn health or skills out of range
     LifeStages,       ///< stage ages not strictly increasing, or marriage ages outside the stages
+    HealthDrift,      ///< a monthly health amount or the swing outside its corridor
+    Stress,           ///< stress thresholds not increasing within 0...100, or an amount outside its corridor
 };
 
 struct RulesError {
@@ -294,5 +347,60 @@ childbirth_risk_permille(const DemographyRules& rules, core::Fixed32 health, boo
 [[nodiscard]] std::int32_t male_birth_permille(const DemographyRules& rules) noexcept;
 
 [[nodiscard]] LifeStage life_stage(const DemographyRules& rules, std::int32_t age) noexcept;
+
+// ---- health, stress and fertility of a month (E7-T11) --------------------------------------------
+
+/// One line of an explanation of a monthly change; like ProbabilityTerm, `key` is a stable tooltip key.
+struct VitalsTerm {
+    std::string_view key;
+    core::Fixed32 value;
+
+    [[nodiscard]] bool operator==(const VitalsTerm&) const = default;
+};
+
+/// A signed monthly change of a 0...100 scale with the terms that add up to it exactly:
+/// sum of `terms[i].value` == `total`.
+struct VitalsChange {
+    static constexpr std::size_t kMaxTerms = 6;
+
+    core::StaticVec<VitalsTerm, kMaxTerms> terms;
+    core::Fixed32 total;
+
+    [[nodiscard]] core::Fixed32 sum_of_terms() const noexcept;
+};
+
+/// The tail of a swing roll that means "no swing at all" (the middle of the range).
+inline constexpr std::uint32_t kNeutralHealthRoll = 0x80000000U;
+
+/// The monthly change of the STORED health of a character of `age` whose effective health and stress
+/// are given (traits included): the drift of the life stage, plus `low_health_drift` below
+/// `low_health_below`, plus the strain penalty at `stress_high_from` (the breakdown penalty from
+/// `stress_critical_from` replaces it), plus a swing in [-health_noise, +health_noise] hundredths chosen
+/// by `noise_roll` (a raw 32-bit draw, mapped by multiply-high). Terms (stable keys):
+/// demography.health.age / .low_health / .stress / .noise; a zero amount is omitted. The result is not
+/// clamped: the caller keeps the stored value within 0...100.
+[[nodiscard]] VitalsChange monthly_health_change(const DemographyRules& rules,
+                                                 std::int32_t age,
+                                                 core::Fixed32 effective_health,
+                                                 core::Fixed32 effective_stress,
+                                                 std::uint32_t noise_roll = kNeutralHealthRoll);
+
+/// The monthly change of the STORED stress: `stress_gain_low_health` while the effective health is below
+/// `low_health_below`, `stress_gain_head` for the head of a dynasty, then `stress_decay_permille` of the
+/// sum fades; the result stays within 0...100. Terms: demography.stress.low_health / .head / .decay /
+/// .clamp; the total is `new - stored`, so that stored + total is the new stored stress.
+[[nodiscard]] VitalsChange monthly_stress_change(const DemographyRules& rules,
+                                                 core::Fixed32 stored_stress,
+                                                 core::Fixed32 effective_health,
+                                                 bool dynasty_head);
+
+/// Level of an effective stress value against the thresholds of the rules.
+[[nodiscard]] StressLevel stress_level(const DemographyRules& rules, core::Fixed32 effective_stress) noexcept;
+
+/// The derived fertility of a character, 0...100: 100 x the age factor of `conception.age_factor` x the
+/// health factor (low / high health of the same table as the conception chance), cut to the scale.
+/// Traits are not included: they add to it when the effective value is built (attribute_breakdown).
+[[nodiscard]] core::Fixed32
+derived_fertility(const DemographyRules& rules, std::int32_t age, core::Fixed32 effective_health) noexcept;
 
 }  // namespace pat::sim

@@ -31,6 +31,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/entity_table.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/conception.hpp
+    include/pat/sim/health.hpp
     include/pat/sim/mortality.hpp
     include/pat/sim/opinion.hpp
     include/pat/sim/names.hpp
@@ -71,6 +72,7 @@ add_library(patriarch_sim STATIC
     economy/unrest.cpp
     kinship.cpp
     conception.cpp
+    health.cpp
     mortality.cpp
     opinion.cpp
     names.cpp

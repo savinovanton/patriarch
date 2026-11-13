@@ -35,7 +35,7 @@ namespace fs = std::filesystem;
 // A field added to DemographyRules changes the size. When this fails: add the field to flatten() below,
 // to the schema (src/data/demography_schemas.cpp), to the builder (src/content/demography_content.cpp),
 // to data/balance/demography.pd and to the tweaks table in this file.
-static_assert(sizeof(DemographyRules) == 384,
+static_assert(sizeof(DemographyRules) == 440,
               "DemographyRules changed: update the schema, the builder and this test");
 
 namespace {
@@ -171,6 +171,20 @@ Flat flatten(const DemographyRules& r) {
     f.emplace_back("elder_from", r.elder_from);
     f.emplace_back("marriage_age_male", r.marriage_age_male);
     f.emplace_back("marriage_age_female", r.marriage_age_female);
+    f.emplace_back("health_drift.child", r.health_drift[0]);
+    f.emplace_back("health_drift.adolescent", r.health_drift[1]);
+    f.emplace_back("health_drift.prime", r.health_drift[2]);
+    f.emplace_back("health_drift.mature", r.health_drift[3]);
+    f.emplace_back("health_drift.elder", r.health_drift[4]);
+    f.emplace_back("health_noise", r.health_noise);
+    f.emplace_back("low_health_drift", r.low_health_drift);
+    f.emplace_back("stress_high_from", r.stress_high_from);
+    f.emplace_back("stress_critical_from", r.stress_critical_from);
+    f.emplace_back("stress_high_health_drift", r.stress_high_health_drift);
+    f.emplace_back("stress_critical_health_drift", r.stress_critical_health_drift);
+    f.emplace_back("stress_gain_low_health", r.stress_gain_low_health);
+    f.emplace_back("stress_gain_head", r.stress_gain_head);
+    f.emplace_back("stress_decay_permille", r.stress_decay_permille);
     return f;
 }
 
@@ -440,6 +454,26 @@ std::vector<Tweak> tweaks() {
         {"elder", "elder_from = 66", "elder_from = 65", {"elder_from"}},
         {"marriage male", "marriage_age_male = 16", "marriage_age_male = 17", {"marriage_age_male"}},
         {"marriage female", "marriage_age_female = 15", "marriage_age_female = 14", {"marriage_age_female"}},
+        {"health drift child", "child = 15 ", "child = 16 ", {"health_drift.child"}},
+        {"health drift adolescent", "adolescent = 10 ", "adolescent = 11 ", {"health_drift.adolescent"}},
+        {"health drift prime", "prime = 0 ", "prime = 1 ", {"health_drift.prime"}},
+        {"health drift mature", "mature = -10 ", "mature = -11 ", {"health_drift.mature"}},
+        {"health drift elder", "elder = -40 ", "elder = -41 ", {"health_drift.elder"}},
+        {"health noise", "noise = 20 ", "noise = 25 ", {"health_noise"}},
+        {"low health drift", "low_health = -10 ", "low_health = -12 ", {"low_health_drift"}},
+        {"stress high", "high_from = 60 ", "high_from = 55 ", {"stress_high_from"}},
+        {"stress critical", "critical_from = 90 ", "critical_from = 95 ", {"stress_critical_from"}},
+        {"stress high drift",
+         "high_health_drift = -20",
+         "high_health_drift = -25",
+         {"stress_high_health_drift"}},
+        {"stress critical drift",
+         "critical_health_drift = -60",
+         "critical_health_drift = -65",
+         {"stress_critical_health_drift"}},
+        {"stress gain illness", "gain_low_health = 100", "gain_low_health = 110", {"stress_gain_low_health"}},
+        {"stress gain head", "gain_head = 30", "gain_head = 40", {"stress_gain_head"}},
+        {"stress decay", "decay_permille = 100", "decay_permille = 150", {"stress_decay_permille"}},
     };
 }
 
@@ -704,6 +738,12 @@ TEST_CASE("demography content: the schema corridors agree with validate() at the
         {"boys_per_100_girls = 105", "boys_per_100_girls", 10000},
         {"from_age = 15, permille = 15", "from_age = 15, permille", 1000},
         {"high_from = 80", "high_from", 100},
+        {"child = 15 ", "child", 10000},
+        {"elder = -40 ", "elder", 10000},
+        {"noise = 20 ", "noise", 10000},
+        {"critical_from = 90 ", "critical_from", 100},
+        {"gain_head = 30", "gain_head", 10000},
+        {"decay_permille = 100", "decay_permille", 1000},
     };
     for (const Edge& edge : edges) {
         CAPTURE(edge.key);
@@ -865,6 +905,16 @@ TEST_CASE("demography content: childbirth risk that leaves 0...1000 is reported 
         CHECK(error->diagnostic.code == data::ErrorCode::ContentRule);
         CHECK(error->diagnostic.pos == locate(files[kFile], "birth {"));
     }
+}
+
+TEST_CASE("demography content: stress thresholds that do not increase are reported at the stress block") {
+    Files files = shipped_files();
+    edit(files, kFile, "critical_from = 90", "critical_from = 60");  // equal to high_from
+    const auto result = load(files);
+    const LoadError* error = first_error(result);
+    CHECK(error->diagnostic.code == data::ErrorCode::ContentRule);
+    CHECK(error->diagnostic.message.find("stress thresholds") != std::string::npos);
+    CHECK(error->diagnostic.pos == locate(files[kFile], "stress {"));
 }
 
 TEST_CASE("demography content: life stages that do not increase or marriage ages outside them") {
@@ -1082,5 +1132,5 @@ TEST_CASE("demography content: the schema offers a field for every number of the
         }
     }
     CHECK(tables == 2);
-    CHECK(scalars == 30);  // the int32 scalars of DemographyRules (384 bytes = 2 tables x 132 + 30 x 4)
+    CHECK(scalars == 44);  // the int32 scalars of DemographyRules (440 bytes = 2 tables x 132 + 44 x 4)
 }
