@@ -570,6 +570,9 @@ CharacterId World::create_character(const CharacterInit& init) {
         link_child(id);
         if (is_sane_date(init.birth_date) && is_sane_date(today())) {
             push_life_events(id, first_birthday_due(init.birth_date, today()));
+            if (adulthood_date(init.birth_date) >= today()) {
+                adult_queue_.push(adulthood_date(init.birth_date), id);
+            }
             if (dynasty.valid() && init.birth_date == today()) {
                 append_chronicle(dynasty, {today(), ChronicleKind::Birth, id, {}, 0});
             }
@@ -1033,6 +1036,7 @@ void World::rebuild_derived_indexes() {
     rebuild_child_lists();
     life_queue_.clear();
     labour_queue_.clear();
+    adult_queue_.clear();
     for (const Pregnancy& pregnancy : pregnancies_) {
         labour_queue_.push(pregnancy.due, pregnancy.mother);
     }
@@ -1045,8 +1049,25 @@ void World::rebuild_derived_indexes() {
             const Date birthday = calendar_.tick_count() == 0 ? first_birthday_due(birth, today())
                                                               : rebuilt_birthday_due(birth, today());
             push_life_events(id, birthday);
+            const Date adult = adulthood_date(birth);
+            if (calendar_.tick_count() == 0 ? adult >= today() : adult > today()) {
+                adult_queue_.push(adult, id);
+            }
         }
     }
+}
+
+std::vector<DueAdulthood> World::take_due_adulthoods(Date today) {
+    std::vector<DueAdulthood> due_adulthoods;
+    adult_queue_.pop_due(today, [&](Date due, CharacterId id) {
+        if (is_alive(id)) {
+            due_adulthoods.push_back({due, id});
+        }
+    });
+    std::sort(due_adulthoods.begin(), due_adulthoods.end(), [](const DueAdulthood& a, const DueAdulthood& b) {
+        return std::tie(a.due, a.character) < std::tie(b.due, b.character);
+    });
+    return due_adulthoods;
 }
 
 // ---- hashing ------------------------------------------------------------------------------------

@@ -232,6 +232,13 @@ private:
             rules_.stress_gain_head = i32_of(*b, "gain_head");
             rules_.stress_decay_permille = i32_of(*b, "decay_permille");
         }
+        if (const TypedBlock* b = block_of(body, "education")) {
+            rules_.education_gain_per_month = i32_of(*b, "gain_per_month");
+            rules_.education_tutor_skill_step = i32_of(*b, "tutor_skill_step");
+            rules_.education_trait_min_level = i32_of(*b, "trait_min_level");
+            rules_.education_bonus_max = i32_of(*b, "bonus_max");
+            rules_.education_tutor_bonus_permille = i32_of(*b, "tutor_bonus_permille");
+        }
         if (const TypedBlock* b = block_of(body, "life_stages")) {
             rules_.adolescent_from = i32_of(*b, "adolescent_from");
             rules_.prime_from = i32_of(*b, "prime_from");
@@ -282,6 +289,8 @@ private:
                 return "health_drift";
             case RulesErrorCode::Stress:
                 return "stress";
+            case RulesErrorCode::Education:
+                return "education";
         }
         return {};
     }

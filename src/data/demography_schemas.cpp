@@ -196,6 +196,28 @@ ObjectSchema stress_block() {
     return s;
 }
 
+ObjectSchema education_block() {
+    ObjectSchema s("education");
+    s.describe_kind("Образование (E7-T13, GDD 01 §5): месячный прогресс уровня образования ребёнка с "
+                    "выбранным направлением и то, что он даёт в 16 лет.");
+    s.required("gain_per_month", Type::integer(1, kMaxHealth))
+        .describe("Сколько очков уровня образования (шкала 0...100) ребёнок получает за месяц с начала "
+                  "отрочества (`life_stages.adolescent_from`); заготовка 1: с 7 лет шкала заполняется к 16.")
+        .required("tutor_skill_step", Type::integer(1, 20))
+        .describe("Наставник добавляет к месячному приросту целую часть `навык / tutor_skill_step` своего "
+                  "навыка в направлении ребёнка (заготовка 5).")
+        .required("trait_min_level", Type::integer(0, kMaxHealth))
+        .describe("С какого уровня образования в 16 лет выдаётся образовательная черта направления "
+                  "(заготовка 50).")
+        .required("bonus_max", Type::integer(0, 20))
+        .describe("Бонус к навыку направления в 16 лет при полном уровне без наставника, очков навыка "
+                  "(заготовка 2); при неполном уровне пропорционально.")
+        .required("tutor_bonus_permille", multiplier())
+        .describe("Сколько добавляет наставник к этому бонусу: доля его навыка в направлении ребёнка, "
+                  "промилле (заготовка 150 = 15 %); тоже пропорционально уровню.");
+    return s;
+}
+
 ObjectSchema life_stages_block() {
     ObjectSchema s("life_stages");
     s.describe_kind(
@@ -239,7 +261,9 @@ ObjectSchema demography_rules_schema() {
         .required("health_drift", Type::block(health_drift_block()))
         .describe("Дрейф здоровья по возрастам.")
         .required("stress", Type::block(stress_block()))
-        .describe("Стресс: пороги, источники, спад.");
+        .describe("Стресс: пороги, источники, спад.")
+        .required("education", Type::block(education_block()))
+        .describe("Образование: прогресс и итог в 16 лет.");
     return s;
 }
 

@@ -1398,6 +1398,8 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
     CHECK(static_cast<int>(CommandType::CreatePerson) == 9);  // E7 block 6..31, in order of arrival
     CHECK(static_cast<int>(CommandType::Birth) == 10);
     CHECK(static_cast<int>(CommandType::Conceive) == 11);
+    CHECK(static_cast<int>(CommandType::SetEducation) == 12);
+    CHECK(static_cast<int>(CommandType::ComeOfAge) == 13);
     CHECK(static_cast<int>(CommandType::TakeLoan) == 38);
     CHECK(static_cast<int>(CommandType::RepayLoan) == 39);
 
@@ -1419,6 +1421,10 @@ TEST_CASE("commands: tags are an explicit table, independent from the position i
          CommandType::Conceive},
         {Command{DynastyId(), cmd::Birth{CharacterId(5), BirthOutcome::Stillborn, CharacterInit{}}},
          CommandType::Birth},
+        {Command{DynastyId(2), cmd::SetEducation{CharacterId(5), 3, CharacterId(4)}},
+         CommandType::SetEducation},
+        {Command{DynastyId(), cmd::ComeOfAge{CharacterId(5), 13, Fixed32::from_ratio(7, 2)}},
+         CommandType::ComeOfAge},
         {Command{DynastyId(), cmd::Marry{CharacterId(1), CharacterId(2)}}, CommandType::Marry},
         {Command{DynastyId(), cmd::EndMarriage{CharacterId(3), MarriageEnd::Tonsure}},
          CommandType::EndMarriage},

@@ -74,6 +74,8 @@ inline constexpr core::Fixed32 kDefaultUnity =
 inline constexpr auto kDefaultPrestige = core::Fixed32::from_int(50);  // [predl.] neutral prestige
 inline constexpr std::uint8_t kEducationFocusCount = 5;  // focus 0 = none, 1..5 = skill index + 1
 inline constexpr std::uint8_t kMaxEducationLevel = 100;  // [predl.]
+/// Age of majority (GDD 01 sections 3.1 and 6.3): on the 16th birthday a character comes of age (E7-T13).
+inline constexpr int kComingOfAgeYears = 16;
 
 /// Hard limit of character ids ever allocated (ADR-0006 D1): ids are never reused in dynasty mode.
 inline constexpr std::uint32_t kMaxCharacterIds = 1'048'576;
@@ -146,6 +148,10 @@ struct ChronicleEntry {
 
     [[nodiscard]] bool operator==(const ChronicleEntry&) const = default;
 };
+
+/// Code of the chronicle note (kind Note, `param`) that a character has come of age (E7-T13); the codes of
+/// the health system are 101 and 102 (pat/sim/health.hpp).
+inline constexpr std::int32_t kNoteComeOfAge = 103;
 
 using OpinionReason = std::uint16_t;
 inline constexpr OpinionReason kOtherOpinionReason = 0;
@@ -388,6 +394,18 @@ struct DueLabour {
     CharacterId mother;
     [[nodiscard]] bool operator==(const DueLabour&) const = default;
 };
+
+/// A character who has come of age (World::take_due_adulthoods).
+struct DueAdulthood {
+    Date due;  // the 16th birthday (or, for an entry taken late, the day it was due)
+    CharacterId character;
+    [[nodiscard]] bool operator==(const DueAdulthood&) const = default;
+};
+
+/// The 16th birthday of somebody born on `birth` (29 February counts as 28 February in common years).
+[[nodiscard]] constexpr Date adulthood_date(Date birth) noexcept {
+    return anniversary_in_year(birth, birth.year() + kComingOfAgeYears);
+}
 
 /// Stable numbers of the extended hash parts (ADR-0006 D7). Part `n` lives in `WorldHash::ext[n]`.
 /// A part that has no content is 0 and is not mixed into `total`, so a world that does not use a
@@ -779,6 +797,13 @@ public:
     /// stays. After loading a saved world the queue is rebuilt from the rows.
     [[nodiscard]] std::vector<DueLabour> take_due_labours(Date today);
 
+    // ---- coming of age (E7-T13) ----
+    /// Takes the characters whose 16th birthday has come (`due <= today`) out of the queue, by (due, id),
+    /// dropping the dead. Each living character is offered exactly once: the caller issues the ComeOfAge
+    /// command. The queue is derived (not saved, not hashed): it holds the living characters younger than
+    /// 16 and is rebuilt on load for a state at a tick boundary (everything up to today is processed).
+    [[nodiscard]] std::vector<DueAdulthood> take_due_adulthoods(Date today);
+
     /// Drain due events in (date, kind, character) order, discarding stale entries. Reschedule
     /// birthdays and keep active death plans indexed until the next boundary applies Die.
     [[nodiscard]] std::vector<DueLifeEvent> take_due_life_events(Date today);
@@ -914,6 +939,7 @@ private:
     ScheduledQueue<LifeEvent> life_queue_;                      // derived
     std::vector<Pregnancy> pregnancies_;                        // by ascending mother id
     ScheduledQueue<CharacterId> labour_queue_;                  // derived: (due, mother) of the rows above
+    ScheduledQueue<CharacterId> adult_queue_;                   // derived: 16th birthdays of the living
     std::uint64_t archive_sum_ = 0;                             // derived: sum of the hashes of archived rows
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id

@@ -46,6 +46,7 @@ add_executable(patriarch_tests
     m1_economy_content_test.cpp
     m1_hot_reload_test.cpp
     conception_test.cpp
+    education_test.cpp
     health_test.cpp
     mortality_test.cpp
     names_content_test.cpp

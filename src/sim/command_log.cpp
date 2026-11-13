@@ -95,6 +95,16 @@ struct Writer {
         out.u8(static_cast<std::uint8_t>(c.outcome));
         write_init(out, c.newborn);
     }
+    void operator()(const cmd::SetEducation& c) const {
+        out.u32(c.child.value());
+        out.u8(c.focus);
+        out.u32(c.tutor.value());
+    }
+    void operator()(const cmd::ComeOfAge& c) const {
+        out.u32(c.character.value());
+        out.u16(c.trait);
+        out.i32(c.bonus.raw());
+    }
     void operator()(const cmd::Die& c) const {
         out.u32(c.character.value());
         out.u8(static_cast<std::uint8_t>(c.cause));
@@ -299,6 +309,25 @@ bool read_command(core::ByteReader& in, Command& out) {
                 return false;
             }
             c.outcome = static_cast<BirthOutcome>(outcome);
+            out.payload = c;
+            break;
+        }
+        case CommandType::SetEducation: {
+            cmd::SetEducation c;
+            c.child = CharacterId(in.u32());
+            c.focus = in.u8();
+            c.tutor = CharacterId(in.u32());
+            if (c.focus > kEducationFocusCount) {
+                return false;
+            }
+            out.payload = c;
+            break;
+        }
+        case CommandType::ComeOfAge: {
+            cmd::ComeOfAge c;
+            c.character = CharacterId(in.u32());
+            c.trait = in.u16();
+            c.bonus = core::Fixed32::from_raw(in.i32());
             out.payload = c;
             break;
         }

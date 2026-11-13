@@ -342,6 +342,26 @@ core::Result<void, RulesError> validate(const DemographyRules& r) {
             RulesErrorCode::Stress,
             std::format("stress_decay_permille {} outside 0...{}", r.stress_decay_permille, kPermilleOne)));
     }
+
+    // E7-T13: education
+    if (r.education_gain_per_month < 1 || r.education_gain_per_month > kMaxHealth ||
+        r.education_tutor_skill_step < 1 || r.education_tutor_skill_step > 20 ||
+        r.education_trait_min_level < 0 || r.education_trait_min_level > kMaxHealth ||
+        r.education_bonus_max < 0 || r.education_bonus_max > 20 || r.education_tutor_bonus_permille < 0 ||
+        r.education_tutor_bonus_permille > DemographyRules::kMaxMultiplierPermille) {
+        return Check::err(make_error(
+            RulesErrorCode::Education,
+            std::format("education gain {} (1...{}), tutor step {} (1...20), trait level {} (0...{}), bonus "
+                        "{} (0...20) or tutor bonus {} per mille (0...{}) outside its corridor",
+                        r.education_gain_per_month,
+                        kMaxHealth,
+                        r.education_tutor_skill_step,
+                        r.education_trait_min_level,
+                        kMaxHealth,
+                        r.education_bonus_max,
+                        r.education_tutor_bonus_permille,
+                        DemographyRules::kMaxMultiplierPermille)));
+    }
     return Check::ok();
 }
 
@@ -460,6 +480,25 @@ Fixed32 VitalsChange::sum_of_terms() const noexcept {
         sum += term.value;
     }
     return sum;
+}
+
+std::int32_t education_monthly_gain(const DemographyRules& rules, Fixed32 tutor_skill) noexcept {
+    return rules.education_gain_per_month +
+           std::max<std::int32_t>(tutor_skill.to_int(), 0) / std::max(rules.education_tutor_skill_step, 1);
+}
+
+EducationOutcome
+education_outcome(const DemographyRules& rules, std::int32_t level, Fixed32 tutor_skill) noexcept {
+    const std::int32_t clamped_level = std::clamp<std::int32_t>(level, 0, kMaxHealth);
+    EducationOutcome outcome;
+    outcome.base_bonus = Fixed32::from_int(rules.education_bonus_max).mul_div(clamped_level, kMaxHealth);
+    outcome.tutor_bonus = core::clamp(tutor_skill, Fixed32::zero(), Fixed32::from_int(20))
+                              .mul_permille(rules.education_tutor_bonus_permille)
+                              .mul_div(clamped_level, kMaxHealth);
+    outcome.bonus =
+        core::clamp(outcome.base_bonus + outcome.tutor_bonus, Fixed32::zero(), Fixed32::from_int(20));
+    outcome.earns_trait = clamped_level >= rules.education_trait_min_level;
+    return outcome;
 }
 
 StressLevel stress_level(const DemographyRules& rules, Fixed32 effective_stress) noexcept {

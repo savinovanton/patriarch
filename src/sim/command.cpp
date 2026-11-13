@@ -290,6 +290,63 @@ struct Validator {
         return accept();
     }
 
+    Result<void, CommandError> operator()(const cmd::SetEducation& c) const {
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "education needs dynasty mode");
+        }
+        if (!world.is_alive(c.child)) {
+            return reject(Rejection::UnknownEntity, "the child does not exist or is dead");
+        }
+        const CharacterTable& t = world.characters();
+        if (!may_act_for(actor, t.dynasty[c.child.index()])) {
+            return reject(Rejection::NotAuthorized, "the actor does not raise this child");
+        }
+        if (age_years(t.birth_date[c.child.index()], world.today()) >= kComingOfAgeYears) {
+            return reject(Rejection::InvalidState, "the child is already of age");
+        }
+        if (c.focus < 1 || c.focus > kEducationFocusCount) {
+            return reject(Rejection::InvalidArgument, "the education focus must be 1...5");
+        }
+        if (c.tutor.valid()) {
+            if (!world.is_alive(c.tutor)) {
+                return reject(Rejection::UnknownEntity, "the tutor does not exist or is dead");
+            }
+            if (c.tutor == c.child) {
+                return reject(Rejection::InvalidArgument, "a child cannot be its own tutor");
+            }
+            if (age_years(t.birth_date[c.tutor.index()], world.today()) < kComingOfAgeYears) {
+                return reject(Rejection::InvalidState, "the tutor must be of age");
+            }
+        }
+        return accept();
+    }
+
+    Result<void, CommandError> operator()(const cmd::ComeOfAge& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may let a character come of age");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "coming of age needs dynasty mode");
+        }
+        if (!world.is_alive(c.character)) {
+            return reject(Rejection::UnknownEntity, "the character does not exist or is dead");
+        }
+        if (age_years(world.characters().birth_date[c.character.index()], world.today()) <
+            kComingOfAgeYears) {
+            return reject(Rejection::InvalidState, "the character is not 16 yet");
+        }
+        if (c.bonus < kZeroFixed || c.bonus > kSkillMax) {
+            return reject(Rejection::InvalidArgument, "the skill bonus must be within 0..20");
+        }
+        if (c.trait != 0) {
+            if (traits == nullptr) {
+                return reject(Rejection::InvalidState, "an education trait needs a trait catalogue");
+            }
+            return trait_verdict(check_grant_trait(world, *traits, c.character, c.trait));
+        }
+        return accept();
+    }
+
     Result<void, CommandError> trait_command() const {
         if (actor.valid()) {
             return reject(Rejection::NotAuthorized, "only the system may change traits directly");
@@ -714,6 +771,31 @@ struct Applier {
             (void)world.create_character(init);
         }
     }
+    void operator()(const cmd::SetEducation& c) const {
+        const CharacterTable& t = world.characters();
+        const std::size_t i = c.child.index();
+        const std::uint8_t level = t.education_focus[i] == c.focus ? t.education_level[i] : 0;
+        (void)world.set_character_education(c.child, Education{c.focus, c.tutor, level});
+    }
+    void operator()(const cmd::ComeOfAge& c) const {
+        const CharacterTable& t = world.characters();
+        const std::size_t i = c.character.index();
+        const std::uint8_t focus = t.education_focus[i];
+        if (focus != 0) {
+            const auto skill = static_cast<Skill>(focus - 1);
+            world.set_character_skill(c.character, skill, t.skills[i][focus - 1] + c.bonus);
+        }
+        if (c.trait != 0 && traits != nullptr) {
+            (void)grant_trait(world, *traits, c.character, c.trait);
+        }
+        // The education is over: the tutor goes, the focus and the level stay as the record.
+        (void)world.set_character_education(c.character,
+                                            Education{focus, CharacterId(), t.education_level[i]});
+        const DynastyId dynasty = t.dynasty[i];
+        if (dynasty.valid()) {
+            (void)world.record_chronicle_note(dynasty, c.character, CharacterId(), kNoteComeOfAge);
+        }
+    }
     void operator()(const cmd::Die& c) const { (void)world.die(c.character, c.cause); }
     void operator()(const cmd::PlanDeath& c) const {
         (void)world.set_character_planned_death(c.character, c.date);
@@ -806,6 +888,14 @@ struct CommandTag<cmd::Conceive> {
 template <>
 struct CommandTag<cmd::Birth> {
     static constexpr CommandType value = CommandType::Birth;
+};
+template <>
+struct CommandTag<cmd::SetEducation> {
+    static constexpr CommandType value = CommandType::SetEducation;
+};
+template <>
+struct CommandTag<cmd::ComeOfAge> {
+    static constexpr CommandType value = CommandType::ComeOfAge;
 };
 template <>
 struct CommandTag<cmd::Die> {
@@ -927,6 +1017,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "Conceive";
         case CommandType::Birth:
             return "Birth";
+        case CommandType::SetEducation:
+            return "SetEducation";
+        case CommandType::ComeOfAge:
+            return "ComeOfAge";
         case CommandType::GrantTrait:
             return "GrantTrait";
         case CommandType::RevokeTrait:

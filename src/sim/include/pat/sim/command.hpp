@@ -37,6 +37,8 @@ enum class CommandType : std::uint8_t {
     CreatePerson = 9,                  // E7-T02
     Birth = 10,                        // E7-T12
     Conceive = 11,                     // E7-T12
+    SetEducation = 12,                 // E7-T13
+    ComeOfAge = 13,                    // E7-T13
     GrantTrait = 14,                   // E7-T08
     RevokeTrait = 15,                  // E7-T08
     PlanDeath = 16,                    // E7-T10
@@ -187,6 +189,34 @@ struct Birth {
     [[nodiscard]] bool operator==(const Birth&) const = default;
 };
 
+/// Chooses the education of a child (E7-T13, US-7.8): the focus (1...5 = skill index + 1, see
+/// Education::focus) and an optional tutor (invalid = none). The actor is the dynasty of the child (its
+/// head decides in the UI) or the system (the automatic choice for AI houses). Refused: no dynasty mode
+/// (InvalidState), unknown or dead child (UnknownEntity), a child of another house (NotAuthorized), a
+/// child who is already of age (InvalidState), a focus outside 1...5 (InvalidArgument), a tutor who does
+/// not exist or is dead (UnknownEntity), is the child itself (InvalidArgument) or is not of age
+/// (InvalidState). Changing the focus starts the education over (level 0); choosing the same focus again
+/// keeps the progress, so that changing only the tutor loses nothing.
+struct SetEducation {
+    CharacterId child;
+    std::uint8_t focus = 0;
+    CharacterId tutor;
+    [[nodiscard]] bool operator==(const SetEducation&) const = default;
+};
+
+/// A character comes of age on the 16th birthday (E7-T13). System only, dynasty mode only. Everything was
+/// decided by the system at emission (the skill `bonus` for the focus skill of the education, the education
+/// `trait` or 0 for none), so applying it is bookkeeping: the bonus is added to the focus skill, the trait
+/// is granted (it must pass the checks of GrantTrait, so a catalogue is needed for a non-zero trait), the
+/// tutor leaves, the chronicle of the house gets a note (kNoteComeOfAge). Refused for a dead character, one
+/// younger than 16 (InvalidState) and a bonus outside 0...20 (InvalidArgument).
+struct ComeOfAge {
+    CharacterId character;
+    std::uint16_t trait = 0;
+    core::Fixed32 bonus;
+    [[nodiscard]] bool operator==(const ComeOfAge&) const = default;
+};
+
 /// Adds an editorial note to a dynasty's chronicle. Factual entries come from world operations.
 struct RecordChronicle {
     DynastyId dynasty;
@@ -317,6 +347,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::CreatePerson,
                                     cmd::Conceive,
                                     cmd::Birth,
+                                    cmd::SetEducation,
+                                    cmd::ComeOfAge,
                                     cmd::Die,
                                     cmd::Marry,
                                     cmd::EndMarriage,
