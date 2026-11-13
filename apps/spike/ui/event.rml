@@ -1,0 +1,45 @@
+<rml>
+<head>
+    <title>Event</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="event.rcss"/>
+</head>
+<!-- The window of an important event (UI-D07, board "03 / Событие и последствия"): a modal document, the dimmed map
+     and a 1032 x 794 sheet. The options are buttons: the highlighted one is green, a click or Enter chooses it. -->
+<body data-model="event">
+<div id="event-dim"></div>
+<div id="event">
+    <div id="event-frame"></div>
+    <div id="event-strip"></div>
+    <div id="event-kind">{{ t.kind }}</div>
+    <div id="event-badge" data-if="autopause">{{ t.autopause }}</div>
+    <div class="event-rule" id="event-rule-top"></div>
+
+    <div id="event-portrait" data-if="has_portrait" data-style-decorator="portrait"></div>
+    <div id="event-speaker">{{ t.speaker }}</div>
+    <div id="event-role">{{ t.role }}</div>
+    <div class="event-rule" id="event-rule-left"></div>
+    <div id="event-quote" data-if="has_quote">{{ t.quote }}</div>
+    <svg id="event-shield" data-attr-src="shield + ''"/>
+
+    <div id="event-title">{{ t.title }}</div>
+    <div id="event-subtitle">{{ t.subtitle }}</div>
+    <div id="event-text">{{ t.text }}</div>
+    <div id="event-choose">{{ t.choose }}</div>
+
+    <button class="choice" data-for="row : rows" data-attr-id="'event-opt-' + row.index" data-style-top="row.top"
+            data-class-selected="sel == row.index" data-class-is-disabled="!row.enabled"
+            data-class-has-reason="row.reason" data-attr-data-tip="row.tip"
+            data-event-click="choose(row.index)" data-event-mouseover="hover(row.index)"
+            data-event-focus="hover(row.index)">
+        <div class="choice-number">{{ row.number }}</div>
+        <div class="choice-title">{{ row.title }}</div>
+        <div class="choice-detail">{{ row.detail }}</div>
+        <div class="choice-frame"></div>
+    </button>
+
+    <div id="event-footer">{{ t.footer }}</div>
+</div>
+</body>
+</rml>

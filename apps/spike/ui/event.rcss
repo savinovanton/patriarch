@@ -1,0 +1,296 @@
+/* The window of an important event (UI-D07; board 03 of the mockup, geometry in
+   data/ui/layout/board_03_event.pd, sheet "Important event / Продолжение рода" at 484,154 of 1920x1080, 1032x794).
+   The sheet sits at the same offset from the middle of the screen as on the board; the dim covers the map area
+   (the bars and the navigation stay as they are). Everything inside is placed in design pixels from the corner of the
+   sheet. The options are buttons with absolutely placed children and a separate frame element, so that the border
+   (hairline, or the gold ring of the keyboard focus) never moves their content. */
+#event-dim {
+    position: absolute;
+    left: 96dp;
+    top: 96dp;
+    right: 0;
+    bottom: 44dp;
+    background-color: $ink_a76;
+    pointer-events: auto;
+}
+
+#event {
+    position: absolute;
+    left: 50%;
+    margin-left: -476dp;
+    top: 50%;
+    margin-top: -386dp;
+    width: 1032dp;
+    height: 794dp;
+    background-color: $paper;
+    pointer-events: auto;
+    color: $text;
+}
+
+#event-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: $stroke_window $gold;
+    pointer-events: none;
+}
+
+#event-strip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1032dp;
+    height: 7dp;
+    background-color: $green;
+}
+
+#event-kind {
+    position: absolute;
+    left: 34dp;
+    top: 30dp;
+    width: 760dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 3dp;
+    color: $green;
+    white-space: nowrap;
+}
+
+#event-badge {
+    position: absolute;
+    left: 830dp;
+    top: 24dp;
+    width: 168dp;
+    height: $badge_h;
+    line-height: $badge_h;
+    text-align: center;
+    background-color: $paper2;
+    border-radius: $radius;
+    font-size: $type_13;
+    font-weight: bold;
+    color: $green;
+}
+
+.event-rule {
+    position: absolute;
+    height: $stroke_hairline;
+    background-color: $line;
+}
+
+#event-rule-top {
+    left: 34dp;
+    top: 73dp;
+    width: 964dp;
+}
+
+#event-rule-left {
+    left: 34dp;
+    top: 494dp;
+    width: 222dp;
+}
+
+/* ---- left column: portrait, name, quote */
+#event-portrait {
+    position: absolute;
+    left: 34dp;
+    top: 108dp;
+    width: 222dp;
+    height: 277dp;
+    background-color: $line;
+}
+
+#event-speaker {
+    position: absolute;
+    left: 34dp;
+    top: 411dp;
+    width: 224dp;
+    font-family: $serif;
+    font-size: $type_24;
+    white-space: nowrap;
+}
+
+#event-role {
+    position: absolute;
+    left: 34dp;
+    top: 451dp;
+    width: 222dp;
+    font-size: $type_14;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#event-quote {
+    position: absolute;
+    left: 34dp;
+    top: 525dp;
+    width: 222dp;
+    font-family: $serif;
+    font-size: $type_24;
+    white-space: pre-line;
+}
+
+#event-shield {
+    position: absolute;
+    left: 110dp;
+    top: 686dp;
+    width: $icon_size;
+    height: $icon_size;
+}
+
+/* ---- right column: title, text, question, options */
+#event-title {
+    position: absolute;
+    left: 292dp;
+    top: 104dp;
+    width: 700dp;
+    font-family: $serif;
+    font-size: $type_40;
+    white-space: nowrap;
+}
+
+#event-subtitle {
+    position: absolute;
+    left: 294dp;
+    top: 168dp;
+    width: 680dp;
+    font-family: $serif;
+    font-size: $type_18;
+    color: $muted;
+    white-space: nowrap;
+}
+
+#event-text {
+    position: absolute;
+    left: 294dp;
+    top: 215dp;
+    width: 692dp;
+    font-size: $type_18;
+    white-space: pre-line;
+}
+
+#event-choose {
+    position: absolute;
+    left: 294dp;
+    top: 353dp;
+    width: 680dp;
+    font-size: $type_12;
+    font-weight: bold;
+    letter-spacing: 2dp;
+    color: $muted;
+    white-space: nowrap;
+}
+
+.choice {
+    display: block;
+    position: absolute;
+    left: 292dp;
+    width: 706dp;
+    height: 102dp;
+    margin: 0;
+    padding: 0;
+    border: 0dp transparent;
+    background-color: $paper;
+    font-family: $sans;
+    color: $text;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+.choice-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: $stroke_hairline $line;
+    pointer-events: none;
+}
+
+.choice-number {
+    position: absolute;
+    left: 17dp;
+    top: 15dp;
+    width: 31dp;
+    font-family: $serif;
+    font-size: $type_20;
+    color: $muted;
+    text-align: left;
+}
+
+.choice-title {
+    position: absolute;
+    left: 58dp;
+    top: 13dp;
+    width: 624dp;
+    font-size: $type_20;
+    font-weight: bold;
+    color: $text;
+    white-space: nowrap;
+}
+
+.choice-detail {
+    position: absolute;
+    left: 58dp;
+    top: 53dp;
+    width: 620dp;
+    height: 23dp;
+    overflow: hidden;
+    font-size: $type_15;
+    color: $muted;
+    white-space: pre;
+}
+
+/* The highlighted option: green fill, light text, gold number. */
+.choice.selected {
+    background-color: $green;
+}
+
+.choice.selected .choice-frame {
+    border-color: $green;
+}
+
+.choice.selected .choice-number {
+    color: $gold;
+}
+
+.choice.selected .choice-title {
+    color: $light;
+}
+
+.choice.selected .choice-detail {
+    color: $quiet;
+}
+
+/* An option that cannot be chosen: dim fill, muted text; the reason (in the line below the title) is red. */
+.choice.is-disabled {
+    background-color: $paper2;
+    cursor: default;
+    tab-index: none;
+}
+
+.choice.is-disabled .choice-title {
+    color: $muted;
+}
+
+.choice.has-reason .choice-detail {
+    color: $red;
+}
+
+.kbd .choice:focus .choice-frame {
+    border: $focus_ring $gold;
+}
+
+#event-footer {
+    position: absolute;
+    left: 294dp;
+    top: 751dp;
+    width: 690dp;
+    font-size: $type_13;
+    color: $muted;
+    white-space: nowrap;
+}
