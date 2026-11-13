@@ -30,6 +30,7 @@ ctest --preset win-msvc-debug
 | [docs/adr/0003-3d-terrain-map.md](docs/adr/0003-3d-terrain-map.md) | Объёмная 3D-карта-ландшафт (стиль Victoria 3) |
 | [docs/dev/save-format.md](docs/dev/save-format.md) | Формат сохранений: контейнер, реестры разделов и тегов команд, политика версий и совместимости ([ADR-0011](docs/adr/0011-saves.md)) |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
+| [docs/dev/store-pages.md](docs/dev/store-pages.md) | Путь к вишлисту: чеклист страниц Steam, VK Play, EGS (условия, ассеты, сроки, ИИ-отметка, статусы) |
 | [docs/dev/agents-workflow.md](docs/dev/agents-workflow.md) | Работа двух агентов (Claude, Codex) через Issues, метки, вехи, PR |
 | [docs/gdd/01-dynasty.md](docs/gdd/01-dynasty.md) | GDD: Династия и персонажи (E7, E8, E30) |
 | [docs/gdd/02-throne-crisis.md](docs/gdd/02-throne-crisis.md) | GDD: Престол, стабильность и кризис (E12, E18) |
