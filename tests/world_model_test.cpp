@@ -879,6 +879,9 @@ private:
     // own tests in conception_test.cpp), so these two are never issued.
     bool apply(DynastyId /*actor*/, const cmd::Conceive& /*c*/) { return false; }
     bool apply(DynastyId /*actor*/, const cmd::Birth& /*c*/) { return false; }
+    // Education has its own tests in education_test.cpp; the model never issues these commands.
+    bool apply(DynastyId /*actor*/, const cmd::SetEducation& /*c*/) { return false; }
+    bool apply(DynastyId /*actor*/, const cmd::ComeOfAge& /*c*/) { return false; }
     // This model runs without a trait catalogue, so trait commands are rejected.
     bool apply(DynastyId /*actor*/, const cmd::GrantTrait& /*c*/) { return false; }
     bool apply(DynastyId /*actor*/, const cmd::RevokeTrait& /*c*/) { return false; }

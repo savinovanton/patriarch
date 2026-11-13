@@ -35,7 +35,7 @@ namespace fs = std::filesystem;
 // A field added to DemographyRules changes the size. When this fails: add the field to flatten() below,
 // to the schema (src/data/demography_schemas.cpp), to the builder (src/content/demography_content.cpp),
 // to data/balance/demography.pd and to the tweaks table in this file.
-static_assert(sizeof(DemographyRules) == 440,
+static_assert(sizeof(DemographyRules) == 460,
               "DemographyRules changed: update the schema, the builder and this test");
 
 namespace {
@@ -185,6 +185,11 @@ Flat flatten(const DemographyRules& r) {
     f.emplace_back("stress_gain_low_health", r.stress_gain_low_health);
     f.emplace_back("stress_gain_head", r.stress_gain_head);
     f.emplace_back("stress_decay_permille", r.stress_decay_permille);
+    f.emplace_back("education_gain_per_month", r.education_gain_per_month);
+    f.emplace_back("education_tutor_skill_step", r.education_tutor_skill_step);
+    f.emplace_back("education_trait_min_level", r.education_trait_min_level);
+    f.emplace_back("education_bonus_max", r.education_bonus_max);
+    f.emplace_back("education_tutor_bonus_permille", r.education_tutor_bonus_permille);
     return f;
 }
 
@@ -474,6 +479,20 @@ std::vector<Tweak> tweaks() {
         {"stress gain illness", "gain_low_health = 100", "gain_low_health = 110", {"stress_gain_low_health"}},
         {"stress gain head", "gain_head = 30", "gain_head = 40", {"stress_gain_head"}},
         {"stress decay", "decay_permille = 100", "decay_permille = 150", {"stress_decay_permille"}},
+        {"education gain", "gain_per_month = 1 ", "gain_per_month = 2 ", {"education_gain_per_month"}},
+        {"education tutor step",
+         "tutor_skill_step = 5 ",
+         "tutor_skill_step = 4 ",
+         {"education_tutor_skill_step"}},
+        {"education trait level",
+         "trait_min_level = 50 ",
+         "trait_min_level = 60 ",
+         {"education_trait_min_level"}},
+        {"education bonus", "bonus_max = 2 ", "bonus_max = 3 ", {"education_bonus_max"}},
+        {"education tutor bonus",
+         "tutor_bonus_permille = 150 ",
+         "tutor_bonus_permille = 200 ",
+         {"education_tutor_bonus_permille"}},
     };
 }
 
@@ -744,6 +763,11 @@ TEST_CASE("demography content: the schema corridors agree with validate() at the
         {"critical_from = 90 ", "critical_from", 100},
         {"gain_head = 30", "gain_head", 10000},
         {"decay_permille = 100", "decay_permille", 1000},
+        {"gain_per_month = 1 ", "gain_per_month", 100},
+        {"tutor_skill_step = 5 ", "tutor_skill_step", 20},
+        {"trait_min_level = 50 ", "trait_min_level", 100},
+        {"bonus_max = 2 ", "bonus_max", 20},
+        {"tutor_bonus_permille = 150 ", "tutor_bonus_permille", multiplier_max},
     };
     for (const Edge& edge : edges) {
         CAPTURE(edge.key);
@@ -1132,5 +1156,5 @@ TEST_CASE("demography content: the schema offers a field for every number of the
         }
     }
     CHECK(tables == 2);
-    CHECK(scalars == 44);  // the int32 scalars of DemographyRules (440 bytes = 2 tables x 132 + 44 x 4)
+    CHECK(scalars == 49);  // the int32 scalars of DemographyRules (460 bytes = 2 tables x 132 + 49 x 4)
 }

@@ -173,6 +173,20 @@ struct DemographyRules {
     /// Share of the stress that fades every month, per mille (rest).
     std::int32_t stress_decay_permille = 0;
 
+    // Education (E7-T13, GDD 01 section 5): the monthly progress of a child who has a focus, and what it
+    // brings on the 16th birthday.
+    /// Points of the education level (0...100) gained a month from the start of adolescence.
+    std::int32_t education_gain_per_month = 1;
+    /// A tutor adds `skill / education_tutor_skill_step` (whole skill points, rounded down) to the monthly
+    /// gain.
+    std::int32_t education_tutor_skill_step = 5;
+    /// The education trait of the focus is earned from this level.
+    std::int32_t education_trait_min_level = 50;
+    /// Skill points of the focus skill at full level, without a tutor.
+    std::int32_t education_bonus_max = 0;
+    /// What a tutor adds to that bonus: this share (per mille) of the tutor's skill in the focus skill.
+    std::int32_t education_tutor_bonus_permille = 0;
+
     /// Largest accepted multiplier (per-mille of one); keeps Fixed32 arithmetic far from overflow.
     static constexpr std::int32_t kMaxMultiplierPermille = 10000;
     /// Largest accepted number of living characters in the crowding rule, and of skill spread points.
@@ -276,6 +290,15 @@ inline constexpr DemographyRules kDefaultDemography{
     .stress_gain_low_health = 100,
     .stress_gain_head = 30,
     .stress_decay_permille = 100,
+
+    // E7-T13 [predl.]: a point of level a month from age 7 fills the scale by 16 (108 months); a tutor with
+    // skill 10 adds two points a month; the education trait from level 50; +2 skill points at full level
+    // and 15 % of the tutor's skill on top (GDD 01 section 5: "bonuses of skills at 16")
+    .education_gain_per_month = 1,
+    .education_tutor_skill_step = 5,
+    .education_trait_min_level = 50,
+    .education_bonus_max = 2,
+    .education_tutor_bonus_permille = 150,
 };
 
 // ---- validation --------------------------------------------------------------------------------
@@ -290,6 +313,7 @@ enum class RulesErrorCode : std::uint8_t {
     LifeStages,       ///< stage ages not strictly increasing, or marriage ages outside the stages
     HealthDrift,      ///< a monthly health amount or the swing outside its corridor
     Stress,           ///< stress thresholds not increasing within 0...100, or an amount outside its corridor
+    Education,        ///< education gain, tutor step, trait level or bonus outside its corridor
 };
 
 struct RulesError {
@@ -393,6 +417,24 @@ inline constexpr std::uint32_t kNeutralHealthRoll = 0x80000000U;
                                                  core::Fixed32 stored_stress,
                                                  core::Fixed32 effective_health,
                                                  bool dynasty_head);
+
+/// Education of a month and of the 16th birthday (E7-T13). `tutor_skill` is the effective skill of the
+/// tutor in the focus skill of the child (0 without a tutor).
+[[nodiscard]] std::int32_t education_monthly_gain(const DemographyRules& rules,
+                                                  core::Fixed32 tutor_skill) noexcept;
+
+/// What a child brings home at 16 with `level` (0...100): the skill bonus split into the part of the
+/// focus itself and the part of the tutor, each scaled by the level; the sum is cut to the skill scale.
+struct EducationOutcome {
+    core::Fixed32 base_bonus;   ///< education_bonus_max x level / 100
+    core::Fixed32 tutor_bonus;  ///< tutor skill x education_tutor_bonus_permille / 1000 x level / 100
+    core::Fixed32 bonus;        ///< base + tutor, at most the top of the skill scale
+    bool earns_trait = false;   ///< level >= education_trait_min_level
+
+    [[nodiscard]] bool operator==(const EducationOutcome&) const = default;
+};
+[[nodiscard]] EducationOutcome
+education_outcome(const DemographyRules& rules, std::int32_t level, core::Fixed32 tutor_skill) noexcept;
 
 /// Level of an effective stress value against the thresholds of the rules.
 [[nodiscard]] StressLevel stress_level(const DemographyRules& rules, core::Fixed32 effective_stress) noexcept;
