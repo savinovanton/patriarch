@@ -36,6 +36,28 @@ struct MapLabelSet {
                                                const SdfAtlas& atlas,
                                                std::span<const std::string> names);
 
+/// Colours of the labels (E5-A3, docs/dev/map-art-direction.md): the ink of the names, and the halo drawn
+/// around them. The halo is a contrasting underlay for dark ink, or a dark outline for light letters.
+struct LabelTheme {
+    Color region_fill{1.0f, 0.93f, 0.68f, 1.0f};
+    Color region_halo{0.06f, 0.045f, 0.03f, 0.92f};
+    Color province_fill{0.97f, 0.95f, 0.88f, 1.0f};
+    Color province_halo{0.06f, 0.045f, 0.03f, 0.92f};
+    TextHalo halo_shape;  ///< default: a crisp outline
+};
+
+/// The original look: cream letters with a dark outline (readable on any terrain; the default, also used
+/// by the unstyled map).
+[[nodiscard]] LabelTheme cream_label_theme();
+
+/// The look of board 01 (winter map): region names and cities in the warm ink `#242e29` over a soft
+/// light underlay instead of an outline.
+[[nodiscard]] LabelTheme ink_label_theme();
+
+/// The layout that goes with `ink_label_theme()`: region names tracked wide (5 px on 27 px type), a diamond
+/// marker above each province (city) name.
+[[nodiscard]] LabelStyle ink_label_style();
+
 /// Draws the labels of a map: placement per frame, glyph layout and SDF text rendering.
 class MapLabelRenderer {
 public:
@@ -46,7 +68,9 @@ public:
     void replace_labels(MapLabelSet labels);
 
     /// Lays out the labels for this camera and draws them (between begin_frame and end_frame).
-    LabelLayoutStats draw(const LabelLayoutInput& input, const LabelStyle& style = {});
+    LabelLayoutStats draw(const LabelLayoutInput& input,
+                          const LabelStyle& style = {},
+                          const LabelTheme& theme = cream_label_theme());
 
     [[nodiscard]] const std::vector<PlacedLabel>& last_placed() const noexcept { return placed_; }
     [[nodiscard]] const MapLabelSet& labels() const noexcept { return labels_; }

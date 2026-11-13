@@ -511,14 +511,22 @@ int main(int argc, char** argv) {
 
     // ---- UI overlay (RmlUi) and map labels use the game fonts from assets/fonts (PT Serif, PT Sans Caption; OFL-1.1).
     const std::filesystem::path font_dir = PATRIARCH_SPIKE_FONT_DIR;
-    // ---- map labels: SDF text from PT Serif Bold
+    // ---- map labels: SDF text from PT Serif (Regular with the winter style, Bold without)
     std::unique_ptr<MapLabelRenderer> labels;
     bool labels_on = true;
     LabelLayoutStats label_stats;
     std::size_t label_min = ~static_cast<std::size_t>(0);
     std::size_t label_max = 0;
+    // The winter art direction (E5-A3) sets the names in the ink of the concept: PT Serif Regular, dark over a
+    // soft light underlay, region names tracked wide, cities with a diamond. Without the style: cream letters.
+    const bool ink_labels = opt.style.winter > 0.0f;
+    const LabelStyle label_style = ink_labels ? ink_label_style() : LabelStyle{};
+    const LabelTheme label_theme = ink_labels ? ink_label_theme() : cream_label_theme();
+    std::vector<double> label_cpu_ms;  // --bench: CPU time of the label pass (layout + quad recording) per frame
     if (!opt.no_labels) {
-        for (const std::filesystem::path& font : std::vector<std::filesystem::path>{font_dir / "pt-serif" / "PT_Serif-Web-Bold.ttf"}) {
+        const std::filesystem::path label_font =
+            font_dir / "pt-serif" / (ink_labels ? "PT_Serif-Web-Regular.ttf" : "PT_Serif-Web-Bold.ttf");
+        for (const std::filesystem::path& font : std::vector<std::filesystem::path>{label_font}) {
             if (!std::filesystem::exists(font)) {
                 continue;
             }
@@ -1569,8 +1577,13 @@ int main(int argc, char** argv) {
                 li.viewport_w = width_px;
                 li.viewport_h = height_px;
                 li.pixels_per_unit_at_one = height_px / (2.0f * std::tan(camera.fov_y() * 0.5f));
+                li.selected_id = overlays && hud_visible ? selected : 0;  // the overlays draw its marker and plate
                 renderer->push_marker("labels");
-                label_stats = labels->draw(li);
+                const std::int64_t label_t0 = opt.bench ? now_ns() : 0;
+                label_stats = labels->draw(li, label_style, label_theme);
+                if (opt.bench) {
+                    label_cpu_ms.push_back(static_cast<double>(now_ns() - label_t0) * 1e-6);
+                }
                 renderer->pop_marker();
                 label_min = std::min(label_min, label_stats.placed);
                 label_max = std::max(label_max, label_stats.placed);
@@ -1757,6 +1770,12 @@ int main(int argc, char** argv) {
         if (labels) {
             std::printf("bench: labels placed per frame  min %zu  max %zu (of %zu)\n", label_min, label_max,
                         labels->labels().labels.size());
+            if (label_cpu_ms.size() > 8) {
+                const std::vector<double> t(label_cpu_ms.begin() + static_cast<std::ptrdiff_t>(label_cpu_ms.size() / 4),
+                                            label_cpu_ms.end());
+                std::printf("bench: labels CPU ms  p50 %.3f  p95 %.3f  p99 %.3f  max %.3f\n", percentile(t, 0.50),
+                            percentile(t, 0.95), percentile(t, 0.99), percentile(t, 1.0));
+            }
         }
     }
 

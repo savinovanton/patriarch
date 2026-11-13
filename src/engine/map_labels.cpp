@@ -187,7 +187,8 @@ MapLabelSet make_test_map_labels(const mapdata::MapData& map,
         MapLabel label;
         label.id = static_cast<std::uint32_t>(100000 + c);
         label.kind = LabelKind::Region;
-        label.text = utf8_to_utf32(region_name(region_index++));
+        label.text =
+            to_upper(utf8_to_utf32(region_name(region_index++)));  // region names are set in capitals
         label.anchor = {anchors[anchor_member].x,
                         anchors[anchor_member].y,
                         picker.height_at(anchors[anchor_member].x, anchors[anchor_member].y) + 2.0f};
@@ -234,21 +235,51 @@ void MapLabelRenderer::replace_labels(MapLabelSet labels) {
     labels_ = std::move(labels);
 }
 
-LabelLayoutStats MapLabelRenderer::draw(const LabelLayoutInput& input, const LabelStyle& style) {
+LabelTheme cream_label_theme() {
+    return {};
+}
+
+LabelTheme ink_label_theme() {
+    LabelTheme t;
+    t.region_fill = {0.141f, 0.180f, 0.161f, 1.0f};  // #242e29
+    t.province_fill = t.region_fill;
+    t.region_halo = {0.933f, 0.898f, 0.824f, 0.62f};  // #eee5d2 snow-cream underlay
+    t.province_halo = {0.933f, 0.898f, 0.824f, 0.72f};
+    t.halo_shape = {0.05f, 0.11f};
+    return t;
+}
+
+LabelStyle ink_label_style() {
+    LabelStyle s;
+    s.region_spacing_em = 5.0f / 27.0f;  // board 01: letter-spacing 5 on 27 px
+    s.province_marker = true;
+    return s;
+}
+
+LabelLayoutStats
+MapLabelRenderer::draw(const LabelLayoutInput& input, const LabelStyle& style, const LabelTheme& theme) {
     const LabelLayoutStats stats = layout_labels(labels_.labels, input, style, placed_);
     quads_.clear();
+    const bool have_marker = atlas_.find(kMarkerGlyph) != nullptr;
     for (const PlacedLabel& p : placed_) {
-        geometry_.clear();
-        // Centre the text vertically on the anchor: the baseline sits a bit below it.
-        layout_text(atlas_, p.label->text, p.size_px, p.x, p.y + p.size_px * 0.33f, geometry_);
         const bool region = p.label->kind == LabelKind::Region;
-        const Color fill = region ? Color{1.0f, 0.93f, 0.68f, p.alpha} : Color{0.97f, 0.95f, 0.88f, p.alpha};
-        const Color outline = Color{0.06f, 0.045f, 0.03f, p.alpha * 0.92f};
+        Color fill = region ? theme.region_fill : theme.province_fill;
+        Color halo = region ? theme.region_halo : theme.province_halo;
+        fill.a *= p.alpha;
+        halo.a *= p.alpha;
+        geometry_.clear();
+        // Centre the text vertically on its line: the baseline sits a bit below it.
+        layout_text(
+            atlas_, p.label->text, p.size_px, p.x, p.text_y + p.size_px * 0.33f, geometry_, p.spacing_em);
+        if (p.marker_px > 0.0f && have_marker) {
+            layout_text(atlas_, std::u32string_view(&kMarkerGlyph, 1), p.marker_px, p.x, p.y, geometry_);
+        }
         for (const TextQuadGeometry& g : geometry_) {
-            quads_.push_back({g, fill, outline});
+            quads_.push_back({g, fill, halo});
         }
     }
     if (!quads_.empty()) {
+        text_->set_halo(theme.halo_shape);
         text_->draw(quads_);
     }
     return stats;

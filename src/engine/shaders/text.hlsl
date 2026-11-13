@@ -5,7 +5,7 @@
 cbuffer TextConstants : register(b0) {
     float2 viewport;
     float outline_width;  // in field units: atlas pixels of outline / (2 * spread)
-    float padding;
+    float halo_soft;      // in field units: extra width over which the halo fades out (0 = crisp)
 };
 
 Texture2D atlas : register(t0);
@@ -39,7 +39,7 @@ float4 ps_main(VsOut input) : SV_Target {
     const float smoothing = max(fwidth(d) * 0.75, 0.002);
     const float fill = smoothstep(0.5 - smoothing, 0.5 + smoothing, d);
     const float edge = 0.5 - outline_width;
-    const float halo = smoothstep(edge - smoothing, edge + smoothing, d);
+    const float halo = smoothstep(edge - smoothing - halo_soft, edge + smoothing, d);
     const float3 rgb = lerp(input.outline.rgb, input.color.rgb, fill);
     const float alpha = max(fill * input.color.a, halo * input.outline.a);
     return float4(rgb, alpha);

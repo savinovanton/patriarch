@@ -30,15 +30,28 @@ struct Vertex {
 struct TextCB {
     float viewport[2];
     float outline_width;
-    float padding;
+    float halo_soft;
 };
 static_assert(sizeof(TextCB) == 16, "constant buffers are 16-byte aligned");
 
 class D3D11TextRenderer final : public ITextRenderer {
 public:
     D3D11TextRenderer(const D3D11Shared& shared, const SdfAtlas& atlas)
-        : shared_(shared),
-          outline_width_(std::min(0.45f, 3.0f / (2.0f * std::max(atlas.spread, 1.0f)) * 1.0f + 0.02f)) {}
+        : shared_(shared), default_outline_width_(
+                               std::min(0.45f, 3.0f / (2.0f * std::max(atlas.spread, 1.0f)) * 1.0f + 0.02f)),
+          outline_width_(default_outline_width_),
+          em_to_field_(atlas.font_px / (2.0f * std::max(atlas.spread, 1.0f))) {}
+
+    void set_halo(const TextHalo& halo) override {
+        if (halo.width_em >= 0.0f) {
+            // Width and softness are in ems; the field maps `spread` atlas pixels to half its range.
+            outline_width_ = std::clamp(halo.width_em * em_to_field_, 0.0f, 0.45f);
+            halo_soft_ = std::clamp(halo.softness_em * em_to_field_, 0.0f, 0.45f);
+        } else {
+            outline_width_ = default_outline_width_;
+            halo_soft_ = 0.0f;
+        }
+    }
 
     [[nodiscard]] core::Result<void> init(const SdfAtlas& atlas) {
         auto* device = shared_.device.Get();
@@ -179,6 +192,7 @@ public:
         cb.viewport[0] = static_cast<float>(std::max(shared_.target_size->w, 1));
         cb.viewport[1] = static_cast<float>(std::max(shared_.target_size->h, 1));
         cb.outline_width = outline_width_;
+        cb.halo_soft = halo_soft_;
         D3D11_MAPPED_SUBRESOURCE mapped{};
         if (FAILED(ctx->Map(constants_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
             return;
@@ -251,7 +265,10 @@ public:
 
 private:
     D3D11Shared shared_;
+    float default_outline_width_;
     float outline_width_;
+    float halo_soft_ = 0.0f;
+    float em_to_field_;  // field units per em of the font size
     ComPtr<ID3D11ShaderResourceView> atlas_srv_;
     ComPtr<ID3D11VertexShader> vs_;
     ComPtr<ID3D11PixelShader> ps_;

@@ -141,10 +141,20 @@ struct TextQuad {
     Color outline{0, 0, 0, 1};
 };
 
+/// Shape of the halo (the "outline" colour of a TextQuad) around the glyphs, in fractions of the font size.
+/// A negative width keeps the renderer's default: a crisp outline of about 0.08 em.
+struct TextHalo {
+    float width_em = -1.0f;  ///< solid part: distance from the glyph edge where the halo is fully opaque
+    float softness_em =
+        0.0f;  ///< extra distance over which the halo fades out (dark ink on a light underlay)
+};
+
 /// Draws SDF text quads (E3-T05) with a fill and an outline; created for one atlas.
 class ITextRenderer {
 public:
     virtual ~ITextRenderer() = default;
+    /// Sets the halo shape for the next draw() calls.
+    virtual void set_halo(const TextHalo& halo) { (void)halo; }
     /// Draws the glyph quads in order with alpha blending, between begin_frame() and end_frame().
     virtual void draw(std::span<const TextQuad> quads) = 0;
 };

@@ -31,6 +31,11 @@ struct SdfGlyph {
     float advance = 0.0f;
 };
 
+/// Code point of the city marker, a synthetic glyph that is not in any font: an outlined diamond (U+25C7).
+/// It is centred on the pen position and the baseline, and a quad laid out at size S is a diamond about
+/// 0.84 S across with a stroke of about 0.08 S. Whoever draws it should check `SdfAtlas::find()` first.
+inline constexpr char32_t kMarkerGlyph = 0x25C7;
+
 struct SdfAtlas {
     int width = 0;
     int height = 0;
@@ -49,6 +54,7 @@ struct SdfAtlasOptions {
     int font_px = 40;
     int spread = 8;
     int max_width = 1024;
+    bool marker_glyph = true;  ///< add the synthetic diamond of kMarkerGlyph
     /// Inclusive code point ranges to include. The default covers Basic Latin, Cyrillic (incl. Ё/ё) and
     /// the punctuation used in names and numbers.
     std::vector<std::pair<char32_t, char32_t>> ranges = {{0x20, 0x7E},
@@ -81,9 +87,15 @@ struct TextQuadGeometry {
 
 [[nodiscard]] std::u32string utf8_to_utf32(std::string_view text);
 
+/// Upper-cases Latin and Cyrillic letters (including Ё); everything else is kept. Used for region names,
+/// which are set in capitals.
+[[nodiscard]] std::u32string to_upper(std::u32string_view text);
+
 /// Width of the text in pixels when the font is drawn at `size_px` (the em size, i.e. atlas font_px
-/// scales to size_px). Glyphs missing from the atlas are skipped.
-[[nodiscard]] float measure_text(const SdfAtlas& atlas, std::u32string_view text, float size_px);
+/// scales to size_px). Glyphs missing from the atlas are skipped. `letter_spacing_em` adds that fraction
+/// of the size between neighbouring glyphs (tracking; none after the last one).
+[[nodiscard]] float
+measure_text(const SdfAtlas& atlas, std::u32string_view text, float size_px, float letter_spacing_em = 0.0f);
 
 /// Appends the glyph quads of a single line of text. `center_x` is the horizontal centre of the line,
 /// `baseline_y` the baseline in screen pixels (y grows downwards).
@@ -92,6 +104,7 @@ void layout_text(const SdfAtlas& atlas,
                  float size_px,
                  float center_x,
                  float baseline_y,
-                 std::vector<TextQuadGeometry>& out);
+                 std::vector<TextQuadGeometry>& out,
+                 float letter_spacing_em = 0.0f);
 
 }  // namespace pat::engine
