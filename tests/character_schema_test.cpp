@@ -1117,10 +1117,10 @@ TEST_CASE("save v2: damaged extension blocks are rejected with an error") {
     // framing
     CHECK(rejected(with_extension(plain, 2, {})));  // unknown flag bit
     CHECK(rejected(with_extension(plain, 0x80000000U, {})));
-    CHECK(rejected(with_extension(plain, 0, {}, 33)));                  // more sections than allowed
-    CHECK(rejected(with_extension(plain, 0, {}, 1)));                   // declared but missing
-    CHECK(rejected(with_extension(plain, 0, {RawSection{9, 1, {}}})));  // unknown section id
-    CHECK(rejected(with_extension(plain, 0, {RawSection{0, 1, {}}})));  // id 0 is not a section
+    CHECK(rejected(with_extension(plain, 0, {}, 97), "invalid section count"));  // more sections than allowed
+    CHECK(rejected(with_extension(plain, 0, {}, 1)));                            // declared but missing
+    CHECK(rejected(with_extension(plain, 0, {RawSection{9, 1, {}}})));           // unknown section id
+    CHECK(rejected(with_extension(plain, 0, {RawSection{0, 1, {}}})));           // id 0 is not a section
     RawSection wrong_version = person_section({ok_row});
     wrong_version.version = 2;
     CHECK(rejected(with_extension(plain, 0, {wrong_version})));
