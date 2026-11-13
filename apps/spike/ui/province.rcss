@@ -1,0 +1,356 @@
+/* Holding inspector, UI-D06: board 01 at 124,160, 376x822. Only this sheet receives the mouse;
+   the theme keeps the rest of the document transparent to the map. Short viewports scroll the body. */
+#province-inspector {
+    position: absolute;
+    left: 124dp;
+    top: 160dp;
+    bottom: 98dp;
+    width: 376dp;
+    max-height: 822dp;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0dp;
+}
+
+#province-header {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
+    padding: 16dp 23dp 0;
+}
+
+#province-title {
+    height: 26dp;
+    padding-top: 3dp;
+    letter-spacing: 3dp;
+}
+
+#province-close {
+    position: absolute;
+    box-sizing: border-box;
+    right: 15dp;
+    top: 8dp;
+    width: 40dp;
+    height: 40dp;
+    padding: 7dp;
+    border: $stroke_hairline transparent;
+    background-color: transparent;
+    border-radius: $radius;
+    pointer-events: auto;
+    tab-index: auto;
+    cursor: pointer;
+}
+
+#province-close svg {
+    width: $icon_size;
+    height: $icon_size;
+}
+
+#province-close:hover {
+    background-color: $paper2;
+}
+
+.kbd #province-close:focus {
+    padding: 6dp;
+    border: $focus_ring $gold;
+}
+
+#province-name {
+    font-family: $serif;
+    font-size: $type_40;
+    line-height: 58dp;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#province-subtitle {
+    min-height: 24dp;
+    margin-top: 0dp;
+    margin-bottom: 18dp;
+    font-size: $type_16;
+    color: $muted;
+}
+
+#province-tabs {
+    flex-shrink: 0;
+    margin: 0 23dp;
+}
+
+#province-tabs .tab {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-right: 0;
+    padding-left: 0;
+    border-top: 0dp transparent;
+    border-right: 0dp transparent;
+    border-left: 0dp transparent;
+    background-color: transparent;
+}
+
+#province-tabs .tab:last-child {
+    margin-right: 0;
+}
+
+#province-content {
+    box-sizing: border-box;
+    width: 374dp;
+    flex: 1;
+    min-height: 0dp;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 23dp;
+}
+
+/* Definite board dimensions avoid intrinsic percent widths inside RmlUi's scrolling flex item. */
+#province-economy,
+#province-overview-page,
+#province-income-page,
+#province-buildings-page,
+#province-income-summary,
+#province-income-line,
+#province-unavailable,
+#province-owner,
+#province-owner-row,
+.province-section-label,
+.province-stats,
+.province-stat,
+.province-detail-row,
+.province-detail-line,
+#province-income-note,
+#province-state-block,
+#province-state-detail {
+    box-sizing: border-box;
+    width: 328dp;
+}
+
+#province-unavailable {
+    margin-top: $space_24;
+    font-size: $type_17;
+    line-height: 26dp;
+    color: $muted;
+}
+
+.province-section-label {
+    color: $muted;
+    letter-spacing: 1.5dp;
+}
+
+#province-income-summary {
+    padding-top: 20dp;
+    padding-bottom: 16dp;
+    border-bottom: $stroke_hairline $line;
+}
+
+#province-income-line {
+    display: block;
+    margin-top: 7dp;
+}
+
+#province-income {
+    display: block;
+    width: 328dp;
+    font-family: $serif;
+    font-size: $type_42;
+    line-height: 63dp;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#province-income-change {
+    display: block;
+    width: 160dp;
+    margin-left: 168dp;
+    margin-bottom: $space_4;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#province-income-change.positive {
+    color: $green;
+}
+
+#province-income-change.negative {
+    color: $red;
+}
+
+#province-income-note {
+    min-height: 23dp;
+    line-height: 23dp;
+}
+
+.province-stats {
+    padding-top: 10dp;
+}
+
+.province-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 43dp;
+    font-size: $type_17;
+    color: $muted;
+}
+
+.province-stat-value {
+    font-size: $type_19;
+    font-weight: bold;
+    color: $text;
+    text-align: right;
+}
+
+.province-stat > span {
+    display: block;
+    box-sizing: border-box;
+    flex: 0 0 50%;
+    width: 50%;
+    min-width: 0dp;
+}
+
+#province-order-track {
+    height: 5dp;
+    margin-top: 14dp;
+    background-color: $paper2;
+}
+
+#province-order-fill {
+    height: 5dp;
+    background-color: $green;
+}
+
+#province-state-block {
+    padding-top: $space_24;
+    padding-bottom: 16dp;
+    border-bottom: $stroke_hairline $line;
+}
+
+#province-state {
+    display: block;
+    width: 328dp;
+    height: auto;
+    min-height: $badge_h;
+    padding-top: 4dp;
+    padding-bottom: 4dp;
+    line-height: 20dp;
+    white-space: normal;
+}
+
+#province-state-detail {
+    margin-top: 8dp;
+    line-height: 23dp;
+}
+
+#province-owner {
+    padding-top: 18dp;
+    padding-bottom: 16dp;
+}
+
+#province-owner-row {
+    display: flex;
+    margin-top: 15dp;
+    min-height: 84dp;
+}
+
+#province-owner-portrait {
+    flex-shrink: 0;
+    width: 68dp;
+    height: 84dp;
+    background-color: $paper2;
+}
+
+#province-owner-text {
+    flex: 1;
+    min-width: 0dp;
+    margin-left: $space_16;
+}
+
+#province-owner-name {
+    font-family: $serif;
+    font-size: $type_21;
+    line-height: 31dp;
+}
+
+#province-owner-detail {
+    margin-top: 7dp;
+    font-size: $type_13;
+    line-height: 20dp;
+    color: $muted;
+}
+
+#province-actions {
+    box-sizing: border-box;
+    width: 100%;
+    flex-shrink: 0;
+    padding: 0 23dp 15dp;
+}
+
+#province-manage {
+    width: 100%;
+    min-height: $btn_h;
+    height: auto;
+    padding-top: 7dp;
+    padding-bottom: 7dp;
+}
+
+.kbd #province-manage:focus {
+    padding-top: 6dp;
+    padding-bottom: 6dp;
+}
+
+#province-manage-reason {
+    margin-top: $space_8;
+    font-size: $type_12;
+    line-height: 18dp;
+}
+
+.province-detail-heading {
+    margin-top: $space_24;
+    margin-bottom: $space_8;
+}
+
+.province-detail-row {
+    padding: 10dp 0;
+    border-bottom: $stroke_hairline $line;
+    font-size: $type_15;
+    line-height: 23dp;
+}
+
+.province-detail-line {
+    display: flex;
+    justify-content: space-between;
+}
+
+.province-detail-line > span {
+    display: block;
+    min-width: 0dp;
+}
+
+.province-detail-line > span:first-child {
+    flex: 1;
+}
+
+.province-detail-value {
+    flex-shrink: 0;
+    margin-left: $space_8;
+    font-weight: bold;
+    text-align: right;
+}
+
+.province-recorded {
+    margin-top: $space_16;
+}
+
+.province-building-name {
+    margin-bottom: $space_4;
+    font-size: $type_17;
+}
+
+#province-income-page,
+#province-buildings-page {
+    padding-bottom: $space_24;
+}

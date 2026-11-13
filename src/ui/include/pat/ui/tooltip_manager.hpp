@@ -45,6 +45,10 @@ public:
     /// Per frame, before UiContext::update(): finds what is hovered and opens/closes tooltip documents.
     void update(float dt_seconds);
 
+    /// Refresh changed provider data without losing the open paths, anchors or pinning. Unchanged
+    /// explanations keep their documents; a path that no longer exists closes the stack.
+    void refresh();
+
     void close_all();
 
     [[nodiscard]] std::size_t open_levels() const;

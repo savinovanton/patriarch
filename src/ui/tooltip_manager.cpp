@@ -48,6 +48,9 @@ struct TooltipManager::Impl {
         std::string path;
         Rml::ElementDocument* document = nullptr;
         RectF rect;
+        Explanation content;
+        float cursor_x = 0.0f;
+        float cursor_y = 0.0f;
     };
     std::vector<Open> open;
 
@@ -117,10 +120,33 @@ struct TooltipManager::Impl {
         open.resize(std::min(first, open.size()));
     }
 
-    void sync() {
+    void sync(bool refresh_content = false) {
+        if (refresh_content) {
+            for (const auto& level : state.levels()) {
+                if (resolve(level.path) == nullptr) {
+                    state.close_all();
+                    break;
+                }
+            }
+        }
         const auto& levels = state.levels();
+        const bool preserve_origin =
+            refresh_content && !open.empty() && !levels.empty() && open.front().path == levels.front().path;
+        float root_cursor_x = preserve_origin ? open.front().cursor_x : cursor_x;
+        float root_cursor_y = preserve_origin ? open.front().cursor_y : cursor_y;
+        if (!preserve_origin && keyboard && !levels.empty()) {
+            // No cursor: place the root below the focused element.
+            root_cursor_x = levels.front().anchor.x - 14.0f;
+            root_cursor_y = levels.front().anchor.bottom() - 14.0f;
+        }
         std::size_t keep = 0;
         while (keep < open.size() && keep < levels.size() && open[keep].path == levels[keep].path) {
+            if (refresh_content) {
+                const Explanation* node = resolve(levels[keep].path);
+                if (node == nullptr || open[keep].content != *node) {
+                    break;
+                }
+            }
             ++keep;
         }
         close_documents_from(keep);
@@ -150,10 +176,9 @@ struct TooltipManager::Impl {
             request.viewport = {static_cast<float>(dims.x), static_cast<float>(dims.y)};
             request.cursor_x = cursor_x;
             request.cursor_y = cursor_y;
-            if (keyboard && i == 0) {
-                // No cursor: put the tooltip just below the focused element, flipping at the edges as usual.
-                request.cursor_x = levels[i].anchor.x - 14.0f;
-                request.cursor_y = levels[i].anchor.bottom() - 14.0f;
+            if (i == 0) {
+                request.cursor_x = root_cursor_x;
+                request.cursor_y = root_cursor_y;
             }
             request.anchor = levels[i].anchor;
             request.margin = 8.0f * ui->context()->GetDensityIndependentPixelRatio();
@@ -167,7 +192,7 @@ struct TooltipManager::Impl {
             box->SetProperty("left", px_string(rect.x));
             box->SetProperty("top", px_string(rect.y));
             doc->Show(Rml::ModalFlag::None, Rml::FocusFlag::None);
-            open.push_back({levels[i].path, doc, rect});
+            open.push_back({levels[i].path, doc, rect, *node, request.cursor_x, request.cursor_y});
         }
         synced_revision = state.revision();
     }
@@ -241,6 +266,10 @@ void TooltipManager::update(float dt_seconds) {
     if (impl_->state.revision() != impl_->synced_revision) {
         impl_->sync();
     }
+}
+
+void TooltipManager::refresh() {
+    impl_->sync(true);
 }
 
 void TooltipManager::close_all() {

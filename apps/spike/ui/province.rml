@@ -1,0 +1,90 @@
+<rml>
+<head>
+    <title>Province</title>
+    <link type="text/rcss" href="theme.rcss"/>
+    <link type="text/rcss" href="components.rcss"/>
+    <link type="text/rcss" href="province.rcss"/>
+</head>
+<body data-model="province">
+<div id="province-inspector" class="sheet sheet-window">
+    <div id="province-header">
+        <div class="label" id="province-title">{{ t.title }}</div>
+        <button id="province-close" data-attr-title="t.close" data-event-click="close()">
+            <svg id="province-close-icon" data-attr-src="close_icon"/>
+        </button>
+        <div id="province-name" data-attr-title="name">{{ name }}</div>
+        <div id="province-subtitle">{{ subtitle }}</div>
+    </div>
+    <div class="tabs" id="province-tabs">
+        <button class="tab" id="province-tab-overview" data-class-active="tab == 'overview'" data-event-click="tab('overview')">{{ t.tab_overview }}</button>
+        <button class="tab" id="province-tab-income" data-class-active="tab == 'income'" data-event-click="tab('income')">{{ t.tab_income }}</button>
+        <button class="tab" id="province-tab-buildings" data-class-active="tab == 'buildings'" data-event-click="tab('buildings')">{{ t.tab_buildings }}</button>
+    </div>
+    <div id="province-content">
+        <div id="province-unavailable" data-if="!available">{{ t.unavailable }}</div>
+        <div id="province-economy" data-if="available">
+            <div id="province-income-summary">
+                <div class="label province-section-label">{{ t.income }}</div>
+                <div id="province-income-line">
+                    <div id="province-income" data-tip="province:income">{{ income }}</div>
+                    <div class="badge" id="province-income-change" data-class-positive="change_positive" data-class-negative="change_negative" data-tip="province:change">{{ income_change }}</div>
+                </div>
+                <div class="note" id="province-income-note">{{ t.income_detail }}</div>
+            </div>
+            <div id="province-overview-page" data-if="tab == 'overview'">
+                <div class="province-stats">
+                    <div class="province-stat" data-tip="province:population"><span>{{ t.population }}</span><span class="province-stat-value" id="province-population" data-tip="province:population">{{ population }}</span></div>
+                    <div class="province-stat" data-tip="province:order"><span>{{ t.order }}</span><span class="province-stat-value" id="province-order" data-tip="province:order">{{ order }}</span></div>
+                    <div class="province-stat" data-tip="province:garrison"><span>{{ t.garrison }}</span><span class="province-stat-value" id="province-garrison" data-tip="province:garrison">{{ garrison }}</span></div>
+                </div>
+                <div id="province-order-track" data-tip="province:order"><div id="province-order-fill" data-style-width="order_width"></div></div>
+                <div id="province-state-block" data-tip="province:state">
+                    <div class="badge" id="province-state" data-tip="province:state">{{ state }}</div>
+                    <div class="note" id="province-state-detail">{{ state_detail }}</div>
+                </div>
+            </div>
+            <div id="province-income-page" data-if="tab == 'income'">
+                <div class="label province-section-label province-detail-heading">{{ t.income_factors }}</div>
+                <div class="province-detail-row" data-for="row : factors" data-attr-data-tip="row.tip">
+                    <div class="province-detail-line"><span>{{ row.name }}</span><span class="province-detail-value">{{ row.value }}</span></div>
+                    <div class="note" data-if="row.note != ''">{{ row.note }}</div>
+                </div>
+                <div class="province-detail-row province-recorded" data-tip="province:income-last">
+                    <div class="province-detail-line"><span>{{ t.income_last_month }}</span><span class="province-detail-value" id="province-income-last">{{ income_last_month }}</span></div>
+                </div>
+                <div class="label province-section-label province-detail-heading">{{ t.groups }}</div>
+                <div class="province-detail-row" data-for="row : groups" data-attr-data-tip="row.tip">
+                    <div class="province-detail-line"><span>{{ row.name }}</span><span class="province-detail-value">{{ row.value }}</span></div>
+                </div>
+            </div>
+            <div id="province-buildings-page" data-if="tab == 'buildings'">
+                <div class="label province-section-label province-detail-heading">{{ t.buildings }}</div>
+                <div class="note" data-if="!has_buildings">{{ t.buildings_empty }}</div>
+                <div class="province-detail-row" data-for="row : buildings" data-attr-data-tip="row.tip">
+                    <div class="province-building-name">{{ row.name }}</div>
+                    <div class="province-detail-line note"><span>{{ t.building_upkeep }}</span><span class="province-detail-value">{{ row.value }}</span></div>
+                </div>
+                <div class="province-detail-row province-recorded" data-tip="province:slots"><div class="province-detail-line"><span>{{ t.slots }}</span><span class="province-detail-value" id="province-slots">{{ slots }}</span></div></div>
+                <div class="province-detail-row" data-tip="province:free-slots"><div class="province-detail-line"><span>{{ t.free_slots }}</span><span class="province-detail-value" id="province-free-slots">{{ free_slots }}</span></div></div>
+            </div>
+        </div>
+        <div id="province-owner" data-if="tab == 'overview' && owner_name != ''">
+            <div class="label province-section-label">{{ t.owner }}</div>
+            <div id="province-owner-row">
+                <div id="province-owner-portrait" data-style-decorator="owner_portrait"></div>
+                <div id="province-owner-text">
+                    <div id="province-owner-name">{{ owner_name }}</div>
+                    <div id="province-owner-detail">{{ owner_detail }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="province-actions" data-if="available">
+        <button class="btn btn-primary" id="province-manage" data-class-is-disabled="!manage_enabled" data-tip="province:manage" data-event-click="manage()">
+            <svg data-attr-src="manage_icon"/><span>{{ t.manage }}</span>
+        </button>
+        <div class="note" id="province-manage-reason" data-if="!manage_enabled">{{ manage_reason }}</div>
+    </div>
+</div>
+</body>
+</rml>
