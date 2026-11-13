@@ -70,6 +70,7 @@ add_executable(patriarch_tests
     spsc_queue_test.cpp
     static_vec_test.cpp
     ui_data_test.cpp
+    ui_layout_boards_test.cpp
     string_interner_test.cpp
     traits_content_test.cpp
     traits_test.cpp

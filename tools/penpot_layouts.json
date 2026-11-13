@@ -1,0 +1,65 @@
+{
+  "comment": "Output layout files and the Penpot boards in each (UI-D11). A board is given by its number (the name must start with 'NN / ') or by its exact name. Run: python -I tools/penpot_export.py <snapshot.json> --manifest tools/penpot_layouts.json --out-dir data/ui/layout",
+  "files": [
+    {
+      "file": "save_menu.pd",
+      "description": "Pause menu (14), save dialog and its states (15-21), overwrite (22), before exit (23, 78) and load game (72).",
+      "boards": ["14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "78", "72"]
+    },
+    {
+      "file": "game_summary.pd",
+      "description": "Game summary: the name that stays in history (24-26) and the extinct line (27, 73, 74).",
+      "boards": ["24", "25", "26", "27", "73", "74"]
+    },
+    {
+      "file": "empire_state.pd",
+      "description": "State of the empire (boards 28-29).",
+      "boards": ["28", "29"]
+    },
+    {
+      "file": "court.pd",
+      "description": "Court (30-32) and the candidates for a position (75, 76).",
+      "boards": ["30", "31", "32", "75", "76"]
+    },
+    {
+      "file": "throne.pd",
+      "description": "Throne screens: claim and support (33-35, 79).",
+      "boards": ["33", "34", "35", "79"]
+    },
+    {
+      "file": "plots_coup.pd",
+      "description": "Plots and the coup: boards 36-44.",
+      "boards": ["36", "37", "38", "39", "40", "41", "42", "43", "44"]
+    },
+    {
+      "file": "goals.pd",
+      "description": "Game goal window and change of goal: boards 45-48.",
+      "boards": ["45", "46", "47", "48"]
+    },
+    {
+      "file": "dynasty_start.pd",
+      "description": "Start of a custom dynasty and the check of the beginning of the story: boards 49-55.",
+      "boards": ["49", "50", "51", "52", "53", "54", "55"]
+    },
+    {
+      "file": "servants.pd",
+      "description": "Household servants: boards 56-59, 70 (dismissal confirm), 77 (steward dismissed).",
+      "boards": ["56", "57", "58", "59", "70", "77"]
+    },
+    {
+      "file": "house_council.pd",
+      "description": "House council: boards 60-64, 71 (inheritance reform), 80 (new law).",
+      "boards": ["60", "61", "62", "63", "64", "71", "80"]
+    },
+    {
+      "file": "chronicle_journal.pd",
+      "description": "Dynasty chronicle, journal and event settings: boards 65-69.",
+      "boards": ["65", "66", "67", "68", "69"]
+    },
+    {
+      "file": "ui_guide.pd",
+      "description": "Guide to the interfaces (board 81).",
+      "boards": ["81"]
+    }
+  ]
+}
