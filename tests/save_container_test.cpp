@@ -28,7 +28,6 @@ constexpr std::size_t kOffVersion = 4;
 constexpr std::size_t kOffFlags = 6;
 constexpr std::size_t kOffSummarySize = 8;
 constexpr std::size_t kOffSummaryHash = 12;
-constexpr std::size_t kOffCompressedSize = 36;
 
 std::filesystem::path fixture(const char* name) {
     return std::filesystem::path(PATRIARCH_TEST_DATA_DIR) / "saves" / name;
