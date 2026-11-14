@@ -526,7 +526,7 @@ TEST_CASE("godparents: reserved, validated, saved and hashed") {
 namespace {
 
 /// A small married family with children, in dynasty mode.
-World family() {
+World make_kinship_world() {
     World world = dynasty_world();
     const CharacterId f = add(world, Sex::Male, year(1650));
     const CharacterId m = add(world, Sex::Female, year(1655));
@@ -544,7 +544,7 @@ World family() {
 /// must not load.
 template <class Corrupt>
 void expect_rejected(const char* what, Corrupt corrupt, const char* message = nullptr) {
-    World world = family();
+    World world = make_kinship_world();
     require_valid(world);
     corrupt(world);
     const auto problems = world.check_invariants();
@@ -630,7 +630,7 @@ TEST_CASE("invariants: a damaged family is reported and refused by the loader") 
 
 TEST_CASE("invariants: the derived child lists are checked against the parent columns") {
     auto damaged = [](auto corrupt) {
-        World world = family();
+        World world = make_kinship_world();
         corrupt(table_of(world));
         return world.check_invariants();
     };

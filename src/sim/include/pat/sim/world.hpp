@@ -15,6 +15,7 @@
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/entity_ids.hpp"
 #include "pat/sim/entity_table.hpp"
+#include "pat/sim/family/tables.hpp"
 #include "pat/sim/scheduled_queue.hpp"
 
 #include <algorithm>
@@ -779,6 +780,51 @@ public:
     /// empty outside dynasty mode. Not saved and not hashed; rebuilt on load.
     [[nodiscard]] const ScheduledQueue<LifeEvent>& life_queue() const noexcept { return life_queue_; }
 
+    // ---- family tables (E8-T02; rules, systems and persistence follow in E8) ----
+    [[nodiscard]] const family::State& family() const noexcept { return family_; }
+    /// Creation assigns the next monotone id; the supplied id must be zero. Rejected mutations
+    /// leave every family row and counter unchanged. These operations apply structural checks only.
+    [[nodiscard]] std::optional<family::NegotiationId> create_family_negotiation(family::Negotiation row);
+    bool update_family_negotiation(family::NegotiationId id, const family::Negotiation& row);
+    bool close_family_negotiation(family::NegotiationId id);
+    [[nodiscard]] std::optional<family::BetrothalId> create_family_betrothal(family::Betrothal row);
+    bool update_family_betrothal(family::BetrothalId id, const family::Betrothal& row);
+    bool close_family_betrothal(family::BetrothalId id);
+    /// An Active record describes an existing World::marry pair; this does not marry the people.
+    [[nodiscard]] std::optional<family::MarriageId> create_family_marriage(family::Marriage row);
+    bool update_family_marriage(family::MarriageId id, const family::Marriage& row);
+    [[nodiscard]] std::optional<family::OutcomeSequence>
+    append_family_outcome(family::NegotiationOutcome row);
+    bool set_family_status(const family::PersonStatus& row);
+    bool clear_family_status(CharacterId character);
+    bool set_family_succession(const family::SuccessionState& row);
+    bool clear_family_succession(DynastyId dynasty);
+    bool set_family_regency(const family::Regency& row);
+    bool clear_family_regency(DynastyId dynasty);
+    bool set_family_dispute(const family::Dispute& row);
+    bool clear_family_dispute(DynastyId dynasty);
+    /// With economy enabled, the holder must already be the province administrator.
+    bool set_family_land_grant(const family::LandGrant& row);
+    bool clear_family_land_grant(ProvinceId province);
+    bool set_family_godparent_cursor(std::uint32_t cursor);
+    [[nodiscard]] const family::Negotiation* find_family_negotiation(family::NegotiationId id) const;
+    [[nodiscard]] const family::Betrothal* find_family_betrothal(family::BetrothalId id) const;
+    [[nodiscard]] const family::Marriage* find_family_marriage(family::MarriageId id) const;
+    [[nodiscard]] const family::NegotiationOutcome* find_family_outcome(family::OutcomeSequence seq) const;
+    [[nodiscard]] const family::PersonStatus* family_status(CharacterId character) const;
+    [[nodiscard]] const family::SuccessionState* family_succession(DynastyId dynasty) const;
+    [[nodiscard]] const family::Regency* family_regency(DynastyId dynasty) const;
+    [[nodiscard]] const family::Dispute* family_dispute(DynastyId dynasty) const;
+    [[nodiscard]] const family::LandGrant* family_land_grant(ProvinceId province) const;
+    [[nodiscard]] const family::Negotiation* family_negotiation_of(CharacterId character) const;
+    [[nodiscard]] const family::Betrothal* family_betrothal_of(CharacterId character) const;
+    [[nodiscard]] const family::Marriage* family_marriage_of(CharacterId character) const;
+    /// Computed indexes: 0 none, 1 negotiation, 2 betrothal. No mutable derived family state.
+    [[nodiscard]] std::uint8_t engagement_of(CharacterId character) const;
+    /// The first living adult in the saved order, otherwise the first living minor (#491).
+    /// No final title is assigned.
+    [[nodiscard]] CharacterId family_caretaker(DynastyId dynasty) const;
+
     // ---- pregnancies (E7-T12) ----
     /// Pregnancies by ascending mother id. Dynasty mode only (empty otherwise).
     [[nodiscard]] std::span<const Pregnancy> pregnancies() const noexcept { return pregnancies_; }
@@ -892,6 +938,8 @@ private:
     void check_kinship_invariants(std::vector<std::string>& bad) const;
     void check_pregnancy_invariants(std::vector<std::string>& bad) const;
     [[nodiscard]] std::uint64_t pregnancy_hash() const;
+    void family_on_death(CharacterId character);
+    void check_family_invariants(std::vector<std::string>& bad) const;
     // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
     struct StateSection {
         std::uint16_t id = 0;
@@ -944,6 +992,7 @@ private:
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
     std::vector<StandingHistory> standing_history_;  // nonempty histories, ascending dynasty id
+    family::State family_;                           // E8-T02: not serialized or hashed until T03
     economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
     economy::ModifierCache modifier_cache_;          // E9-T17: derived, never saved, hashed or compared
 };

@@ -647,6 +647,7 @@ bool World::die(CharacterId id, CauseOfDeath cause) {
     const bool retired = characters_.ids.retire(id);
     PAT_ASSERT(retired, "die: retire failed");
     erase_opinion_holder(id);
+    family_on_death(id);
     archive_sum_ += archive_row_hash(i);
     if (retired && dynasty.valid()) {
         append_chronicle(dynasty, {today(), ChronicleKind::Death, id, {}, static_cast<std::int32_t>(cause)});
@@ -1920,6 +1921,7 @@ std::vector<std::string> World::check_invariants() const {
     }
 
     check_economy_invariants(bad);
+    check_family_invariants(bad);
     return bad;
 }
 
