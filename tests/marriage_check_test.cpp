@@ -464,6 +464,14 @@ TEST_CASE("marriage check: stable reasons have keys and legacy command errors ke
     CHECK(marriage_denial_key(static_cast<Denial>(0)).empty());
     CHECK(marriage_denial_key(static_cast<Denial>(29)).empty());
     CHECK(marriage_denial_key(static_cast<Denial>(65'535)).empty());
+    const CommandError empty;
+    CHECK(empty.reason == Rejection::None);
+    CHECK(empty.code == 0);
+    CHECK(std::string_view(empty.detail).empty());
+    const CommandError reason_only{Rejection::UnknownEntity};
+    CHECK(reason_only.reason == Rejection::UnknownEntity);
+    CHECK(reason_only.code == 0);
+    CHECK(std::string_view(reason_only.detail).empty());
     const CommandError legacy{Rejection::InvalidState, "detail"};
     CHECK(legacy.code == 0);
     CHECK(legacy.reason == Rejection::InvalidState);

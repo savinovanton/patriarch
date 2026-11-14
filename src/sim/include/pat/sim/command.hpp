@@ -394,9 +394,18 @@ enum class Rejection : std::uint8_t {
 
 struct CommandError {
     Rejection reason = Rejection::None;
-    const char* detail = "";  // static string describing the first violated rule
     std::uint16_t code = 0;   // optional domain-specific reason; not serialized
+    const char* detail = "";  // static string describing the first violated rule
+
+    constexpr CommandError() noexcept = default;
+    constexpr CommandError(Rejection reason_value,
+                           const char* detail_value = "",
+                           std::uint16_t code_value = 0) noexcept
+        : reason(reason_value), code(code_value), detail(detail_value) {}
 };
+
+// Validation returns this for every command: use the padding before the pointer for the code.
+static_assert(sizeof(CommandError) <= 2 * sizeof(void*), "CommandError must stay compact");
 
 [[nodiscard]] CommandType type_of(const Command& command) noexcept;
 [[nodiscard]] std::string_view to_string(CommandType type) noexcept;
