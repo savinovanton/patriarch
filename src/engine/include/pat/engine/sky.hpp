@@ -87,7 +87,8 @@ struct SkyPalette {
     std::array<float, 3> gold{};  ///< Gold clouds on the sunset side. Grades to #bda68d.
 };
 
-inline constexpr SkyPalette kGoldenHourSky{
-    {0.1229f, 0.2476f, 0.3338f}, {0.2267f, 0.2427f, 0.2545f}, {0.3981f, 0.3249f, 0.2482f}};
+inline constexpr SkyPalette kGoldenHourSky{std::array<float, 3>{0.1229f, 0.2476f, 0.3338f},
+                                           std::array<float, 3>{0.2267f, 0.2427f, 0.2545f},
+                                           std::array<float, 3>{0.3981f, 0.3249f, 0.2482f}};
 
 }  // namespace pat::engine
