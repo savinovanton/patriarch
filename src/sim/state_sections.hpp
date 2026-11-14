@@ -7,7 +7,7 @@
 
 // Ids of the sections of the extension block of the world state (ADR-0006 D6) and the helpers that
 // the readers share. Internal to src/sim: the layout itself is documented at the top of world_io.cpp
-// (sections 1..7) and world_economy_io.cpp (sections 32..39).
+// (sections 1..7), world_family_io.cpp (sections 16..23) and world_economy_io.cpp (sections 32..40).
 //
 // Ids are stable forever and are only ever added. Blocks: 1..15 E7, 16..31 E8, 32..47 E9.
 
@@ -20,6 +20,16 @@ inline constexpr std::uint16_t kSectionPregnancy = 4;
 inline constexpr std::uint16_t kSectionChronicle = 5;
 inline constexpr std::uint16_t kSectionOpinion = 6;
 inline constexpr std::uint16_t kSectionStanding = 7;
+
+// ---- E8-T03: the family (schema >= 12). Default sections are omitted. ----
+inline constexpr std::uint16_t kSectionFamilyCounters = 16;
+inline constexpr std::uint16_t kSectionNegotiations = 17;
+inline constexpr std::uint16_t kSectionBetrothals = 18;
+inline constexpr std::uint16_t kSectionMarriages = 19;
+inline constexpr std::uint16_t kSectionPersonStatus = 20;
+inline constexpr std::uint16_t kSectionSuccession = 21;
+inline constexpr std::uint16_t kSectionRegency = 22;
+inline constexpr std::uint16_t kSectionDispute = 23;
 
 // ---- E9-T03: the economy (schema >= 5). Written only when the economy is on. ----
 inline constexpr std::uint16_t kSectionEconomy = 32;              ///< scalars, rules hash

@@ -92,6 +92,7 @@ add_library(patriarch_sim STATIC
     traits.cpp
     world.cpp
     world_family.cpp
+    world_family_io.cpp
     world_economy.cpp
     world_economy_io.cpp
     world_io.cpp

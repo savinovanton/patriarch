@@ -420,7 +420,14 @@ enum class ExtPart : std::uint8_t {
     Chronicle = 5,     // E7-T16
     Opinion = 6,       // E7-T17
     Kinship = 7,       // E7-T03: spouses, marriage counters, former spouses, godparents
-    Economy = 16,      // E9-T03 (numbers 16..23 are E9's): hash of the nine economy sub-hashes
+    Negotiation = 8,   // E8-T03: counters, negotiations and their outcome ring
+    Betrothal = 9,     // E8-T03
+    MarriageRecord = 10,
+    PersonStatus = 11,
+    Succession = 12,  // E8-T03: choices, grants and godparent cursor
+    Regency = 13,
+    Dispute = 14,
+    Economy = 16,  // E9-T03 (numbers 16..23 are E9's): hash of the nine economy sub-hashes
 };
 inline constexpr std::size_t kExtPartCount = 64;
 
@@ -882,7 +889,8 @@ public:
     ///   9  + section 40 "economy policy" (E9-T12): policies of the dynasties; older files: all default
     ///  10  loan interest carries use denominator 12,000,000; older carries are multiplied by 12
     ///  11  + section 4 "pregnancy" (E7-T12); older files start without pregnancies
-    static constexpr std::uint32_t kStateSchema = 11;
+    ///  12  + sections 16..23 (E8 family), coded ledger additions 16 and 112
+    static constexpr std::uint32_t kStateSchema = 12;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -946,6 +954,13 @@ private:
         std::uint16_t version = 1;
         core::ByteWriter body;
     };
+    [[nodiscard]] bool family_section_present(std::uint16_t id) const;
+    /// Appends nondefault family sections 16..23 in ascending order.
+    void family_write_sections(std::vector<StateSection>& sections) const;
+    /// Reads raw rows; the caller checks cross-table invariants after every section is loaded.
+    [[nodiscard]] const char* family_read_section(std::uint16_t id, core::ByteReader& in);
+    /// Parts 8..14 in order; default content yields zero and contributes nothing to the total.
+    [[nodiscard]] std::array<std::uint64_t, 7> family_hash_parts() const;
     /// Appends the sections of the economy (nothing when it is off), ascending by id.
     void economy_write_sections(std::vector<StateSection>& sections) const;
     /// Reads one economy section into the tables. `closed_months` etc. come from the section 32 read
@@ -992,7 +1007,7 @@ private:
     std::map<DynastyId, std::vector<ChronicleEntry>> chronicles_;
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
     std::vector<StandingHistory> standing_history_;  // nonempty histories, ascending dynasty id
-    family::State family_;                           // E8-T02: not serialized or hashed until T03
+    family::State family_;                           // E8-T03: sparse family tables and counters
     economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
     economy::ModifierCache modifier_cache_;          // E9-T17: derived, never saved, hashed or compared
 };

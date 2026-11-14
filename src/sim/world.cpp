@@ -89,6 +89,20 @@ std::string ext_part_name(std::size_t number) {
             return "opinion";
         case ExtPart::Kinship:
             return "kinship";
+        case ExtPart::Negotiation:
+            return "negotiation";
+        case ExtPart::Betrothal:
+            return "betrothal";
+        case ExtPart::MarriageRecord:
+            return "marriage_record";
+        case ExtPart::PersonStatus:
+            return "person_status";
+        case ExtPart::Succession:
+            return "succession";
+        case ExtPart::Regency:
+            return "regency";
+        case ExtPart::Dispute:
+            return "dispute";
         case ExtPart::Economy:
             return "economy";
     }
@@ -1283,6 +1297,11 @@ WorldHash World::compute_hash() const {
             h.u64(part);
         }
         out.ext[static_cast<std::size_t>(ExtPart::Economy)] = nonzero(h.value());
+    }
+
+    const auto family_parts = family_hash_parts();
+    for (std::size_t part = 0; part < family_parts.size(); ++part) {
+        out.ext[static_cast<std::size_t>(ExtPart::Negotiation) + part] = family_parts[part];
     }
 
     core::HashStream total;

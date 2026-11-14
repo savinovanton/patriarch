@@ -698,6 +698,91 @@ TEST_CASE("save: the economy hash is the hash of its nine sub-hashes, and rules_
     CHECK(loaded.value().economy().meta.rules_hash == 0xAAAA);
 }
 
+TEST_CASE("E8 ledger: schema-11 economy retains its exact legacy hash and gains zero lines") {
+    auto file = read_file(fixture_path("dynasty_v11_e8_economy.psv"));
+    REQUIRE(file.has_value());
+    auto loaded = deserialize_save(file.value());
+    REQUIRE(loaded.has_value());
+    const World& world = loaded.value().world;
+    // Recorded by main a1c3e69, before the E8 codes shifted the dense indices (see fixture .md).
+    CHECK(world.compute_hash().total == 15479572076255755579ULL);
+    CHECK(economy_ext(world) == 12620759142815849368ULL);
+    const auto& accounts = world.economy().accounts;
+    for (std::size_t row = 0; row < accounts.size(); ++row) {
+        for (const auto code : {LedgerCode::DowryIn, LedgerCode::MarriageEnvoy}) {
+            CHECK(accounts.open_line(row, code) == 0);
+            for (std::size_t month = 0; month < kLedgerRingMonths; ++month) {
+                CHECK(accounts.ring_lines(row, month)[*ledger_index(code)] == 0);
+            }
+        }
+    }
+    require_valid(world);
+    auto reloaded = load(state_bytes(world));
+    REQUIRE(reloaded.has_value());
+    CHECK(reloaded.value().compute_hash() == world.compute_hash());
+    CHECK(reloaded.value().economy() == world.economy());
+}
+
+TEST_CASE("E8 ledger: nonzero hash extensions distinguish account, period and code") {
+    const World base = rich_world();
+    const auto accounts_hash = [](const World& world) {
+        return world.economy_hash_parts()[part_index(EconomyHashPart::Accounts)];
+    };
+    const auto variant = [&](std::size_t account, int month, LedgerCode code) {
+        World copy = base;
+        auto& accounts = state(copy).accounts;
+        const auto line = *ledger_index(code);
+        if (month < 0) {
+            Access::open_lines(accounts)[account * kLedgerLineCount + line] = 7;
+        } else {
+            Access::ring_lines(
+                accounts)[(account * kLedgerRingMonths + static_cast<std::size_t>(month)) * kLedgerLineCount +
+                          line] = 7;
+        }
+        return accounts_hash(copy);
+    };
+    // Keep all legacy bytes fixed and vary only the context of one nonzero extension cell.
+    const auto open = variant(1, -1, LedgerCode::DowryIn);
+    CHECK(open != accounts_hash(base));
+    CHECK(open != variant(2, -1, LedgerCode::DowryIn));
+    CHECK(open != variant(1, -1, LedgerCode::MarriageEnvoy));
+    CHECK(open != variant(1, 0, LedgerCode::DowryIn));
+    CHECK(variant(1, 0, LedgerCode::DowryIn) != variant(1, 1, LedgerCode::DowryIn));
+}
+
+TEST_CASE("E8 ledger: nonzero extensions survive ring wrap, reload and further postings") {
+    World world(Date::from_ymd(1703, 1, 1), 298);
+    const auto bride = world.create_dynasty(StringId(1));
+    const auto groom = world.create_dynasty(StringId(2));
+    REQUIRE(world.enable_economy());
+    const auto sender = AccountRef::of(bride);
+    const auto receiver = AccountRef::of(groom);
+    for (int month = 0; month < static_cast<int>(kLedgerRingMonths) + 3; ++month) {
+        const Kopecks amount = 100 + month;
+        REQUIRE(world.post_money(sender, LedgerCode::MarriageEnvoy, -amount) == -amount);
+        REQUIRE(world.transfer(sender, receiver, LedgerCode::DowryOut, LedgerCode::DowryIn, amount) ==
+                amount);
+        const int next = month + 1;
+        REQUIRE(world.close_ledger_month(Date::from_ymd(1703 + next / 12, 1 + next % 12, 1)));
+    }
+    REQUIRE(world.economy().meta.closed_months == kLedgerRingMonths);
+    REQUIRE(world.post_money(sender, LedgerCode::MarriageEnvoy, -17) == -17);
+    REQUIRE(world.transfer(sender, receiver, LedgerCode::DowryOut, LedgerCode::DowryIn, 19) == 19);
+    require_valid(world);
+    auto loaded = load(state_bytes(world));
+    REQUIRE(loaded.has_value());
+    CHECK(loaded.value().economy_hash_parts() == world.economy_hash_parts());
+    CHECK(loaded.value().economy() == world.economy());
+    const auto next_month = Date::from_ymd(1704, 5, 1);
+    for (World* current : {&world, &loaded.value()}) {
+        REQUIRE(current->post_money(sender, LedgerCode::MarriageEnvoy, -23) == -23);
+        REQUIRE(current->transfer(sender, receiver, LedgerCode::DowryOut, LedgerCode::DowryIn, 29) == 29);
+        REQUIRE(current->close_ledger_month(next_month));
+        require_valid(*current);
+    }
+    CHECK(loaded.value().compute_hash() == world.compute_hash());
+}
+
 // =================================================================================================
 // the hash: every column, every table; no dependence on the way the state was reached
 // =================================================================================================
@@ -1097,7 +1182,10 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
     refuse("accounts missing", [](auto& secs) { remove_section(secs, kSecAccounts); }, "violates invariants");
 
     // ---- the statement
-    refuse("33 lines", [](auto& secs) { put16(body_of(secs, kSecAccounts), 0, 33); }, "number of lines");
+    refuse(
+        "too many lines",
+        [](auto& secs) { put16(body_of(secs, kSecAccounts), 0, kLedgerLineCount + 1); },
+        "number of lines");
     refuse(
         "0xFFFF lines", [](auto& secs) { put16(body_of(secs, kSecAccounts), 0, 0xFFFF); }, "number of lines");
     refuse(

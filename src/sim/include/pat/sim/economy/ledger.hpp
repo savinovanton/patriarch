@@ -34,6 +34,7 @@ enum class LedgerCode : std::uint16_t {
     GrantsIn = 13,
     Tribute = 14,
     FarmingIncome = 15,
+    DowryIn = 16,
     // expenses
     Embezzlement = 100,
     BuildingUpkeep = 101,
@@ -47,6 +48,7 @@ enum class LedgerCode : std::uint16_t {
     Interest = 109,
     RaidLoss = 110,
     DowryOut = 111,
+    MarriageEnvoy = 112,
     // transfers between accounts (always in pairs, see kLedgerPairs)
     LoanTaken = 200,
     LoanRepaid = 201,
@@ -61,16 +63,22 @@ enum class LedgerCode : std::uint16_t {
 /// Every issued code in strictly ascending order; the position in this array is the dense index of
 /// the line in the statement.
 inline constexpr std::array kLedgerCodes = {
-    LedgerCode::TaxNobility,   LedgerCode::TaxClergy,       LedgerCode::TaxTownsfolk,
-    LedgerCode::TaxPeasants,   LedgerCode::TaxCossacks,     LedgerCode::TaxNatives,
-    LedgerCode::HoldingIncome, LedgerCode::Duties,          LedgerCode::SalariesIn,
-    LedgerCode::GrantsIn,      LedgerCode::Tribute,         LedgerCode::FarmingIncome,
-    LedgerCode::Embezzlement,  LedgerCode::BuildingUpkeep,  LedgerCode::Construction,
-    LedgerCode::CourtUpkeep,   LedgerCode::SalariesOut,     LedgerCode::ArmyUpkeep,
-    LedgerCode::GiftsBribes,   LedgerCode::ChurchDonations, LedgerCode::QuotaMoney,
-    LedgerCode::Interest,      LedgerCode::RaidLoss,        LedgerCode::DowryOut,
-    LedgerCode::LoanTaken,     LedgerCode::LoanRepaid,      LedgerCode::LoanIssued,
-    LedgerCode::LoanCollected, LedgerCode::QuotaCollected,  LedgerCode::InterestCollected,
+    LedgerCode::TaxNobility,     LedgerCode::TaxClergy,
+    LedgerCode::TaxTownsfolk,    LedgerCode::TaxPeasants,
+    LedgerCode::TaxCossacks,     LedgerCode::TaxNatives,
+    LedgerCode::HoldingIncome,   LedgerCode::Duties,
+    LedgerCode::SalariesIn,      LedgerCode::GrantsIn,
+    LedgerCode::Tribute,         LedgerCode::FarmingIncome,
+    LedgerCode::DowryIn,         LedgerCode::Embezzlement,
+    LedgerCode::BuildingUpkeep,  LedgerCode::Construction,
+    LedgerCode::CourtUpkeep,     LedgerCode::SalariesOut,
+    LedgerCode::ArmyUpkeep,      LedgerCode::GiftsBribes,
+    LedgerCode::ChurchDonations, LedgerCode::QuotaMoney,
+    LedgerCode::Interest,        LedgerCode::RaidLoss,
+    LedgerCode::DowryOut,        LedgerCode::MarriageEnvoy,
+    LedgerCode::LoanTaken,       LedgerCode::LoanRepaid,
+    LedgerCode::LoanIssued,      LedgerCode::LoanCollected,
+    LedgerCode::QuotaCollected,  LedgerCode::InterestCollected,
     LedgerCode::Adjustment,
 };
 
@@ -149,6 +157,7 @@ inline constexpr std::array kLedgerPairs = {
     LedgerPair{LedgerCode::LoanRepaid, LedgerCode::LoanCollected},    // repayment: dynasty -> crown
     LedgerPair{LedgerCode::QuotaMoney, LedgerCode::QuotaCollected},   // money quota: dynasty -> crown
     LedgerPair{LedgerCode::Interest, LedgerCode::InterestCollected},  // interest: dynasty -> crown
+    LedgerPair{LedgerCode::DowryOut, LedgerCode::DowryIn},            // dowry: bride's house -> groom's
 };
 
 [[nodiscard]] constexpr bool is_ledger_pair(LedgerCode out, LedgerCode in) noexcept {

@@ -35,6 +35,7 @@ add_executable(patriarch_tests
     economy_world_test.cpp
     fixed_test.cpp
     family_state_test.cpp
+    family_save_test.cpp
     golden_test.cpp
     ids_test.cpp
     save_capacity_test.cpp
