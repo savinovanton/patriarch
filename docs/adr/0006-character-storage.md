@@ -325,7 +325,7 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 32 `economy` | E9-T03 | заголовок экономики: `present`, `rules_hash`, `crown_dynasty`, ведомость (даты), счётчики | 1 |
 | 33 `economy_dynasty` … 39 `economy_incidents` | E9-T03 | роды, провинции, население, счета с кольцами ведомости, очередь стройки, займы/квоты/итоги, журнал происшествий; раскладка — `economy-model.md` §13.5 и комментарий в `src/sim/world_economy_io.cpp` | 1 |
 | 40…47 | резерв E9 | | |
-| 48…63 | E11 (события; E11-T01) | | |
+| 48…63 | E11 (подтверждено E11-T01: выпущены 48…57 `events_meta`, `event_flags`, `event_vars`, `event_timers`, `event_cooldowns`, `event_chains`, `event_modifiers`, `event_queue`, `event_history`, `event_journal`; 58…63 резерв; теги 96…109; части хеша `ExtPart` 24…29 — [event-engine.md](../dev/event-engine.md) §8.4, §9) | | |
 | 64…71 | E10 (двор; E10-T01) | | |
 | 72…83 | E12 (император и кризис; E12-T01) | | |
 | 84…91 | E30 (`GameSetup`, цели; E30-T01) | | |
@@ -448,7 +448,8 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 8…15 | E8 | | |
 | 16 | `economy` — FNV от девяти под-хешей таблиц экономики (`World::economy_hash_parts()`); 0 и вне `total` при выключенной экономике | E9-T03 |
 | 17…23 | резерв E9 | |
-| 24…63 | остальные эпики блоками | | |
+| 24…31 | E11: `event_flags_vars` 24, `event_timers_cooldowns` 25, `event_chains_modifiers` 26, `event_queue` 27, `event_history_journal` 28, `event_meta` 29, 30…31 резерв (E11-T01, [event-engine.md](../dev/event-engine.md) §9.2) | | |
+| 32…63 | остальные эпики блоками | | |
 
 **Правило пустоты.** Часть, у которой нет содержимого (нет отличающихся от умолчания строк, нет записей), равна `0`; если хеш случайно вышел `0`, он заменяется на `1`. Хеш строится **по содержимому**, поэтому «строка с умолчаниями» и «нет строки» неразличимы — это одно и то же состояние (само существование строки покрывает часть `characters`).
 

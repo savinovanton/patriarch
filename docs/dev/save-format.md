@@ -89,7 +89,8 @@ off  size
 | 18 | `tick` | i64 | да | `calendar.tick_count()` |
 | 19 | `ironman` | u8 | нет | зарезервировано под M2 (режим «без перезагрузок»); в M1 всегда 0 или нет |
 | 20 | `preview` | bytes | нет | зарезервировано под скриншот-превью M2 (E5/E26) |
-| 21…63 | — | | | свободны для сводки; выдаёт T02/следующие эпики строкой в этой таблице |
+| 21 | `events_hash` | u64 | нет | хеш скомпилированного набора событий (`EventSet::hash()`, [event-engine.md](event-engine.md) §20.1); нет ключа — партия без событий; при загрузке сверяется так же, как `content_hash` (кроме `--dev`) — сверку добавляет E13-T07; пишет E11-T03 |
+| 22…63 | — | | | свободны для сводки; выдаёт T02/следующие эпики строкой в этой таблице |
 
 **Реализовано (T02):** `SaveSummary`, `summary_from_world(world)` (схема, дата, тик, хеш набора контента, `world_hash`, версия сборки; **часы не читаются** — `saved_at`, `play_time_s`, сценарий, род игрока, глава, казна, вид и имя заполняет вызывающий, T05), `serialize_save(world, pending, summary)` и прежняя перегрузка без сводки (минимум из мира, детерминированно), `read_save_summary(bytes[, file_size])` / `read_save_summary(path)` (читает не больше 44 + 16 КиБ, zstd не трогает; для версии 1 возвращает `SaveInfo` без сводки — каталог показывает «Старый»), `SaveData::summary` и `SaveData::format_version` у `deserialize_save` (для версии 1 — минимум из мира, `game_version` пуст). Писатель **подрезает** строки до пределов по границе символа, выбрасывает NUL и невалидный UTF-8, ограничивает прогресс цели 10⁶ и неизвестный вид приводит к ручному, а превью, которое не помещается в 16 КиБ, не пишет: он не способен создать файл, который не прочтёт читатель. Известные ключи 1…20 читаются строго (длины, диапазоны), неизвестные пропускаются. Порядок проверки схемы: п. 7 §2.4 выполняется после чтения мира, как записано; отказ 28 — раньше разжатия.
 
@@ -190,7 +191,17 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 39 | `economy_incidents` | E9-T03 | 5 | 1 | в коде |
 | 40 | `economy_policy` | E9-T12 | 9 | 1 | в коде |
 | 41…47 | — | **E9** | | | резерв (7 id) |
-| 48…63 | — | **E11** (события; E11-T03) | | | резерв (16 id) |
+| 48 | `events_meta` | E11-T03 ([event-engine.md](event-engine.md) §9.1: флаг старта, `events_hash`, счётчики, курсор `IncidentLog`, настройки частоты/якорей, список игроков, счётчик модальных окон) | схема E11-T03 | 1 | спецификация E11-T01 |
+| 49 | `event_flags` | E11-T03 | схема E11-T03 | 1 | спецификация |
+| 50 | `event_vars` | E11-T03 | схема E11-T03 | 1 | спецификация |
+| 51 | `event_timers` | E11-T03 | схема E11-T03 | 1 | спецификация |
+| 52 | `event_cooldowns` | E11-T03 (кулдауны, группы, `once`) | схема E11-T03 | 1 | спецификация |
+| 53 | `event_chains` | E11-T03 | схема E11-T03 | 1 | спецификация |
+| 54 | `event_modifiers` | E11-T03 | схема E11-T03 | 1 | спецификация |
+| 55 | `event_queue` | E11-T03 (экземпляры `Pending`/`Deferred`/`Chosen`) | схема E11-T03 | 1 | спецификация |
+| 56 | `event_history` | E11-T03 (кольцо 512) | схема E11-T03 | 1 | спецификация |
+| 57 | `event_journal` | E11-T03 (кольцо 256: уведомления, слухи) | схема E11-T03 | 1 | спецификация |
+| 58…63 | — | **E11** | | | резерв (6 id) |
 | 64…71 | — | **E10** (двор: `court_offices`, `court_petitions`, `court_servants`, `court_favor` + резерв; E10-T03) | | | резерв (8 id) |
 | 72…83 | — | **E12** (император и кризис: `realm`, `suspicion`, `throne`, `plots`, `coup_log` + резерв; E12-T03) | | | резерв (12 id) |
 | 84…91 | — | **E30** (`game_setup`, `goals`, `key_decisions`, `score_history`; E30-T03) | | | резерв (8 id) |
@@ -224,7 +235,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 6…31 | E7 | 6 `Die`, 7 `Marry`, 8 `EndMarriage`, 9 `CreatePerson`, **10 `Birth`, 11 `Conceive`, 12 `SetEducation`, 13 `ComeOfAge`**, 14 `GrantTrait`, 15 `RevokeTrait`, 16 `PlanDeath`, 17 `AdjustUnity`, 18 `RecordChronicle`, 19 `AdjustOpinion`, 20 `AdjustPrestige`, 21 `AdjustHonorWithReason` | 22…31 |
 | 32…63 | E9 | 32 `SetTaxPolicy`, 33 `SetRecruitPolicy`, 34 `ConscriptRecruits`, 35 `AssignProvinceAdministrator`, 36 `StartConstruction`, 37 `CancelConstruction`, 38 `TakeLoan`, 39 `RepayLoan` | 40…63 |
 | 64…95 | E8 | выпущены спецификацией E8-T01 ([marriage-succession-model.md](marriage-succession-model.md) §7.1): 64 `SendMarriageEnvoy`, 65 `WithdrawMarriageEnvoy`, 66 `RespondMarriage`, 67 `Betroth`, 68 `BreakBetrothal`, 69 `Tonsure`, 70 `SetHeir`, 71 `ChangeSuccessionLaw`, 72 `Disown`, 73 `AssignRegent`, 74 `DismissRegent`, 75 `ResolveSuccessionDispute`, 76 `GrantLand`, 77 `AssignGodparents`, 78 `Wed`, 79 `OpenSuccessionDispute`, 80 `Succeed`, 81 `SettleWidowhood`, 82 `RegencyCheck`, 83 `PartitionEstate` (в коде пока нет) | 84…95 |
-| 96…127 | E11 | — | 96…127 |
+| 96…127 | E11 | выпущены спецификацией E11-T01 ([event-engine.md](event-engine.md) §8.4): 96 `ChooseEventOption`, 97 `DeferEvent`, 98 `AcknowledgeJournal`, 99 `SetEventSettings`, 100 `FireEvent`, 101 `SetEventFlag`, 102 `SetEventVariable`, 103 `PostEventMoney`, 104 `AdjustSkill`, 105 `AdjustHealth`, 106 `AdjustStress`, 107 `AdjustProvinceUnrest`, 108 `AdjustProvinceControl`, 109 `AdjustGroupMood` (в коде пока нет) | 110…127 |
 | 128…143 | E10 | — | 128…143 |
 | 144…167 | E12 | — | 144…167 |
 | 168…175 | E30 | — | 168…175 |
