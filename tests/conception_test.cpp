@@ -434,16 +434,16 @@ TEST_CASE("pregnancy: a world with pregnancies survives a save and load with the
 }
 
 TEST_CASE("pregnancy: a file of schema 10 loads without pregnancies, a pregnancy needs schema 11") {
-    static_assert(World::kStateSchema == 11, "this test was written for the schema that added pregnancies");
+    static_assert(World::kStateSchema >= 11, "pregnancy section support starts at schema 11");
 
     World world = dynasty_world();
     const DynastyId dynasty = world.create_dynasty({});
     const Couple couple = add_couple(world, dynasty);
 
-    // without a pregnancy the bytes of schema 11 are those of schema 10 (no section is written)
+    // Empty later extensions are omitted, so this world also has a schema-10 representation.
     std::vector<std::uint8_t> bytes = state_bytes(world);
     ByteReader word(std::span<const std::uint8_t>(bytes.data(), 4));
-    REQUIRE(word.u32() == 11);
+    REQUIRE(word.u32() == World::kStateSchema);
     bytes[0] = 10;
     auto old = load_bytes(bytes);
     REQUIRE(old.has_value());

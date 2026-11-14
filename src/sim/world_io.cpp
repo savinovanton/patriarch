@@ -111,6 +111,14 @@ constexpr SectionInfo kSections[] = {
     {kSectionChronicle, 1, 6},
     {kSectionOpinion, 1, 7},
     {kSectionStanding, 1, 8},
+    {detail::kSectionFamilyCounters, 1, 12},
+    {detail::kSectionNegotiations, 1, 12},
+    {detail::kSectionBetrothals, 1, 12},
+    {detail::kSectionMarriages, 1, 12},
+    {detail::kSectionPersonStatus, 1, 12},
+    {detail::kSectionSuccession, 1, 12},
+    {detail::kSectionRegency, 1, 12},
+    {detail::kSectionDispute, 1, 12},
     {detail::kSectionEconomy, 1, 5},
     {detail::kSectionEconomyDynasty, 1, 5},
     {detail::kSectionEconomyProvince, 1, 5},
@@ -434,7 +442,8 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
-    economy_write_sections(sections);                            // ids 32..40, after the sections above
+    family_write_sections(sections);   // ids 16..23, after E7 and before the economy
+    economy_write_sections(sections);  // ids 32..40, after the sections above
     for (std::uint16_t i = 0; i < g_test_sections.count; ++i) {  // test-only, ids above 40
         Section section{static_cast<std::uint16_t>(g_test_sections.first_id + i), 1, {}};
         section.body.u32(section.id);
@@ -867,6 +876,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                         changes.push_back({date, metric, reason, delta});
                     }
                 }
+            } else if (id >= detail::kSectionFamilyCounters && id <= detail::kSectionDispute) {
+                if (const char* problem = world.family_read_section(id, sr)) {
+                    return fail(problem);
+                }
             } else if (id >= detail::kSectionEconomy) {
                 if (const char* problem = world.economy_read_section(id, sr)) {
                     return fail(problem);
@@ -923,6 +936,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             }
             carry *= 12;
         }
+    }
+    if (schema < 12) {
+        // 11 -> 12: no family data existed; coded ledger columns absent in old saves are already zero.
+        world.family_ = family::State{};
     }
     world.rebuild_derived_indexes();
     const std::vector<std::string> problems = world.check_invariants();

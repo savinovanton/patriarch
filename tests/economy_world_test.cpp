@@ -374,11 +374,33 @@ TEST_CASE("economy world: ledger codes are stable, ascending and mapped to dense
     // The issued numbers never move (they are in saves).
     CHECK(static_cast<int>(tax_code(Group::Peasants)) == 4);
     CHECK(static_cast<int>(LedgerCode::HoldingIncome) == 10);
+    CHECK(static_cast<int>(LedgerCode::DowryIn) == 16);
     CHECK(static_cast<int>(LedgerCode::Embezzlement) == 100);
+    CHECK(static_cast<int>(LedgerCode::DowryOut) == 111);
+    CHECK(static_cast<int>(LedgerCode::MarriageEnvoy) == 112);
     CHECK(static_cast<int>(LedgerCode::InterestCollected) == 205);
     CHECK(static_cast<int>(LedgerCode::Adjustment) == 300);
     CHECK(is_ledger_pair(LedgerCode::LoanIssued, LedgerCode::LoanTaken));
     CHECK_FALSE(is_ledger_pair(LedgerCode::LoanTaken, LedgerCode::LoanIssued));
+    CHECK(is_ledger_pair(LedgerCode::DowryOut, LedgerCode::DowryIn));
+    CHECK_FALSE(is_ledger_pair(LedgerCode::DowryIn, LedgerCode::DowryOut));
+    CHECK(is_transfer_code(LedgerCode::DowryOut));
+    CHECK(is_transfer_code(LedgerCode::DowryIn));
+    CHECK_FALSE(is_transfer_code(LedgerCode::MarriageEnvoy));
+}
+
+TEST_CASE("economy world: E8 envoy expense and dowry use separate ledger lines") {
+    World world = make_economy_world();
+    const auto sender = AccountRef::of(DynastyId(0));
+    const auto receiver = AccountRef::of(DynastyId(1));
+    REQUIRE(world.post_money(sender, LedgerCode::MarriageEnvoy, -120) == -120);
+    REQUIRE(world.transfer(sender, receiver, LedgerCode::DowryOut, LedgerCode::DowryIn, 700) == 700);
+    CHECK(world.economy().accounts.open_line(1, LedgerCode::MarriageEnvoy) == -120);
+    CHECK(world.economy().accounts.open_line(1, LedgerCode::DowryOut) == -700);
+    CHECK(world.economy().accounts.open_line(2, LedgerCode::DowryIn) == 700);
+    CHECK(world.treasury(sender) == -820);
+    CHECK(world.treasury(receiver) == 700);
+    require_valid(world);
 }
 
 TEST_CASE("economy world: post_money changes the balance and the line by the same amount") {

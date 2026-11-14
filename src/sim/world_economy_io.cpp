@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -63,6 +64,45 @@ using detail::plausible;
 
 constexpr std::size_t kLines = economy::kLedgerLineCount;
 constexpr std::size_t kRing = economy::kLedgerRingMonths;
+
+// Freeze the pre-E8 hash layout by CODE, not by dense index: later codes can be inserted anywhere.
+constexpr std::array kLegacyLedgerCodes = {
+    economy::LedgerCode::TaxNobility,    economy::LedgerCode::TaxClergy,
+    economy::LedgerCode::TaxTownsfolk,   economy::LedgerCode::TaxPeasants,
+    economy::LedgerCode::TaxCossacks,    economy::LedgerCode::TaxNatives,
+    economy::LedgerCode::HoldingIncome,  economy::LedgerCode::Duties,
+    economy::LedgerCode::SalariesIn,     economy::LedgerCode::GrantsIn,
+    economy::LedgerCode::Tribute,        economy::LedgerCode::FarmingIncome,
+    economy::LedgerCode::Embezzlement,   economy::LedgerCode::BuildingUpkeep,
+    economy::LedgerCode::Construction,   economy::LedgerCode::CourtUpkeep,
+    economy::LedgerCode::SalariesOut,    economy::LedgerCode::ArmyUpkeep,
+    economy::LedgerCode::GiftsBribes,    economy::LedgerCode::ChurchDonations,
+    economy::LedgerCode::QuotaMoney,     economy::LedgerCode::Interest,
+    economy::LedgerCode::RaidLoss,       economy::LedgerCode::DowryOut,
+    economy::LedgerCode::LoanTaken,      economy::LedgerCode::LoanRepaid,
+    economy::LedgerCode::LoanIssued,     economy::LedgerCode::LoanCollected,
+    economy::LedgerCode::QuotaCollected, economy::LedgerCode::InterestCollected,
+    economy::LedgerCode::Adjustment,
+};
+static_assert(kLegacyLedgerCodes.size() == 31);
+static_assert(std::ranges::all_of(kLegacyLedgerCodes, economy::is_issued));
+
+void hash_new_ledger_lines(core::HashStream& hash,
+                           std::size_t account,
+                           std::uint8_t ordinal,
+                           std::span<const economy::Kopecks> lines) {
+    for (std::size_t index = 0; index < kLines; ++index) {
+        const auto code = economy::ledger_code_at(index);
+        if (lines[index] == 0 || std::ranges::find(kLegacyLedgerCodes, code) != kLegacyLedgerCodes.end()) {
+            continue;
+        }
+        hash.u8(0xE8);  // Extension record; no records means exactly the pre-E8 byte stream.
+        hash.u64(account);
+        hash.u8(ordinal);  // 0 = open; 1..closed = closed months in oldest-first order.
+        hash.u16(static_cast<std::uint16_t>(code));
+        hash.i64(lines[index]);
+    }
+}
 
 constexpr std::size_t kDynastyRowBytes = 4 + 1;
 constexpr std::size_t kPolicyRowBytes = 2;
@@ -254,21 +294,28 @@ std::array<std::uint64_t, economy::kEconomyHashPartCount> World::economy_hash_pa
         const std::size_t closed = std::min<std::size_t>(e.meta.closed_months, kRing);
         core::HashStream h;
         h.u64(a.size());
-        h.u64(kLines);
+        h.u64(kLegacyLedgerCodes.size());
         for (std::size_t m = closed; m-- > 0;) {  // oldest first
             h.i32(a.ring_month_start(m).days());
         }
         for (std::size_t row = 0; row < a.size(); ++row) {
             h.i64(a.treasury(row));
             h.i64(a.opening(row));
-            for (const economy::Kopecks line : a.open_lines(row)) {
-                h.i64(line);
+            for (const auto code : kLegacyLedgerCodes) {
+                h.i64(a.open_line(row, code));
             }
             for (std::size_t m = closed; m-- > 0;) {
                 h.i64(a.ring_opening(row, m));
-                for (const economy::Kopecks line : a.ring_lines(row, m)) {
-                    h.i64(line);
+                const auto lines = a.ring_lines(row, m);
+                for (const auto code : kLegacyLedgerCodes) {
+                    h.i64(lines[*economy::ledger_index(code)]);
                 }
+            }
+        }
+        for (std::size_t row = 0; row < a.size(); ++row) {
+            hash_new_ledger_lines(h, row, 0, a.open_lines(row));
+            for (std::size_t m = closed; m-- > 0;) {
+                hash_new_ledger_lines(h, row, static_cast<std::uint8_t>(closed - m), a.ring_lines(row, m));
             }
         }
         out[at(economy::EconomyHashPart::Accounts)] = h.value();
