@@ -30,6 +30,7 @@
 #include "pat/game/hud_view.hpp"
 #include "pat/game/map_overview.hpp"
 #include "pat/game/province_view.hpp"
+#include "pat/game/season.hpp"
 #include "pat/game/world_view.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_gen.hpp"
@@ -126,7 +127,10 @@ struct Options {
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
     pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
-    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter  --grade X  --vignette X  --borders on|off
+    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter|auto  --grade X  --vignette X  --borders on|off
+    bool season_follows_date = true;  // palette and grading follow the date (E5-A4); off with --style off
+    bool date_set = false;            // --date YYYY-MM-DD / --season NAME: a fixed date instead of the simulation's
+    pat::sim::Date date_override;     // (screenshots; also drives the season badge and the sun's day of the year)
     float time_hour = -1.0f;         // --time H: sun position for this solar hour (0..24) instead of --sun
     float day_seconds = 0.0f;        // --day-seconds N: real seconds per day-night cycle (0 = no cycle; key N toggles)
     bool gallery_tips = false;     // --gallery-tips: open the tooltip page of the gallery
@@ -200,12 +204,44 @@ bool parse_options(int argc, char** argv, Options& out) {
             const std::string_view style = argv[++i];
             if (style == "off") {
                 out.style = pat::engine::MapStyle{};
-            } else if (style == "winter") {
+                out.season_follows_date = false;
+            } else if (style == "winter" || style == "auto") {
+                // "winter" is the full art style pinned to winter (as before the seasons existed); "auto" follows
+                // the date of the game.
                 out.style = pat::engine::winter_style_1703();
+                out.season_follows_date = true;
+                out.date_set = style == "winter";
+                out.date_override = pat::game::season_sample_date(pat::ui::Season::Winter, 1703);
             } else {
-                std::fprintf(stderr, "--style must be off or winter\n");
+                std::fprintf(stderr, "--style must be off, winter or auto\n");
                 return false;
             }
+        } else if (arg == "--season" && i + 1 < argc) {
+            const std::string_view name = argv[++i];
+            using pat::ui::Season;
+            if (name == "auto") {
+                out.date_set = false;
+            } else if (name == "winter" || name == "spring" || name == "summer" || name == "autumn") {
+                const Season season = name == "winter"   ? Season::Winter
+                                      : name == "spring" ? Season::Spring
+                                      : name == "summer" ? Season::Summer
+                                                         : Season::Autumn;
+                out.date_set = true;
+                out.date_override = pat::game::season_sample_date(season, 1703);
+            } else {
+                std::fprintf(stderr, "--season must be auto, winter, spring, summer or autumn\n");
+                return false;
+            }
+        } else if (arg == "--date" && i + 1 < argc) {
+            int y = 0;
+            int m = 0;
+            int d = 0;
+            if (std::sscanf(argv[++i], "%d-%d-%d", &y, &m, &d) != 3 || !pat::sim::Date::is_valid_ymd(y, m, d)) {
+                std::fprintf(stderr, "--date expects a valid Julian date YYYY-MM-DD\n");
+                return false;
+            }
+            out.date_set = true;
+            out.date_override = pat::sim::Date::from_ymd(y, m, d);
         } else if (arg == "--grade" && i + 1 < argc) {
             out.style.grade = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--vignette" && i + 1 < argc) {
@@ -284,7 +320,7 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--select ID] [--borders on|off] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
+                         "                       [--select ID] [--borders on|off] [--style off|winter|auto] [--season auto|winter|spring|summer|autumn] [--date YYYY-MM-DD] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
                          "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME] [--event]\n");
             return false;
         }
@@ -1318,8 +1354,12 @@ int main(int argc, char** argv) {
         if (runner) {
             world_snapshot = runner->latest_snapshot();
         }
+        // The date the map shows: the simulation's, or the fixed one of --date / --season (screenshots).
+        const pat::sim::Date season_date = opt.date_set ? opt.date_override
+                                           : world_snapshot ? world_snapshot->today()
+                                                            : pat::sim::Date::from_ymd(1703, 1, 1);
         if (world_snapshot) {
-            day_of_year = world_snapshot->today().day_of_year();
+            day_of_year = season_date.day_of_year();
             const std::uint64_t version = runner ? runner->snapshot_version() : 0;
             if (province && province_open && hud_visible &&
                 (province_dirty || province_seen_version != version)) {
@@ -1435,8 +1475,7 @@ int main(int argc, char** argv) {
                                                                     geometry.width, geometry.height);
             overlays->set_view(mv);
             overlays->set_scale_km(pat::game::scale_label_km(mv, pat::game::kPlaceholderMapWidthKm));
-            const pat::sim::Date today = world_snapshot ? world_snapshot->today() : pat::sim::Date::from_ymd(1703, 1, 1);
-            overlays->set_season(pat::game::season_of(today), today.ymd().year);
+            overlays->set_season(pat::game::season_of(season_date), season_date.ymd().year);
             const Mat4 vp = camera.view_projection(aspect);
             const auto project = [&](float mx, float my, float& sx, float& sy) {
                 const Vec3 ndc = transform_point(vp, Vec3{mx, my, picker.height_at(mx, my)});
@@ -1546,9 +1585,21 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        // Behind the map: dark navy, or the warm grey of the winter horizon when the map is styled.
-        const pat::engine::Color clear = opt.style.winter > 0.0f ? pat::engine::Color{0.46f, 0.44f, 0.41f, 1.0f}
-                                                                 : pat::engine::Color{0.04f, 0.05f, 0.08f, 1.0f};
+        // The season of the date (E5-A4): winter share and autumn tint feed the style of the map.
+        pat::engine::MapStyle map_style = opt.style;
+        if (opt.season_follows_date) {
+            const pat::game::SeasonLook look = pat::game::season_look(season_date);
+            map_style.winter = look.winter;
+            map_style.autumn = look.autumn;
+        }
+        // Behind the map: dark navy, or the horizon colour of the season (warm grey in winter, a soft summer
+        // blue-grey) when the map is styled.
+        const float winter_share = map_style.winter;
+        const pat::engine::Color clear =
+            opt.season_follows_date || opt.style.winter > 0.0f
+                ? pat::engine::Color{0.37f + 0.09f * winter_share, 0.42f + 0.02f * winter_share,
+                                     0.49f - 0.08f * winter_share, 1.0f}
+                : pat::engine::Color{0.04f, 0.05f, 0.08f, 1.0f};
         if (renderer->begin_frame(clear)) {
             MapFrame frame;
             frame.view_proj = camera.view_projection(aspect);
@@ -1566,7 +1617,7 @@ int main(int argc, char** argv) {
                 light.sun_elevation_deg = sun.elevation_deg;
             }
             frame.light = light;
-            frame.style = opt.style;
+            frame.style = map_style;
             frame.time_s = (static_cast<float>(logic_steps) + step.alpha) / 60.0f;
             renderer->push_marker("map");
             view->draw(frame);

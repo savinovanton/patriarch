@@ -41,6 +41,7 @@ struct FrameCB {
     float haze_color[4];   // rgb = colour of the haze
     float style_info[4];   // x = winter palette, y = grading strength, z = vignette, w = painted borders
     float view_info[4];    // x, y = target size in pixels, z, w = their reciprocals
+    float season_info[4];  // x = autumn tint
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -238,6 +239,7 @@ public:
         cb.style_info[1] = std::clamp(frame.style.grade, 0.0f, 1.0f);
         cb.style_info[2] = std::clamp(frame.style.vignette, 0.0f, 1.0f);
         cb.style_info[3] = frame.style.borders ? 1.0f : 0.0f;
+        cb.season_info[0] = std::clamp(frame.style.autumn, 0.0f, 1.0f);
         {
             const bool known = shared_.target_size != nullptr;
             const float w = known ? static_cast<float>(std::max(shared_.target_size->w, 1)) : 1.0f;
