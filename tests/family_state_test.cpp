@@ -224,7 +224,7 @@ TEST_CASE("family state: both participant columns share one engagement across bo
 TEST_CASE("family state: invalid negotiation fields reject without spending an id") {
     World world = make_family_world();
     const auto valid = negotiation(pair(world));
-    for (int problem = 0; problem < 10; ++problem) {
+    for (int problem = 0; problem < 12; ++problem) {
         INFO("invalid field " << problem);
         auto row = valid;
         switch (problem) {
@@ -258,6 +258,13 @@ TEST_CASE("family state: invalid negotiation fields reject without spending an i
             case 9:
                 row.id = 77;
                 break;
+            case 10:
+                row.bride_house = DynastyId(2);
+                break;
+            case 11:
+                row.groom_house = DynastyId(2);
+                row.initiator = row.groom_house;
+                break;
         }
         reject_atomically(world, [&] { return world.create_family_negotiation(row); });
     }
@@ -267,13 +274,16 @@ TEST_CASE("family state: invalid negotiation fields reject without spending an i
     auto changed = *world.find_family_negotiation(*id);
     changed.answer_due = changed.sent - 1;
     reject_atomically(world, [&] { return world.update_family_negotiation(*id, changed); });
+    changed = *world.find_family_negotiation(*id);
+    changed.bride_house = DynastyId(2);
+    reject_atomically(world, [&] { return world.update_family_negotiation(*id, changed); });
     require_valid(world);
 }
 
 TEST_CASE("family state: betrothal dates and widow claim references are checked atomically") {
     World world = make_family_world();
     const auto valid = betrothal(pair(world));
-    for (int problem = 0; problem < 5; ++problem) {
+    for (int problem = 0; problem < 7; ++problem) {
         INFO("invalid betrothal field " << problem);
         auto row = valid;
         switch (problem) {
@@ -292,10 +302,20 @@ TEST_CASE("family state: betrothal dates and widow claim references are checked 
             case 4:
                 row.origin = static_cast<family::BetrothalOrigin>(3);
                 break;
+            case 5:
+                row.bride_house = DynastyId(2);
+                break;
+            case 6:
+                row.groom_house = DynastyId(2);
+                break;
         }
         reject_atomically(world, [&] { return world.create_family_betrothal(row); });
     }
-    REQUIRE(world.create_family_betrothal(valid).has_value());
+    const auto id = world.create_family_betrothal(valid);
+    REQUIRE(id.has_value());
+    auto changed = *world.find_family_betrothal(*id);
+    changed.bride_house = DynastyId(2);
+    reject_atomically(world, [&] { return world.update_family_betrothal(*id, changed); });
     require_valid(world);
 }
 

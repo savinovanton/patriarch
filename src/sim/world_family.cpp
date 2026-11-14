@@ -83,6 +83,13 @@ bool pair_exists(const World& world, CharacterId groom, CharacterId bride) {
            world.characters().sex[bride.index()] == Sex::Female;
 }
 
+template <class Row>
+bool current_houses(const World& world, const Row& row) {
+    // Bind new writes to the participants. Stored house snapshots may outlive a membership change.
+    return world.characters().dynasty[row.groom.index()] == row.groom_house &&
+           world.characters().dynasty[row.bride.index()] == row.bride_house;
+}
+
 bool engaged_elsewhere(const World& world,
                        CharacterId character,
                        family::NegotiationId negotiation,
@@ -416,7 +423,8 @@ CharacterId World::family_caretaker(DynastyId dynasty) const {
 
 std::optional<family::NegotiationId> World::create_family_negotiation(family::Negotiation row) {
     if (row.id != 0 || !allocatable(family_.next_negotiation_id) ||
-        family_.negotiations.size() >= family::kMaxNegotiations || !valid_negotiation(*this, row)) {
+        family_.negotiations.size() >= family::kMaxNegotiations || !valid_negotiation(*this, row) ||
+        !current_houses(*this, row)) {
         return std::nullopt;
     }
     row.id = family_.next_negotiation_id;
@@ -426,7 +434,8 @@ std::optional<family::NegotiationId> World::create_family_negotiation(family::Ne
 }
 
 bool World::update_family_negotiation(family::NegotiationId id, const family::Negotiation& row) {
-    if (row.id != id || find_family_negotiation(id) == nullptr || !valid_negotiation(*this, row)) {
+    if (row.id != id || find_family_negotiation(id) == nullptr || !valid_negotiation(*this, row) ||
+        !current_houses(*this, row)) {
         return false;
     }
     replace_row(family_.negotiations, row, &family::Negotiation::id);
@@ -439,7 +448,8 @@ bool World::close_family_negotiation(family::NegotiationId id) {
 
 std::optional<family::BetrothalId> World::create_family_betrothal(family::Betrothal row) {
     if (row.id != 0 || !allocatable(family_.next_betrothal_id) ||
-        family_.betrothals.size() >= family::kMaxBetrothals || !valid_betrothal(*this, row)) {
+        family_.betrothals.size() >= family::kMaxBetrothals || !valid_betrothal(*this, row) ||
+        !current_houses(*this, row)) {
         return std::nullopt;
     }
     row.id = family_.next_betrothal_id;
@@ -449,7 +459,8 @@ std::optional<family::BetrothalId> World::create_family_betrothal(family::Betrot
 }
 
 bool World::update_family_betrothal(family::BetrothalId id, const family::Betrothal& row) {
-    if (row.id != id || find_family_betrothal(id) == nullptr || !valid_betrothal(*this, row)) {
+    if (row.id != id || find_family_betrothal(id) == nullptr || !valid_betrothal(*this, row) ||
+        !current_houses(*this, row)) {
         return false;
     }
     replace_row(family_.betrothals, row, &family::Betrothal::id);
