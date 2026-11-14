@@ -663,4 +663,113 @@ TEST_CASE("Map view: rendering coexists with quads in one frame") {
     CHECK(p.b == 255);
 }
 
+TEST_CASE("Map lighting: the golden hour preset - low warm sun behind the map, sky on, defaults untouched") {
+    const pat::engine::MapLighting golden = pat::engine::golden_hour_lighting();
+    CHECK(golden.sun_elevation_deg >= 12.0f);
+    CHECK(golden.sun_elevation_deg <= 15.0f);
+    CHECK(golden.sun_azimuth_deg > 0.0f);  // north-east: behind the map (north up) and to the right
+    CHECK(golden.sun_azimuth_deg < 90.0f);
+    CHECK(golden.shadow_steps > 0);
+    CHECK(golden.shadow_strength > 0.2f);  // soft shadows: present, but far from fully dark
+    CHECK(golden.shadow_strength < 0.7f);
+    CHECK(golden.sky);
+    CHECK(golden.custom_haze);
+    CHECK(golden.haze_rgb[0] ==
+          pat::engine::kGoldenHourSky.horizon[0]);  // the haze is the colour of the horizon
+
+    // The light is warm (red > green > blue) at this elevation.
+    const pat::engine::SkyColors colors = pat::engine::sky_colors(golden.sun_elevation_deg);
+    CHECK(colors.sun[0] > colors.sun[1]);
+    CHECK(colors.sun[1] > colors.sun[2]);
+    CHECK(pat::engine::kGoldenHourSky.gold[0] > pat::engine::kGoldenHourSky.gold[2]);
+
+    // A default MapLighting has none of it: the pictures made before the sky existed stay as they were.
+    const pat::engine::MapLighting plain;
+    CHECK_FALSE(plain.sky);
+    CHECK_FALSE(plain.custom_haze);
+    CHECK(plain.sun_intensity == 1.0f);
+    CHECK(plain.sun_elevation_deg == 38.0f);
+}
+
+TEST_CASE(
+    "Map view: sky - only the empty pixels change, the horizon is the shared haze colour, stable frames") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    pat::engine::MapFrame styled = fx.frame();
+    styled.style = pat::engine::winter_style_1703();
+    styled.style.vignette = 0.0f;
+    styled.light = pat::engine::golden_hour_lighting();
+    pat::engine::MapFrame no_sky = styled;
+    no_sky.light.sky = false;
+    const auto empty = fx.render(no_sky);  // the clear colour shows beyond the map
+    pat::engine::MapFrame flat = styled;
+    flat.light.sky_gold = 0.0f;
+    const auto with_sky = fx.render(styled);
+    const auto no_clouds = fx.render(flat);
+
+    // The sky replaces the clear colour and nothing else: the terrain pixels are identical (except near the
+    // map edge, which dissolves into the haze so that it runs into the sky without a seam).
+    const auto frame_hash = [](const std::vector<std::uint8_t>& px) {
+        std::uint64_t h = 1469598103934665603ULL;
+        for (const std::uint8_t b : px) {
+            h = (h ^ b) * 1099511628211ULL;
+        }
+        return h;
+    };
+    CHECK(frame_hash(with_sky) == frame_hash(fx.render(styled)));  // deterministic
+    CHECK(frame_hash(with_sky) != frame_hash(empty));
+    std::size_t sky_pixels = 0;
+    std::size_t terrain_pixels = 0;
+    std::size_t terrain_changed = 0;
+    std::size_t terrain_changed_central = 0;
+    std::array<double, 3> mean{};
+    for (std::size_t i = 0; i + 3 < empty.size(); i += 4) {
+        const bool clear = empty[i] == 5 && empty[i + 1] == 5 && empty[i + 2] == 5;  // 0.02 * 255
+        const bool changed =
+            empty[i] != with_sky[i] || empty[i + 1] != with_sky[i + 1] || empty[i + 2] != with_sky[i + 2];
+        const std::size_t px_x = (i / 4) % 640;
+        const std::size_t px_y = (i / 4) / 640;
+        const bool central = px_x > 200 && px_x < 440 && px_y > 110 && px_y < 250;
+        if (!clear) {
+            ++terrain_pixels;
+            terrain_changed += changed ? 1U : 0U;
+            terrain_changed_central += (changed && central) ? 1U : 0U;
+        } else if (changed) {
+            ++sky_pixels;
+            for (std::size_t c = 0; c < 3; ++c) {
+                mean[c] += static_cast<double>(no_clouds[i + c]);
+            }
+        }
+    }
+    CHECK(terrain_changed * 5 < terrain_pixels);  // only a ring along the map edge
+    CHECK(terrain_changed_central * 20 < terrain_pixels);
+    CHECK(sky_pixels > 5000);  // a good part of the small test map's frame is background
+
+    // Without the gold clouds the ground beyond the map is the horizon colour #80827e (graded like the
+    // terrain).
+    for (std::size_t c = 0; c < 3; ++c) {
+        mean[c] /= static_cast<double>(sky_pixels);
+    }
+    CHECK(mean[0] == doctest::Approx(128.0).epsilon(0.04));
+    CHECK(mean[1] == doctest::Approx(130.0).epsilon(0.04));
+    CHECK(mean[2] == doctest::Approx(126.0).epsilon(0.04));
+
+    // Looking at the horizon (a low camera), the sky above it has the gold cloud band on the sunset side.
+    fx.camera.rotate(0.0f, -1.2f);
+    pat::engine::MapFrame low = styled;
+    low.view_proj = fx.camera.view_projection(640.0f / 360.0f);
+    low.eye = fx.camera.eye();
+    low.zoom_fraction = fx.camera.zoom_fraction();
+    pat::engine::MapFrame low_flat = low;
+    low_flat.light.sky_gold = 0.0f;
+    CHECK(differing_pixels(fx.render(low), fx.render(low_flat)) > 300);
+
+    // The default lighting draws no sky: identical to the frame before the feature (clear colour behind the
+    // map).
+    pat::engine::MapFrame plain = fx.frame();
+    const auto before = fx.render(plain);
+    plain.light = pat::engine::MapLighting{};
+    CHECK(differing_pixels(before, fx.render(plain)) == 0);
+}
+
 #endif  // _WIN32

@@ -18,7 +18,7 @@ cbuffer FrameConstants : register(b0) {
     float4 patch_info;    // x = cells per patch edge
     float4 sun_dir;       // xyz = unit vector towards the sun
     float4 light_info;    // x = shadow strength, y = shadow steps, z = haze, w = longest shadow (texels)
-    float4 sun_color;     // rgb = sunlight colour times intensity (0 at night)
+    float4 sun_color;     // rgb = sunlight colour times intensity (0 at night), w = 1 when the sky is drawn
     float4 ambient_mul;   // rgb = multiplier of the day ambient light
     float4 haze_color;    // rgb = colour of the haze and the horizon
     float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette, w = painted borders (0/1)
@@ -152,13 +152,22 @@ float sun_shadow(float3 p) {
     return lerp(1.0, lit, light_info.x * (1.0 - 0.4 * style_info.x));  // winter light is softer: shadows are shallower
 }
 
-float3 apply_haze(float3 c, float3 world) {
-    const float d = distance(eye_zoom.xyz, world);
-    const float amount = (1.0 - exp(-pow(d / (0.9 * map_info.x), 1.6) * 0.9)) * 0.55 * light_info.z;
+// Colour of the haze and the horizon (before grading); the sky behind the map starts from the same colour.
+float3 scene_haze() {
     // Winter haze is a warm grey instead of blue (the concept's horizon), of the same brightness.
     const float haze_luma = dot(haze_color.rgb, float3(0.3333, 0.3333, 0.3333));
-    const float3 haze = lerp(haze_color.rgb, haze_luma * float3(1.04, 0.99, 0.90), style_info.x * 0.8);
-    return lerp(c, haze, saturate(amount));
+    return lerp(haze_color.rgb, haze_luma * float3(1.04, 0.99, 0.90), style_info.x * 0.8);
+}
+
+float3 apply_haze(float3 c, float3 world) {
+    const float d = distance(eye_zoom.xyz, world);
+    float amount = (1.0 - exp(-pow(d / (0.9 * map_info.x), 1.6) * 0.9)) * 0.55 * light_info.z;
+    // With the sky (sun_color.w = 1) the edge of the map dissolves into the haze, so the landscape runs into the
+    // sky behind it without a visible seam.
+    const float2 uv = world.xy / map_info.xy;
+    const float edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+    amount = max(amount, sun_color.w * (1.0 - smoothstep(0.0, 0.05, edge)));
+    return lerp(c, scene_haze(), saturate(amount));
 }
 
 // Colour grading and vignette (E5 #269): the low winter sun leaves the lit scene dim, so the picture is
@@ -459,4 +468,52 @@ float4 ps_main(VsOut input) : SV_Target {
         }
     }
     return finish(color, input.world, input.pos.xy);
+}
+
+// Sky behind the map (E5-A5, docs/dev/map-art-direction.md section 9): a fullscreen triangle drawn after the
+// terrain at the far plane, so only the pixels the landscape did not cover are shaded. The colour depends on
+// the elevation of the view ray: the horizon (and everything below it, i.e. the ground beyond the map edge) is
+// the haze colour of the terrain, the sky above it turns slightly lighter, and on the sunset side a narrow band
+// of gold clouds lies along the horizon. The result goes through the same grading and vignette as the terrain.
+cbuffer SkyConstants : register(b2) {
+    row_major float4x4 inv_view_proj;
+    float4 sky_high;  // rgb = sky above the horizon (before grading)
+    float4 sky_gold;  // rgb = gold clouds (before grading), a = strength 0..1
+};
+
+struct SkyOut {
+    float4 pos : SV_Position;
+    float2 ndc : TEXCOORD0;
+};
+
+SkyOut vs_sky(uint id : SV_VertexID) {
+    const float2 corner = float2((id << 1) & 2, id & 2);  // (0,0) (2,0) (0,2): one triangle covers the screen
+    SkyOut o;
+    o.ndc = corner * 2.0 - 1.0;
+    o.pos = float4(o.ndc, 1.0, 1.0);
+    return o;
+}
+
+float4 ps_sky(SkyOut input) : SV_Target {
+    const float4 far_point = mul(inv_view_proj, float4(input.ndc, 1.0, 1.0));
+    const float3 dir = normalize(far_point.xyz / far_point.w - eye_zoom.xyz);
+    const float elevation = degrees(asin(clamp(dir.z, -1.0, 1.0)));  // above the horizon, negative below
+
+    // Angle between the view ray and the sun around the vertical axis; +-pi (the noise seam) is opposite the sun.
+    const float2 flat_dir = dir.xy / max(length(dir.xy), 1e-4);
+    const float2 flat_sun = sun_dir.xy / max(length(sun_dir.xy), 1e-4);
+    const float rel = atan2(flat_dir.x * flat_sun.y - flat_dir.y * flat_sun.x, dot(flat_dir, flat_sun));
+    const float side = smoothstep(-0.35, 1.0, cos(rel));  // 1 towards the sun, 0 away from it
+
+    float3 c = lerp(scene_haze(), sky_high.rgb, smoothstep(0.0, 22.0, elevation));
+
+    // Gold clouds: a band along the horizon broken into long streaks (noise stretched along the horizon).
+    const float band = exp(-pow((elevation - 1.5) / (elevation < 1.5 ? 8.0 : 4.0), 2.0));  // narrow above, soft below
+    const float streaks = 0.55 + 0.45 * (value_noise(float2(rel * 9.0, elevation * 0.45)) * 0.65 +
+                                          value_noise(float2(rel * 23.0, elevation * 1.1)) * 0.35);
+    c = lerp(c, sky_gold.rgb, saturate(sky_gold.a * side * band * streaks));
+
+    // A little noise hides the 8-bit banding of the very soft gradient.
+    c += (hash21(input.pos.xy) - 0.5) * (1.0 / 255.0);
+    return float4(saturate(apply_style(c, input.pos.xy)), 1.0);
 }
