@@ -61,6 +61,21 @@ constexpr MarriageRules kDefaultMarriageRules{
             .envoy_gifts_kop = 4'000,
             .dispensation_fee_kop = 30'000,
         },
+    // Specification section 8.1 and decision #289: absolute blood ban through degree 4,
+    // dispensable degrees 5-6, affinity through degree 4.
+    .eligibility =
+        {
+            .min_marriage_age_male = 16,
+            .min_marriage_age_female = 15,
+            .min_betrothal_age = 7,
+            .blood_forbidden_degree = 6,
+            .blood_absolute_degree = 4,
+            .affinity_forbidden_degree = 4,
+            .mourning_days_female = 365,
+            .mourning_days_male = 180,
+            .require_opposite_sex = true,
+            .forbid_same_house = true,
+        },
 };
 
 // ---- validation helpers ------------------------------------------------------------------------
@@ -139,6 +154,24 @@ Check check_money(const MarriageMoneyRules& m) {
     return Check::ok();
 }
 
+Check check_eligibility(const MarriageEligibilityRules& e) {
+    PAT_MARRIAGE_CHECK(in_range("eligibility.min_marriage_age_male", e.min_marriage_age_male, 1, 150));
+    PAT_MARRIAGE_CHECK(in_range("eligibility.min_marriage_age_female", e.min_marriage_age_female, 1, 150));
+    PAT_MARRIAGE_CHECK(in_range("eligibility.min_betrothal_age", e.min_betrothal_age, 1, 150));
+    if (e.min_betrothal_age > e.min_marriage_age_male || e.min_betrothal_age > e.min_marriage_age_female) {
+        return fail("eligibility.min_betrothal_age must not exceed either minimum marriage age");
+    }
+    PAT_MARRIAGE_CHECK(in_range("eligibility.blood_forbidden_degree", e.blood_forbidden_degree, 0, 6));
+    PAT_MARRIAGE_CHECK(in_range("eligibility.blood_absolute_degree", e.blood_absolute_degree, 0, 6));
+    PAT_MARRIAGE_CHECK(in_range("eligibility.affinity_forbidden_degree", e.affinity_forbidden_degree, 0, 6));
+    if (e.blood_absolute_degree > e.blood_forbidden_degree) {
+        return fail("eligibility.blood_absolute_degree must not exceed blood_forbidden_degree");
+    }
+    PAT_MARRIAGE_CHECK(in_range("eligibility.mourning_days_female", e.mourning_days_female, 0, 36'500));
+    PAT_MARRIAGE_CHECK(in_range("eligibility.mourning_days_male", e.mourning_days_male, 0, 36'500));
+    return Check::ok();
+}
+
 #undef PAT_MARRIAGE_CHECK
 
 }  // namespace
@@ -154,7 +187,10 @@ core::Result<void, MarriageRulesError> validate(const MarriageRules& rules) {
     if (auto res = check_score(rules.score); !res) {
         return res;
     }
-    return check_money(rules.money);
+    if (auto res = check_money(rules.money); !res) {
+        return res;
+    }
+    return check_eligibility(rules.eligibility);
 }
 
 }  // namespace pat::sim

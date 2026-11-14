@@ -395,6 +395,7 @@ enum class Rejection : std::uint8_t {
 struct CommandError {
     Rejection reason = Rejection::None;
     const char* detail = "";  // static string describing the first violated rule
+    std::uint16_t code = 0;   // optional domain-specific reason; not serialized
 };
 
 [[nodiscard]] CommandType type_of(const Command& command) noexcept;

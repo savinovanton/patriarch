@@ -146,6 +146,16 @@ TEST_CASE("marriage rules: the defaults are valid and match the specification ta
     CHECK(rules.money.envoy_road_kop == 8'000);
     CHECK(rules.money.envoy_gifts_kop == 4'000);
     CHECK(rules.money.dispensation_fee_kop == 30'000);
+    CHECK(rules.eligibility.min_marriage_age_male == 16);
+    CHECK(rules.eligibility.min_marriage_age_female == 15);
+    CHECK(rules.eligibility.min_betrothal_age == 7);
+    CHECK(rules.eligibility.blood_forbidden_degree == 6);
+    CHECK(rules.eligibility.blood_absolute_degree == 4);
+    CHECK(rules.eligibility.affinity_forbidden_degree == 4);
+    CHECK(rules.eligibility.mourning_days_female == 365);
+    CHECK(rules.eligibility.mourning_days_male == 180);
+    CHECK(rules.eligibility.require_opposite_sex);
+    CHECK(rules.eligibility.forbid_same_house);
 }
 
 TEST_CASE("marriage rules: validate rejects out-of-range and inconsistent values") {
@@ -178,6 +188,74 @@ TEST_CASE("marriage rules: validate rejects out-of-range and inconsistent values
     const auto error = validate(broken);
     REQUIRE_FALSE(error.has_value());
     CHECK(error.error().message.find("envoy_road_kop") != std::string::npos);
+}
+
+TEST_CASE("marriage rules: eligibility rejects out-of-range and inconsistent limits") {
+    const MarriageRules good = MarriageRules::defaults();
+    const std::array age_fields = {&MarriageEligibilityRules::min_marriage_age_male,
+                                   &MarriageEligibilityRules::min_marriage_age_female,
+                                   &MarriageEligibilityRules::min_betrothal_age};
+    for (const auto field : age_fields) {
+        for (const auto value : {0, 151}) {
+            auto broken = good;
+            broken.eligibility.*field = value;
+            CHECK_FALSE(validate(broken).has_value());
+        }
+    }
+    for (const auto field : {&MarriageEligibilityRules::min_marriage_age_male,
+                             &MarriageEligibilityRules::min_marriage_age_female}) {
+        auto broken = good;
+        broken.eligibility.*field = broken.eligibility.min_betrothal_age - 1;
+        CHECK_FALSE(validate(broken).has_value());
+    }
+    const std::array degree_fields = {&MarriageEligibilityRules::blood_forbidden_degree,
+                                      &MarriageEligibilityRules::blood_absolute_degree,
+                                      &MarriageEligibilityRules::affinity_forbidden_degree};
+    for (const auto field : degree_fields) {
+        for (const auto value : {-1, 7}) {
+            auto broken = good;
+            broken.eligibility.*field = value;
+            CHECK_FALSE(validate(broken).has_value());
+        }
+    }
+    auto broken = good;
+    broken.eligibility.blood_forbidden_degree = 4;
+    broken.eligibility.blood_absolute_degree = 5;
+    CHECK_FALSE(validate(broken).has_value());
+    for (const auto field :
+         {&MarriageEligibilityRules::mourning_days_female, &MarriageEligibilityRules::mourning_days_male}) {
+        for (const auto value : {-1, 36'501}) {
+            broken = good;
+            broken.eligibility.*field = value;
+            CHECK_FALSE(validate(broken).has_value());
+        }
+    }
+}
+
+TEST_CASE("marriage rules: eligibility accepts boundary values and configurable flags") {
+    auto rules = MarriageRules::defaults();
+    auto& e = rules.eligibility;
+    e.min_marriage_age_male = 1;
+    e.min_marriage_age_female = 1;
+    e.min_betrothal_age = 1;
+    e.blood_forbidden_degree = 0;
+    e.blood_absolute_degree = 0;
+    e.affinity_forbidden_degree = 0;
+    e.mourning_days_female = 0;
+    e.mourning_days_male = 0;
+    e.require_opposite_sex = false;
+    e.forbid_same_house = false;
+    CHECK(validate(rules).has_value());
+
+    e.min_marriage_age_male = 150;
+    e.min_marriage_age_female = 150;
+    e.min_betrothal_age = 150;
+    e.blood_forbidden_degree = 6;
+    e.blood_absolute_degree = 6;
+    e.affinity_forbidden_degree = 6;
+    e.mourning_days_female = 36'500;
+    e.mourning_days_male = 36'500;
+    CHECK(validate(rules).has_value());
 }
 
 TEST_CASE("marriage rules: honor ranks follow the thresholds") {

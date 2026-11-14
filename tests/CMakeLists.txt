@@ -53,6 +53,8 @@ add_executable(patriarch_tests
     education_test.cpp
     health_test.cpp
     marriage_score_test.cpp
+    marriage_check_test.cpp
+    marriage_kinship_test.cpp
     mortality_test.cpp
     names_content_test.cpp
     names_test.cpp
