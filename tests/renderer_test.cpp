@@ -3,12 +3,14 @@
 
 #include "pat/engine/camera.hpp"
 #include "pat/engine/renderer.hpp"
+#include "pat/game/season.hpp"
 #include "pat/mapdata/map_gen.hpp"
 
 #include <doctest/doctest.h>
 
 #include <array>
 #include <chrono>
+#include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -419,6 +421,51 @@ TEST_CASE("Map view: art style - off by default, winter palette and grading chan
     }
     CHECK(brighter == 0);
     CHECK(darker > 1000);
+}
+
+TEST_CASE(
+    "Map view: the season of the date sets the palette - same date, same frame; summer differs from winter") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    const auto frame_of = [&fx](int month, int day) {
+        const pat::game::SeasonLook look = pat::game::season_look(pat::sim::Date::from_ymd(1703, month, day));
+        pat::engine::MapFrame f = fx.frame();
+        f.style = pat::engine::seasonal_style(look.winter, look.autumn);
+        return fx.render(f);
+    };
+    const auto january = frame_of(1, 1);
+    const auto april = frame_of(4, 10);
+    const auto july = frame_of(7, 15);
+    const auto october = frame_of(10, 5);
+
+    // The frame is a function of the date alone: nothing else (clock, history of the dates) leaks into it.
+    CHECK(differing_pixels(january, frame_of(1, 1)) == 0);
+    CHECK(differing_pixels(july, frame_of(7, 15)) == 0);
+    CHECK(differing_pixels(january, frame_of(1, 1)) == 0);  // also after other dates were drawn in between
+    CHECK(differing_pixels(frame_of(1, 15), frame_of(2, 20)) == 0);  // the whole of mid-winter looks the same
+    CHECK(differing_pixels(frame_of(6, 1), frame_of(8, 30)) == 0);   // and so does high summer
+
+    // The four seasons are four different pictures; the thaw is in between winter and summer.
+    CHECK(differing_pixels(january, july) > 20000);
+    CHECK(differing_pixels(january, april) > 5000);
+    CHECK(differing_pixels(april, july) > 5000);
+    CHECK(differing_pixels(july, october) > 5000);
+
+    // The mean brightness changes smoothly with the date: neighbouring days never jump.
+    const auto mean = [](const std::vector<std::uint8_t>& px) {
+        std::uint64_t sum = 0;
+        for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+            sum += static_cast<std::uint64_t>(px[i]) + px[i + 1] + px[i + 2];
+        }
+        return static_cast<double>(sum) / static_cast<double>(px.size() / 4 * 3);
+    };
+    double previous = mean(january);
+    for (int day = 20; day <= 28; ++day) {  // the thaw of March-April
+        const double now = mean(frame_of(3, day));
+        CHECK(std::abs(now - previous) < 3.0);
+        previous = now;
+    }
+    CHECK(std::abs(mean(frame_of(3, 14)) - mean(frame_of(3, 15))) < 0.01);  // the thaw starts without a jump
 }
 
 TEST_CASE("Map view: painted borders - thin ink lines, soft gold contour and fill of the selected province") {

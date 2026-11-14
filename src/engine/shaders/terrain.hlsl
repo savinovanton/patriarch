@@ -23,6 +23,7 @@ cbuffer FrameConstants : register(b0) {
     float4 haze_color;    // rgb = colour of the haze and the horizon
     float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette, w = painted borders (0/1)
     float4 view_info;     // x, y = target size in pixels, z, w = their reciprocals
+    float4 season_info;   // x = autumn tint (0..1)
 };
 
 cbuffer MaterialConstants : register(b1) {
@@ -96,10 +97,27 @@ static const float3 winter_colors[10] = {
     float3(0.72, 0.71, 0.65),  // Tundra
 };
 
+// Early October (E5-A4): the summer colours turn golden - meadows ochre, steppe straw, forest amber and
+// russet, hills warm. Blended in by season_info.x, so 0 leaves the summer palette untouched.
+static const float3 autumn_colors[10] = {
+    float3(0.04, 0.12, 0.26),  // DeepWater
+    float3(0.17, 0.36, 0.50),  // ShallowWater
+    float3(0.80, 0.72, 0.52),  // Beach
+    float3(0.66, 0.57, 0.25),  // Plains: stubble and yellowing grass
+    float3(0.76, 0.60, 0.28),  // Steppe: straw
+    float3(0.34, 0.32, 0.12),  // Forest: amber and russet among the dark conifers
+    float3(0.60, 0.44, 0.25),  // Hills
+    float3(0.50, 0.47, 0.44),  // Rock
+    float3(0.94, 0.95, 0.98),  // Snow
+    float3(0.64, 0.58, 0.46),  // Tundra
+};
+
+// Colour of a material through the year: the summer palette, tinted towards autumn, blended into the winter one.
 float3 material_at(int2 texel, int2 size) {
     texel = clamp(texel, int2(0, 0), size - 1);
     const uint m = materials.Load(int3(texel, 0)) & 15;
-    return lerp(material_colors[m].rgb, winter_colors[min(m, 9u)], style_info.x);
+    const float3 summer = lerp(material_colors[m].rgb, autumn_colors[min(m, 9u)], season_info.x);
+    return lerp(summer, winter_colors[min(m, 9u)], style_info.x);
 }
 
 float3 palette_color(uint province) {
@@ -152,6 +170,9 @@ float sun_shadow(float3 p) {
     return lerp(1.0, lit, light_info.x * (1.0 - 0.4 * style_info.x));  // winter light is softer: shadows are shallower
 }
 
+static const float kSummerExposure = 1.75;    // winter is brightened by 2.7, the high summer sun needs much less
+static const float kSummerSaturation = 0.90;  // winter keeps 0.72 of the colour
+
 float3 apply_haze(float3 c, float3 world) {
     const float d = distance(eye_zoom.xyz, world);
     const float amount = (1.0 - exp(-pow(d / (0.9 * map_info.x), 1.6) * 0.9)) * 0.55 * light_info.z;
@@ -164,15 +185,18 @@ float3 apply_haze(float3 c, float3 world) {
 // Colour grading and vignette (E5 #269): the low winter sun leaves the lit scene dim, so the picture is
 // brightened, passed through a soft shoulder (no clipped snow), toned cool in the shadows and warm in the
 // lights and desaturated towards the muted painterly look of the concept; the vignette darkens the edges so
-// the UI panels read on top. Identity when both strengths are 0.
+// the UI panels read on top. The grading follows the season (E5-A4): the high summer sun needs a softer
+// exposure, keeps more of the colour (green stays green) and a lighter split toning, all eased by the winter
+// factor so a changing date never makes the picture jump. Identity when both strengths are 0.
 float3 apply_style(float3 c, float2 pixel) {
     const float g = style_info.y;
     if (g > 0.0) {
-        float3 x = c * lerp(1.0, 2.7, g);
+        const float winter = style_info.x;
+        float3 x = c * lerp(1.0, lerp(kSummerExposure * (1.0 + 0.12 * season_info.x), 2.7, winter), g);
         const float l = dot(x, float3(0.2126, 0.7152, 0.0722));
         const float3 tone = lerp(float3(0.94, 0.98, 1.06), float3(1.04, 1.0, 0.94), smoothstep(0.10, 0.65, l));
-        x *= lerp(float3(1, 1, 1), tone, g);
-        x = lerp(dot(x, float3(0.2126, 0.7152, 0.0722)).xxx, x, lerp(1.0, 0.72, g));
+        x *= lerp(float3(1, 1, 1), tone, g * lerp(0.55, 1.0, winter));
+        x = lerp(dot(x, float3(0.2126, 0.7152, 0.0722)).xxx, x, lerp(1.0, lerp(kSummerSaturation, 0.72, winter), g));
         x = x * (1.0 + x / 2.56) / (1.0 + x);  // extended Reinhard shoulder, white point 1.6
         x += 0.05 * (1.0 - x);                 // lifted blacks: dark forest stays a colour, not a hole
         c = lerp(c, x, g);

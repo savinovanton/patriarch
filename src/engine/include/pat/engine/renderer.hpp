@@ -82,7 +82,10 @@ struct MapLighting {
 struct MapStyle {
     float winter =
         0.0f;  ///< 0 = summer palette, 1 = winter 1703: snow-beige fields, dark conifers, warm-grey haze.
-    float grade = 0.0f;     ///< Colour grading strength: exposure, soft shoulder, split toning, desaturation.
+               ///< Between the two: thaw and first snow. Also eases the grading from summer to winter.
+    float autumn =
+        0.0f;            ///< 0..1 golden-brown tint of the summer palette (meadows turn ochre, forest amber).
+    float grade = 0.0f;  ///< Colour grading strength: exposure, soft shoulder, split toning, desaturation.
     float vignette = 0.0f;  ///< Darkening of the screen edges (0 = none).
     bool borders =
         false;  ///< Painted borders: smooth thin ink lines, gold contour and fill of the selected province.
@@ -95,6 +98,15 @@ struct MapStyle {
     style.grade = 1.0f;
     style.vignette = 0.35f;
     style.borders = true;
+    return style;
+}
+
+/// The same look for a season (E5-A4): `winter` and `autumn` come from the game date
+/// (pat::game::season_look).
+[[nodiscard]] inline MapStyle seasonal_style(float winter, float autumn) noexcept {
+    MapStyle style = winter_style_1703();
+    style.winter = winter;
+    style.autumn = autumn;
     return style;
 }
 
