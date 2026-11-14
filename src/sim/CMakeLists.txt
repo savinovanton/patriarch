@@ -29,6 +29,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/unrest.hpp
     include/pat/sim/entity_ids.hpp
     include/pat/sim/entity_table.hpp
+    include/pat/sim/family/tables.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/conception.hpp
     include/pat/sim/education.hpp
@@ -90,6 +91,7 @@ add_library(patriarch_sim STATIC
     succession.cpp
     traits.cpp
     world.cpp
+    world_family.cpp
     world_economy.cpp
     world_economy_io.cpp
     world_io.cpp
