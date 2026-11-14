@@ -4,6 +4,7 @@
 #include "pat/engine/dpi.hpp"
 #include "pat/engine/math.hpp"
 #include "pat/engine/sdf_font.hpp"
+#include "pat/engine/sky.hpp"
 #include "pat/engine/terrain.hpp"
 #include "pat/mapdata/map_data.hpp"
 
@@ -74,7 +75,33 @@ struct MapLighting {
     float shadow_strength = 0.85f;    ///< 0 = no shadows, 1 = fully dark shadows.
     int shadow_steps = 24;            ///< Ray march steps per pixel; 0 switches terrain shadows off.
     float haze = 1.0f;                ///< Distance haze scale; 0 = clear air.
+    // E5-A5: sky and golden hour. The defaults leave the picture exactly as it was before they existed.
+    float sun_intensity =
+        1.0f;          ///< Multiplies the colour of the sunlight (the warmth still follows the elevation).
+    bool sky = false;  ///< Draw the sky gradient beyond the map edge (instead of the flat clear colour).
+    float sky_gold = 1.0f;     ///< Strength of the gold cloud band on the sunset side of the sky (0..1).
+    bool custom_haze = false;  ///< Use `haze_rgb` instead of the haze colour derived from the sun elevation.
+    float haze_rgb[3] = {0.0f, 0.0f, 0.0f};  ///< Haze and horizon colour (before grading), see SkyPalette.
 };
+
+/// The "golden hour" of the reference concept: the sun low (13.5 degrees) in the north-east, that is behind
+/// the map and to the right, so the relief throws long soft shadows towards the viewer; warm light, a
+/// grey-green haze that is the colour of the horizon, and a gold cloud band in the sky above it.
+[[nodiscard]] inline MapLighting golden_hour_lighting() noexcept {
+    MapLighting light;
+    light.sun_azimuth_deg = 50.0f;
+    light.sun_elevation_deg = 13.5f;
+    light.shadow_strength = 0.45f;  // the concept's shadow is only about 8 % darker than the light
+    light.shadow_steps = 24;
+    light.haze = 1.0f;
+    light.sun_intensity = 1.2f;
+    light.sky = true;
+    light.custom_haze = true;
+    light.haze_rgb[0] = kGoldenHourSky.horizon[0];
+    light.haze_rgb[1] = kGoldenHourSky.horizon[1];
+    light.haze_rgb[2] = kGoldenHourSky.horizon[2];
+    return light;
+}
 
 /// Painterly art direction of the landscape (E5 #269, docs/dev/map-art-direction.md): a season palette,
 /// colour grading and a vignette, all done in the terrain pixel shader (no extra pass). The defaults leave
