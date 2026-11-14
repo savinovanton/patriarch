@@ -305,7 +305,7 @@ core::Result<std::string> run_economy_bench(const Config& config, const EconomyB
 
     // ---- loading: the load of the game (zstd, parse, check_invariants) ---------------------------
     bool loaded_hash_equal = false;
-    sim::SaveData loaded{sim::World(sim::Date::from_ymd(1703, 1, 1), 1), {}};
+    sim::SaveData loaded{sim::World(sim::Date::from_ymd(1703, 1, 1), 1), {}, {}, sim::kSaveFormatVersion};
     const Stat deserialize_us = summarize(time_us(options.heavy_repeats, [&] {
         auto result = sim::deserialize_save(save);
         if (result) {

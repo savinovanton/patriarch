@@ -37,6 +37,7 @@ add_executable(patriarch_tests
     golden_test.cpp
     ids_test.cpp
     save_capacity_test.cpp
+    save_container_test.cpp
     credits_content_test.cpp
     kinship_test.cpp
     localization_test.cpp
