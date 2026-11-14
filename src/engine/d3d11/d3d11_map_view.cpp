@@ -48,6 +48,14 @@ struct MaterialCB {
     float colors[16][4];
 };
 
+// Must match SkyConstants in terrain.hlsl (E5-A5).
+struct SkyCB {
+    float inv_view_proj[16];
+    float sky_high[4];  // rgb = sky above the horizon
+    float sky_gold[4];  // rgb = gold clouds, a = strength
+};
+static_assert(sizeof(SkyCB) % 16 == 0, "constant buffers are 16-byte aligned");
+
 // Surface colours of the Material enum (mapdata/map_data.hpp), linear-ish painterly values.
 constexpr std::array<std::array<float, 3>, mapdata::kMaterialCount> kMaterialColors = {{
     {0.04f, 0.12f, 0.26f},  // DeepWater
@@ -217,10 +225,11 @@ public:
             const float el = el_deg * kDegToRad;
             const SkyColors sky = sky_colors(el_deg);
             for (std::size_t i = 0; i < 3; ++i) {
-                cb.sun_color[i] = sky.sun[i];
+                cb.sun_color[i] = sky.sun[i] * frame.light.sun_intensity;
                 cb.ambient_mul[i] = sky.ambient_mul[i];
-                cb.haze_color[i] = sky.haze[i];
+                cb.haze_color[i] = frame.light.custom_haze ? frame.light.haze_rgb[i] : sky.haze[i];
             }
+            cb.sun_color[3] = frame.light.sky ? 1.0f : 0.0f;
             cb.sun_dir[0] = std::cos(el) * std::sin(az);
             cb.sun_dir[1] = -std::cos(el) * std::cos(az);
             cb.sun_dir[2] = std::sin(el);
@@ -282,6 +291,10 @@ public:
 
         ctx->DrawIndexedInstanced(index_count_, static_cast<UINT>(nodes_.size()), 0, 0, 0);
 
+        if (frame.light.sky) {
+            draw_sky(frame, ctx);
+        }
+
         // Leave no terrain resources bound (the quad pass and later passes expect a clean slate).
         ID3D11ShaderResourceView* none[5] = {};
         ctx->VSSetShaderResources(0, 5, none);
@@ -313,7 +326,40 @@ private:
         ComPtr<ID3D11VertexShader> vs;
         ComPtr<ID3D11PixelShader> ps;
         ComPtr<ID3D11InputLayout> layout;
+        ComPtr<ID3D11VertexShader> sky_vs;
+        ComPtr<ID3D11PixelShader> sky_ps;
     };
+
+    /// The sky behind the map (E5-A5): one fullscreen triangle at the far plane, drawn after the terrain with
+    /// the same depth test, so only the pixels the landscape left empty are shaded (the covered ones fail
+    /// early).
+    void draw_sky(const MapFrame& frame, ID3D11DeviceContext* ctx) {
+        SkyCB sky{};
+        Mat4 inverse = Mat4::identity();
+        if (!invert(frame.view_proj, inverse)) {
+            return;
+        }
+        std::memcpy(sky.inv_view_proj, inverse.data(), sizeof(sky.inv_view_proj));
+        for (std::size_t i = 0; i < 3; ++i) {
+            sky.sky_high[i] = kGoldenHourSky.high[i];
+            sky.sky_gold[i] = kGoldenHourSky.gold[i];
+        }
+        sky.sky_gold[3] = std::clamp(frame.light.sky_gold, 0.0f, 1.0f);
+        D3D11_MAPPED_SUBRESOURCE mapped{};
+        if (FAILED(ctx->Map(sky_cb_.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) {
+            return;
+        }
+        std::memcpy(mapped.pData, &sky, sizeof(sky));
+        ctx->Unmap(sky_cb_.Get(), 0);
+
+        ctx->IASetInputLayout(nullptr);
+        ctx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        ctx->VSSetShader(shaders_.sky_vs.Get(), nullptr, 0);
+        ctx->PSSetShader(shaders_.sky_ps.Get(), nullptr, 0);
+        ID3D11Buffer* cbs[3] = {frame_cb_.Get(), material_cb_.Get(), sky_cb_.Get()};
+        ctx->PSSetConstantBuffers(0, 3, cbs);
+        ctx->Draw(3, 0);
+    }
 
     template <class T>
     [[nodiscard]] core::Result<void> make_texture(DXGI_FORMAT format,
@@ -479,6 +525,12 @@ private:
             return core::Result<void>::err(make_error(47, "frame constant buffer creation failed", hr));
         }
 
+        bd.ByteWidth = sizeof(SkyCB);
+        hr = shared_.device->CreateBuffer(&bd, nullptr, &sky_cb_);
+        if (FAILED(hr)) {
+            return core::Result<void>::err(make_error(55, "sky constant buffer creation failed", hr));
+        }
+
         MaterialCB mc{};
         for (std::size_t i = 0; i < kMaterialColors.size(); ++i) {
             mc.colors[i][0] = kMaterialColors[i][0];
@@ -551,6 +603,28 @@ private:
         if (FAILED(hr)) {
             return core::Result<void>::err(make_error(53, "terrain pixel shader creation failed", hr));
         }
+        auto sky_vs_blob = compile_hlsl(source.value(), kTerrainShaderFile, "vs_sky", "vs_5_0");
+        if (!sky_vs_blob) {
+            return core::Result<void>::err(sky_vs_blob.error());
+        }
+        auto sky_ps_blob = compile_hlsl(source.value(), kTerrainShaderFile, "ps_sky", "ps_5_0");
+        if (!sky_ps_blob) {
+            return core::Result<void>::err(sky_ps_blob.error());
+        }
+        hr = shared_.device->CreateVertexShader(sky_vs_blob.value()->GetBufferPointer(),
+                                                sky_vs_blob.value()->GetBufferSize(),
+                                                nullptr,
+                                                &next.sky_vs);
+        if (FAILED(hr)) {
+            return core::Result<void>::err(make_error(56, "sky vertex shader creation failed", hr));
+        }
+        hr = shared_.device->CreatePixelShader(sky_ps_blob.value()->GetBufferPointer(),
+                                               sky_ps_blob.value()->GetBufferSize(),
+                                               nullptr,
+                                               &next.sky_ps);
+        if (FAILED(hr)) {
+            return core::Result<void>::err(make_error(57, "sky pixel shader creation failed", hr));
+        }
         const D3D11_INPUT_ELEMENT_DESC elements[] = {
             {"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
             {"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
@@ -581,6 +655,7 @@ private:
     ComPtr<ID3D11Buffer> instance_vb_;
     ComPtr<ID3D11Buffer> frame_cb_;
     ComPtr<ID3D11Buffer> material_cb_;
+    ComPtr<ID3D11Buffer> sky_cb_;
     ComPtr<ID3D11SamplerState> sampler_;
     ComPtr<ID3D11RasterizerState> raster_;
     ComPtr<ID3D11DepthStencilState> depth_on_;
