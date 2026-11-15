@@ -173,7 +173,8 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 5 | `chronicle` | E7-T16 | 6 | 1 | в коде |
 | 6 | `opinion` | E7-T17 | 7 | 1 | в коде |
 | 7 | `standing` | E7-T14 | 8 | 1 | в коде |
-| 8…15 | — | **E7** | | | резерв (8 id) |
+| 8 | `feud_pairs` | E7-T26 ([house-relations-model.md](house-relations-model.md) §16: пары членов рода, уровни вражды, перемирие, кулдаун посредничества; 24 Б на строку) | схема E7-T26 | 1 | **выдан** спецификацией E7-T25 |
+| 9…15 | — | **E7** | | | резерв (7 id; 9 — `feud_meta`, если понадобится) |
 | 16 | `family_counters` | E8-T03 ([marriage-succession-model.md](marriage-succession-model.md) §13.1) | 12 | 1 | в коде |
 | 17 | `negotiations` | E8-T03 (идущие переговоры и кольцо итогов) | 12 | 1 | в коде |
 | 18 | `betrothals` | E8-T03 | 12 | 1 | в коде |
@@ -240,7 +241,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | Теги | Эпик | Сейчас занято | Свободно |
 |---|---|---|---|
 | 1…5 | E1 | 1…5 (`SetProvinceOwner`, `CreateCharacter`, `KillCharacter`, `SetDynastyHead`, `AdjustHonor`) | — |
-| 6…31 | E7 | 6 `Die`, 7 `Marry`, 8 `EndMarriage`, 9 `CreatePerson`, **10 `Birth`, 11 `Conceive`, 12 `SetEducation`, 13 `ComeOfAge`**, 14 `GrantTrait`, 15 `RevokeTrait`, 16 `PlanDeath`, 17 `AdjustUnity`, 18 `RecordChronicle`, 19 `AdjustOpinion`, 20 `AdjustPrestige`, 21 `AdjustHonorWithReason` | 22…31 |
+| 6…31 | E7 | 6 `Die`, 7 `Marry`, 8 `EndMarriage`, 9 `CreatePerson`, **10 `Birth`, 11 `Conceive`, 12 `SetEducation`, 13 `ComeOfAge`**, 14 `GrantTrait`, 15 `RevokeTrait`, 16 `PlanDeath`, 17 `AdjustUnity`, 18 `RecordChronicle`, 19 `AdjustOpinion`, 20 `AdjustPrestige`, 21 `AdjustHonorWithReason`; выпущены спецификацией E7-T25 ([house-relations-model.md](house-relations-model.md) §10): 22 `SetFeudLevel`, 23 `MediateFeud`, 24 `GiftToMember` (в коде пока нет), 25…27 резерв M2 | 28…31 |
 | 32…63 | E9 | 32 `SetTaxPolicy`, 33 `SetRecruitPolicy`, 34 `ConscriptRecruits`, 35 `AssignProvinceAdministrator`, 36 `StartConstruction`, 37 `CancelConstruction`, 38 `TakeLoan`, 39 `RepayLoan` | 40…63 |
 | 64…95 | E8 | выпущены спецификацией E8-T01 ([marriage-succession-model.md](marriage-succession-model.md) §7.1): 64 `SendMarriageEnvoy`, 65 `WithdrawMarriageEnvoy`, 66 `RespondMarriage`, 67 `Betroth`, 68 `BreakBetrothal`, 69 `Tonsure`, 70 `SetHeir`, 71 `ChangeSuccessionLaw`, 72 `Disown`, 73 `AssignRegent`, 74 `DismissRegent`, 75 `ResolveSuccessionDispute`, 76 `GrantLand`, 77 `AssignGodparents`, 78 `Wed`, 79 `OpenSuccessionDispute`, 80 `Succeed`, 81 `SettleWidowhood`, 82 `RegencyCheck`, 83 `PartitionEstate` (в коде пока нет) | 84…95 |
 | 96…127 | E11 | выпущены спецификацией E11-T01 ([event-engine.md](event-engine.md) §8.4): 96 `ChooseEventOption`, 97 `DeferEvent`, 98 `AcknowledgeJournal`, 99 `SetEventSettings`, 100 `FireEvent`, 101 `SetEventFlag`, 102 `SetEventVariable`, 103 `PostEventMoney`, 104 `AdjustSkill`, 105 `AdjustHealth`, 106 `AdjustStress`, 107 `AdjustProvinceUnrest`, 108 `AdjustProvinceControl`, 109 `AdjustGroupMood` (в коде пока нет) | 110…127 |
