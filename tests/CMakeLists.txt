@@ -46,6 +46,7 @@ add_executable(patriarch_tests
     kinship_test.cpp
     localization_test.cpp
     log_test.cpp
+    map_migrate_test.cpp
     mapdata_test.cpp
     physical_layer_test.cpp
     pmd2_container_test.cpp

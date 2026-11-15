@@ -2,7 +2,8 @@
 //
 //   mapgen --out map.pmd [--width 8192 --height 4096 --seed 1 --provinces 400 --threads 0]
 //          [--preview map.png] [--no-validate]
-//   mapgen --info map.pmd [--preview map.png]
+//   mapgen --info map.pmd [--preview map.png]      (PMD1, or one file of a PMD2 set)
+//   mapgen --migrate in.pmd outdir                 (PMD1 -> outdir/physical.pmd + provinces.pmd)
 //
 // Exit codes: 0 ok, 1 generation/IO failure, 2 usage error, 3 validation failure.
 
@@ -10,6 +11,7 @@
 #include "pat/core/png_writer.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
+#include "pat/mapdata/map_migrate.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
 #include <algorithm>
@@ -29,6 +31,8 @@ struct Options {
     GenParams gen;
     std::string out;
     std::string info;
+    std::string migrate_in;
+    std::string migrate_out;
     std::string preview;
     bool validate = true;
 };
@@ -42,6 +46,13 @@ bool parse(int argc, char** argv, Options& o) {
             o.out = v;
         } else if (a == "--info" && (v = next()) != nullptr) {
             o.info = v;
+        } else if (a == "--migrate" && (v = next()) != nullptr) {
+            o.migrate_in = v;
+            const char* dir = next();
+            if (dir == nullptr) {
+                return false;
+            }
+            o.migrate_out = dir;
         } else if (a == "--preview" && (v = next()) != nullptr) {
             o.preview = v;
         } else if (a == "--width" && (v = next()) != nullptr) {
@@ -62,8 +73,9 @@ bool parse(int argc, char** argv, Options& o) {
     }
     const bool generating = !o.out.empty();
     const bool inspecting = !o.info.empty();
-    if (generating == inspecting) {  // exactly one mode
-        return false;
+    const bool migrating = !o.migrate_in.empty();
+    if (static_cast<int>(generating) + static_cast<int>(inspecting) + static_cast<int>(migrating) != 1) {
+        return false;  // exactly one mode
     }
     return o.gen.width >= 64 && o.gen.height >= 32 && o.gen.width <= 16384 && o.gen.height <= 16384 &&
            o.gen.province_count >= 1;
@@ -73,7 +85,8 @@ void usage() {
     std::fprintf(stderr,
                  "usage: mapgen --out FILE [--width N --height N --seed N --provinces N --threads N]\n"
                  "              [--preview FILE.png] [--no-validate]\n"
-                 "       mapgen --info FILE [--preview FILE.png]\n");
+                 "       mapgen --info FILE [--preview FILE.png]\n"
+                 "       mapgen --migrate IN.pmd OUTDIR\n");
 }
 
 void print_stats(const MapData& map) {
@@ -209,6 +222,53 @@ double seconds_since(std::chrono::steady_clock::time_point t) {
     return std::chrono::duration<double>(std::chrono::steady_clock::now() - t).count();
 }
 
+/// PMD1 -> PMD2 (ADR-0007 section 5): writes the two files and checks that loading them gives the
+/// original map back.
+int migrate(const Options& opt) {
+    const auto t = std::chrono::steady_clock::now();
+    auto loaded = read_map_file(opt.migrate_in);
+    if (!loaded) {
+        std::fprintf(stderr, "error: %s\n", loaded.error().message.c_str());
+        return 1;
+    }
+    const MapData& map = loaded.value();
+    auto layers = migrate_pmd1(map);
+    if (!layers) {
+        std::fprintf(stderr, "error: %s\n", layers.error().message.c_str());
+        return layers.error().code == migrate_error::kInvalidSource ? 3 : 1;
+    }
+    auto written = write_map_set(opt.migrate_out, layers.value());
+    if (!written) {
+        std::fprintf(stderr, "error: %s\n", written.error().message.c_str());
+        return 1;
+    }
+    const std::filesystem::path dir = opt.migrate_out;
+    const auto kilobytes = [&](const char* name) {
+        return static_cast<double>(std::filesystem::file_size(dir / name)) / 1024.0;
+    };
+    std::printf("migrated %s in %.2f s: %zu water bodies, %zu provinces\n",
+                opt.migrate_in.c_str(),
+                seconds_since(t),
+                layers.value().physical.water_bodies.size(),
+                layers.value().provinces.entries.size());
+    std::printf("wrote %s (%.1f KB) and %s (%.1f KB)\n",
+                (dir / kPhysicalFileName).string().c_str(),
+                kilobytes(kPhysicalFileName),
+                (dir / kProvincesFileName).string().c_str(),
+                kilobytes(kProvincesFileName));
+    auto back = load_map(dir / kPhysicalFileName);
+    if (!back) {
+        std::fprintf(stderr, "error: cannot read the migrated set: %s\n", back.error().message.c_str());
+        return 1;
+    }
+    if (!(back.value() == map)) {
+        std::fprintf(stderr, "ROUND TRIP FAILED: the migrated set does not load back to the original\n");
+        return 3;
+    }
+    std::printf("round trip   : OK (the set loads back to the original map)\n");
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -218,10 +278,14 @@ int main(int argc, char** argv) {
         return 2;
     }
 
+    if (!opt.migrate_in.empty()) {
+        return migrate(opt);
+    }
+
     MapData map;
     if (!opt.info.empty()) {
         auto t = std::chrono::steady_clock::now();
-        auto loaded = read_map_file(opt.info);
+        auto loaded = load_map(opt.info);
         if (!loaded) {
             std::fprintf(stderr, "error: %s\n", loaded.error().message.c_str());
             return 1;

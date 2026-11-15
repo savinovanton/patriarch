@@ -3,6 +3,7 @@
 #include "pat/core/result.hpp"
 #include "pat/mapdata/map_data.hpp"
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <span>
@@ -27,6 +28,11 @@ inline constexpr std::uint16_t kMapFormatVersion = 1;
 
 /// Serializes the map. The map should satisfy validate_map(); the writer itself only checks sizes.
 [[nodiscard]] std::vector<std::uint8_t> serialize_map(const MapData& map, int zstd_level = 3);
+
+/// The `hash` fields the file would carry for this map, in section order (heights, provinces,
+/// materials, table): FNV-1a of the uncompressed section bytes, without compressing anything. The map
+/// must have layers of width x height (as validate_map demands). PMD1 -> PMD2 migration records them.
+[[nodiscard]] std::array<std::uint64_t, 4> pmd1_section_hashes(const MapData& map);
 
 /// Parses a map file. Detects truncation, bit flips, unknown versions and inconsistent layers.
 [[nodiscard]] core::Result<MapData, core::Error> deserialize_map(std::span<const std::uint8_t> bytes);

@@ -26,6 +26,15 @@ if(PATRIARCH_BUILD_TESTS)
             -DOUT=${CMAKE_CURRENT_BINARY_DIR}/mapgen_roundtrip.pmd
             -P ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/roundtrip.cmake)
     set_tests_properties(mapgen_roundtrip PROPERTIES TIMEOUT 300)
+    # PMD1 -> PMD2 on the committed fixture: --migrate writes the set and verifies the round trip,
+    # --info then reads and validates the set through load_map.
+    add_test(NAME mapgen_migrate
+        COMMAND ${CMAKE_COMMAND}
+            -DMAPGEN=$<TARGET_FILE:mapgen>
+            -DIN=${PROJECT_SOURCE_DIR}/tests/data/maps/v1_tiny.pmd
+            -DOUT=${CMAKE_CURRENT_BINARY_DIR}/mapgen_migrate
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/migrate.cmake)
+    set_tests_properties(mapgen_migrate PROPERTIES TIMEOUT 120)
 endif()
 
 add_subdirectory(contentlint)

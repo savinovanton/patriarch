@@ -189,6 +189,13 @@ std::vector<std::uint8_t> serialize_map(const MapData& map, int zstd_level) {
     return out.take();
 }
 
+std::array<std::uint64_t, 4> pmd1_section_hashes(const MapData& map) {
+    return {section_hash(encode_u16_layer(map.heights, map.width)),
+            section_hash(encode_u16_layer(map.provinces, map.width)),
+            section_hash(map.materials),
+            section_hash(encode_table(map.province_list))};
+}
+
 Result<MapData, Error> deserialize_map(std::span<const std::uint8_t> bytes) {
     using R = Result<MapData, Error>;
     core::ByteReader in(bytes);

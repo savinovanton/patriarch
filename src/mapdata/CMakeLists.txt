@@ -4,6 +4,7 @@ add_library(patriarch_mapdata STATIC
     include/pat/mapdata/map_data.hpp
     include/pat/mapdata/map_format.hpp
     include/pat/mapdata/map_gen.hpp
+    include/pat/mapdata/map_migrate.hpp
     include/pat/mapdata/map_stats.hpp
     include/pat/mapdata/map_validate.hpp
     include/pat/mapdata/physical_layer.hpp
@@ -11,6 +12,7 @@ add_library(patriarch_mapdata STATIC
     include/pat/mapdata/province_layer.hpp
     map_format.cpp
     map_gen.cpp
+    map_migrate.cpp
     map_validate.cpp
     physical_layer.cpp
     pmd2_container.cpp
