@@ -1,6 +1,7 @@
 #include "pat/sim/kinship.hpp"
 
 #include <algorithm>
+#include <span>
 #include <utility>
 
 namespace pat::sim::kin {
@@ -40,27 +41,47 @@ struct AncestorDistance {
     std::uint8_t depth = 0;
 };
 
+struct AncestorDistances {
+    std::array<AncestorDistance, 127> entries{};
+    std::size_t count = 0;
+
+    [[nodiscard]] auto begin() const { return entries.begin(); }
+    [[nodiscard]] auto end() const { return entries.begin() + static_cast<std::ptrdiff_t>(count); }
+};
+
 /// Breadth-first traversal records the shortest visit to each reachable ancestor. The list has at
 /// most 127 entries (self and six binary generations), independent of the size of World.
-std::vector<AncestorDistance>
-ancestor_distances(const World& world, CharacterId person, std::size_t max_generations) {
+AncestorDistances ancestor_distances(const World& world,
+                                     CharacterId person,
+                                     std::size_t max_generations,
+                                     std::span<std::uint32_t> visits = {},
+                                     std::uint32_t visit = 0) {
     const auto limit = std::min<std::size_t>(max_generations, 6);
-    std::vector<AncestorDistance> out;
-    out.reserve(127);
-    out.push_back({person, 0});
+    AncestorDistances out;
+    out.entries[out.count++] = {person, 0};
+    if (!visits.empty()) {
+        visits[person.index()] = visit;
+    }
     const auto& people = world.characters();
-    for (std::size_t i = 0; i < out.size(); ++i) {
-        const auto current = out[i];
+    for (std::size_t i = 0; i < out.count; ++i) {
+        const auto current = out.entries[i];
         if (current.depth >= limit) {
             continue;
         }
         for (const CharacterId parent :
              {people.father[current.character.index()], people.mother[current.character.index()]}) {
-            if (!world.exists(parent) ||
-                std::ranges::find(out, parent, &AncestorDistance::character) != out.end()) {
+            if (!world.exists(parent)) {
                 continue;
             }
-            out.push_back({parent, static_cast<std::uint8_t>(current.depth + 1)});
+            if (!visits.empty()) {
+                if (visits[parent.index()] == visit) {
+                    continue;
+                }
+                visits[parent.index()] = visit;
+            } else if (std::ranges::find(out, parent, &AncestorDistance::character) != out.end()) {
+                continue;
+            }
+            out.entries[out.count++] = {parent, static_cast<std::uint8_t>(current.depth + 1)};
         }
     }
     return out;
@@ -83,6 +104,127 @@ bool godparent_of_child(const World& world, CharacterId godparent, CharacterId p
 }
 
 }  // namespace
+
+MarriageQuery::MarriageQuery(const World& world, CharacterId member) : world_(world), member_(member) {
+    if (!world.dynasty_mode() || !world.exists(member)) {
+        return;
+    }
+    const auto& people = world.characters();
+    const auto size = people.ids.capacity();
+    std::array<std::uint8_t, kFamilySize> unknown_depths;
+    unknown_depths.fill(255);
+    depths_.assign(size, unknown_depths);
+    blood_.assign(size, 255);
+    spiritual_.assign(size, 0);
+    visits_.assign(size, 0);
+    family_[family_size_++] = member;
+    const auto add_spouse = [&](CharacterId spouse) {
+        if (world.exists(spouse)) {
+            family_[family_size_++] = spouse;
+        }
+    };
+    add_spouse(people.spouse[member.index()]);
+    for (const auto spouse : people.ex_spouses[member.index()]) {
+        add_spouse(spouse);
+    }
+    for (std::size_t i = 0; i < family_size_; ++i) {
+        for (const auto& ancestor : ancestor_distances(world, family_[i], 6, visits_, next_visit())) {
+            depths_[ancestor.character.index()][i] = ancestor.depth;
+        }
+    }
+    blood_[member.index()] = 0;
+
+    const auto mark = [&](CharacterId person) {
+        if (world.exists(person)) {
+            spiritual_[person.index()] = 1;
+        }
+    };
+    for (const auto godparent : people.godparent[member.index()]) {
+        mark(godparent);
+    }
+    for_each_child(world, member, [&](CharacterId child) {
+        for (const auto godparent : people.godparent[child.index()]) {
+            mark(godparent);
+        }
+    });
+    for (std::size_t i = 0; i < size; ++i) {
+        const CharacterId person(static_cast<std::uint32_t>(i));
+        if (!world.exists(person)) {
+            continue;
+        }
+        if (is_godparent(world, member, person)) {
+            mark(person);
+        }
+        for (const auto godparent : people.godparent[member.index()]) {
+            if (is_godparent(world, godparent, person)) {
+                mark(person);
+            }
+        }
+        // Across all retained parents these child lists visit each retained child at most twice.
+        if (godparent_of_child(world, member, person)) {
+            mark(person);
+        }
+    }
+}
+
+std::uint32_t MarriageQuery::next_visit() {
+    if (++visit_ == 0) {
+        std::ranges::fill(visits_, 0);
+        ++visit_;
+    }
+    return visit_;
+}
+
+std::uint8_t MarriageQuery::member_blood(CharacterId other) {
+    if (family_size_ == 0 || !world_.exists(other) || other == member_) {
+        return 0;
+    }
+    auto& cached = blood_[other.index()];
+    if (cached != 255) {
+        return cached;
+    }
+    cached = 0;
+    for (const auto& ancestor : ancestor_distances(world_, other, 6, visits_, next_visit())) {
+        const auto depth = depths_[ancestor.character.index()][0];
+        if (depth != 255) {
+            const auto degree = static_cast<std::uint8_t>(depth + ancestor.depth);
+            if (cached == 0 || degree < cached) {
+                cached = degree;
+            }
+        }
+    }
+    return cached;
+}
+
+KinResult MarriageQuery::between(CharacterId other) {
+    if (family_size_ == 0 || !world_.exists(other) || other == member_) {
+        return {};
+    }
+    KinResult out;
+    const auto consider = [](std::uint8_t& result, std::uint8_t degree) {
+        if (degree != 0 && (result == 0 || degree < result)) {
+            result = degree;
+        }
+    };
+    for (const auto& ancestor : ancestor_distances(world_, other, 6, visits_, next_visit())) {
+        const auto& depths = depths_[ancestor.character.index()];
+        for (std::size_t i = 0; i < family_size_; ++i) {
+            if (depths[i] == 255 || family_[i] == other) {
+                continue;
+            }
+            const auto degree = static_cast<std::uint8_t>(depths[i] + ancestor.depth);
+            consider(i == 0 ? out.blood_degree : out.affinity_degree, degree);
+        }
+    }
+    blood_[other.index()] = out.blood_degree;
+    const auto& people = world_.characters();
+    consider(out.affinity_degree, member_blood(people.spouse[other.index()]));
+    for (const auto spouse : people.ex_spouses[other.index()]) {
+        consider(out.affinity_degree, member_blood(spouse));
+    }
+    out.spiritual = spiritual_[other.index()] != 0;
+    return out;
+}
 
 std::vector<CharacterId> children_of(const World& world, CharacterId parent) {
     std::vector<CharacterId> out;

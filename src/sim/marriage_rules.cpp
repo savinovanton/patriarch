@@ -76,6 +76,8 @@ constexpr MarriageRules kDefaultMarriageRules{
             .require_opposite_sex = true,
             .forbid_same_house = true,
         },
+    // Specification section 8.4.1: at most three current marriages contribute five points each.
+    .relation = {.marriage_tie_bonus = 5, .max_marriage_ties = 3},
 };
 
 // ---- validation helpers ------------------------------------------------------------------------
@@ -172,6 +174,12 @@ Check check_eligibility(const MarriageEligibilityRules& e) {
     return Check::ok();
 }
 
+Check check_relation(const MarriageRelationRules& r) {
+    PAT_MARRIAGE_CHECK(in_range("relation.marriage_tie_bonus", r.marriage_tie_bonus, 0, 100));
+    PAT_MARRIAGE_CHECK(in_range("relation.max_marriage_ties", r.max_marriage_ties, 0, 1'000));
+    return Check::ok();
+}
+
 #undef PAT_MARRIAGE_CHECK
 
 }  // namespace
@@ -190,7 +198,10 @@ core::Result<void, MarriageRulesError> validate(const MarriageRules& rules) {
     if (auto res = check_money(rules.money); !res) {
         return res;
     }
-    return check_eligibility(rules.eligibility);
+    if (auto res = check_eligibility(rules.eligibility); !res) {
+        return res;
+    }
+    return check_relation(rules.relation);
 }
 
 }  // namespace pat::sim

@@ -40,38 +40,46 @@ clamp_i32(std::int64_t value, std::int64_t lo, std::int64_t hi) noexcept {
     return head.valid() && world.is_alive(head) ? head : CharacterId{};
 }
 
-[[nodiscard]] std::optional<MatchParty>
-make_party(const World& world, const MarriageRules& rules, CharacterId person, DynastyId proposer) {
-    if (!person.valid() || !world.is_alive(person)) {
-        return std::nullopt;
-    }
-    const auto& characters = world.characters();
-    const std::size_t index = person.index();
-    MatchParty party;
-    party.person = person;
-    party.house = characters.dynasty[index];
-    if (!world.exists(party.house)) {
-        return std::nullopt;
-    }
-    party.honor = world.dynasties().honor[party.house.index()];
-    party.rank = honor_rank(rules, party.honor);
-    party.age = age_years(characters.birth_date[index], world.today());
-    party.health = clamp_i32(whole(characters.health[index]), 0, 100);
-    party.fertility = clamp_i32(whole(characters.fertility[index]), 0, 100);
-    std::int32_t skills = 0;
-    for (const auto& skill : characters.skills[index]) {
-        skills += whole(skill);
-    }
-    party.skills = clamp_i32(skills, 0, 100);
-    if (proposer.valid() && party.house != proposer) {
-        const CharacterId own_head = living_head(world, party.house);
-        const CharacterId proposer_head = living_head(world, proposer);
-        if (own_head.valid() && proposer_head.valid()) {
-            party.opinion_of_proposer = clamp_i32(
-                whole(world.get_opinion(own_head, proposer_head)), -kMaxOpinionPoints, kMaxOpinionPoints);
+/// The terms that vary with the members, even when their house facts stay the same.
+void update_member_terms(const MarriageRules& rules,
+                         const MatchParty& groom,
+                         const MatchParty& bride,
+                         MatchSide side,
+                         AcceptScore& result) {
+    const MarriageScoreRules& r = rules.score;
+    const bool groom_side = side == MatchSide::Groom;
+    const MatchParty& other = groom_side ? bride : groom;
+
+    // 5 member_quality: the person the house takes in (health, fertility of the bride, skills).
+    result.health_part = scale_permille(other.health - r.health_neutral, r.health_weight_permille);
+    result.fertility_part =
+        groom_side ? scale_permille(other.fertility - r.fertility_neutral, r.fertility_weight_permille) : 0;
+    result.skills_part = scale_permille(other.skills - r.skills_neutral, r.skills_weight_permille);
+    result.terms[static_cast<std::size_t>(ScoreTerm::MemberQuality)] =
+        result.health_part + result.fertility_part + result.skills_part;
+
+    // 6 age_gap: a penalty per year of the gap above the free years (counted up to a cap).
+    const std::int32_t gap = std::abs(groom.age - bride.age);
+    const std::int32_t excess =
+        clamp_i32(static_cast<std::int64_t>(gap) - r.age_gap_free_years, 0, r.age_gap_years_cap);
+    result.terms[static_cast<std::size_t>(ScoreTerm::AgeGap)] = -r.age_gap_penalty * excess;
+}
+
+void finalize_score(const MarriageRules& rules, AcceptScore& result) {
+    result.score = result.sum_of_terms();
+    result.threshold = rules.score.accept_threshold;
+    result.accepted = result.score >= result.threshold;
+    result.refusal_code = 0;
+    if (!result.accepted) {
+        // The term that pulls the score down most: the lowest value, the first one on a tie.
+        std::size_t weakest = 0;
+        for (std::size_t i = 1; i < kScoreTermCount; ++i) {
+            if (result.terms[i] < result.terms[weakest]) {
+                weakest = i;
+            }
         }
+        result.refusal_code = score_term_code(static_cast<ScoreTerm>(weakest));
     }
-    return party;
 }
 
 /// accept_score of the match seen from `side` (specification section 8.4).
@@ -113,19 +121,7 @@ make_party(const World& world, const MarriageRules& rules, CharacterId person, D
     t[static_cast<std::size_t>(ScoreTerm::OpinionOfProposer)] =
         scale_permille(own.opinion_of_proposer, r.opinion_weight_permille);
 
-    // 5 member_quality: the person the house takes in (health, fertility of the bride, skills).
-    result.health_part = scale_permille(other.health - r.health_neutral, r.health_weight_permille);
-    result.fertility_part =
-        groom_side ? scale_permille(other.fertility - r.fertility_neutral, r.fertility_weight_permille) : 0;
-    result.skills_part = scale_permille(other.skills - r.skills_neutral, r.skills_weight_permille);
-    t[static_cast<std::size_t>(ScoreTerm::MemberQuality)] =
-        result.health_part + result.fertility_part + result.skills_part;
-
-    // 6 age_gap: a penalty per year of the gap above the free years (counted up to a cap).
-    const std::int32_t gap = std::abs(groom.age - bride.age);
-    const std::int32_t excess =
-        clamp_i32(static_cast<std::int64_t>(gap) - r.age_gap_free_years, 0, r.age_gap_years_cap);
-    t[static_cast<std::size_t>(ScoreTerm::AgeGap)] = -r.age_gap_penalty * excess;
+    update_member_terms(rules, groom, bride, side, result);
 
     // 7 external: the hooks of E12/E15 and E31 (0 in M1), both inside their corridors.
     result.political_gain_part =
@@ -133,19 +129,7 @@ make_party(const World& world, const MarriageRules& rules, CharacterId person, D
     result.faith_part = -clamp_i32(context.faith_penalty[side_index], 0, r.faith_penalty_cap);
     t[static_cast<std::size_t>(ScoreTerm::External)] = result.political_gain_part + result.faith_part;
 
-    result.score = result.sum_of_terms();
-    result.threshold = r.accept_threshold;
-    result.accepted = result.score >= result.threshold;
-    if (!result.accepted) {
-        // The term that pulls the score down most: the lowest value, the first one on a tie.
-        std::size_t weakest = 0;
-        for (std::size_t i = 1; i < kScoreTermCount; ++i) {
-            if (t[i] < t[weakest]) {
-                weakest = i;
-            }
-        }
-        result.refusal_code = score_term_code(static_cast<ScoreTerm>(weakest));
-    }
+    finalize_score(rules, result);
     return result;
 }
 
@@ -170,6 +154,9 @@ constexpr std::array kMarriageTermKeys{
     TermKey{marriage_term::kFertility, "marriage.score.fertility"},
     TermKey{marriage_term::kSkills, "marriage.score.skills"},
     TermKey{marriage_term::kFaithPenalty, "marriage.score.faith_penalty"},
+    TermKey{marriage_term::kRelationOpinionMean, "marriage.relation.opinion_mean"},
+    TermKey{marriage_term::kRelationMarriageTies, "marriage.relation.marriage_ties"},
+    TermKey{marriage_term::kRelationLimit, "marriage.relation.limit"},
     TermKey{marriage_term::kEnvoyTotal, "marriage.envoy.total"},
     TermKey{marriage_term::kEnvoyRoad, "marriage.envoy.road"},
     TermKey{marriage_term::kEnvoyGifts, "marriage.envoy.gifts"},
@@ -220,20 +207,75 @@ std::int32_t honor_rank(const MarriageRules& rules, std::int32_t honor) noexcept
     return rank;
 }
 
-std::optional<MatchEvaluation> evaluate_match(const World& world,
-                                              const MarriageRules& rules,
-                                              CharacterId groom,
-                                              CharacterId bride,
-                                              Kopecks dowry_kop,
-                                              const MatchContext& context) {
-    auto groom_party = make_party(world, rules, groom, context.initiator);
-    auto bride_party = make_party(world, rules, bride, context.initiator);
-    if (!groom_party || !bride_party) {
+std::optional<MatchHouse>
+prepare_match_house(const World& world, const MarriageRules& rules, DynastyId house, DynastyId initiator) {
+    if (!world.exists(house)) {
         return std::nullopt;
     }
+    MatchHouse facts;
+    facts.house = house;
+    facts.honor = world.dynasties().honor[house.index()];
+    facts.rank = honor_rank(rules, facts.honor);
+    if (initiator.valid() && house != initiator) {
+        const CharacterId own_head = living_head(world, house);
+        const CharacterId proposer_head = living_head(world, initiator);
+        if (own_head.valid() && proposer_head.valid()) {
+            facts.opinion_of_proposer = clamp_i32(
+                whole(world.get_opinion(own_head, proposer_head)), -kMaxOpinionPoints, kMaxOpinionPoints);
+        }
+    }
+    return facts;
+}
+
+std::optional<MatchParty>
+prepare_match_party(const World& world, CharacterId person, const MatchHouse& house, std::int32_t age) {
+    if (!world.is_alive(person) || !world.exists(house.house)) {
+        return std::nullopt;
+    }
+    const auto& characters = world.characters();
+    const auto index = person.index();
+    if (characters.dynasty[index] != house.house) {
+        return std::nullopt;
+    }
+    MatchParty party;
+    party.person = person;
+    party.house = house.house;
+    party.honor = house.honor;
+    party.rank = house.rank;
+    party.opinion_of_proposer = house.opinion_of_proposer;
+    party.age = age;
+    party.health = clamp_i32(whole(characters.health[index]), 0, 100);
+    party.fertility = clamp_i32(whole(characters.fertility[index]), 0, 100);
+    std::int32_t skills = 0;
+    for (const auto& skill : characters.skills[index]) {
+        skills += whole(skill);
+    }
+    party.skills = clamp_i32(skills, 0, 100);
+    return party;
+}
+
+std::optional<MatchParty>
+prepare_match_party(const World& world, const MarriageRules& rules, CharacterId person, DynastyId initiator) {
+    if (!world.is_alive(person)) {
+        return std::nullopt;
+    }
+    const auto& people = world.characters();
+    const auto house = prepare_match_house(world, rules, people.dynasty[person.index()], initiator);
+    if (!house) {
+        return std::nullopt;
+    }
+    return prepare_match_party(
+        world, person, *house, age_years(people.birth_date[person.index()], world.today()));
+}
+
+MatchEvaluation evaluate_prepared_match(const MarriageRules& rules,
+                                        const MatchParty& groom,
+                                        const MatchParty& bride,
+                                        Kopecks dowry_kop,
+                                        const MatchContext& context) {
     MatchEvaluation evaluation;
-    evaluation.groom = *groom_party;
-    evaluation.bride = *bride_party;
+    evaluation.groom = groom;
+    evaluation.bride = bride;
     evaluation.dowry_kop = std::max<Kopecks>(dowry_kop, 0);
     evaluation.context = context;
     for (const MatchSide side : {MatchSide::Groom, MatchSide::Bride}) {
@@ -241,6 +283,45 @@ std::optional<MatchEvaluation> evaluate_match(const World& world,
             compute_score(rules, evaluation.groom, evaluation.bride, evaluation.dowry_kop, context, side);
     }
     return evaluation;
+}
+
+AcceptScore reevaluate_match_score(const MarriageRules& rules,
+                                   const AcceptScore& base,
+                                   const MatchParty& groom,
+                                   const MatchParty& bride,
+                                   MatchSide side) {
+    AcceptScore score = base;
+    update_member_terms(rules, groom, bride, side, score);
+    finalize_score(rules, score);
+    return score;
+}
+
+MatchEvaluation reevaluate_match_members(const MarriageRules& rules,
+                                         const MatchEvaluation& base,
+                                         const MatchParty& groom,
+                                         const MatchParty& bride) {
+    MatchEvaluation evaluation = base;
+    evaluation.groom = groom;
+    evaluation.bride = bride;
+    for (const MatchSide side : {MatchSide::Groom, MatchSide::Bride}) {
+        const auto index = static_cast<std::size_t>(side);
+        evaluation.scores[index] = reevaluate_match_score(rules, base.scores[index], groom, bride, side);
+    }
+    return evaluation;
+}
+
+std::optional<MatchEvaluation> evaluate_match(const World& world,
+                                              const MarriageRules& rules,
+                                              CharacterId groom,
+                                              CharacterId bride,
+                                              Kopecks dowry_kop,
+                                              const MatchContext& context) {
+    auto groom_party = prepare_match_party(world, rules, groom, context.initiator);
+    auto bride_party = prepare_match_party(world, rules, bride, context.initiator);
+    if (!groom_party || !bride_party) {
+        return std::nullopt;
+    }
+    return evaluate_prepared_match(rules, *groom_party, *bride_party, dowry_kop, context);
 }
 
 const AcceptScore& accept_score(const MatchEvaluation& evaluation, MatchSide side, Breakdown* explain) {
@@ -252,31 +333,39 @@ const AcceptScore& accept_score(const MatchEvaluation& evaluation, MatchSide sid
 }
 
 void explain_accept_score(const AcceptScore& score, Breakdown& explain) {
-    explain.begin(marriage_term::kAcceptScore, Unit::Points, score.score);
+    constexpr std::int64_t scale = core::Fixed32::one_raw;
+    explain.begin(marriage_term::kAcceptScore, Unit::Points, score.score * scale);
     for (std::size_t i = 0; i < kScoreTermCount; ++i) {
         const auto term = static_cast<ScoreTerm>(i);
-        const NodeIndex node = explain.add_term(economy::kRootNode, score_term_code(term), score.terms[i]);
+        const NodeIndex node =
+            explain.add_term(economy::kRootNode, score_term_code(term), score.terms[i] * scale);
         if (node == economy::kNoNode) {
             continue;
         }
         if (term == ScoreTerm::MemberQuality) {
-            static_cast<void>(explain.add_term(node, marriage_term::kHealth, score.health_part));
-            static_cast<void>(explain.add_term(node, marriage_term::kFertility, score.fertility_part));
-            static_cast<void>(explain.add_term(node, marriage_term::kSkills, score.skills_part));
+            static_cast<void>(explain.add_term(node, marriage_term::kHealth, score.health_part * scale));
+            static_cast<void>(
+                explain.add_term(node, marriage_term::kFertility, score.fertility_part * scale));
+            static_cast<void>(explain.add_term(node, marriage_term::kSkills, score.skills_part * scale));
         } else if (term == ScoreTerm::External) {
             static_cast<void>(
-                explain.add_term(node, marriage_term::kPoliticalGain, score.political_gain_part));
-            static_cast<void>(explain.add_term(node, marriage_term::kFaithPenalty, score.faith_part));
+                explain.add_term(node, marriage_term::kPoliticalGain, score.political_gain_part * scale));
+            static_cast<void>(explain.add_term(node, marriage_term::kFaithPenalty, score.faith_part * scale));
         }
     }
 }
 
 Forecast forecast_of(const MarriageRules& rules, const AcceptScore& score) noexcept {
-    const std::int32_t value = score.public_sum();
-    if (value >= score.threshold + rules.score.forecast_margin) {
+    return forecast_from_public_score(rules, score.public_sum(), score.threshold);
+}
+
+Forecast forecast_from_public_score(const MarriageRules& rules,
+                                    std::int32_t public_score,
+                                    std::int32_t threshold) noexcept {
+    if (public_score >= threshold + rules.score.forecast_margin) {
         return Forecast::Likely;
     }
-    if (value < score.threshold - rules.score.forecast_margin) {
+    if (public_score < threshold - rules.score.forecast_margin) {
         return Forecast::Unlikely;
     }
     return Forecast::Unclear;

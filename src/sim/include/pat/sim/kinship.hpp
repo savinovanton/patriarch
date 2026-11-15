@@ -2,6 +2,7 @@
 
 #include "pat/sim/world.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -20,7 +21,41 @@
 // Ids that do not exist (invalid, out of range, free slot) give an empty result. Archived people
 // (E7-T04) are ordinary members of the tree.
 
-namespace pat::sim::kin {
+namespace pat::sim {
+
+struct KinResult {
+    std::uint8_t blood_degree = 0;
+    std::uint8_t affinity_degree = 0;
+    bool spiritual = false;
+
+    [[nodiscard]] bool operator==(const KinResult&) const = default;
+};
+
+namespace kin {
+
+/// Read-only, request-local reuse for marriage queries against one fixed person. Retained ancestors,
+/// spouses and spiritual ties use the same bounds and conventions as the individual queries below.
+/// The World must remain unchanged for the lifetime of this object.
+class MarriageQuery {
+public:
+    MarriageQuery(const World& world, CharacterId member);
+    [[nodiscard]] KinResult between(CharacterId other);
+
+private:
+    [[nodiscard]] std::uint8_t member_blood(CharacterId other);
+    [[nodiscard]] std::uint32_t next_visit();
+
+    static constexpr std::size_t kFamilySize = kMaxExSpouses + 2;
+    const World& world_;
+    CharacterId member_;
+    std::array<CharacterId, kFamilySize> family_{};
+    std::size_t family_size_ = 0;
+    std::vector<std::array<std::uint8_t, kFamilySize>> depths_;
+    std::vector<std::uint8_t> blood_;
+    std::vector<std::uint8_t> spiritual_;
+    std::vector<std::uint32_t> visits_;
+    std::uint32_t visit_ = 0;
+};
 
 inline constexpr std::size_t kAllGenerations = std::numeric_limits<std::size_t>::max();
 
@@ -68,4 +103,5 @@ affinity_degree(const World& world, CharacterId a, CharacterId b, std::size_t ma
 [[nodiscard]] BranchId
 inherited_branch(const World& world, CharacterId father, CharacterId mother, DynastyId child_dynasty);
 
-}  // namespace pat::sim::kin
+}  // namespace kin
+}  // namespace pat::sim

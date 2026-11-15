@@ -22,6 +22,23 @@ ctest --preset win-msvc-relwithdebinfo -L bench --no-tests=error
 .\out\win-msvc\bench\RelWithDebInfo\bench.exe --benchmark_filter=core.pcg32_next --benchmark_format=console --benchmark_repetitions=7 --benchmark_min_time=0.5s
 ```
 
+## Поиск брачной партии (E8-T06)
+
+`sim.marriage_candidates/real_time` измеряет полный `find_candidates` на 5 000 живых
+персонажей в 100 родах: три поколения, текущие браки, крёстные и разреженные мнения.
+Создание мира и проверка инвариантов выполняются до измерения. Бюджет — ≤ 1 мс на
+запрос в Release; в CI-гейт тика этот отдельный сценарий не входит. Для воспроизводимой
+приёмки используется тот же протокол `bench_capture`: 7 повторов по 0,5 с после
+прогрева 0,1 с, последний разрешённый CPU, на Windows — приоритет `above_normal`.
+Набор `marriage_candidates_suite.json` задаёт capture; абсолютный бюджет — 1 мс,
+относительный порог сравнения набора не заменяет его. Запуск — из чистого дерева
+после коммита, чтобы метаданные точно указывали измеренную версию:
+
+```powershell
+cmake --build --preset win-msvc-release --target bench
+python tools\bench_capture.py --source . --build-dir out\win-msvc --suite bench\marriage_candidates_suite.json --output out\marriage-candidates.json
+```
+
 ## CPU affinity
 
 Общий runner (`support.cpp`) до измерений закрепляет **главный поток** за первым
