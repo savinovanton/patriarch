@@ -28,3 +28,4 @@ CMakeLists.txt text eol=lf
 *.tree text eol=lf
 *.expect text eol=lf
 *.psv binary
+*.pmd binary
