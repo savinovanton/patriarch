@@ -43,6 +43,7 @@ add_executable(patriarch_tests
     localization_test.cpp
     log_test.cpp
     mapdata_test.cpp
+    pmd2_container_test.cpp
     m1_content_test.cpp
     m1_definitions_test.cpp
     m1_economy_content_test.cpp
