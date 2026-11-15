@@ -166,6 +166,9 @@ struct PhysicalLayer {
 [[nodiscard]] core::Result<void, core::Error>
 validate_georef(const GeoRef& georef, std::uint32_t width, std::uint32_t height);
 
+/// PROV alone (strings, counts, version); shared with the province container.
+[[nodiscard]] core::Result<void, core::Error> validate_provenance(const Provenance& provenance);
+
 /// Coast key (ADR-0007 section 1.1): FNV-1a64(width, height, raw_hash(GEOR), raw_hash(WBOD)).
 /// Province layers bind to it; it ignores heights, materials, rivers and provenance.
 [[nodiscard]] std::uint64_t coast_key(std::uint32_t width,

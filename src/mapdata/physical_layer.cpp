@@ -401,8 +401,6 @@ Result<void, Error> validate_georef(const GeoRef& g, std::uint32_t width, std::u
     return R::ok();
 }
 
-namespace {
-
 Result<void, Error> validate_provenance(const Provenance& p) {
     using R = Result<void, Error>;
     const auto bad = [](std::string m) {
@@ -441,6 +439,8 @@ Result<void, Error> validate_provenance(const Provenance& p) {
     }
     return R::ok();
 }
+
+namespace {
 
 /// True if every water body is one 4-connected region; on failure `bad_id` is the first split body.
 bool water_connected(const PhysicalLayer& l, std::uint16_t& bad_id) {
