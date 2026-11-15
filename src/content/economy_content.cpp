@@ -16,6 +16,8 @@
 #include <tuple>
 #include <utility>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
@@ -53,19 +55,9 @@ std::string_view stable_key(std::string_view text) {
 
 // ---- typed accessors: schema validation guarantees presence and type; defaults keep us safe ------
 
-std::int64_t int_of(const TypedBlock& block, std::string_view name) {
-    const TypedValue* value = block.find(name);
-    if (value != nullptr) {
-        if (const auto* i = value->get_if<std::int64_t>()) {
-            return *i;
-        }
-    }
-    return 0;
-}
-
-std::int32_t i32_of(const TypedBlock& block, std::string_view name) {
-    return static_cast<std::int32_t>(int_of(block, name));
-}
+using detail::block_of;
+using detail::i32_of;
+using detail::int_of;
 
 Fixed32 fixed_of(const TypedBlock& block, std::string_view name) {
     const TypedValue* value = block.find(name);
@@ -75,11 +67,6 @@ Fixed32 fixed_of(const TypedBlock& block, std::string_view name) {
         }
     }
     return Fixed32::zero();
-}
-
-const TypedBlock* block_of(const TypedBlock& block, std::string_view name) {
-    const TypedValue* value = block.find(name);
-    return value != nullptr ? value->get_if<TypedBlock>() : nullptr;
 }
 
 const TypedMap* map_of(const TypedBlock& block, std::string_view name) {

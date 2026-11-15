@@ -29,7 +29,9 @@ ObjectSchema dynasty_schema() {
     schema.required("name_key", Type::string())
         .describe("Ключ строки локализации с названием рода.")
         .optional("desc_key", Type::string())
-        .describe("Необязательный ключ строки локализации с описанием рода.");
+        .describe("Необязательный ключ строки локализации с описанием рода.")
+        .optional("faith", Type::string(), TypedValue::of(std::string("orthodox")))
+        .describe("Вера рода для брачной политики; по умолчанию orthodox (E8-T07, E31).");
     return schema;
 }
 
