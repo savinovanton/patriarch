@@ -551,6 +551,10 @@ struct VmHost {
 | 103 | `on_favor_threshold` | `dynasty` | — | −1 ниже низкого порога, +1 выше высокого | журнал: `AdjustFavor` с `crossed ≠ 0` | E10-T14 | после T14 |
 | 104 | `on_servant_hired` | `dynasty` | — | роль | журнал: `HireServant` | E10-T12 | после T12 |
 | 105 | `on_servant_left` | `dynasty` | — | роль `+ 256·reason` | журнал: `FireServant` | E10-T12 | после T12 |
+| 106 | `on_portfolio_course` | `holder → character`, `house → dynasty` | `target`, `province` | `тип·256 + курс` | журнал: `SetPortfolioCourse` | E10-T24 | после T24 |
+| 107 | `on_portfolio_order` | `holder → character`, `house → dynasty` | `target` | `тип·256 + приказ` | журнал: `IssuePortfolioOrder` | E10-T24 | после T24 |
+| 108 | `on_portfolio_state` | `house → dynasty` | `previous` (прежний контроллер) | `тип·256 + шаг` | журнал: `AdvancePortfolio` (1…4) | E10-T24 | после T24 |
+| 109 | `on_portfolio_pressure` | `dynasty` | — | −1 / +1 полоса давления | журнал: `AdvancePortfolio` (5) | E10-T28 | после T28 |
 | 110…111 | `on_crisis_phase_changed`, `on_stability_threshold` | зарезервировано | | | престол и стабильность | E12 | резерв |
 | 120…122 | `on_scheme_started`, `on_scheme_discovered`, `on_scheme_completed` | зарезервировано | | | схемы | E14 | резерв |
 | 130…131 | `on_battle_resolved`, `on_siege_end` | зарезервировано | | | армии | E16 | резерв |
@@ -617,7 +621,7 @@ struct VmHost {
 | 1119 | `development` | V | province | уровень освоения |
 | 1120 | `is_player_controlled` | P | character, dynasty, province | область принадлежит роду из `player_dynasties` (§10.3) |
 
-Универсальные конструкции вне каталога: `exists`, `and/or/not/nor`, итераторы, сравнения (§6.1). Предикаты и значения, которые заведут E10/E12/E14/E15/E16/E31 (`has_office`, `crisis_phase`, `stability`, …), добавляют записи в этот каталог в диапазонах 1200…1999 по блокам эпиков (**E10 — 1200…1249**: `has_office`, `office_type`, `office_end_reason`, `office_holders`, `is_favourite`, `favor`, `has_party`, `servant_count`, `servant_loyalty_min`, `has_petition`, [court-model.md](court-model.md) §10.2).
+Универсальные конструкции вне каталога: `exists`, `and/or/not/nor`, итераторы, сравнения (§6.1). Предикаты и значения, которые заведут E10/E12/E14/E15/E16/E31 (`has_office`, `crisis_phase`, `stability`, …), добавляют записи в этот каталог в диапазонах 1200…1999 по блокам эпиков (**E10 — 1200…1249**: `has_office`, `office_type`, `office_end_reason`, `office_holders`, `is_favourite`, `favor`, `has_party`, `servant_count`, `servant_loyalty_min`, `has_petition`, [court-model.md](court-model.md) §10.2; портфели E10-T22: триггеры 1210…1214 `portfolio_course`, `portfolio_state`, `portfolio_pressure`, `controls_portfolio`, `portfolio_targets`, эффекты 2305, 2306 `set_portfolio_course`, `rollback_portfolio`, [court-model.md](court-model.md) §20.11).
 
 ### 8.3 Каталог эффектов (≈ 40; T09 — персонаж и род, T10 — провинция, экономика, поток, T11 — состояние)
 
