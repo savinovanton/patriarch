@@ -421,6 +421,30 @@ TEST_CASE("Map view: art style - off by default, winter palette and grading chan
     }
     CHECK(brighter == 0);
     CHECK(darker > 1000);
+
+    // The map shader knows the real frame size: pixels near the frame edge lose more light than the
+    // centre ones (only map pixels count, the clear colour is not vignetted).
+    long long centre_loss = 0, edge_loss = 0, centre_n = 0, edge_n = 0;
+    for (int y = 0; y < 360; ++y) {
+        for (int x = 0; x < 640; ++x) {
+            const std::size_t i = (static_cast<std::size_t>(y) * 640U + static_cast<std::size_t>(x)) * 4U;
+            const int lit = neutral[i] + neutral[i + 1] + neutral[i + 2];
+            if (lit < 60) {
+                continue;
+            }
+            const long long loss = lit - (dark[i] + dark[i + 1] + dark[i + 2]);
+            const bool centre = x >= 224 && x < 416 && y >= 126 && y < 234;
+            const bool edge = x < 160 || x >= 480 || y < 90 || y >= 270;
+            centre_loss += centre ? loss : 0;
+            centre_n += centre ? 1 : 0;
+            edge_loss += edge ? loss : 0;
+            edge_n += edge ? 1 : 0;
+        }
+    }
+    REQUIRE(centre_n > 500);
+    REQUIRE(edge_n > 100);
+    CHECK(centre_loss * edge_n * 2 <= edge_loss * centre_n);  // mean centre loss <= half the mean edge loss
+    CHECK(edge_loss > 0);
 }
 
 TEST_CASE(
