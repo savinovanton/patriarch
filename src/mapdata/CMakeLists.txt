@@ -8,11 +8,13 @@ add_library(patriarch_mapdata STATIC
     include/pat/mapdata/map_validate.hpp
     include/pat/mapdata/physical_layer.hpp
     include/pat/mapdata/pmd2_container.hpp
+    include/pat/mapdata/province_layer.hpp
     map_format.cpp
     map_gen.cpp
     map_validate.cpp
     physical_layer.cpp
-    pmd2_container.cpp)
+    pmd2_container.cpp
+    province_layer.cpp)
 add_library(patriarch::mapdata ALIAS patriarch_mapdata)
 
 target_include_directories(patriarch_mapdata PUBLIC
