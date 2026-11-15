@@ -75,4 +75,20 @@ struct SkyColors {
     return c;
 }
 
+/// Colours of the sky behind the map (E5-A5, docs/dev/map-art-direction.md section 9). They are *pre-grading*
+/// values: the terrain shader passes the sky through the same grading as the landscape (so the two always
+/// match), and each colour below was solved so that the graded winter picture lands on the hex colour
+/// measured from the concept (checked by a unit test that replays the shader's grading). The horizon is the
+/// colour of the distance haze, shared by the terrain and the sky.
+struct SkyPalette {
+    std::array<float, 3>
+        horizon{};                ///< Haze and horizon, before the winter warm-grey push. Grades to #80827e.
+    std::array<float, 3> high{};  ///< The sky above the horizon. Grades to #838584.
+    std::array<float, 3> gold{};  ///< Gold clouds on the sunset side. Grades to #bda68d.
+};
+
+inline constexpr SkyPalette kGoldenHourSky{std::array<float, 3>{0.1229f, 0.2476f, 0.3338f},
+                                           std::array<float, 3>{0.2267f, 0.2427f, 0.2545f},
+                                           std::array<float, 3>{0.3981f, 0.3249f, 0.2482f}};
+
 }  // namespace pat::engine

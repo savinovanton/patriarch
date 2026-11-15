@@ -126,7 +126,10 @@ struct Options {
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
-    pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X
+    pat::engine::MapLighting light;  // --sun AZ,EL  --shadows N  --haze X  --lighting default|golden
+    pat::engine::MapLighting golden_light;  // the golden hour preset with the explicit --sun/--shadows/--haze applied
+    int lighting_mode = 0;                  // 0 = by style (golden with the winter look), 1 = default, 2 = golden hour
+    bool sun_set = false, shadows_set = false, haze_set = false;  // explicit flags win over the golden-hour preset
     pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter|auto  --grade X  --vignette X  --borders on|off
     bool season_follows_date = true;  // palette and grading follow the date (E5-A4); off with --style off
     bool date_set = false;            // --date YYYY-MM-DD / --season NAME: a fixed date instead of the simulation's
@@ -150,6 +153,7 @@ struct Options {
     std::string shot_file;         // render a few frames, save a PNG screenshot and exit
     int select_id = 0;             // --select ID: start with this province selected (for --shot)
     float view_fx = 0.5f, view_fy = 0.5f, view_dist = -1.0f, view_yaw = 0.0f;  // --view start camera
+    float view_tilt_deg = 0.0f;    // --tilt DEG: tilt bias of the start camera (negative = towards the horizon; for sky shots)
     ScenarioKind scenario = ScenarioKind::Demo;
     std::filesystem::path data_root = PATRIARCH_M1_DATA_DIR;
     bool dev = false;              // poll M1 definitions for changes
@@ -198,8 +202,20 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.day_seconds = std::max(0.0f, static_cast<float>(std::atof(argv[++i])));
         } else if (arg == "--shadows" && i + 1 < argc) {
             out.light.shadow_steps = std::max(0, std::atoi(argv[++i]));
+            out.shadows_set = true;
         } else if (arg == "--haze" && i + 1 < argc) {
             out.light.haze = static_cast<float>(std::atof(argv[++i]));
+            out.haze_set = true;
+        } else if (arg == "--lighting" && i + 1 < argc) {
+            const std::string_view lighting = argv[++i];
+            if (lighting == "default") {
+                out.lighting_mode = 1;
+            } else if (lighting == "golden") {
+                out.lighting_mode = 2;
+            } else {
+                std::fprintf(stderr, "--lighting must be default or golden\n");
+                return false;
+            }
         } else if (arg == "--style" && i + 1 < argc) {
             const std::string_view style = argv[++i];
             if (style == "off") {
@@ -282,6 +298,8 @@ bool parse_options(int argc, char** argv, Options& out) {
             }
         } else if (arg == "--shot" && i + 1 < argc) {
             out.shot_file = argv[++i];
+        } else if (arg == "--tilt" && i + 1 < argc) {
+            out.view_tilt_deg = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--view" && i + 1 < argc) {
             if (std::sscanf(argv[++i], "%f,%f,%f,%f", &out.view_fx, &out.view_fy, &out.view_dist, &out.view_yaw) != 4) {
                 std::fprintf(stderr, "--view expects fx,fy,distance,yaw (e.g. 0.5,0.5,800,0.3)\n");
@@ -320,10 +338,33 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--select ID] [--borders on|off] [--style off|winter|auto] [--season auto|winter|spring|summer|autumn] [--date YYYY-MM-DD] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
+                         "                       [--select ID] [--borders on|off] [--style off|winter|auto] [--lighting default|golden] [--season auto|winter|spring|summer|autumn] [--date YYYY-MM-DD] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
                          "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME] [--event]\n");
             return false;
         }
+    }
+    // The golden hour (E5-A5): the preset of the winter concept. It is the default look while the map is winter
+    // (decided per frame, see the main loop); explicit --sun, --shadows and --haze still win over its values.
+    out.golden_light = out.light;
+    {
+        const pat::engine::MapLighting golden = pat::engine::golden_hour_lighting();
+        pat::engine::MapLighting& g = out.golden_light;
+        if (!out.sun_set) {
+            g.sun_azimuth_deg = golden.sun_azimuth_deg;
+            g.sun_elevation_deg = golden.sun_elevation_deg;
+        }
+        if (!out.shadows_set) {
+            g.shadow_steps = golden.shadow_steps;
+        }
+        if (!out.haze_set) {
+            g.haze = golden.haze;
+        }
+        g.shadow_strength = golden.shadow_strength;
+        g.sun_intensity = golden.sun_intensity;
+        g.sky = golden.sky;
+        g.sky_gold = golden.sky_gold;
+        g.custom_haze = golden.custom_haze;
+        std::copy(std::begin(golden.haze_rgb), std::end(golden.haze_rgb), std::begin(g.haze_rgb));
     }
     if (out.scenario == ScenarioKind::M1 && out.provinces_set) {
         std::fprintf(stderr, "--provinces is only available for the demo scenario\n");
@@ -532,6 +573,9 @@ int main(int argc, char** argv) {
         camera.set_focus(geometry.width * opt.view_fx, geometry.height * opt.view_fy);
         camera.set_distance(opt.view_dist);
         camera.set_yaw(opt.view_yaw);
+    }
+    if (opt.view_tilt_deg != 0.0f) {
+        camera.rotate(0.0f, opt.view_tilt_deg * (3.14159265f / 180.0f));
     }
 
     // ---- loop state
@@ -1607,7 +1651,12 @@ int main(int argc, char** argv) {
             frame.zoom_fraction = camera.zoom_fraction();
             frame.hovered = hovered;
             frame.selected = selected;
-            pat::engine::MapLighting light = opt.light;
+            // The golden hour while the map is winter (or when asked for); before the thaw it hands over to the plain
+            // lighting (its haze and sky are tuned for the winter grading).
+            const bool golden = opt.lighting_mode == 2 ||
+                                (opt.lighting_mode == 0 && (opt.season_follows_date || opt.style.winter > 0.0f) &&
+                                 map_style.winter >= 0.5f);
+            pat::engine::MapLighting light = golden ? opt.golden_light : opt.light;
             if (sun_by_time) {
                 if (day_seconds > 0.0f) {
                     solar_hour = std::fmod(solar_hour + frame_dt * 24.0f / day_seconds, 24.0f);
