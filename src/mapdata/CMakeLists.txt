@@ -6,10 +6,12 @@ add_library(patriarch_mapdata STATIC
     include/pat/mapdata/map_gen.hpp
     include/pat/mapdata/map_stats.hpp
     include/pat/mapdata/map_validate.hpp
+    include/pat/mapdata/physical_layer.hpp
     include/pat/mapdata/pmd2_container.hpp
     map_format.cpp
     map_gen.cpp
     map_validate.cpp
+    physical_layer.cpp
     pmd2_container.cpp)
 add_library(patriarch::mapdata ALIAS patriarch_mapdata)
 
