@@ -8,14 +8,14 @@
 #include <cstdint>
 #include <string>
 
-// Marriage rules (E8-T05, docs/dev/marriage-succession-model.md sections 8.3, 8.4 and 11, GDD 01
-// section 7): the numbers the evaluation of a match reads.
+// Marriage rules (E8-T04/T05, docs/dev/marriage-succession-model.md sections 8.1, 8.3, 8.4 and 11,
+// GDD 01 section 7): the numbers the eligibility and evaluation of a match read.
 //
 // Rules are CONTENT, not state: they are not part of the World and are passed to the pure functions
 // of marriage_score.hpp. MarriageRules::defaults() is the ONLY place in the code with numeric
 // constants of the marriage (marriage_rules.cpp, one named table); E8-T07 reproduces exactly these
 // values in `data/balance/marriage.pd` and a test keeps the two equal. Later tasks of the epic add
-// their own groups of fields (admissibility T04, the matchmaker T20) next to the ones here.
+// their own groups of fields (the matchmaker T20) next to the ones here.
 //
 // Like DemographyRules and EconomyRules this is plain data plus pure functions. There is no floating
 // point: weights are per-mille of one (1000 = x1.0), points are whole numbers, money is kopecks.
@@ -93,10 +93,27 @@ struct MarriageMoneyRules {
     [[nodiscard]] bool operator==(const MarriageMoneyRules&) const = default;
 };
 
+/// Eligibility limits (specification section 8.1); ages are full calendar years, mourning is days.
+struct MarriageEligibilityRules {
+    std::int32_t min_marriage_age_male = 0;
+    std::int32_t min_marriage_age_female = 0;
+    std::int32_t min_betrothal_age = 0;
+    std::int32_t blood_forbidden_degree = 0;
+    std::int32_t blood_absolute_degree = 0;
+    std::int32_t affinity_forbidden_degree = 0;
+    std::int32_t mourning_days_female = 0;
+    std::int32_t mourning_days_male = 0;
+    bool require_opposite_sex = true;
+    bool forbid_same_house = true;
+
+    [[nodiscard]] bool operator==(const MarriageEligibilityRules&) const = default;
+};
+
 struct MarriageRules {
     MarriageRankRules ranks;
     MarriageScoreRules score;
     MarriageMoneyRules money;
+    MarriageEligibilityRules eligibility{};
 
     /// The default rules: the one table of numeric constants (marriage_rules.cpp).
     [[nodiscard]] static MarriageRules defaults();

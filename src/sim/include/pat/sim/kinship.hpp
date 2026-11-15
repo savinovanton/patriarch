@@ -3,6 +3,7 @@
 #include "pat/sim/world.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <vector>
 
@@ -45,6 +46,21 @@ descendants_of(const World& world, CharacterId who, std::size_t max_generations 
 
 /// True when `ancestor` is a (direct) ancestor of `person`.
 [[nodiscard]] bool is_ancestor_of(const World& world, CharacterId ancestor, CharacterId person);
+
+/// Shortest Roman degree (parent edges to a common ancestor), including direct ancestry.
+/// Searches at most six generations on each side; smaller max_generations reduces the bound.
+/// Returns 0 outside dynasty mode, for unknown/equal people or when no relation is found.
+[[nodiscard]] std::uint8_t
+blood_degree(const World& world, CharacterId a, CharacterId b, std::size_t max_generations = 6);
+
+/// Minimum positive blood degree from either person to a current or former spouse of the other.
+/// Archived spouses count. Uses the same generation bound and zero-result convention as blood_degree.
+[[nodiscard]] std::uint8_t
+affinity_degree(const World& world, CharacterId a, CharacterId b, std::size_t max_generations = 6);
+
+/// Godparent/child, godparent/parent of that child, or children sharing a godparent; symmetric.
+/// Unknown/equal people and missing godparent slots do not create a relation. Archived facts count.
+[[nodiscard]] bool spiritually_related(const World& world, CharacterId a, CharacterId b);
 
 /// The branch a newborn of this couple belongs to by default: the father's branch when the child
 /// stays in the father's dynasty, otherwise the mother's when it stays in hers, otherwise none.

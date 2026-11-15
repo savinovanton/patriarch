@@ -1,6 +1,7 @@
 #include "pat/sim/kinship.hpp"
 
 #include <algorithm>
+#include <utility>
 
 namespace pat::sim::kin {
 
@@ -32,6 +33,53 @@ void for_each_child(const World& world, CharacterId parent, Visit&& visit) {
     const Date da = t.birth_date[a.index()];
     const Date db = t.birth_date[b.index()];
     return da < db || (da == db && a < b);
+}
+
+struct AncestorDistance {
+    CharacterId character;
+    std::uint8_t depth = 0;
+};
+
+/// Breadth-first traversal records the shortest visit to each reachable ancestor. The list has at
+/// most 127 entries (self and six binary generations), independent of the size of World.
+std::vector<AncestorDistance>
+ancestor_distances(const World& world, CharacterId person, std::size_t max_generations) {
+    const auto limit = std::min<std::size_t>(max_generations, 6);
+    std::vector<AncestorDistance> out;
+    out.reserve(127);
+    out.push_back({person, 0});
+    const auto& people = world.characters();
+    for (std::size_t i = 0; i < out.size(); ++i) {
+        const auto current = out[i];
+        if (current.depth >= limit) {
+            continue;
+        }
+        for (const CharacterId parent :
+             {people.father[current.character.index()], people.mother[current.character.index()]}) {
+            if (!world.exists(parent) ||
+                std::ranges::find(out, parent, &AncestorDistance::character) != out.end()) {
+                continue;
+            }
+            out.push_back({parent, static_cast<std::uint8_t>(current.depth + 1)});
+        }
+    }
+    return out;
+}
+
+bool is_godparent(const World& world, CharacterId godparent, CharacterId child) {
+    if (!world.exists(godparent) || !world.exists(child)) {
+        return false;
+    }
+    const auto& godparents = world.characters().godparent[child.index()];
+    return std::ranges::find(godparents, godparent) != godparents.end();
+}
+
+bool godparent_of_child(const World& world, CharacterId godparent, CharacterId parent) {
+    bool related = false;
+    for_each_child(world, parent, [&](CharacterId child) {
+        related = related || is_godparent(world, godparent, child);
+    });
+    return related;
 }
 
 }  // namespace
@@ -123,6 +171,72 @@ bool is_ancestor_of(const World& world, CharacterId ancestor, CharacterId person
     }
     const std::vector<CharacterId> all = ancestors_of(world, person);
     return std::find(all.begin(), all.end(), ancestor) != all.end();
+}
+
+std::uint8_t blood_degree(const World& world, CharacterId a, CharacterId b, std::size_t max_generations) {
+    if (!world.dynasty_mode() || !world.exists(a) || !world.exists(b) || a == b) {
+        return 0;
+    }
+    const auto ancestors_a = ancestor_distances(world, a, max_generations);
+    const auto ancestors_b = ancestor_distances(world, b, max_generations);
+    std::uint8_t degree = 0;
+    for (const auto& left : ancestors_a) {
+        for (const auto& right : ancestors_b) {
+            if (left.character == right.character) {
+                const auto distance = static_cast<std::uint8_t>(left.depth + right.depth);
+                if (degree == 0 || distance < degree) {
+                    degree = distance;
+                }
+            }
+        }
+    }
+    return degree;
+}
+
+std::uint8_t affinity_degree(const World& world, CharacterId a, CharacterId b, std::size_t max_generations) {
+    if (!world.dynasty_mode() || !world.exists(a) || !world.exists(b) || a == b) {
+        return 0;
+    }
+    std::uint8_t degree = 0;
+    const auto& people = world.characters();
+    const auto consider = [&](CharacterId spouse, CharacterId person) {
+        if (!world.exists(spouse)) {
+            return;
+        }
+        const auto distance = blood_degree(world, spouse, person, max_generations);
+        if (distance != 0 && (degree == 0 || distance < degree)) {
+            degree = distance;
+        }
+    };
+    for (const auto& [person, other] : {std::pair{a, b}, std::pair{b, a}}) {
+        consider(people.spouse[person.index()], other);
+        for (const CharacterId spouse : people.ex_spouses[person.index()]) {
+            consider(spouse, other);
+        }
+    }
+    return degree;
+}
+
+bool spiritually_related(const World& world, CharacterId a, CharacterId b) {
+    if (!world.dynasty_mode() || !world.exists(a) || !world.exists(b) || a == b) {
+        return false;
+    }
+    if (is_godparent(world, a, b) || is_godparent(world, b, a) || godparent_of_child(world, a, b) ||
+        godparent_of_child(world, b, a)) {
+        return true;
+    }
+    const auto& people = world.characters();
+    for (const CharacterId left : people.godparent[a.index()]) {
+        if (!world.exists(left)) {
+            continue;
+        }
+        for (const CharacterId right : people.godparent[b.index()]) {
+            if (world.exists(right) && left == right) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 BranchId

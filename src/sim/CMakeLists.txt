@@ -37,6 +37,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/education.hpp
     include/pat/sim/health.hpp
     include/pat/sim/marriage_rules.hpp
+    include/pat/sim/marriage_check.hpp
     include/pat/sim/marriage_score.hpp
     include/pat/sim/mortality.hpp
     include/pat/sim/opinion.hpp
@@ -84,6 +85,7 @@ add_library(patriarch_sim STATIC
     events/vm.cpp
     health.cpp
     marriage_rules.cpp
+    marriage_check.cpp
     marriage_score.cpp
     mortality.cpp
     opinion.cpp

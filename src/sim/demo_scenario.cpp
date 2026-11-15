@@ -1,6 +1,7 @@
 #include "pat/sim/demo_scenario.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -63,10 +64,11 @@ public:
     void run(World& world, TickContext& context) override {
         core::Pcg32& rng = world.rng().stream("demo.growth");
         auto population = world.province_population_mut();
-        for (std::uint32_t id = 0; id < population.size(); ++id) {
-            if (!is_monthly_slot(id, context.date)) {
-                continue;
-            }
+        const int day = context.date.day();
+        if (day > 28) {
+            return;
+        }
+        for (std::size_t id = static_cast<std::size_t>(day - 1); id < population.size(); id += 28) {
             const std::int32_t permille = rng.range(-3, 8);
             Fixed32 next = population[id] + population[id].mul_permille(permille);
             if (next < Fixed32::from_int(1)) {
