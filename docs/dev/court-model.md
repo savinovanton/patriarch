@@ -2,6 +2,7 @@
 
 > Статус: **спецификация v1** (2026-11-15), задача E10-T01 ([#381](https://github.com/savinovanton/patriarch/issues/381)); решения — [ADR-0009](../adr/0009-court.md). Таблицы мира — E10-T02, сейв и хеш — T03, данные и правила — T04…T05, команды и системы — T06…T16, мост — T17, окна — T18/T19, приёмка — T20/T21. Документ — контракт для E10-T02…T21 и точка согласования с E7, E8, E9, E11, E12, E13, E14, E17, E20, E30.
 > Опирается на: [эпик E10](../epics/E10-court-offices.md) (решения §3, истории US-10.1…10.8), [GDD 04](../gdd/04-court-intrigue.md) §3–§6, §13–§16 (§7–§12 — E14/E20 по решению Q1), [ADR-0006](../adr/0006-character-storage.md) (D1 ссылки на умерших, D5 теги, D6 схема, D7 хеш), [ADR-0008](../adr/0008-event-engine.md) и [event-engine.md](event-engine.md) (on-action, каталоги, `content_hash`), [ADR-0011](../adr/0011-saves.md) и [save-format.md](save-format.md) (единый реестр тегов и разделов), [economy-model.md](economy-model.md) (деньги, ведомость, `Breakdown`, `ExpenseSource`), [marriage-succession-model.md](marriage-succession-model.md) (образец формы, находка F3 о хеше счетов), код `src/sim`, `src/content`, `data/` на 2026-11-15 (схема 12), решения владельца [#359](https://github.com/savinovanton/patriarch/issues/359) и [#360](https://github.com/savinovanton/patriarch/issues/360) (2026-11-12), макеты UI (`data/ui/layout/court.pd` — доски 30–32, 75, 76; `servants.pd` — доски 56–59, 70, 77).
+> **Дополнение E10-T22 (2026-11-15):** портфели должностей — [§20](#20-портфели-должностей-e10-t22-514) (GDD 04 §19): теги 143 и 256…263, разделы 70, 71, часть хеша 39 (38 занят E7-T25), задачи T23…T32; §4.1, §4.8, §7.1, §13.1, §13.2 ниже уже учитывают эти правки.
 > Числа с пометкой `[предл.]` — предложения: они живут в данных (`data/court/*.pd`, `data/balance/court.pd`), а не в коде и не в этом документе как «истина». Вопросы владельцу, которых нет в документах, вынесены отдельными issue (§17); до ответа работаем по рекомендации **в виде данных**.
 
 ## 1. Что здесь решено и что нет
@@ -64,7 +65,7 @@
 | **F1** | `AssignProvinceAdministrator` допускает назначение **только** системе (любому живому) или роду-владельцу провинции (своего члена). Государевы провинции (`OwnerKind::Crown`) — это ровно место воевод; император — не «род-владелец» | E10 вызывает метод `World` напрямую из `apply` своей команды и сам проверяет допустимость (D11); команду 35 не ослабляем |
 | **F2** | В E7 есть черта `emperor_favorite`, но нет ни слота фаворита, ни должности | фаворит — тип должности 13; черта — маркер для событий и тултипов (D3) |
 | **F3** | Эпик T02 говорит «свободные слоты LIFO» для слуг, T07 — `court.vacancy` «ежемесячно `id % 28`» | стабильные `ServantId` без повторного использования, вставка/удаление в отсортированном SoA (≤ 10 000 строк, удаление редкое); `court.vacancy` — ежедневный обход малой таблицы + ежемесячный скан мест (§6.1) |
-| **F4** | Номера частей хеша `ExtPart` для E10 не назначены ни в эпике, ни в ADR-0006 D7 («24…63 — остальные эпики блоками»); E11 взял 24…31 | E10 — **32…39** (§13.2); E12 — 40…47, E30 — 48…55 |
+| **F4** | Номера частей хеша `ExtPart` для E10 не назначены ни в эпике, ни в ADR-0006 D7 («24…63 — остальные эпики блоками»); E11 взял 24…31 | E10 — **32…37 и 39** (§13.2; 38 отдан E7-T25 `Feud`); E12 — 40…47, E30 — 48…55 |
 | **F5** | `court_upkeep`, `salaries_in/out`, `grants_in`, `gifts_bribes` **уже выпущены** E9 (коды 103, 12/104, 13, 106; «рез.» в economy-model §6.1) | новые коды не нужны (D7): хеш счетов не двигается, находка F3 E8 для E10 не повторяется |
 | **F6** | `is_expense_source_code` в `settlement.cpp` включает `SalariesOut`, а коды пары `kLedgerPairs` проводятся **только** через `transfer` | T10 добавляет пару `{SalariesOut, SalariesIn}` и **убирает** `SalariesOut` из `is_expense_source_code` (обновляя комментарий и economy-model §15). `gifts_bribes` остаётся одиночным кодом: его будет использовать E14 для взяток без счёта-получателя |
 | **F7** | Доски 56–59 показывают **одного слуга на роль**, GDD 04 §5.2 и эпик — «лимит `base + f(честь) + f(владения)`, 5–40» | D17; вопрос [#510](https://github.com/savinovanton/patriarch/issues/510) |
@@ -358,7 +359,7 @@
 | 140 | `AssignParty` | `dynasty`, `party` (`u8`, 0 — вне партий) | **система** (сценарий E30; позже E20) | T15 |
 | 141 | `EndDisgrace` | `character` | **система** (`court.holders`) | T11 |
 | 142 | `SetServantMarket` | `month` (`i32`), `seed` (`u64`) | **система** (`court.market`) | T12 |
-| 143 | — | **резерв** | | |
+| 143 | `SetPortfolioCourse` | см. §20.7 (портфели должностей, E10-T22) | игрок/ИИ-держатель; система | T24 |
 
 Отличия от карточки задачи: добавлены `OpenVacancy`, `AssignParty`, `EndDisgrace`, `SetServantMarket` (шаги, без которых результат нельзя применить одной «чистой» командой: открытие вакансии из скана мест, статическая метка партии, снятие опалы по сроку, зерно рынка); «139…143 резерв» сокращён до одного тега 143. Внутренние команды в реплей как внешний ввод не пишутся (`CommandSource::Internal`); внутренняя команда с заданным актором — `NotAuthorized`.
 
@@ -815,19 +816,21 @@ servant_role "steward" {
 
 | id | Раздел | Содержимое (строка раздела) |
 |---:|---|---|
-| 64 | `court_meta` | `u32 next_office_id, next_vacancy_id, next_petition_id, next_servant_id, next_decision_seq`, `i32 market_month`, `u64 market_seed` |
+| 64 | `court_meta` | `u32 next_office_id, next_vacancy_id, next_petition_id, next_servant_id, next_decision_seq, next_order_seq` (E10-T22), `i32 market_month`, `u64 market_seed` |
 | 65 | `court_offices` | держания `{u32 id, u8 type, u32 locus, u32 holder, u32 appointer, i32 since, u32 patron, u8 flags}`; затем опала `{u32 character, i32 until, u8 reason}` |
 | 66 | `court_vacancies` | вакансии `{u32 id, u8 type, u32 locus, i32 opened, i32 decide_by, u8 reason, u32 previous_holder, u8 postponed}`; затем `u32 ring (≤ 32)` и записи `{u32 seq, u32 vacancy, u8 type, u32 locus, i32 decided, u8 result, u8 n, n × {u32 candidate, u32 dynasty, i32 score, 8×i32 terms, u32 petition}}` |
 | 67 | `court_petitions` | `{u32 id, u32 vacancy, u32 petitioner, u32 candidate, i32 submitted, i64 gift_kop, u8 flags, u32 evidence}` |
 | 68 | `court_servants` | `{u32 id, u32 dynasty, u32 name, u16 birth_year, u16 hired_month, u8 role, u8 sex, u8 skill, u8 loyalty, u16 wage_kop, u8 arrears, u8 portrait}` (24 байта) |
-| 69 | `court_favor` | `{u32 dynasty, i32 favor_x100, u8 services, u8 party, i32 party_support_on, i32 gift_month, i32 gift_points_x100}` |
-| 70, 71 | — | **резерв E10** (M2: услуги/обязательства, клиентела) |
+| 69 | `court_favor` | `{u32 dynasty, i32 favor_x100, u8 services, u8 party, i32 party_support_on, i32 gift_month, i32 gift_points_x100, u8 pressure_band}` (`pressure_band` — E10-T22) |
+| 70 | `court_portfolio` | портфели `{u8 type, u32 locus, u8 course, i32 course_since, u32 controller, u32 set_by, u32 target, u8 state, i32 next_step, 4×i32 order_ready, u8 flags}` (§20.13) |
+| 71 | `court_orders` | кольцо приказов (64) `{u32 seq, u8 type, u32 locus, u8 order, u32 issuer, u32 holder, i32 date, u32 target, i64 cost_kop, i32 cost_favor_x100, i16 power, i16 execution, i16 noise}` (§20.13) |
+| — | — | блок E10 64…71 **исчерпан**; дальнейшее — блок ≥ 96 (ADR-0011 §5.2 п. 3) |
 
 Загрузчик отвергает: неизвестные перечисления; строки не по возрастанию; ссылки за пределами таблиц; счётчики, не превосходящие максимума используемых id; раздел E10 в схеме ниже схемы T03; мир без режима династии с непустыми таблицами E10; `market_month < −1`.
 
 ### 13.2 Хеш и версия схемы
 
-- **Части хеша** (`ExtPart`, блок 32…39, F4): 32 `CourtMeta` (раздел 64: счётчики и зерно рынка), 33 `CourtOffice` (65), 34 `CourtVacancy` (66, вместе с кольцом), 35 `CourtPetition` (67), 36 `CourtServant` (68), 37 `CourtFavor` (69), 38, 39 — резерв. Часть **0 и вне `total`**, пока её данные по умолчанию; FNV по строкам в порядке хранения. Мир без данных E10 имеет прежний `total`.
+- **Части хеша** (`ExtPart`, блок 32…39, F4): 32 `CourtMeta` (раздел 64: счётчики и зерно рынка), 33 `CourtOffice` (65), 34 `CourtVacancy` (66, вместе с кольцом), 35 `CourtPetition` (67), 36 `CourtServant` (68), 37 `CourtFavor` (69), **39 `CourtPortfolio` (разделы 70 и 71 вместе)** (E10-T22; 38 занят E7-T25 `Feud` — house-relations-model.md; блок исчерпан). Часть **0 и вне `total`**, пока её данные по умолчанию; FNV по строкам в порядке хранения. Мир без данных E10 имеет прежний `total`.
 - **`kStateSchema`:** один подъём в T03 — **следующий свободный номер на момент слияния** (сейчас 12; E11-T03 в очереди раньше E10-T03, возможно 13): единая схема для всех таблиц E10. Контейнер `PSV1` v2 не меняется; последующие изменения байтов — отдельным подъёмом по ADR-0011 §7.
 - **Ключ сводки:** `22 court_hash` (u64, необязательный) — `CourtRules::hash()`, пишется только если системы двора установлены (T20); отсутствует — партия без двора.
 - **Миграция «N−1 → N»:** пустые таблицы E10, `next_* = 1`, `market_month = −1`; ledger-раздел старого файла читается как есть (новых кодов нет). Шаг — типизированный, над загруженным миром.
@@ -995,3 +998,335 @@ T02…T19: **ни одно** закреплённое значение не ме
 | **T21** | отчёт и замеры (§14) | T20 | S, 1 |
 
 **Статус `status:` задач после этого PR:** T01 закрыта; T02 остаётся `status:blocked` (ждёт **E11-T03** — очередь W: E11-T02 → E11-T03 → E10-T02 → E10-T03 → E12-T02…); T04 разблокирован (`status:ready`, зависит только от T01; Q2 решён); T05 ждёт T02 и T04; остальные — по таблице.
+
+## 20. Портфели должностей (E10-T22, [#514](https://github.com/savinovanton/patriarch/issues/514))
+
+> Статус: **спецификация v1** (2026-11-15). Игровая часть — [GDD 04 §19](../gdd/04-court-intrigue.md) (каталог курсов и приказов, решения владельца 2026-11-15); здесь — состояние, команды, формулы, данные, мост и задачи **E10-T23…T32**. Дополняет, а не заменяет §1…§19; нумерация D18…, F15…, C-13…, `CourtDenial` 100… продолжает прежнюю. Числа `[предл.]` — данные (`data/court/portfolios.pd`, `data/balance/court.pd`). Решено владельцем 2026-11-15: [#517](https://github.com/savinovanton/patriarch/issues/517) (канцелярия — M2), [#518](https://github.com/savinovanton/patriarch/issues/518) (смешанная модель, деньги и милость, тон 12+), [#519](https://github.com/savinovanton/patriarch/issues/519) (образование наследника государя); открыто [#520](https://github.com/savinovanton/patriarch/issues/520) (макеты).
+
+### 20.1 Сводка решений
+
+| # | Решение | Основание |
+|---|---|---|
+| D18 | **Портфель — строка по месту `(тип, locus)`, а не по человеку**; строка создаётся при первом назначении на тип с портфелем и живёт, пока курс не равен умолчанию или ведомство не вернулось к умолчанию. Курс переживает смену держателя | решение владельца №3 (инерция), D3 |
+| D19 | Состояние — **две малые таблицы**: `PortfolioTable` (≤ 32 строк) и `PortfolioOrderRing` (кольцо 64: история приказов, шум, цены). Объявляются **в E10-T02/T03** (не отдельной W-задачей, правило D2): разделы **70** и **71** (блок E10 64…71 исчерпан), часть хеша **39** (раздел 70 и 71 хешируются вместе; 38 занят E7-T25 `Feud`, блок 32…39 исчерпан); `kStateSchema` — тот же один подъём T03 | ADR-0011 §5.2, очередь W без нового слота |
+| D20 | Три команды: **143 `SetPortfolioCourse`** (последний свободный тег блока E10) и **256 `IssuePortfolioOrder`, 257 `AdvancePortfolio`** из **нового блока 256…263** реестра ≥ 256 (ADR-0011 §6.1: два байта varint, форматы не меняются); 258…263 — резерв M2 (генерал, МИД) | ADR-0011 §5.2 п. 3, §6 |
+| D21 | **Курс = модификаторы, приказ = разовая правка существующими методами.** Постоянные эффекты читают подсистемы через интерфейс `DepartmentModifierSource` (производные кэши с dirty-битами E9-T17, по умолчанию нейтральны → хеш экономики не движется); приказы вызывают методы `World` и E11-команды (контроль, смута, настроение, стресс, мнение, милость, деньги) | находка F16, §13.3 |
+| D22 | **Без ГСЧ вообще.** Сила, цена, перезарядка, исполнение, шум, давление, зависть — целочисленные функции состояния (новых потоков и бросков нет); `court.market` остаётся единственным | NFR-DET-1 |
+| D23 | Реакции на потерю/смерть/смену держателя — **по состоянию** (как D10): система `court.portfolio` ежедневно сверяет строки с `OfficeTable` и выпускает внутренние `AdvancePortfolio`; `ResignOffice`/`DismissOffice` про портфели не знают | D10 |
+| D24 | **Давление** рода (`portfolio_pressure`) — чистая функция состояния (должности, курсы, кольцо приказов, милость); E12 читает её как слагаемое подозрения, E10 пишет только зависть (мнения глав родов, `OpinionReason` 310) | GDD 02 §5.1, находка F20 |
+| D25 | Цена приказов — **деньги** (`gifts_bribes`, пары не нужны: как подарок) и **милость**; «услуга» подключается после #509/#518; зарплатные перки губернатора — **надбавка к окладу в паре 104 ↔ 12** (новых кодов ведомости нет) | D7, F5 |
+| D26 | Окна портфелей не ждут логики: мост `PortfolioView` (T29) и окна (T30) — после бордов #520; до борда игра работает без окон (команды и ИИ уже действуют) | #520 |
+
+### 20.2 Находки
+
+| # | Находка | Что делаем |
+|---|---|---|
+| **F15** | §4.2 GDD 04 даёт `powers`/`modifiers`, но court-model не описывал их: в §8.8 «эффекты должностей» — только управитель, честь, оклад | §20 вводит портфель как единый механизм; §8.8 не меняется |
+| **F16** | У E9 есть колонки `tax_policy`/`recruit_policy` провинции, но **ни одной команды и ни одного мутатора** для государевых провинций, нет метода отсрочки квоты, правки коррупции провинции и займа по пониженной ставке; кэш модификаторов (E9-T17) учитывает здания, политику, управителя | узкая правка E9 (задача T25, вход «ведомственные модификаторы» рядом с «персоналом» T13): интерфейс §20.9, три мутатора; нулевые по умолчанию, тест «хеш экономики на M1 прежний» |
+| **F17** | Свободен один тег блока E10 (143), нужно три | 143 + блок 256…263 (D20) |
+| **F18** | Блок разделов 64…71 и частей хеша 32…37 + 39 полностью израсходован (38 отдан E7-T25) | дальнейшее — блок ≥ 96 (ADR-0011 §5.2 п. 3); M2-портфели (генерал, МИД) своих таблиц не требуют: тот же `PortfolioTable` |
+| **F19** | «Тайная канцелярия» (кандидат владельца) не входит в 12 должностей #360 и зависит от E12-T10 | решение владельца [#517](https://github.com/savinovanton/patriarch/issues/517): **M2**; в M1 три портфеля; каркас (`domain = Inquiry`, `SuspicionSink`, 14-й тип должности — данные) допускает добавление без смены формата |
+| **F20** | `suspicion` появляется только с E12-T02 | чистая функция `portfolio_pressure`; E12-T10 читает её как слагаемое подозрения; `SuspicionSink` (запись `AdjustSuspicion`) — заготовка M2 для «Сыска» |
+| **F21** | «Зависти» родов нет ни в одном документе | зависть — сдвиг мнений глав родов (E7, `OpinionReason` 310) месячной системой; новых таблиц нет |
+| **F22** | Воспитатель настраивает образование **царевича**, а не ваших детей; кто наследник государя — E8 (`SetHeir`) и `EmperorSource` (E12) | решение владельца [#519](https://github.com/savinovanton/patriarch/issues/519): образование наследника государя; до E12 наследник — наследник главы `crown_dynasty`; смерть царевича/смена наследника — потеря места с инерцией, новый наследник получает прежний курс как умолчание |
+| **F23** | Эпик E10 уже перегружен (≈ 70 дн.); портфели ≈ +39 дн. | задачи T23…T32 и точки среза (§20.18) |
+
+### 20.3 Типы и единицы
+
+| Величина | Тип | Единица / диапазон |
+|---|---|---|
+| `PortfolioId` (тип портфеля) | `u8` | совпадает со слотом типа должности (`OfficeTypeId`); портфель — необязательное свойство типа |
+| `course` | `u8` | `0…7`; 0 — умолчание типа (по данным может быть другой индекс, `default_course`) |
+| `order` | `u8` | `0…3` (`kMaxOrdersPerPortfolio = 4`) |
+| `state` | `u8` | 1 `Active` (держатель есть), 2 `Inertia` (место пусто, курс действует), 3 `Rollback` (курс шагает к умолчанию) |
+| Давление | `i32` | очки ×100 (`pressure_x100`); полосы 0…3 (`PressureBand`) |
+| Шум | `i16` | сотые доли очка давления; затухает за `heat_days` |
+| Сила, исполнение | `i16`/`u16` | промилле |
+| Домен портфеля (`domain`) | `u8` | 1 `Treasury` (E9), 2 `Education` (E7), 3 `Province` (E9/E10), 4 `Inquiry` (E12/E14, **M2**: тайная канцелярия, #517), 5 `Army` (E15, M2), 6 `Diplomacy` (E18, M2), 7 `Church` (E31, M2), 8 `Navy` (E16, M2) |
+| Вид цели (`target_kind`) | `u8` | 0 нет, 1 род, 2 провинция, 3 персонаж |
+| Вид цены | битовая маска | бит 0 деньги (коп.), бит 1 милость (сотые), бит 2 услуги (после #509) |
+
+Целочисленное деление усекает к нулю; дельты зажимаются границами получателя (не отказ), если не сказано иное.
+
+### 20.4 Таблицы
+
+Живут в `World::court()` рядом с таблицами §4 (`pat/sim/court/portfolio.hpp`); мутации — методы `World`. Без правил портфелей (`PortfolioRules` не установлены) таблицы пусты и команды дают `NoCourtRules`.
+
+| Константа | Значение | Что ограничивает |
+|---|---:|---|
+| `kMaxPortfolios` | 32 | строк `PortfolioTable` (M1: ≤ 8; губернаторские места по списку сценария ≤ 8, плюс 3 ведомства) |
+| `kMaxOrdersPerPortfolio` | 4 | приказов на тип |
+| `kOrderRingSize` | 64 | кольцо приказов (мир целиком) |
+
+**`PortfolioTable`** — строки по возрастанию `(type, locus)`, ≤ 32:
+
+| Колонка | Тип | Смысл |
+|---|---|---|
+| `type`, `locus` | `u8`, `u32` | место (как §4.2) |
+| `course` | `u8` | выбранный курс |
+| `course_since` | `Date` | когда выбран (для `course_change_cooldown_days`) |
+| `controller` | `DynastyId` | род **текущего или последнего** держателя (в `Inertia`/`Rollback` — последнего); определяет, кто может ставить курс и приказы |
+| `set_by` | `DynastyId` | род, выбравший текущий курс (для события «курс сменился другим родом») |
+| `target` | `u32` | `DynastyId` целевого рода для курса «с целью», 0 — нет |
+| `state` | `u8` | см. §20.3 |
+| `next_step` | `Date` | конец инерции (`Inertia`) или дата следующего шага отката (`Rollback`); `kNoDate` в `Active` |
+| `order_ready[4]` | `Date[4]` | дата, с которой приказ снова доступен (`kNoDate` — готов) |
+| `flags` | `u8` | бит 0 — «враждебный»: `controller` ≠ род, начавший курс, и курс с целью против рода игрока/любого рода (производное, хранится для хеша событий); бит 1 — курс задан системой/событием |
+
+Размер строки 44 байта (≤ 1,4 КБ таблица). Уникальность `(type, locus)`; `controller` — существующий род; `target` — существующий род или 0.
+
+**`PortfolioOrderRing`** — кольцо 64 записи (старейшая вытесняется), хранит историю приказов для окна и шума давления:
+
+| Колонка | Тип | Смысл |
+|---|---|---|
+| `seq` | `u32` | из `CourtMeta.next_order_seq` |
+| `type`, `locus`, `order` | `u8`, `u32`, `u8` | что и где |
+| `issuer`, `holder` | `DynastyId`, `CharacterId` | кто отдал и кто исполнял |
+| `date` | `Date` | дата |
+| `target` | `u32` | цель (род/провинция/персонаж по `target_kind`) |
+| `cost_kop`, `cost_favor_x100` | `i64`, `i32` | фактически списанная цена |
+| `power_permille`, `execution_permille`, `noise_x100` | `i16`, `i16`, `i16` | итоговая сила, исполнение, шум приказа |
+
+45 байт × 64 ≈ 2,9 КБ. Затухание шума — по `date`, без записи.
+
+**Изменения таблиц §4.1/§4.8** (T02/T03 ещё не начаты, поэтому правим сразу): `CourtMeta` получает `next_order_seq` (раздел 64); `FavorTable` получает колонку `pressure_band` (`u8`, 0 по умолчанию; раздел 69 `+1` байт) — для события пересечения порога давления (§20.7, on-action 109).
+
+**Производные (не сохраняются, `rebuild_derived_indexes()`):** индекс `portfolio_by_seat_`; кэши ведомственных модификаторов E9 (`province_dept_[p]`: сдвиг налогового уровня, бонус контроля, поправка коррупции; `loan_terms_[dynasty]`; `quota_permille_[dynasty]`; `crown_tax_shift`) с dirty-битами; кэш давления `pressure_cache_[dynasty]` (пересчёт ежемесячно и при команде). Кэши пусты после загрузки и пересчитываются лениво (как §17.10 E9).
+
+### 20.5 Деньги
+
+| Поток | Проводки | Условие |
+|---|---|---|
+| Денежная цена приказа | `post_money(род-держатель, gifts_bribes 106, −cost)` | `can_afford` в `validate`; приказ с ценой в милость — `AdjustFavor` с `reason 320` (команда 137 внутри `apply` методом `World`) |
+| Комиссия чрезвычайной ссуды | то же, `2 %` суммы | входит в цену |
+| Чрезвычайная ссуда | метод E9 `issue_loan(dynasty, amount, rate)` → пара `loan_taken (200) ↔ loan_issued (202)` | существующие коды; пониженная ставка — поле строки займа |
+| Кормление губернатора (надбавка к окладу) | `court.pay`: оклад `+ perk_kop` одним `transfer(Crown → род, 104, 12)`; `perk = perk_permille·налог провинции за прошлый месяц/1000` | пока курс «Кормление» активен и держатель жив; из `income_last_month` провинции (E9) |
+| Остальное | нет проводок (мнения, контроль, смута — состояние) | |
+
+Новых кодов ведомости нет; хеш счетов и golden экономики не меняются; утечка нечестного держателя — **уменьшение эффекта**, не отдельная проводка.
+
+### 20.6 Время: системы, порядок, ГСЧ
+
+К таблице §6.1 добавляются (в тех же двух функциях установки):
+
+| № | Имя | `Cadence` | Когда | Что делает |
+|---:|---|---|---|---|
+| 8 | `court.portfolio` | Daily | до `economy.*`, после `court.holders` | обходит `PortfolioTable` (≤ 32): строка `Active`, а место пустое → `AdvancePortfolio{BeginInertia}`; место занято другим родом/человеком → `{Adopt}`; `Inertia` и `next_step ≤ today` → `{Rollback}` (первый шаг); `Rollback` и `next_step ≤ today` → следующий шаг; цепочка дошла до умолчания → `{Close}` (строка удалена) |
+| 3 (расширение) | `court.ai` | Daily | как §6.1 | для ИИ-рода-держателя по слоту `is_monthly_slot`: выбирает курс по весам данных `ai_weight` и контекста (§20.8.7) → `SetPortfolioCourse`; приказ — не чаще слота и только по `ai_orders` в данных. Для рода игрока ничего не делает |
+| 9 | `court.reaction` | Monthly | **после** `economy.settlement` | пересчёт `pressure_cache_`; зависть (§20.8.5); при пересечении полосы — `AdvancePortfolio{PressureCrossed}`; в M2 для домена `Inquiry` — `AdjustSuspicion` (E12) по курсу; надбавки `court.favor` 14208 |
+| 5, 7 (расширение) | `court.pay`, `court.favor` | Monthly | как §6.1 | `court.pay` — надбавка «Кормление»; `court.favor` — слагаемое 14208 `portfolio` (§20.8.6) |
+
+**ГСЧ: ни одного нового потока и броска** (D22). Все тайбрейки — по возрастанию `(type, locus)` и `DynastyId`. Параллельность не используется. Сейв мира между выпуском внутренней команды и применением теряет её, следующий день восстанавливает по состоянию (§6.2).
+
+### 20.7 Команды
+
+Теги выданы этим документом; вносятся в [save-format.md](save-format.md) §6 (143 и новая строка 256…263). Журнал `PRP1`/`PCL1` кодирует тег varint без смены версий.
+
+| Тег | Команда | Поля | Кто выпускает | Задача |
+|---:|---|---|---|---|
+| 143 | `SetPortfolioCourse` | `type` (`u8`), `locus` (`u32`), `course` (`u8`), `target` (`u32`, род для курса «с целью», иначе 0) | актор — род-держатель (игрок/ИИ); **система** (событие E11 `set_portfolio_course`, актор невалиден — сценарий/событие, без проверок кулдауна) | T24 |
+| 256 | `IssuePortfolioOrder` | `type`, `locus`, `order` (`u8`), `target` (`u32`: род/провинция/персонаж по `target_kind`, 0 — по умолчанию) | актор — род-держатель | T24 |
+| 257 | `AdvancePortfolio` | `type`, `locus`, `step` (`u8`: 1 `Adopt`, 2 `BeginInertia`, 3 `Rollback`, 4 `Close`, 5 `PressureCrossed`), `dynasty` (`u32`, для `Adopt` — новый контроллер, для `PressureCrossed` — род), `value` (`i8`, для `PressureCrossed` −1/+1) | **внутренняя** (`court.portfolio`, `court.reaction`, событие E11 `rollback_portfolio`) | T24, T28 |
+| 258…263 | — | **резерв блока** (M2: генерал, МИД; новые команды портфелей) | | |
+
+**`validate`:**
+
+| Команда | Проверки (порядок) |
+|---|---|
+| `SetPortfolioCourse` | режим династии → правила → тип имеет портфель (`NoPortfolio`) → портфель `Active` и актор — род-держатель (`PortfolioClosed`, `NotPortfolioOwner`; системный актор пропускает) → курс существует и отличается от текущего (`CourseUnknown`, `CourseSame`) → `course_change_cooldown_days` (`CourseCooldown`, a = дней; не для первой настройки и не для системы) → цель: нужна для курса «с целью» (`TargetRequired`), существует, не сам род-держатель и не Корона (`TargetInvalid`) → домен, подсистема которого ещё не включена (`Inquiry` в M1 нет), даёт `SystemNotReady` |
+| `IssuePortfolioOrder` | как выше до `Active` → приказ существует (`OrderUnknown`) → перезарядка (`OrderCooldown`, a = дней) → условие приказа (`OrderConditionUnmet`, например смута ≥ 40) → цель (`TargetRequired`/`TargetInvalid`; провинция — государева/«своя» по `target_kind`) → **исполнение**: `execution ≥ refuse_below` иначе `HolderRefuses` → цена: деньги `can_afford` (`CannotAfford`), милость `favor ≥ cost` (`FavorTooLow`) → тот же `SystemNotReady` |
+| `AdvancePortfolio` | внутренняя (`InternalOnly`, актор невалиден); строка существует (кроме `Adopt` для первой строки и `PressureCrossed`); шаг допустим для состояния |
+
+**`apply` (что меняется):**
+
+| Команда | Эффекты |
+|---|---|
+| `SetPortfolioCourse` | создаёт строку при первой настройке; пишет `course`, `course_since = сегодня`, `set_by`, `target`, `controller`; помечает dirty-биты затронутых кэшей; пересчитывает флаг «враждебный»; летопись `Note` 11; журнал для on-action 106 |
+| `IssuePortfolioOrder` | считает `power`, `cost`, `cooldown`, `noise` теми же функциями, что превью; списывает цену (§20.5); применяет эффект методами `World` (контроль, смута, настроение, стресс, мнение 311/312, милость, образование, срок квоты, коррупция, заём); пишет `order_ready[order] = сегодня + cooldown`; запись в кольцо; летопись `Note` 12; журнал для on-action 107 |
+| `AdvancePortfolio` | `Adopt`: создаёт/обновляет строку, `controller = dynasty`, `state = Active`, `next_step = kNoDate`, пересчитывает «враждебный»; `BeginInertia`: `state = Inertia`, `next_step = сегодня + inertia_months·30`; `Rollback`: курс → `rollback_to`, `state = Rollback`, `next_step += 30`; `Close`: строка удаляется, dirty-биты кэшей; `PressureCrossed`: пишет `pressure_band` в `FavorTable`, летопись; журнал для on-action 108/109 |
+
+**Новые причины `CourtDenial`** (коды стабильны, тексты `court.denial.<имя>`; `a`, `b` — числа для подстановки):
+
+| Код | Имя | Где | `a` |
+|---:|---|---|---|
+| 100 | `NoPortfolio` | тип должности без портфеля | — |
+| 101 | `PortfolioClosed` | место пусто / инерция / откат: окно закрыто | дней инерции |
+| 102 | `NotPortfolioOwner` | актор не род-держатель | — |
+| 103 | `CourseUnknown` | нет такого курса | — |
+| 104 | `CourseSame` | курс уже выбран | — |
+| 105 | `CourseCooldown` | рано менять | дней |
+| 106 | `TargetRequired` | курс/приказ требует цель | `target_kind` |
+| 107 | `TargetInvalid` | цель недопустима | — |
+| 108 | `OrderUnknown` | нет такого приказа | — |
+| 109 | `OrderCooldown` | перезарядка | дней |
+| 110 | `OrderConditionUnmet` | условие приказа не выполнено | код условия |
+| 111 | `FavorTooLow` | милости не хватает на цену | `b` — не хватает (сотые) |
+| 112 | `HolderRefuses` | исполнение ниже порога отказа | `a` = исполнение‰ |
+| 113 | `SystemNotReady` | нужная подсистема (E12) ещё не включена | домен |
+| 114 | `PortfolioWindowClosed` | окно даты типа (губернатор до 1708-12-18) | дней до открытия |
+
+Соответствие `Rejection`: 100, 103, 106, 107, 108 — `InvalidArgument`; 102 — `NotAuthorized`; остальные — `InvalidState`; несуществующее место — `UnknownEntity`. Нехватка денег — прежний 43 `CannotAfford`.
+
+### 20.8 Формулы
+
+Все — таблицы данных, целочисленные; «показанное = применённое»: `course_preview`, `order_preview`, `portfolio_pressure` — те же функции, что `validate`/`apply`/системы.
+
+**20.8.1 Исполнение и сила** (код `portfolio_power`; `Breakdown` 14700): `skill` — навык держателя области (`Хозяйство`, `Учёность`, `Интриги`…); `loyalty_pt` — мнение держателя к главе его рода; `integrity` — из `administrator_profile` (E10-T09); `skill_power = clamp(1000 + 40·(skill − 10), 600, 1400)`; `loyalty_term = 500 + 5·loyalty_pt`; `integrity_term = 10·integrity`; `execution = (600·loyalty_term + 400·integrity_term)/1000`; `exec_eff = min(1000, execution·1000/700)`; `power = skill_power·exec_eff/1000`; `leak = max(0, 40 − integrity)·10`‰ для денежных эффектов. Отказ при `execution < 300`.
+
+**20.8.2 Цена и перезарядка** (14750): `cost = base·clamp(1000 − 30·(skill − 10), 700, 1300)/1000`; `cooldown = base_days·clamp(1000 − 25·(skill − 10), 750, 1250)/1000`.
+
+**20.8.3 Числовые эффекты:** сила умножает **изменение**, а не базу: `delta' = delta·power/1000` (усечение к нулю), множители курсов — `1000 + (mult − 1000)·power/1000`. Курсы действуют с `power` держателя на момент пересчёта кэша (смена навыка или мнения помечает кэш грязным ежемесячно); в `Inertia` — с последним сохранённым значением (в строке не хранится: берётся `power_inertia_permille = 800` — курс без держателя работает «как привык»).
+
+**20.8.4 Инерция и откат:** `inertia_months` типа (6/4/12/6); `Rollback`: шаг в 30 дней по `rollback_to` (цепочка ≤ 3 шагов, курсы с целью — сразу к умолчанию); строка удаляется при курсе = умолчание.
+
+**20.8.5 Давление и зависть** (`Breakdown` 14800): `pressure_x100 = (Σ w·k(state) ·convex + Σ noise_course + Σ noise_orders·decay − favor_relief)`, где `convex = (1000 + 250·max(0, n − 1))/1000`, `decay = max(0, 1 − возраст/heat_days)`, `heat_days = 180`, `favor_relief = favor_x100/10`; полосы 20/40/60. Вклад в подозрение (E12): `max(0, pressure − 20)·60/1000` очка в месяц, ≤ 5. Зависть: для каждого из `envy_max_rivals = 12` родов по возрастанию `(−честь, id)`, кроме Короны и рода-держателя: `delta = −min(2, (pressure − 15)/10)`, вдвое меньше при собственном портфеле или общей партии → `AdjustOpinion` (19, причина **310**, глава рода → глава рода-держателя); только ненулевые.
+
+**20.8.6 Милость:** к `Breakdown` 14200 добавляется слагаемое **14208 `portfolio`**: суммы `favor_per_month` выбранных курсов (щадящий −0,4, жёсткий +0,6, сбор податей +0,5 и т. п.) для рода-держателя; зажим месячной дельты прежний (±6).
+
+**20.8.7 ИИ-держатель** (`court.ai`): для каждого курса — `ai_score = Σ ai_weight[курс]·контекст` (данные: казна Короны, смута, милость, мнение к кандидату в цель); цель выбирается как род с минимальным мнением главы к главе держателя **при условии** `opinion ≤ hostile_opinion (−15)` или противоборствующих партиях (§8.10); иначе — курс без цели; максимум, ничья по индексу. **Враждебный преемник** — это тот же выбор: он начинается в первый месячный слот после `Adopt` (≤ 30 дней).
+
+**Семейства `Breakdown`** (стабильные `u16`, продолжение §9): **14700** сила исполнения (14701 `skill`, 14702 `loyalty`, 14703 `integrity`, 14704 `inertia`, 14705 `leak`); **14750** цена приказа (14751 `base`, 14752 `skill_discount`, 14753 `favor_part`, 14754 `fee`); **14760** перезарядка (14761 `base`, 14762 `skill`); **14800** давление (14801 `offices`, 14802 `convexity`, 14803 `courses`, 14804 `orders`, 14805 `favor_relief`, 14806 `suspicion_hint`); **14810** зависть (14811 `base`, 14812 `own_portfolio`, 14813 `same_party`). Текст — `court.term.<код>`.
+
+### 20.9 Интерфейсы к подсистемам
+
+| Подсистема | Что читает/зовёт E10 | Что даёт E10 |
+|---|---|---|
+| **E9** | методы `World`: `defer_quota(dynasty, days)` (срок ближайшей квоты, ≤ 1 раз на квоту), `adjust_province_corruption(province, delta_permille)`, `issue_loan(dynasty, amount, rate_ppm_year)`; E11-методы контроля/смуты/настроения (команды 107…109) | интерфейс **`DepartmentModifierSource`** (`crown_tax_shift()`, `province_tax_shift(p)`, `province_control_bonus(p)`, `province_corruption_bonus(p)`, `loan_terms(dynasty) → {rate_permille, limit_permille}`, `quota_permille(dynasty)`), по умолчанию нейтральный (`nullptr`/нули); подключается в T25; E9 читает при пересборке кэша |
+| **E7** | `SetEducation` (12) с `tutor = держатель`; метод `adjust_education_level(child, delta)` (узкий, если нет); наследник государя — `EmperorSource::heir()` | курс «Воспитание» — направление образования царевича; приказы меняют мнение (`AdjustOpinion`), уровень, стресс (`AdjustStress`) |
+| **E10** | `court.pay`, `court.favor`, `administrator_profile` | надбавка «Кормление», слагаемое милости, честность держателя |
+| **E12** | `AdjustSuspicion` (147), `suspicion[род]` для M2-портфеля «Сыск» (в M1 не используется) | `portfolio_pressure(dynasty)` — слагаемое месячного подозрения (E12-T10); интерфейс `SuspicionSink` — заготовка M2 |
+| **E11** | журнал: on-action 106…109, триггеры, эффекты (§20.11) | события «новый казначей — ваш недруг», «царевич спрашивает о вас» и др. |
+| **E17** | утилити-ИИ заменяет выбор курса `court.ai` на тех же командах | `ai_weight` как стартовый набор |
+| **E15/E16/E18** (M2) | регистрация потребителя `PortfolioConsumer(domain)` | типы `Army`, `Diplomacy`, `Navy` — данные без новых таблиц |
+
+### 20.10 Данные `.pd`
+
+| Файл | Содержимое |
+|---|---|
+| `data/court/portfolios.pd` | объекты `portfolio` (по одному на тип должности) с вложенными `course` и `order` |
+| `data/balance/court.pd` | добавляется блок `portfolio_balance`: `course_change_cooldown_days = 90`, `full_at = 700`, `refuse_below = 300`, `skill_power_per_level = 40`, `skill_cost_per_level = 30`, `skill_cd_per_level = 25`, `inertia_power_permille = 800`, `heat_days = 180`, `pressure_free = 20`, `suspicion_per_pt_permille = 60`, `suspicion_month_cap = 5`, `envy_free = 15`, `envy_max_rivals = 12`, `envy_cap = 2`, `convexity_permille = 250`, `hostile_opinion = -15`, `bands = [20 40 60]` |
+| `data/loc/ru/court.pd` | `portfolio.<тип>.name`, `…course.<id>.name/desc/good/bad`, `…order.<id>.name/desc`, `court.denial.<имя>` (100…114), `court.term.147xx…148xx` |
+
+Виды `portfolio`, `portfolio_balance` **исключены из `registry.content_hash()`** (D15), входят в `CourtRules::hash()` после T32.
+
+```
+portfolio "treasurer" {
+    office = office:treasurer           # ссылка на тип должности (слот 11)
+    domain = treasury
+    skill = stewardship
+    weight = 12                         # очки давления w
+    inertia_months = 6
+    default_course = standard
+    course "standard"  { rollback_to = standard }
+    course "lenient"   { rollback_to = standard  mods = { crown_tax_shift = -1  quota_permille = 850 }
+                         favor_per_month_x100 = -40  noise_x100 = 0 }
+    course "strict"    { rollback_to = standard  mods = { crown_tax_shift = 1   quota_permille = 1150 }
+                         favor_per_month_x100 = 60  noise_x100 = 100 }
+    course "patronage" { rollback_to = standard  target = dynasty
+                         mods = { loan_rate_permille = 700  loan_limit_permille = 1250 }  noise_x100 = 600 }
+    course "squeeze"   { rollback_to = standard  target = dynasty
+                         mods = { loan_rate_permille = 1300 loan_limit_permille = 750 }
+                         target_opinion = -1  noise_x100 = 400 }
+    order "defer_quota" { target = dynasty  cost = { favor_x100 = 400 }  cooldown_days = 360  noise_x100 = 300
+                          effect = { defer_quota_days = 30 } }
+    order "emergency_loan" { target = dynasty  cost = { favor_x100 = 200  fee_permille = 20 }  cooldown_days = 270
+                             noise_x100 = 400  effect = { loan_kop = 500000  loan_rate_permille = 500 } }
+    order "audit" { target = province  cost = { money_kop = 60000 }  cooldown_days = 180  noise_x100 = 100
+                    effect = { corruption_permille = -50  control = 4 } }
+}
+```
+
+`contentlint`: ссылки на тип должности, навыки, куски эффектов (допустимые ключи по домену), `rollback_to` без циклов длиннее 3, `default_course` существует, число курсов 2…8 и приказов 0…4, цели курсов и приказов согласованы с `target_kind`, ключи `loc` есть для каждого курса и приказа (тест на пары `name/desc`), `weight` ≥ 0, `inertia_months` 0…36, окно дат у губернатора (`from_date`).
+
+### 20.11 Каталог E11: on-action, триггеры, эффекты
+
+| Код | Имя | Применённая команда | Корни / `scope:` | `param` | Задача |
+|---:|---|---|---|---|---|
+| 106 | `on_portfolio_course` | `SetPortfolioCourse` | `holder → character`, `house → dynasty`; `target` (род), `province` | `тип·256 + курс` | T24 |
+| 107 | `on_portfolio_order` | `IssuePortfolioOrder` | то же; `target` | `тип·256 + приказ` | T24 |
+| 108 | `on_portfolio_state` | `AdvancePortfolio` (1…4) | `house → dynasty` (контроллер), `previous` (бывший контроллер) | `тип·256 + шаг` | T24 |
+| 109 | `on_portfolio_pressure` | `AdvancePortfolio` (5) | `dynasty` | −1 / +1 полоса | T28 |
+
+Триггеры (диапазон E10 1200…1249, новые **1210…1214**): `portfolio_course` (V, тип → индекс курса), `portfolio_state` (V), `portfolio_pressure` (V, род → очки), `controls_portfolio` (P, род, тип), `portfolio_targets` (P, род — курс против него). Эффекты (**2305, 2306**): `set_portfolio_course` (актор — система), `rollback_portfolio` (`AdvancePortfolio{Close}`). Записывают T24/T28; записи каталога — малые, без правок ВМ.
+
+Записи летописи (`ChronicleKind::Note`, `param = 3000 + 100·вид + слот`): 11 курс выбран, 12 приказ, 13 ведомство потеряно, 14 откат завершён, 15 враждебный преемник. Причины: `OpinionReason` 310 `PortfolioEnvy`, 311 `PortfolioBond`, 312 `PortfolioSour`, 313 `PortfolioHostile`; `AdjustFavor.reason` 320 `PortfolioOrderCost`, 321 `PortfolioCourse`.
+
+### 20.12 Инварианты
+
+| # | Инвариант |
+|---|---|
+| C-13 | `PortfolioTable`: по возрастанию `(type, locus)`, без повторов; тип имеет портфель; `course < n_courses`; `controller` и `target` существуют; `state ∈ 1…3`; `kNoDate` в `next_step` ⇔ `Active` |
+| C-14 | `Active` ⇒ место занято держателем рода `controller` (допустимо расхождение до одних суток); `Inertia`/`Rollback` ⇒ место пусто или занято, но строка ещё не `Adopt`ена (не дольше суток) |
+| C-15 | Курс «с целью» имеет `target ≠ 0`; прочие — `target = 0`; курс ≠ умолчание или `state ≠ Active` (иначе строка лишняя) |
+| C-16 | `PortfolioOrderRing`: `seq` строго растут, `≤ next_order_seq`; не более 64; `power`, `execution` в границах; `cost ≥ 0` |
+| C-17 | `order_ready` не раньше даты приказа в кольце, не позже `дата + max_cooldown` |
+| C-18 | Производные кэши равны пересборке (`DepartmentModifierSource` неизменен при `portfolio_by_seat_` пусто; нет утечки модификаторов после `Close`) |
+
+### 20.13 Сейв, хеш, миграция, golden
+
+- **Разделы** (блок E10 64…71): **70 `court_portfolio`** — `u32 rows (≤ 32)`, строка `{u8 type, u32 locus, u8 course, i32 course_since, u32 controller, u32 set_by, u32 target, u8 state, i32 next_step, 4×i32 order_ready, u8 flags}` (44 байта); **71 `court_orders`** — `u32 ring (≤ 64)`, запись `{u32 seq, u8 type, u32 locus, u8 order, u32 issuer, u32 holder, i32 date, u32 target, i64 cost_kop, i32 cost_favor_x100, i16 power, i16 execution, i16 noise}` (45 байт). Раздел 64 получает `u32 next_order_seq` (после `next_decision_seq`), раздел 69 — `u8 pressure_band` в строку. «Пустое не пишется»; версия 1; загрузчик отвергает неизвестные перечисления, строки не по возрастанию, ссылки на несуществующие род/тип, `rows`/`ring` выше предела.
+- **Части хеша:** **39 `CourtPortfolio`** — один хеш по строкам разделов 70 и 71 (таблица, затем кольцо): 0 и вне `total`, пока пусто (формула §13.2); `CourtMeta` (32) и `CourtFavor` (37) учитывают новые поля.
+- **`kStateSchema`:** **без отдельного подъёма** — всё входит в схему T03 (D19); если на момент слияния T02/T03 уже в `main`, добавляем отдельную **W-задачу E10-T22b** по тому же правилу очереди (после E12-T03 или в любом свободном слоте W), сохраняя раскладку выше. Контейнер `PSV1` v2, теги ≥ 128 — varint, форматы не меняются.
+- **Миграция:** пустые таблицы, `next_order_seq = 1`, `pressure_band = 0`.
+- **Фикстуры:** `dynasty_vN_court.psv` T03 дополняется строками портфелей в состояниях `Active`, `Inertia`, `Rollback`, кольцом приказов; корпус порчи E13-T11 — для разделов 70, 71.
+- **Golden:** T02…T31 **не двигают** ни одного закреплённого значения; подключение систем портфелей в M1 — **T32** (одним PR): `tests/golden_court_test.cpp` получает хеш части 39; хеш экономики на M1 прежний (до включения курсов все модификаторы нейтральны). Политика AGENTS §5.4 соблюдается.
+
+### 20.14 Производительность
+
+| Метрика | Бюджет `[предл.]` | Проверка |
+|---|---|---|
+| `court.portfolio` (ежедневный обход ≤ 32 строк) | ≤ 5 мкс/день | T24 |
+| `court.reaction` (давление 100 родов + зависть 12 + события) | ≤ 0,3 мс/месяц | T28 |
+| `order_preview`, `course_preview` | ≤ 5 мкс | T24 |
+| Пересборка кэша `DepartmentModifierSource` (400 провинций, грязных ≤ 8) | ≤ 50 мкс | T25 |
+| Разделы 70, 71 | ≤ 5 КБ | T24 |
+| `compute_hash` части 39 | ≤ 10 мкс | T24 |
+
+Месячный пересчёт двора остаётся ≤ 3 мс (§14).
+
+### 20.15 Мост «снапшот → UI» (T29, T30)
+
+Модуль `src/game/portfolio_view.hpp/.cpp` (читает `World`, не меняет; тексты — по ключам `loc`; числа — теми же функциями, что `validate`). Окна — по бордам [#520](https://github.com/savinovanton/patriarch/issues/520).
+
+| Структура | Поля | Питает |
+|---|---|---|
+| `PortfolioIndexView` | `my[]` (`PortfolioCardView`: тип, название, провинция, состояние, держатель, текущий курс, остаток инерции), `others[]` (`PortfolioPublicView`: тип, держатель, род, курс, цель, `hostile`), `pressure` (`PressureView`) | сводка «Ведомства» |
+| `PortfolioView` | `type`, `name_key`, `locus`/`province`, `state` (`Active`, `Inertia`, `Rollback`, `Hostile`, `NotYet` — окно дат), `holder` (`CharacterView`, навык, `loyalty_pt`, `integrity`, диапазон «ненадёжен»), `power` (`execution_permille`, `power_permille`, `breakdown` 14700), `courses[]`, `orders[]`, `history[]` (кольцо, до 8 записей), `effects_now[]` (строки `{label_key, value, unit}` для курса и приказов), `inertia` (`until`, `days_left`, `rollback_chain_keys`), `warnings[]` | окно портфеля |
+| `CourseView` | `course`, `name_key`, `desc_key`, `good[]`/`bad[]` (`{text_key, value}`), `noise`, `favor_per_month`, `selected`, `available`, `denials[]` (`{code, a, b}`), `needs_target`, `target`, `cooldown_days` | список курсов |
+| `OrderView` | `order`, `name_key`, `desc_key`, `target_kind`, `ready_in_days`, `denials[]`, `cost` (`{money_kop, favor_x100}` — **с учётом навыка**), `power`, `execution`, `noise` | список приказов |
+| `CourseChangePreview` | `from`, `to`, `effects_diff[]`, `pressure_delta`, `cooldown_days`, `denials[]` | подтверждение курса |
+| `OrderPreview` | `order`, `target`, `cost`, `cooldown_days`, `power_permille`, `execution_permille`, `refuses`, `leak_permille`, `expected_effects[]`, `noise`, `pressure_delta`, `breakdown` (14700, 14750), `denials[]` | подтверждение приказа |
+| `PressureView` | `value`, `band` (`Calm`/`Watch`/`Suspicion`/`Danger`), `breakdown` (14800), `suspicion_hint` (очки/мес), `envy_rivals[]` (`{dynasty, delta}`, ≤ 12), `breakdown_envy` (14810) | подсказка «Давление» |
+
+**Конечный автомат UI:** курс — `Browsing` → `CourseSelected` → (`TargetPicking`) → `Confirming` → `Submitting` → `Applied`; приказ — `OrderSelected` → `TargetPicking` → `Confirming` (превью: цена, сила, отказ) → `Submitting` → `Applied`/`Refused`. `Submitting` держится до следующего снапшота (как §15.3 п. 1, решение Q8.7 #489). Окно в `Inertia`/`Rollback`/чужом ведомстве — только чтение с баннером и обратным отсчётом. **Контракты:** превью = применение; дата берётся из снапшота; названия курсов и цен — ключи `loc`; «ненадёжен» — по `execution < full_at`.
+
+### 20.16 Соответствие и приёмка
+
+| Требование владельца / история | Покрытие |
+|---|---|
+| №1 (M1: три портфеля, каркас M2) | GDD 04 §19.4/§19.7, T25…T27, `PortfolioConsumer`, блок тегов 256…263 |
+| №2 (курсы и приказы, навык/характер) | §20.7, §20.8.1…20.8.3, `PortfolioView` |
+| №3 (инерция и откат, чужой преемник) | D18, D23, §20.6, §20.8.4, §20.8.7, C-13…C-15 |
+| №4 (подозрение и зависть, видимость ИИ) | D24, §20.8.5, §20.11, E12-T10 |
+| PORT-A1…A6 | T32 (GDD 04 §19.8) |
+| US-10.8 (воспроизводимость) | D22, §20.13 |
+
+### 20.17 Решения владельца и открытые вопросы
+
+Применено: решения владельца 2026-11-15 (#514) — п. 1…4 (D18…D26). Решено владельцем 2026-11-15 в ответах на вопросы агента: [#517](https://github.com/savinovanton/patriarch/issues/517) тайная канцелярия — **M2** (в M1 три портфеля), [#518](https://github.com/savinovanton/patriarch/issues/518) смешанная модель выгоды, цена — деньги (`gifts_bribes`) и милость, услуги после #509, тон 12+ (T25, T27, T28), [#519](https://github.com/savinovanton/patriarch/issues/519) образование наследника государя (T26). Открыто: [#520](https://github.com/savinovanton/patriarch/issues/520) структура окон и борды (T30). Решения агента по умолчанию — GDD 04 §19.9.
+
+### 20.18 Правки других документов и поправки к задачам
+
+| Документ | Правка |
+|---|---|
+| [ADR-0009](../adr/0009-court.md) | дополнение «Портфель должности» (D18…D26) |
+| [save-format.md](save-format.md) §5, §6 | разделы 70, 71 выданы; тег 143 и блок 256…263; часть хеша 39 |
+| [event-engine.md](event-engine.md) §8.1, §8.2 | on-action 106…109; триггеры 1210…1214, эффекты 2305, 2306 |
+| [economy-model.md](economy-model.md) | узкий интерфейс «ведомственные модификаторы» и три мутатора (E10-T25) |
+| [GDD 04](../gdd/04-court-intrigue.md) §19, [GDD 02](../gdd/02-throne-crisis.md) §5.1 | каталог и давление как вход подозрения |
+| [эпик E10](../epics/E10-court-offices.md), [epics/README](../epics/README.md) | задачи T22…T32, оценка |
+| [ui-design.md](ui-design.md) §3 | строка «Портфели должностей» в списке окон |
+
+**Поправки к T02/T03/T21 (в той же очереди W, без сдвига):** T02 (+0,5 дн.) объявляет `PortfolioTable`, `PortfolioOrderRing`, `CourtMeta.next_order_seq`, `FavorTable.pressure_band`, `check_invariants` C-13…C-18; T03 (+0,5) — разделы 70, 71, часть хеша 39, фикстуры; T21 (+0,5) — бюджеты §20.14. Порядок очереди **не меняется**: E11-T02 → E11-T03 → E10-T02 → E10-T03 → E12-T02.
+
+**Задачи T23…T32** (подробно — в [эпике E10](../epics/E10-court-offices.md)): T23 данные и правила портфелей; T24 ядро портфеля (команды, система, формулы); T25 казначей и узкая правка E9; T26 воспитатель царевича; T27 губернатор; T28 реакция мира (давление, зависть, милость, ИИ); T29 мост `PortfolioView`; T30 окна портфелей; T31 события; T32 приёмка и golden. **Тайная канцелярия — M2** (#517, отдельная задача после E12-T10; каркас готов). Всего ≈ **+39 дн.**; срезы при необходимости: T31 (события), T30 (окна до бордов), зависть в T28.
