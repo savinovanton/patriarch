@@ -333,6 +333,7 @@ public:
         shared.context = context_;
         shared.shader_dir = shader_dir_;
         shared.invalidate_pipeline = &pipeline_dirty_;
+        shared.target_size = &size_;  // vignette, border scale and sky depend on the frame size
         return create_d3d11_map_view(shared, map, desc);
     }
 
