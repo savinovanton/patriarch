@@ -28,6 +28,8 @@ add_library(patriarch_sim STATIC
     include/pat/sim/economy/types.hpp
     include/pat/sim/economy/unrest.hpp
     include/pat/sim/entity_ids.hpp
+    include/pat/sim/events/program.hpp
+    include/pat/sim/events/vm.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/family/tables.hpp
     include/pat/sim/kinship.hpp
@@ -77,6 +79,9 @@ add_library(patriarch_sim STATIC
     kinship.cpp
     conception.cpp
     education.cpp
+    events/disasm.cpp
+    events/program.cpp
+    events/vm.cpp
     health.cpp
     marriage_rules.cpp
     marriage_score.cpp

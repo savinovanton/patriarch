@@ -52,6 +52,7 @@ add_executable(patriarch_tests
     m1_hot_reload_test.cpp
     conception_test.cpp
     education_test.cpp
+    events_vm_test.cpp
     health_test.cpp
     marriage_score_test.cpp
     mortality_test.cpp
