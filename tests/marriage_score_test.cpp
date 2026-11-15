@@ -156,6 +156,8 @@ TEST_CASE("marriage rules: the defaults are valid and match the specification ta
     CHECK(rules.eligibility.mourning_days_male == 180);
     CHECK(rules.eligibility.require_opposite_sex);
     CHECK(rules.eligibility.forbid_same_house);
+    CHECK(rules.relation.marriage_tie_bonus == 5);
+    CHECK(rules.relation.max_marriage_ties == 3);
 }
 
 TEST_CASE("marriage rules: validate rejects out-of-range and inconsistent values") {
@@ -188,6 +190,145 @@ TEST_CASE("marriage rules: validate rejects out-of-range and inconsistent values
     const auto error = validate(broken);
     REQUIRE_FALSE(error.has_value());
     CHECK(error.error().message.find("envoy_road_kop") != std::string::npos);
+}
+
+TEST_CASE("marriage evaluation: prepared parties retain both views without changing cached facts") {
+    SceneParams params;
+    params.groom_honor = 340;
+    params.bride_honor = 1000;
+    params.opinion = 37;
+    Scene s(params);
+    const auto rules = MarriageRules::defaults();
+    MatchContext context;
+    context.initiator = s.third_house;
+    context.relation = -17;
+    const auto groom = prepare_match_party(s.world, rules, s.groom, context.initiator);
+    const auto bride = prepare_match_party(s.world, rules, s.bride, context.initiator);
+    REQUIRE(groom.has_value());
+    REQUIRE(bride.has_value());
+    CHECK(groom->age == 25);
+    CHECK(groom->rank == 2);
+    CHECK(bride->rank == 4);
+    CHECK(groom->opinion_of_proposer == 37);
+    CHECK(bride->opinion_of_proposer == 37);
+    const auto groom_house = prepare_match_house(s.world, rules, s.groom_house, context.initiator);
+    REQUIRE(groom_house.has_value());
+    CHECK(prepare_match_party(s.world, s.groom, *groom_house, 25) == groom);
+    CHECK_FALSE(prepare_match_party(s.world, s.bride, *groom_house, 20).has_value());
+    const auto before_groom = *groom;
+    const auto before_bride = *bride;
+    for (const Kopecks dowry : {-1, 40'000}) {
+        CHECK(evaluate_prepared_match(rules, *groom, *bride, dowry, context) ==
+              s.evaluate(rules, dowry, context));
+    }
+    CHECK(*groom == before_groom);
+    CHECK(*bride == before_bride);
+    CHECK_FALSE(prepare_match_party(s.world, rules, {}).has_value());
+}
+
+TEST_CASE("marriage evaluation: member reuse matches full evaluation for both house views") {
+    SceneParams params;
+    params.groom_honor = 340;
+    params.bride_honor = 1000;
+    params.opinion = -37;
+    Scene s(params);
+    const std::array grooms{
+        s.groom, s.make(s.groom_house, Sex::Male, 18, 0, 0), s.make(s.groom_house, Sex::Male, 80, 100, 20)};
+    const std::array brides{s.bride,
+                            s.make(s.bride_house, Sex::Female, 16, 0, 0, 0),
+                            s.make(s.bride_house, Sex::Female, 75, 100, 20, 100)};
+    const auto rules = MarriageRules::defaults();
+    MatchContext context;
+    context.initiator = s.third_house;
+    context.relation = -17;
+    context.political_gain = {41, -23};
+    context.faith_penalty = {7, 11};
+    const auto base = s.evaluate(rules, 40'000, context);
+    const auto unchanged = base;
+    for (const auto groom_id : grooms) {
+        for (const auto bride_id : brides) {
+            const auto groom = prepare_match_party(s.world, rules, groom_id, context.initiator);
+            const auto bride = prepare_match_party(s.world, rules, bride_id, context.initiator);
+            REQUIRE(groom.has_value());
+            REQUIRE(bride.has_value());
+            const auto full = evaluate_match(s.world, rules, groom_id, bride_id, base.dowry_kop, context);
+            REQUIRE(full.has_value());
+            CHECK(reevaluate_match_members(rules, base, *groom, *bride) == *full);
+            for (const auto side : {MatchSide::Groom, MatchSide::Bride}) {
+                CHECK(reevaluate_match_score(rules, base.score(side), *groom, *bride, side) ==
+                      full->score(side));
+            }
+        }
+    }
+    CHECK(base == unchanged);
+}
+
+TEST_CASE("marriage evaluation: member reuse resets decisions and preserves refusal tie priority") {
+    Scene s(neutral());
+    const auto weak_groom = s.make(s.groom_house, Sex::Male, 20, 0, 0);
+    const auto weak_bride = s.make(s.bride_house, Sex::Female, 20, 0, 0, 0);
+    const auto good_groom = s.make(s.groom_house, Sex::Male, 20, 100, 20);
+    const auto good_bride = s.make(s.bride_house, Sex::Female, 20, 100, 20, 100);
+    const auto old_groom = s.make(s.groom_house, Sex::Male, 80, 100, 20);
+    auto rules = MarriageRules::defaults();
+    rules.score.accept_threshold = 5;
+    auto base = s.evaluate(rules, 0);
+    for (const auto& score : base.scores) {
+        CHECK_FALSE(score.accepted);
+        CHECK(score.refusal_code == marriage_term::kHonorGap);
+    }
+    struct Row {
+        CharacterId groom;
+        CharacterId bride;
+        bool accepted;
+        std::uint16_t refusal;
+    };
+    const std::array rows{
+        Row{weak_groom, weak_bride, false, marriage_term::kMemberQuality},
+        Row{good_groom, good_bride, true, 0},
+        Row{old_groom, good_bride, false, marriage_term::kAgeGap},
+        Row{s.groom, s.bride, false, marriage_term::kHonorGap},
+    };
+    for (const auto& row : rows) {
+        const auto groom = prepare_match_party(s.world, rules, row.groom);
+        const auto bride = prepare_match_party(s.world, rules, row.bride);
+        REQUIRE(groom.has_value());
+        REQUIRE(bride.has_value());
+        const auto before = base;
+        const auto cached = reevaluate_match_members(rules, base, *groom, *bride);
+        const auto full = evaluate_match(s.world, rules, row.groom, row.bride, 0);
+        REQUIRE(full.has_value());
+        CHECK(cached == *full);
+        for (const auto side : {MatchSide::Groom, MatchSide::Bride}) {
+            CHECK(reevaluate_match_score(rules, base.score(side), *groom, *bride, side) == full->score(side));
+        }
+        CHECK(base == before);
+        for (const auto& score : cached.scores) {
+            CHECK(score.accepted == row.accepted);
+            CHECK(score.refusal_code == row.refusal);
+        }
+        base = cached;
+    }
+}
+
+TEST_CASE("marriage rules: relation limits accept boundaries and reject invalid values") {
+    for (const auto bonus : {0, 100}) {
+        for (const auto ties : {0, 1'000}) {
+            auto rules = MarriageRules::defaults();
+            rules.relation = {.marriage_tie_bonus = bonus, .max_marriage_ties = ties};
+            CHECK(validate(rules).has_value());
+        }
+    }
+    for (const auto bonus : {-1, 101}) {
+        auto rules = MarriageRules::defaults();
+        rules.relation.marriage_tie_bonus = bonus;
+        CHECK_FALSE(validate(rules).has_value());
+    }
+    for (const auto ties : {-1, 1'001}) {
+        auto rules = MarriageRules::defaults();
+        rules.relation.max_marriage_ties = ties;
+        CHECK_FALSE(validate(rules).has_value());
+    }
 }
 
 TEST_CASE("marriage rules: eligibility rejects out-of-range and inconsistent limits") {
@@ -580,16 +721,18 @@ TEST_CASE("accept_score: the terms add up exactly and the Breakdown tells the sa
         CHECK(explain.is_consistent());
         CHECK(explain.root().code == marriage_term::kAcceptScore);
         CHECK(explain.root().unit == pat::sim::economy::Unit::Points);
-        CHECK(explain.total() == score.score);
+        CHECK(explain.total() == static_cast<std::int64_t>(score.score) * pat::core::Fixed32::one_raw);
         CHECK(explain.child_count(pat::sim::economy::kRootNode) == kScoreTermCount);
         for (std::size_t i = 0; i < kScoreTermCount; ++i) {
             const auto node = explain.find(score_term_code(static_cast<ScoreTerm>(i)));
             REQUIRE(node != pat::sim::economy::kNoNode);
-            CHECK(explain.node(node).value == score.terms[i]);
+            CHECK(explain.node(node).value ==
+                  static_cast<std::int64_t>(score.terms[i]) * pat::core::Fixed32::one_raw);
         }
         CHECK(explain.child_count(explain.find(marriage_term::kMemberQuality)) == 3);
         CHECK(explain.child_count(explain.find(marriage_term::kExternal)) == 2);
-        CHECK(explain.node(explain.find(marriage_term::kFaithPenalty)).value == score.faith_part);
+        CHECK(explain.node(explain.find(marriage_term::kFaithPenalty)).value ==
+              static_cast<std::int64_t>(score.faith_part) * pat::core::Fixed32::one_raw);
         CHECK(explain.size() <= pat::sim::economy::kBreakdownCapacity);
         CHECK(explain.size() == 1 + kScoreTermCount + 3 + 2);
     }
@@ -983,16 +1126,61 @@ TEST_CASE("forecast: only the public terms count, with a margin around the thres
           Forecast::Unlikely);
 }
 
+TEST_CASE("forecast: the public entry retains both margin boundaries and the supplied threshold") {
+    auto rules = MarriageRules::defaults();
+    rules.score.accept_threshold = -200;
+    struct Row {
+        std::int32_t threshold;
+        std::int32_t public_score;
+        Forecast forecast;
+    };
+    const std::array rows{
+        Row{37, 21, Forecast::Unlikely},
+        Row{37, 22, Forecast::Unclear},
+        Row{37, 51, Forecast::Unclear},
+        Row{37, 52, Forecast::Likely},
+        Row{-20, -36, Forecast::Unlikely},
+        Row{-20, -35, Forecast::Unclear},
+        Row{-20, -6, Forecast::Unclear},
+        Row{-20, -5, Forecast::Likely},
+    };
+    for (const auto& row : rows) {
+        AcceptScore score;
+        score.terms[idx(ScoreTerm::HonorGap)] = row.public_score;
+        score.threshold = row.threshold;
+        CHECK(forecast_from_public_score(rules, score.public_sum(), score.threshold) == row.forecast);
+        CHECK(forecast_of(rules, score) == row.forecast);
+    }
+}
+
 TEST_CASE("marriage terms: every issued code has a unique localisation key") {
     constexpr std::array codes{
-        marriage_term::kAcceptScore,     marriage_term::kHonorGap,     marriage_term::kRankGap,
-        marriage_term::kDowry,           marriage_term::kRelation,     marriage_term::kOpinionOfProposer,
-        marriage_term::kMemberQuality,   marriage_term::kAgeGap,       marriage_term::kExternal,
-        marriage_term::kPoliticalGain,   marriage_term::kHealth,       marriage_term::kFertility,
-        marriage_term::kSkills,          marriage_term::kFaithPenalty, marriage_term::kEnvoyTotal,
-        marriage_term::kEnvoyRoad,       marriage_term::kEnvoyGifts,   marriage_term::kEnvoyDispensation,
-        marriage_term::kDowryTotal,      marriage_term::kDowryBase,    marriage_term::kDowryHonor,
-        marriage_term::kDowryWidowClaim, marriage_term::kDowryLimit,
+        marriage_term::kAcceptScore,
+        marriage_term::kHonorGap,
+        marriage_term::kRankGap,
+        marriage_term::kDowry,
+        marriage_term::kRelation,
+        marriage_term::kOpinionOfProposer,
+        marriage_term::kMemberQuality,
+        marriage_term::kAgeGap,
+        marriage_term::kExternal,
+        marriage_term::kPoliticalGain,
+        marriage_term::kHealth,
+        marriage_term::kFertility,
+        marriage_term::kSkills,
+        marriage_term::kFaithPenalty,
+        marriage_term::kRelationOpinionMean,
+        marriage_term::kRelationMarriageTies,
+        marriage_term::kRelationLimit,
+        marriage_term::kEnvoyTotal,
+        marriage_term::kEnvoyRoad,
+        marriage_term::kEnvoyGifts,
+        marriage_term::kEnvoyDispensation,
+        marriage_term::kDowryTotal,
+        marriage_term::kDowryBase,
+        marriage_term::kDowryHonor,
+        marriage_term::kDowryWidowClaim,
+        marriage_term::kDowryLimit,
     };
     for (std::size_t i = 0; i < codes.size(); ++i) {
         CAPTURE(codes[i]);

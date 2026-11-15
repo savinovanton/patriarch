@@ -75,6 +75,9 @@ inline constexpr std::uint16_t kHealth = 10010;         // children of kMemberQu
 inline constexpr std::uint16_t kFertility = 10011;
 inline constexpr std::uint16_t kSkills = 10012;
 inline constexpr std::uint16_t kFaithPenalty = 10013;  // child of kExternal
+inline constexpr std::uint16_t kRelationOpinionMean = 10020;
+inline constexpr std::uint16_t kRelationMarriageTies = 10021;
+inline constexpr std::uint16_t kRelationLimit = 10022;  // delta of the -100...100 clamp
 // 10100: the cost of the envoy (Kopecks)
 inline constexpr std::uint16_t kEnvoyTotal = 10100;
 inline constexpr std::uint16_t kEnvoyRoad = 10101;
@@ -114,6 +117,16 @@ struct MatchContext {
     std::array<std::int32_t, kMatchSideCount> faith_penalty{};
 
     [[nodiscard]] bool operator==(const MatchContext&) const = default;
+};
+
+/// Facts shared by the members of a house in one read-only match query.
+struct MatchHouse {
+    DynastyId house;
+    std::int32_t honor = 0;
+    std::int32_t rank = 0;
+    std::int32_t opinion_of_proposer = 0;
+
+    [[nodiscard]] bool operator==(const MatchHouse&) const = default;
 };
 
 /// One of the two people of a match and what the evaluation knows about them and their house.
@@ -192,6 +205,46 @@ enum class Forecast : std::uint8_t {
 
 // ---- functions ---------------------------------------------------------------------------------
 
+/// Facts for one living, housed person. Reuse within a query over the same immutable World, rules
+/// and initiator; no caller-owned cache survives a change to any of those inputs.
+[[nodiscard]] std::optional<MatchHouse> prepare_match_house(const World& world,
+                                                            const MarriageRules& rules,
+                                                            DynastyId house,
+                                                            DynastyId initiator = {});
+
+/// Reuses house facts and the whole calendar age already read from the same immutable snapshot.
+[[nodiscard]] std::optional<MatchParty>
+prepare_match_party(const World& world, CharacterId person, const MatchHouse& house, std::int32_t age);
+
+[[nodiscard]] std::optional<MatchParty> prepare_match_party(const World& world,
+                                                            const MarriageRules& rules,
+                                                            CharacterId person,
+                                                            DynastyId initiator = {});
+
+/// The same evaluation core, using parties prepared from the same snapshot/rules/initiator.
+/// This avoids reading the fixed proposing member again for every candidate.
+[[nodiscard]] MatchEvaluation evaluate_prepared_match(const MarriageRules& rules,
+                                                      const MatchParty& groom,
+                                                      const MatchParty& bride,
+                                                      economy::Kopecks dowry_kop,
+                                                      const MatchContext& context = {});
+
+/// Reuses one view's house/context terms from the same immutable snapshot and rules. Both parties
+/// must retain their house, honor, rank and opinion_of_proposer; only member facts may change.
+[[nodiscard]] AcceptScore reevaluate_match_score(const MarriageRules& rules,
+                                                 const AcceptScore& base,
+                                                 const MatchParty& groom,
+                                                 const MatchParty& bride,
+                                                 MatchSide side);
+
+/// Reuses the house/context terms of an evaluation from the same immutable snapshot and rules.
+/// Both parties must retain their respective house, honor, rank and opinion_of_proposer; only their
+/// person, age, health, fertility and skills may change. Dowry and context are copied from `base`.
+[[nodiscard]] MatchEvaluation reevaluate_match_members(const MarriageRules& rules,
+                                                       const MatchEvaluation& base,
+                                                       const MatchParty& groom,
+                                                       const MatchParty& bride);
+
 /// The rank of a house with this honor: the highest rank whose threshold the honor reaches.
 [[nodiscard]] std::int32_t honor_rank(const MarriageRules& rules, std::int32_t honor) noexcept;
 
@@ -217,6 +270,11 @@ void explain_accept_score(const AcceptScore& score, economy::Breakdown& explain)
 /// The forecast the proposing side may see before the answer: only the public terms, against the
 /// threshold with the margin of the rules.
 [[nodiscard]] Forecast forecast_of(const MarriageRules& rules, const AcceptScore& score) noexcept;
+
+/// The same public forecast when only the public sum and the answering side's threshold are needed.
+[[nodiscard]] Forecast forecast_from_public_score(const MarriageRules& rules,
+                                                  std::int32_t public_score,
+                                                  std::int32_t threshold) noexcept;
 
 /// The range of one term (rules only; the term never leaves it).
 [[nodiscard]] TermBounds term_bounds(const MarriageRules& rules, ScoreTerm term) noexcept;

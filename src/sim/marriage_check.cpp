@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <array>
+#include <limits>
+#include <utility>
 
 namespace pat::sim {
 
@@ -28,13 +30,69 @@ KinResult kinship_for_marriage(const World& world, CharacterId a, CharacterId b)
             kin::spiritually_related(world, a, b)};
 }
 
-MarriageDenials check_marriage(const World& world,
-                               const MarriageRules& rules,
-                               CharacterId groom,
-                               CharacterId bride,
-                               MarriageCheckOptions options,
-                               const FaithPolicy* faith) {
-    MarriageDenials out;
+namespace {
+
+void append_person_denials(const World& world,
+                           const MarriageRules& rules,
+                           CharacterId person,
+                           MarriageCheckOptions options,
+                           MarriageDenials& out,
+                           std::optional<std::int32_t> cached_age = std::nullopt) {
+    if (!world.exists(person)) {
+        return;
+    }
+    const auto add = [&](MarriageDenial reason) { out.push_back(reason); };
+    const auto& people = world.characters();
+    const auto& eligibility = rules.eligibility;
+    const auto index = person.index();
+    const bool male = people.sex[index] == Sex::Male;
+    const int age = cached_age ? *cached_age : age_years(people.birth_date[index], world.today());
+    if (options.as_betrothal) {
+        if (age < eligibility.min_betrothal_age) {
+            add(MarriageDenial::TooYoungToBetroth);
+        }
+    } else if (age < (male ? eligibility.min_marriage_age_male : eligibility.min_marriage_age_female)) {
+        add(male ? MarriageDenial::GroomTooYoung : MarriageDenial::BrideTooYoung);
+    }
+    if (people.spouse[index].valid()) {
+        add(MarriageDenial::AlreadyMarried);
+    }
+    const auto engagement = world.engagement_of(person);
+    if (engagement == 1) {
+        add(MarriageDenial::InNegotiation);
+    } else if (engagement == 2) {
+        add(MarriageDenial::Betrothed);
+    }
+    if (people.marriages[index] >= kMaxMarriages) {
+        add(MarriageDenial::MarriageLimit);
+    }
+    if (!male && world.is_pregnant(person)) {
+        add(MarriageDenial::Pregnant);
+    }
+    if (const auto* status = world.family_status(person)) {
+        if ((status->flags & family::kPersonTonsured) != 0) {
+            add(MarriageDenial::Tonsured);
+        }
+        if ((status->flags & family::kPersonDisowned) != 0 &&
+            (!options.actor.valid() || people.dynasty[index] == options.actor)) {
+            add(MarriageDenial::Disowned);
+        }
+        const auto mourning_days = male ? eligibility.mourning_days_male : eligibility.mourning_days_female;
+        if (status->widowed_on != kNoDate &&
+            static_cast<std::int64_t>(world.today().days()) - status->widowed_on.days() < mourning_days) {
+            add(MarriageDenial::Mourning);
+        }
+    }
+}
+
+MarriageDenials assemble_denials(const World& world,
+                                 const MarriageRules& rules,
+                                 CharacterId groom,
+                                 CharacterId bride,
+                                 MarriageCheckOptions options,
+                                 const FaithPolicy* faith,
+                                 const KinResult& kinship,
+                                 MarriageDenials out) {
     const auto add = [&](MarriageDenial reason) { out.push_back(reason); };
     const auto& people = world.characters();
     const auto& eligibility = rules.eligibility;
@@ -43,7 +101,6 @@ MarriageDenials check_marriage(const World& world,
     if (!world.is_alive(groom) || !world.is_alive(bride)) {
         add(MarriageDenial::NotAlive);
     }
-
     if (groom_exists && bride_exists) {
         if (groom == bride) {
             add(MarriageDenial::SamePerson);
@@ -56,56 +113,9 @@ MarriageDenials check_marriage(const World& world,
             add(MarriageDenial::SameHouse);
         }
     }
-
     if (options.actor.valid() && !(groom_exists && people.dynasty[groom.index()] == options.actor) &&
         !(bride_exists && people.dynasty[bride.index()] == options.actor)) {
         add(MarriageDenial::NotYourMember);
-    }
-
-    for (const auto person : {groom, bride}) {
-        if (!world.exists(person)) {
-            continue;
-        }
-        const auto index = person.index();
-        const bool male = people.sex[index] == Sex::Male;
-        const int age = age_years(people.birth_date[index], world.today());
-        if (options.as_betrothal) {
-            if (age < eligibility.min_betrothal_age) {
-                add(MarriageDenial::TooYoungToBetroth);
-            }
-        } else if (age < (male ? eligibility.min_marriage_age_male : eligibility.min_marriage_age_female)) {
-            add(male ? MarriageDenial::GroomTooYoung : MarriageDenial::BrideTooYoung);
-        }
-        if (people.spouse[index].valid()) {
-            add(MarriageDenial::AlreadyMarried);
-        }
-        const auto engagement = world.engagement_of(person);
-        if (engagement == 1) {
-            add(MarriageDenial::InNegotiation);
-        } else if (engagement == 2) {
-            add(MarriageDenial::Betrothed);
-        }
-        if (people.marriages[index] >= kMaxMarriages) {
-            add(MarriageDenial::MarriageLimit);
-        }
-        if (!male && world.is_pregnant(person)) {
-            add(MarriageDenial::Pregnant);
-        }
-        if (const auto* status = world.family_status(person)) {
-            if ((status->flags & family::kPersonTonsured) != 0) {
-                add(MarriageDenial::Tonsured);
-            }
-            if ((status->flags & family::kPersonDisowned) != 0 &&
-                (!options.actor.valid() || people.dynasty[index] == options.actor)) {
-                add(MarriageDenial::Disowned);
-            }
-            const auto mourning_days =
-                male ? eligibility.mourning_days_male : eligibility.mourning_days_female;
-            if (status->widowed_on != kNoDate &&
-                static_cast<std::int64_t>(world.today().days()) - status->widowed_on.days() < mourning_days) {
-                add(MarriageDenial::Mourning);
-            }
-        }
     }
 
     if (groom_exists && bride_exists) {
@@ -115,7 +125,6 @@ MarriageDenials check_marriage(const World& world,
                 people.ex_spouses[bride.index()].end()) {
             add(MarriageDenial::PreviouslyMarried);
         }
-        const auto kinship = kinship_for_marriage(world, groom, bride);
         if (kinship.blood_degree != 0 && kinship.blood_degree <= eligibility.blood_forbidden_degree) {
             if (kinship.blood_degree <= eligibility.blood_absolute_degree) {
                 add(MarriageDenial::BloodKinship);
@@ -130,15 +139,103 @@ MarriageDenials check_marriage(const World& world,
         if (kinship.spiritual) {
             add(MarriageDenial::SpiritualKinship);
         }
-        const FaithPolicy same_faith;
-        if (!(faith != nullptr ? *faith : same_faith).allows(world, groom, bride)) {
+        // Without an explicit policy every house has the same default Orthodox faith.
+        if (faith != nullptr && !faith->allows(world, groom, bride)) {
             add(MarriageDenial::FaithMismatch);
         }
     }
-    std::ranges::sort(out);
-    const auto duplicates = std::ranges::unique(out);
-    out.erase(duplicates.begin(), duplicates.end());
+    if (out.size() > 1) {
+        std::ranges::sort(out);
+        const auto duplicates = std::ranges::unique(out);
+        out.erase(duplicates.begin(), duplicates.end());
+    }
     return out;
+}
+
+}  // namespace
+
+MarriageDenials check_marriage(const World& world,
+                               const MarriageRules& rules,
+                               CharacterId groom,
+                               CharacterId bride,
+                               MarriageCheckOptions options,
+                               const FaithPolicy* faith,
+                               KinResult* kinship_out) {
+    const auto kinship = kinship_for_marriage(world, groom, bride);
+    if (kinship_out != nullptr) {
+        *kinship_out = kinship;
+    }
+    MarriageDenials out;
+    append_person_denials(world, rules, groom, options, out);
+    append_person_denials(world, rules, bride, options, out);
+    return assemble_denials(world, rules, groom, bride, options, faith, kinship, std::move(out));
+}
+
+struct MarriageCheckContext::Impl {
+    const World& world;
+    const MarriageRules& rules;
+    CharacterId member;
+    MarriageCheckOptions options;
+    const FaithPolicy* faith;
+    kin::MarriageQuery kinship;
+    std::vector<std::int32_t> ages;
+    MarriageDenials member_denials;
+    bool member_male;
+
+    Impl(const World& world_in,
+         const MarriageRules& rules_in,
+         CharacterId member_in,
+         MarriageCheckOptions options_in,
+         const FaithPolicy* faith_in)
+        : world(world_in), rules(rules_in), member(member_in), options(options_in), faith(faith_in),
+          kinship(world_in, member_in),
+          ages(world_in.characters().ids.capacity(), std::numeric_limits<std::int32_t>::min()),
+          member_male(world_in.exists(member_in) &&
+                      world_in.characters().sex[member_in.index()] == Sex::Male) {
+        append_person_denials(world, rules, member, options, member_denials, age_of(member));
+    }
+
+    [[nodiscard]] std::int32_t age_of(CharacterId person) {
+        if (!world.exists(person)) {
+            return 0;
+        }
+        auto& age = ages[person.index()];
+        if (age == std::numeric_limits<std::int32_t>::min()) {
+            age = age_years(world.characters().birth_date[person.index()], world.today());
+        }
+        return age;
+    }
+};
+
+MarriageCheckContext::MarriageCheckContext(const World& world,
+                                           const MarriageRules& rules,
+                                           CharacterId member,
+                                           MarriageCheckOptions options,
+                                           const FaithPolicy* faith)
+    : impl_(std::make_unique<Impl>(world, rules, member, options, faith)) {}
+
+MarriageCheckContext::~MarriageCheckContext() = default;
+
+std::int32_t MarriageCheckContext::age_of(CharacterId person) {
+    return impl_->age_of(person);
+}
+
+MarriageDenials MarriageCheckContext::check(CharacterId other, KinResult* kinship_out) {
+    auto& context = *impl_;
+    const auto kinship = context.kinship.between(other);
+    if (kinship_out != nullptr) {
+        *kinship_out = kinship;
+    }
+    MarriageDenials out = context.member_denials;
+    append_person_denials(context.world, context.rules, other, context.options, out, context.age_of(other));
+    return assemble_denials(context.world,
+                            context.rules,
+                            context.member_male ? context.member : other,
+                            context.member_male ? other : context.member,
+                            context.options,
+                            context.faith,
+                            kinship,
+                            std::move(out));
 }
 
 std::optional<MarriageDenial> candidate_denial(const MarriageDenials& denials) {

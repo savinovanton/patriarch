@@ -38,6 +38,8 @@ add_library(patriarch_sim STATIC
     include/pat/sim/health.hpp
     include/pat/sim/marriage_rules.hpp
     include/pat/sim/marriage_check.hpp
+    include/pat/sim/marriage_candidates.hpp
+    include/pat/sim/dynasty_relation.hpp
     include/pat/sim/marriage_score.hpp
     include/pat/sim/mortality.hpp
     include/pat/sim/opinion.hpp
@@ -86,6 +88,8 @@ add_library(patriarch_sim STATIC
     health.cpp
     marriage_rules.cpp
     marriage_check.cpp
+    marriage_candidates.cpp
+    dynasty_relation.cpp
     marriage_score.cpp
     mortality.cpp
     opinion.cpp

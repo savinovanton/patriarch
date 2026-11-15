@@ -14,7 +14,7 @@ if(PATRIARCH_BUILD_TESTS)
     set_tests_properties(bench_smoke PROPERTIES LABELS bench TIMEOUT 60)
 endif()
 
-target_sources(bench PRIVATE telemetry_bench.cpp)
+target_sources(bench PRIVATE telemetry_bench.cpp marriage_candidates_bench.cpp)
 target_link_libraries(bench PRIVATE patriarch::sim)
 if(PATRIARCH_BUILD_TESTS)
     add_test(NAME bench_telemetry COMMAND Python3::Interpreter "${CMAKE_CURRENT_SOURCE_DIR}/telemetry_smoke_test.py" "$<TARGET_FILE:bench>" "$<TARGET_FILE_DIR:bench>/bench-telemetry.json")

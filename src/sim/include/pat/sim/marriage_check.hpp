@@ -1,9 +1,10 @@
 #pragma once
 
+#include "pat/sim/kinship.hpp"
 #include "pat/sim/marriage_rules.hpp"
-#include "pat/sim/world.hpp"
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -54,14 +55,6 @@ enum class MarriageDenial : std::uint16_t {
 /// Unique reasons in ascending numeric order. No reason is lost to a fixed-capacity buffer.
 using MarriageDenials = std::vector<MarriageDenial>;
 
-struct KinResult {
-    std::uint8_t blood_degree = 0;
-    std::uint8_t affinity_degree = 0;
-    bool spiritual = false;
-
-    [[nodiscard]] bool operator==(const KinResult&) const = default;
-};
-
 /// Read-only content adapter for E31. Missing/empty house faith entries mean "orthodox".
 /// The caller owns the strings and the span for the lifetime of this policy. A future policy can
 /// override allows(); it is not persistent simulation state.
@@ -72,9 +65,9 @@ public:
     virtual ~FaithPolicy() = default;
 
     [[nodiscard]] virtual bool allows(const World& world, CharacterId a, CharacterId b) const;
+    [[nodiscard]] virtual std::string_view faith_of(DynastyId house) const noexcept;
 
 private:
-    [[nodiscard]] std::string_view faith_of(DynastyId house) const noexcept;
     std::span<const std::string_view> faith_by_house_;
 };
 
@@ -85,18 +78,42 @@ struct MarriageCheckOptions {
     DynastyId actor;
 };
 
+/// Reuses the fixed member's eligibility and bounded kinship facts across a read-only request.
+/// check() uses the same denial rules as check_marriage(); the fixed member is the groom when male,
+/// otherwise the bride. The World, rules and faith policy must remain unchanged while in use.
+class MarriageCheckContext {
+public:
+    MarriageCheckContext(const World& world,
+                         const MarriageRules& rules,
+                         CharacterId member,
+                         MarriageCheckOptions options = {},
+                         const FaithPolicy* faith = nullptr);
+    ~MarriageCheckContext();
+    MarriageCheckContext(const MarriageCheckContext&) = delete;
+    MarriageCheckContext& operator=(const MarriageCheckContext&) = delete;
+    [[nodiscard]] MarriageDenials check(CharacterId other, KinResult* kinship = nullptr);
+    /// Whole years in this snapshot, reused by check(); zero for unknown ids.
+    [[nodiscard]] std::int32_t age_of(CharacterId person);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+};
+
 /// Bounded family queries, including archived relatives. Zero degrees mean no detected relation.
 [[nodiscard]] KinResult kinship_for_marriage(const World& world, CharacterId a, CharacterId b);
 
 /// Pure, complete eligibility query. Known archived people still contribute their retained facts;
 /// unknown ids contribute NotAlive and are never indexed. No random draws, payments or mutations.
 /// With dispensation only BloodKinshipDispensable is removed; envoy_cost() prices it separately.
+/// When supplied, kinship receives the same result used for the denials (zero for unknown people).
 [[nodiscard]] MarriageDenials check_marriage(const World& world,
                                              const MarriageRules& rules,
                                              CharacterId groom,
                                              CharacterId bride,
                                              MarriageCheckOptions options = {},
-                                             const FaithPolicy* faith = nullptr);
+                                             const FaithPolicy* faith = nullptr,
+                                             KinResult* kinship = nullptr);
 
 /// The unavailable-candidate label prioritizes engagement, marriage, mourning and tonsure, then
 /// chooses the smallest remaining code. The complete set remains unchanged.

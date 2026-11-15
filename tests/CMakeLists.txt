@@ -17,6 +17,7 @@ add_executable(patriarch_tests
     demography_content_test.cpp
     demography_test.cpp
     dynasty_standing_test.cpp
+    dynasty_relation_test.cpp
     economy_administrator_test.cpp
     economy_policy_test.cpp
     economy_recruits_test.cpp
@@ -59,6 +60,7 @@ add_executable(patriarch_tests
     health_test.cpp
     marriage_score_test.cpp
     marriage_check_test.cpp
+    marriage_candidates_test.cpp
     marriage_kinship_test.cpp
     mortality_test.cpp
     names_content_test.cpp

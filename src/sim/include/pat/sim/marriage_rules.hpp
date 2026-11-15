@@ -109,11 +109,20 @@ struct MarriageEligibilityRules {
     [[nodiscard]] bool operator==(const MarriageEligibilityRules&) const = default;
 };
 
+/// Relation of two houses (specification section 8.4.1), before its score weight is applied.
+struct MarriageRelationRules {
+    std::int32_t marriage_tie_bonus = 0;
+    std::int32_t max_marriage_ties = 0;
+
+    [[nodiscard]] bool operator==(const MarriageRelationRules&) const = default;
+};
+
 struct MarriageRules {
     MarriageRankRules ranks;
     MarriageScoreRules score;
     MarriageMoneyRules money;
     MarriageEligibilityRules eligibility{};
+    MarriageRelationRules relation{};
 
     /// The default rules: the one table of numeric constants (marriage_rules.cpp).
     [[nodiscard]] static MarriageRules defaults();
