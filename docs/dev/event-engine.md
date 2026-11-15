@@ -545,7 +545,12 @@ struct VmHost {
 | 60 | `on_heir_designated` | `dynasty` | `heir` | — | журнал: `SetHeir` | E8-T15 | после T15 |
 | 61 | `on_disowned` | `character`, `house → dynasty` | — | — | журнал: `Disown` | E8-T15 | после T15 |
 | 62 | `on_law_changed` | `dynasty` | — | новый `SuccessionLaw` | журнал: `ChangeSuccessionLaw` | E8-T15 | после T15 |
-| 100…101 | `on_office_assigned`, `on_office_removed` | зарезервировано | | | назначения | E10 | резерв |
+| 100 | `on_office_assigned` | `holder → character`, `house → dynasty` | `appointer`, `province`, `petitioner` | слот типа | журнал: `AssignOffice`, `DecideAppointment` (`result = 1`) | E10-T06 | после T06 |
+| 101 | `on_office_removed` | `holder → character`, `house → dynasty` | `province`, `appointer` | слот типа `+ 256·reason` | журнал: `ResignOffice`, `DismissOffice` | E10-T06 | после T06 |
+| 102 | `on_petition_decided` | `petitioner → dynasty`, `candidate → character` | `winner`, `emperor` | 1 удовлетворена, 2 отвергнута, 3 отложена | журнал: `DecideAppointment` | E10-T08 | после T08 |
+| 103 | `on_favor_threshold` | `dynasty` | — | −1 ниже низкого порога, +1 выше высокого | журнал: `AdjustFavor` с `crossed ≠ 0` | E10-T14 | после T14 |
+| 104 | `on_servant_hired` | `dynasty` | — | роль | журнал: `HireServant` | E10-T12 | после T12 |
+| 105 | `on_servant_left` | `dynasty` | — | роль `+ 256·reason` | журнал: `FireServant` | E10-T12 | после T12 |
 | 110…111 | `on_crisis_phase_changed`, `on_stability_threshold` | зарезервировано | | | престол и стабильность | E12 | резерв |
 | 120…122 | `on_scheme_started`, `on_scheme_discovered`, `on_scheme_completed` | зарезервировано | | | схемы | E14 | резерв |
 | 130…131 | `on_battle_resolved`, `on_siege_end` | зарезервировано | | | армии | E16 | резерв |
@@ -612,7 +617,7 @@ struct VmHost {
 | 1119 | `development` | V | province | уровень освоения |
 | 1120 | `is_player_controlled` | P | character, dynasty, province | область принадлежит роду из `player_dynasties` (§10.3) |
 
-Универсальные конструкции вне каталога: `exists`, `and/or/not/nor`, итераторы, сравнения (§6.1). Предикаты и значения, которые заведут E10/E12/E14/E15/E16/E31 (`has_office`, `crisis_phase`, `stability`, …), добавляют записи в этот каталог в диапазонах 1200…1999 по блокам эпиков.
+Универсальные конструкции вне каталога: `exists`, `and/or/not/nor`, итераторы, сравнения (§6.1). Предикаты и значения, которые заведут E10/E12/E14/E15/E16/E31 (`has_office`, `crisis_phase`, `stability`, …), добавляют записи в этот каталог в диапазонах 1200…1999 по блокам эпиков (**E10 — 1200…1249**: `has_office`, `office_type`, `office_end_reason`, `office_holders`, `is_favourite`, `favor`, `has_party`, `servant_count`, `servant_loyalty_min`, `has_petition`, [court-model.md](court-model.md) §10.2).
 
 ### 8.3 Каталог эффектов (≈ 40; T09 — персонаж и род, T10 — провинция, экономика, поток, T11 — состояние)
 
@@ -687,7 +692,7 @@ struct VmHost {
 | 2213 | `remove_global_flag` | имя | |
 | 2214 | `notify` | `key`, `a?`, `b?`, `urgency?` | запись журнала уведомлений |
 
-Итого каталожных эффектов без E8: 16 + 9 + 14 = **39**, плюс 8 эффектов E8 (после своих задач) и конструкции потока. Новые записи для E10/E12/E14/E15/E16/E31 — диапазоны 2300…2999 по блокам.
+Итого каталожных эффектов без E8: 16 + 9 + 14 = **39**, плюс 8 эффектов E8 (после своих задач) и конструкции потока. Новые записи для E10/E12/E14/E15/E16/E31 — диапазоны 2300…2999 по блокам (**E10 — 2300…2349**: `assign_office`, `remove_office`, `adjust_favor`, `adjust_servant_loyalty`, `end_disgrace`, [court-model.md](court-model.md) §10.2).
 
 ### 8.4 Новые команды E11 (блок тегов 96…127) и список для T09/T10
 

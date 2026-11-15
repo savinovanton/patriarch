@@ -31,6 +31,7 @@ ctest --preset win-msvc-debug
 | [docs/dev/save-format.md](docs/dev/save-format.md) | Формат сохранений: контейнер, реестры разделов и тегов команд, политика версий и совместимости ([ADR-0011](docs/adr/0011-saves.md)) |
 | [docs/dev/marriage-succession-model.md](docs/dev/marriage-succession-model.md) | Модель данных браков и наследования (E8): таблицы, команды 64…83, формулы, регентство, спор, мост UI |
 | [docs/dev/event-engine.md](docs/dev/event-engine.md) | Движок событий (E11, [ADR-0008](docs/adr/0008-event-engine.md)): формат `.pd`, байткод и ВМ, каталоги триггеров/эффектов/on-action, состояние, команды 96…109, очередь игрока, `contentlint`, пакеты контента |
+| [docs/dev/court-model.md](docs/dev/court-model.md) | Модель двора (E10, [ADR-0009](docs/adr/0009-court.md)): таблицы должностей, вакансий, челобитных, слуг, милости и партий, команды 128…142, формулы назначения, деньги без новых кодов ведомости, мост UI |
 | [docs/dev/economy-model.md](docs/dev/economy-model.md) | Модель данных экономики (E9): таблицы, проводки, ведомость, формулы |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
 | [docs/dev/store-pages.md](docs/dev/store-pages.md) | Путь к вишлисту: чеклист страниц Steam, VK Play, EGS (условия, ассеты, сроки, ИИ-отметка, статусы) |

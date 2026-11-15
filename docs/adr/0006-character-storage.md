@@ -326,7 +326,7 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 33 `economy_dynasty` … 39 `economy_incidents` | E9-T03 | роды, провинции, население, счета с кольцами ведомости, очередь стройки, займы/квоты/итоги, журнал происшествий; раскладка — `economy-model.md` §13.5 и комментарий в `src/sim/world_economy_io.cpp` | 1 |
 | 40…47 | резерв E9 | | |
 | 48…63 | E11 (подтверждено E11-T01: выпущены 48…57 `events_meta`, `event_flags`, `event_vars`, `event_timers`, `event_cooldowns`, `event_chains`, `event_modifiers`, `event_queue`, `event_history`, `event_journal`; 58…63 резерв; теги 96…109; части хеша `ExtPart` 24…29 — [event-engine.md](../dev/event-engine.md) §8.4, §9) | | |
-| 64…71 | E10 (двор; E10-T01) | | |
+| 64…71 | E10 (подтверждено E10-T01: выпущены 64…69 `court_meta`, `court_offices`, `court_vacancies`, `court_petitions`, `court_servants`, `court_favor`; 70, 71 резерв; теги 128…142; части хеша `ExtPart` 32…37 — [court-model.md](../dev/court-model.md) §7.1, §13, [ADR-0009](0009-court.md)) | | |
 | 72…83 | E12 (император и кризис; E12-T01) | | |
 | 84…91 | E30 (`GameSetup`, цели; E30-T01) | | |
 | 92…95 | резерв E13 | | |
