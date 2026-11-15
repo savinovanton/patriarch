@@ -412,7 +412,7 @@ TEST_CASE("contentlint: scan_text_for_keys finds exact keys and run-time prefixe
     CHECK(empty.keys.empty());
 }
 
-TEST_CASE("contentlint: valid files without the economy and demography objects fail the rule builders") {
+TEST_CASE("contentlint: valid files without required balance objects fail the rule builders") {
     MemorySource root("m");
     root.add("traits.pd", R"(format_version = 1
 trait "a" {
@@ -426,6 +426,9 @@ trait "a" {
     options.check_unused = false;
     const Report report = lint_memory(root, options);
     CHECK(has_code(report, "PD115"));
+    CHECK(std::ranges::any_of(report.findings, [](const Finding& finding) {
+        return finding.code == "PD115" && finding.message.find("marriage_rules") != std::string::npos;
+    }));
     CHECK(report.exit_code() == 1);
     options.run_rules = false;
     CHECK(lint_memory(root, options).exit_code() == 0);

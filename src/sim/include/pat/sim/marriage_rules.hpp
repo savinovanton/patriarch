@@ -8,14 +8,13 @@
 #include <cstdint>
 #include <string>
 
-// Marriage rules (E8-T04/T05, docs/dev/marriage-succession-model.md sections 8.1, 8.3, 8.4 and 11,
-// GDD 01 section 7): the numbers the eligibility and evaluation of a match read.
+// Marriage rules (E8-T04/T05/T07, docs/dev/marriage-succession-model.md sections 8.1, 8.3, 8.4,
+// 8.8, 8.9 and 11, GDD 01 section 7): the content for eligibility, evaluation and marriage commands.
 //
 // Rules are CONTENT, not state: they are not part of the World and are passed to the pure functions
 // of marriage_score.hpp. MarriageRules::defaults() is the ONLY place in the code with numeric
 // constants of the marriage (marriage_rules.cpp, one named table); E8-T07 reproduces exactly these
-// values in `data/balance/marriage.pd` and a test keeps the two equal. Later tasks of the epic add
-// their own groups of fields (the matchmaker T20) next to the ones here.
+// values in `data/balance/marriage.pd` and a test keeps the two equal.
 //
 // Like DemographyRules and EconomyRules this is plain data plus pure functions. There is no floating
 // point: weights are per-mille of one (1000 = x1.0), points are whole numbers, money is kopecks.
@@ -117,12 +116,56 @@ struct MarriageRelationRules {
     [[nodiscard]] bool operator==(const MarriageRelationRules&) const = default;
 };
 
+/// Negotiation timing, capacity and withdrawal (specification sections 5, 7.3 and 8.3).
+struct MarriageNegotiationRules {
+    std::int32_t answer_days = 0;
+    std::int32_t max_parallel_negotiations = 0;
+    std::int32_t refusal_cooldown_days = 0;
+    std::int32_t withdraw_refund_permille = 0;
+
+    [[nodiscard]] bool operator==(const MarriageNegotiationRules&) const = default;
+};
+
+/// Marriage effects (specification sections 5 and 8.8). Penalties are nonnegative magnitudes;
+/// commands subtract them, while accepted/married-into opinions and wedding rank honor are gains.
+struct MarriageConsequenceRules {
+    std::int32_t dispensation_honor = 0;
+    std::int32_t marriage_accepted_opinion = 0;
+    std::int32_t marriage_refused_opinion = 0;
+    std::int32_t betrothal_broken_honor = 0;
+    std::int32_t betrothal_broken_opinion = 0;
+    std::int32_t tonsure_honor = 0;
+    std::int32_t tonsure_unity = 0;
+    std::int32_t tonsure_opinion = 0;
+    std::int32_t tonsure_refund_permille = 0;
+    std::int32_t third_marriage_honor = 0;
+    std::int32_t wedding_rank_honor = 0;
+    std::int32_t married_into_opinion = 0;
+    /// A widow's claim can exceed the original dowry (the default includes an estate share).
+    std::int32_t widow_claim_permille = 0;
+    /// The female head keeps her house (decision #488); other brides join the groom's house.
+    bool bride_joins_groom_house = true;
+
+    [[nodiscard]] bool operator==(const MarriageConsequenceRules&) const = default;
+};
+
+/// AI proposal policy (specification section 8.9).
+struct MarriageMatchmakerRules {
+    std::int32_t matchmaker_min_value = 0;
+    bool ai_may_propose_to_player = false;
+
+    [[nodiscard]] bool operator==(const MarriageMatchmakerRules&) const = default;
+};
+
 struct MarriageRules {
     MarriageRankRules ranks;
     MarriageScoreRules score;
     MarriageMoneyRules money;
     MarriageEligibilityRules eligibility{};
     MarriageRelationRules relation{};
+    MarriageNegotiationRules negotiation{};
+    MarriageConsequenceRules consequences{};
+    MarriageMatchmakerRules matchmaker{};
 
     /// The default rules: the one table of numeric constants (marriage_rules.cpp).
     [[nodiscard]] static MarriageRules defaults();
@@ -132,6 +175,8 @@ struct MarriageRules {
 
 struct MarriageRulesError {
     std::string message;
+    /// Stable field path for content diagnostics, including the index of a rank threshold.
+    std::string field;
 
     [[nodiscard]] bool operator==(const MarriageRulesError&) const = default;
 };

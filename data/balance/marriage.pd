@@ -1,0 +1,83 @@
+format_version = 1
+
+# Брачные правила (E8-T07). Значения [предл.], равны MarriageRules::defaults().
+# Возраст — полные годы, сроки — дни, деньги — копейки, множители — промилле.
+# Штрафы последствий — положительные величины, вычитаемые применяющей командой.
+marriage_rules "main" {
+    ranks {
+        min_honor = [ -1000, 0, 100, 500, 1000 ]
+    }
+    score {
+        honor_weight_permille = 150
+        honor_gap_limit = 600
+        rank_step_penalty = 40
+        dowry_points_per_100rub = 4
+        dowry_points_cap = 30
+        relation_weight_permille = 500
+        opinion_weight_permille = 500
+        health_weight_permille = 200
+        health_neutral = 50
+        fertility_weight_permille = 200
+        fertility_neutral = 50
+        skills_weight_permille = 150
+        skills_neutral = 40
+        age_gap_penalty = 8
+        age_gap_free_years = 10
+        age_gap_years_cap = 30
+        political_gain_cap = 30
+        faith_penalty_cap = 100
+        accept_threshold = 0
+        forecast_margin = 15
+    }
+    money {
+        dowry_base_kop = 10000
+        dowry_per_honor_kop = 50
+        dowry_min_kop = 5000
+        dowry_max_kop = 100000
+        envoy_road_kop = 8000
+        envoy_gifts_kop = 4000
+        dispensation_fee_kop = 30000
+    }
+    eligibility {
+        min_marriage_age_male = 16
+        min_marriage_age_female = 15
+        min_betrothal_age = 7
+        blood_forbidden_degree = 6
+        blood_absolute_degree = 4
+        affinity_forbidden_degree = 4
+        mourning_days_female = 365
+        mourning_days_male = 180
+        require_opposite_sex = yes
+        forbid_same_house = yes
+    }
+    relation {
+        marriage_tie_bonus = 5
+        max_marriage_ties = 3
+    }
+    negotiation {
+        answer_days = 30
+        max_parallel_negotiations = 3
+        refusal_cooldown_days = 365
+        withdraw_refund_permille = 0
+    }
+    consequences {
+        bride_joins_groom_house = yes
+        dispensation_honor = 10
+        marriage_accepted_opinion = 5
+        marriage_refused_opinion = 5
+        betrothal_broken_honor = 10
+        betrothal_broken_opinion = 25
+        tonsure_honor = 30
+        tonsure_unity = 5
+        tonsure_opinion = 40
+        tonsure_refund_permille = 500
+        third_marriage_honor = 15
+        wedding_rank_honor = 5
+        married_into_opinion = 10
+        widow_claim_permille = 1500
+    }
+    matchmaker {
+        matchmaker_min_value = 0
+        ai_may_propose_to_player = no
+    }
+}

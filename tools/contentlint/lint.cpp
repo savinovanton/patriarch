@@ -5,6 +5,7 @@
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
 #include "pat/content/m1_economy_content.hpp"
+#include "pat/content/marriage_content.hpp"
 #include "pat/content/names_content.hpp"
 #include "pat/content/traits_content.hpp"
 #include "pat/data/content_loader.hpp"
@@ -266,6 +267,11 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 content::build_demography_rules(loaded.registry);
             if (!demography) {
                 for (const data::LoadError& error : demography.error())
+                    findings.push_back(from_load_error(error));
+            }
+            const content::MarriageRulesResult marriage = content::build_marriage_rules(loaded.registry);
+            if (!marriage) {
+                for (const data::LoadError& error : marriage.error())
                     findings.push_back(from_load_error(error));
             }
             const content::NamePoolsResult names = content::build_name_pools(loaded.registry);

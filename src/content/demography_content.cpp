@@ -11,6 +11,8 @@
 #include <tuple>
 #include <utility>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
@@ -28,35 +30,10 @@ using namespace sim;
 
 // ---- typed accessors: schema validation guarantees presence and type; defaults keep us safe ------
 
-std::int32_t i32_of(const TypedBlock& block, std::string_view name) {
-    const TypedValue* value = block.find(name);
-    if (value != nullptr) {
-        if (const auto* i = value->get_if<std::int64_t>()) {
-            return static_cast<std::int32_t>(*i);
-        }
-    }
-    return 0;
-}
-
-const TypedBlock* block_of(const TypedBlock& block, std::string_view name) {
-    const TypedValue* value = block.find(name);
-    return value != nullptr ? value->get_if<TypedBlock>() : nullptr;
-}
-
-const TypedList* list_of(const TypedBlock& block, std::string_view name) {
-    const TypedValue* value = block.find(name);
-    return value != nullptr ? value->get_if<TypedList>() : nullptr;
-}
-
-/// Position of the key of a field (`fallback` when the field is missing).
-SourcePos key_pos(const TypedBlock& block, std::string_view name, SourcePos fallback) {
-    for (const TypedField& field : block.fields) {
-        if (field.name == name) {
-            return field.pos;
-        }
-    }
-    return fallback;
-}
+using detail::block_of;
+using detail::i32_of;
+using detail::key_pos;
+using detail::list_of;
 
 /// One loaded step of an age table, with the position of its `from_age` for error messages.
 struct LoadedBucket {
