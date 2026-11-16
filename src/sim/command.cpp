@@ -5,6 +5,7 @@
 #include "pat/sim/economy/loans.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
+#include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/traits.hpp"
 
 #include <algorithm>
@@ -24,6 +25,33 @@ constexpr core::Fixed32 kZeroFixed = core::Fixed32::zero();
 }
 [[nodiscard]] Result<void, CommandError> accept() {
     return Result<void, CommandError>::ok();
+}
+
+const MarriageRules& rules_or_default(const MarriageRules* rules) {
+    static const MarriageRules defaults = MarriageRules::defaults();
+    return rules != nullptr ? *rules : defaults;
+}
+
+Result<void, CommandError> marriage_verdict(const MarriageDenials& denials) {
+    if (denials.empty()) {
+        return accept();
+    }
+    const MarriageDenial first = denials.front();
+    Rejection rejection = Rejection::InvalidState;
+    switch (first) {
+        case MarriageDenial::NotAlive:
+        case MarriageDenial::NegotiationNotFound:
+            rejection = Rejection::UnknownEntity;
+            break;
+        case MarriageDenial::NotYourMember:
+        case MarriageDenial::NotInitiator:
+            rejection = Rejection::NotAuthorized;
+            break;
+        default:
+            break;
+    }
+    return Result<void, CommandError>::err(
+        CommandError{rejection, marriage_denial_key(first).data(), static_cast<std::uint16_t>(first)});
 }
 
 Result<void, CommandError> trait_verdict(TraitStatus status) {
@@ -87,6 +115,19 @@ struct Validator {
     DynastyId actor;
     const TraitCatalog* traits;
     const economy::EconomyRules* economy;
+    const MarriageRules* marriage;
+    const FaithPolicy* faith;
+
+    Result<void, CommandError> operator()(const cmd::SendMarriageEnvoy& c) const {
+        if (c.dispensation > 1) {
+            return reject(Rejection::InvalidArgument, "dispensation must be zero or one");
+        }
+        return marriage_verdict(can_send_envoy(
+            world, rules_or_default(marriage), actor, c.groom, c.bride, c.dispensation != 0, faith));
+    }
+    Result<void, CommandError> operator()(const cmd::WithdrawMarriageEnvoy& c) const {
+        return marriage_verdict(can_withdraw_envoy(world, actor, c.negotiation));
+    }
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
         if (!world.exists(c.province)) {
@@ -724,6 +765,16 @@ struct Applier {
     DynastyId actor;
     const TraitCatalog* traits;
     const economy::EconomyRules* economy;
+    const MarriageRules* marriage;
+    const FaithPolicy* faith;
+
+    void operator()(const cmd::SendMarriageEnvoy& c) const {
+        (void)send_marriage_envoy(
+            world, rules_or_default(marriage), actor, c.groom, c.bride, c.dispensation != 0, faith);
+    }
+    void operator()(const cmd::WithdrawMarriageEnvoy& c) const {
+        withdraw_marriage_envoy(world, rules_or_default(marriage), c.negotiation);
+    }
 
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {
@@ -967,6 +1018,14 @@ template <>
 struct CommandTag<cmd::RepayLoan> {
     static constexpr CommandType value = CommandType::RepayLoan;
 };
+template <>
+struct CommandTag<cmd::SendMarriageEnvoy> {
+    static constexpr CommandType value = CommandType::SendMarriageEnvoy;
+};
+template <>
+struct CommandTag<cmd::WithdrawMarriageEnvoy> {
+    static constexpr CommandType value = CommandType::WithdrawMarriageEnvoy;
+};
 
 template <class Variant>
 struct TagTable;
@@ -1055,6 +1114,10 @@ std::string_view to_string(CommandType type) noexcept {
             return "TakeLoan";
         case CommandType::RepayLoan:
             return "RepayLoan";
+        case CommandType::SendMarriageEnvoy:
+            return "SendMarriageEnvoy";
+        case CommandType::WithdrawMarriageEnvoy:
+            return "WithdrawMarriageEnvoy";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:
@@ -1085,17 +1148,32 @@ Result<void, CommandError> validate(const World& world,
                                     const Command& command,
                                     const TraitCatalog* traits,
                                     const economy::EconomyRules* economy) {
-    if (command.actor.valid() && !world.exists(command.actor)) {
+    return validate(world, command, CommandContent{traits, economy});
+}
+
+Result<void, CommandError>
+validate(const World& world, const Command& command, const CommandContent& content) {
+    if (command.actor.valid() && !world.exists(command.actor) &&
+        !std::holds_alternative<cmd::SendMarriageEnvoy>(command.payload) &&
+        !std::holds_alternative<cmd::WithdrawMarriageEnvoy>(command.payload)) {
         return reject(Rejection::UnknownEntity, "unknown actor");
     }
-    return std::visit(Validator{world, command.actor, traits, economy}, command.payload);
+    return std::visit(
+        Validator{world, command.actor, content.traits, content.economy, content.marriage, content.faith},
+        command.payload);
 }
 
 void apply(World& world,
            const Command& command,
            const TraitCatalog* traits,
            const economy::EconomyRules* economy) {
-    std::visit(Applier{world, command.actor, traits, economy}, command.payload);
+    apply(world, command, CommandContent{traits, economy});
+}
+
+void apply(World& world, const Command& command, const CommandContent& content) {
+    std::visit(
+        Applier{world, command.actor, content.traits, content.economy, content.marriage, content.faith},
+        command.payload);
 }
 
 ApplyStats process_commands(World& world,
@@ -1105,9 +1183,18 @@ ApplyStats process_commands(World& world,
                             std::vector<DepartedHead>* departed_heads,
                             const TraitCatalog* traits,
                             const economy::EconomyRules* economy) {
+    return process_commands(world, commands, source, log, CommandContent{traits, economy}, departed_heads);
+}
+
+ApplyStats process_commands(World& world,
+                            std::span<const Command> commands,
+                            CommandSource source,
+                            CommandLog& log,
+                            const CommandContent& content,
+                            std::vector<DepartedHead>* departed_heads) {
     ApplyStats stats;
     for (const Command& command : commands) {
-        const Result<void, CommandError> verdict = validate(world, command, traits, economy);
+        const Result<void, CommandError> verdict = validate(world, command, content);
         LoggedCommand entry;
         entry.date = world.today();
         entry.source = source;
@@ -1127,7 +1214,7 @@ ApplyStats process_commands(World& world,
                     }
                 }
             }
-            apply(world, command, traits, economy);
+            apply(world, command, content);
             ++stats.applied;
         } else {
             entry.outcome = verdict.error().reason;

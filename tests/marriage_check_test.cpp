@@ -12,47 +12,14 @@
 #include <initializer_list>
 #include <string_view>
 
+#include "marriage_test_fixture.hpp"
+
 namespace {
 
 using namespace pat::sim;
 using Denial = MarriageDenial;
 
-struct Scene {
-    World world;
-    DynastyId groom_house;
-    DynastyId bride_house;
-    DynastyId third_house;
-    CharacterId groom;
-    CharacterId bride;
-
-    CharacterId person(DynastyId house,
-                       Sex sex,
-                       Date birth = Date::from_ymd(1670, 1, 1),
-                       CharacterId father = {},
-                       CharacterId mother = {}) {
-        CharacterInit init;
-        init.dynasty = house;
-        init.sex = sex;
-        init.birth_date = birth;
-        init.father = father;
-        init.mother = mother;
-        const auto id = world.create_character(init);
-        REQUIRE(id.valid());
-        return id;
-    }
-
-    explicit Scene(Date today = Date::from_ymd(1703, 5, 20),
-                   Date groom_birth = Date::from_ymd(1670, 1, 1),
-                   Date bride_birth = Date::from_ymd(1670, 1, 1))
-        : world(today, 299) {
-        REQUIRE(world.enable_dynasty_mode());
-        groom_house = world.create_dynasty({});
-        bride_house = world.create_dynasty({});
-        third_house = world.create_dynasty({});
-        groom = person(groom_house, Sex::Male, groom_birth);
-        bride = person(bride_house, Sex::Female, bride_birth);
-    }
-};
+using pat::test::marriage::Scene;
 
 MarriageDenials query(const Scene& scene,
                       CharacterId a,
@@ -219,7 +186,7 @@ TEST_CASE("marriage check: betrothal uses seven years instead of wedding ages") 
     expect_reasons(query(exact), {Denial::GroomTooYoung, Denial::BrideTooYoung});
 }
 
-TEST_CASE("marriage check: eligibility thresholds and pair restrictions come from rules") {
+TEST_CASE("marriage check: age thresholds are configurable and M1 pair restrictions remain required") {
     Scene scene;
     auto rules = MarriageRules::defaults();
     rules.eligibility.min_marriage_age_male = 40;
@@ -227,9 +194,8 @@ TEST_CASE("marriage check: eligibility thresholds and pair restrictions come fro
     expect_reasons(query(scene, {}, nullptr, rules), {Denial::GroomTooYoung, Denial::BrideTooYoung});
     const auto man = scene.person(scene.groom_house, Sex::Male);
     rules = MarriageRules::defaults();
-    rules.eligibility.require_opposite_sex = false;
-    rules.eligibility.forbid_same_house = false;
-    expect_reasons(query(scene, scene.groom, man, {}, nullptr, rules), {});
+    REQUIRE(validate(rules).has_value());
+    expect_reasons(query(scene, scene.groom, man, {}, nullptr, rules), {Denial::SameSex, Denial::SameHouse});
 }
 
 TEST_CASE("marriage check: marriage history allows a third union and forbids the fourth") {

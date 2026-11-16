@@ -789,6 +789,11 @@ public:
 
     // ---- family tables (E8-T02; rules, systems and persistence follow in E8) ----
     [[nodiscard]] const family::State& family() const noexcept { return family_; }
+    /// Pure storage availability, including monotone-id exhaustion (the outcome ring evicts).
+    [[nodiscard]] bool has_family_negotiation_capacity() const;
+    [[nodiscard]] bool has_family_outcome_capacity() const;
+    /// The same structural predicate used by creation, without writing a row or allocating an id.
+    [[nodiscard]] bool can_create_family_negotiation(const family::Negotiation& row) const;
     /// Creation assigns the next monotone id; the supplied id must be zero. Rejected mutations
     /// leave every family row and counter unchanged. These operations apply structural checks only.
     [[nodiscard]] std::optional<family::NegotiationId> create_family_negotiation(family::Negotiation row);

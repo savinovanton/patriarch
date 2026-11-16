@@ -104,6 +104,44 @@ TEST_CASE("dynasty relation: only current heads are excluded and living house me
     CHECK(dynasty_relation(s.world, s.a, s.b) == 10);  // (100 - 80 + 10) / 3
 }
 
+TEST_CASE("dynasty relation: acting regent and caretaker opinions are excluded") {
+    RelationScene s;
+    SUBCASE("regent") {
+        CharacterInit init;
+        init.dynasty = s.a;
+        init.birth_date = Date::from_ymd(1695, 1, 1);
+        const auto ward = s.world.create_character(init);
+        REQUIRE(ward.valid());
+        REQUIRE(s.world.set_dynasty_head(s.a, ward));
+        family::Regency row;
+        row.dynasty = s.a;
+        row.ward = ward;
+        row.regent = s.member_a;
+        row.kind = family::RegencyKind::Council;
+        row.started = s.world.today();
+        REQUIRE(s.world.set_family_regency(row));
+    }
+    SUBCASE("caretaker") {
+        REQUIRE(s.world.die(s.head_a, CauseOfDeath::Illness));
+        REQUIRE(s.world.set_dynasty_head(s.a, {}));
+        family::Dispute row;
+        row.dynasty = s.a;
+        row.predecessor = s.head_a;
+        row.opened = s.world.today();
+        row.resolve_by = s.world.today() + 90;
+        row.claimants_n = 2;
+        row.claimants[0] = {s.member_a, 30};
+        row.claimants[1] = {s.person(s.a), 20};
+        REQUIRE(s.world.set_family_dispute(row));
+    }
+    s.opinion(s.member_a, s.head_b, 100);
+    s.opinion(s.head_b, s.member_a, -80);
+    s.opinion(s.member_a, s.member_b, 30);
+    CHECK(dynasty_relation(s.world, s.a, s.b) == 30);
+    CHECK(dynasty_relation(s.world, s.b, s.a) == 30);
+    CHECK(s.world.check_invariants().empty());
+}
+
 TEST_CASE("dynasty relation: current marriages count once, are capped and end with death or separation") {
     RelationScene s;
     REQUIRE(s.world.marry(s.member_a, s.member_b));

@@ -421,10 +421,21 @@ CharacterId World::family_caretaker(DynastyId dynasty) const {
     return dispute != nullptr ? caretaker_of(*this, *dispute) : CharacterId{};
 }
 
+bool World::has_family_negotiation_capacity() const {
+    return allocatable(family_.next_negotiation_id) && family_.negotiations.size() < family::kMaxNegotiations;
+}
+
+bool World::has_family_outcome_capacity() const {
+    return allocatable(family_.next_outcome_seq);
+}
+
+bool World::can_create_family_negotiation(const family::Negotiation& row) const {
+    return row.id == 0 && has_family_negotiation_capacity() && valid_negotiation(*this, row) &&
+           current_houses(*this, row);
+}
+
 std::optional<family::NegotiationId> World::create_family_negotiation(family::Negotiation row) {
-    if (row.id != 0 || !allocatable(family_.next_negotiation_id) ||
-        family_.negotiations.size() >= family::kMaxNegotiations || !valid_negotiation(*this, row) ||
-        !current_houses(*this, row)) {
+    if (!can_create_family_negotiation(row)) {
         return std::nullopt;
     }
     row.id = family_.next_negotiation_id;
@@ -505,7 +516,7 @@ bool World::update_family_marriage(family::MarriageId id, const family::Marriage
 }
 
 std::optional<family::OutcomeSequence> World::append_family_outcome(family::NegotiationOutcome row) {
-    if (row.seq != 0 || !allocatable(family_.next_outcome_seq) || !valid_outcome(*this, row)) {
+    if (row.seq != 0 || !has_family_outcome_capacity() || !valid_outcome(*this, row)) {
         return std::nullopt;
     }
     row.seq = family_.next_outcome_seq;

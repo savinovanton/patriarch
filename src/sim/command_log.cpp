@@ -118,6 +118,12 @@ struct Writer {
         out.u32(c.a.value());
         out.u8(static_cast<std::uint8_t>(c.reason));
     }
+    void operator()(const cmd::SendMarriageEnvoy& c) const {
+        out.u32(c.groom.value());
+        out.u32(c.bride.value());
+        out.u8(c.dispensation);
+    }
+    void operator()(const cmd::WithdrawMarriageEnvoy& c) const { out.u32(c.negotiation); }
     void operator()(const cmd::PlanDeath& c) const {
         out.u32(c.character.value());
         out.i32(c.date.days());
@@ -398,6 +404,20 @@ bool read_command(core::ByteReader& in, Command& out) {
             out.payload = cmd::PlanDeath{character, Date::from_days(in.i32())};
             break;
         }
+        case CommandType::SendMarriageEnvoy: {
+            cmd::SendMarriageEnvoy c;
+            c.groom = CharacterId(in.u32());
+            c.bride = CharacterId(in.u32());
+            c.dispensation = in.u8();
+            if (c.dispensation > 1) {
+                return false;
+            }
+            out.payload = c;
+            break;
+        }
+        case CommandType::WithdrawMarriageEnvoy:
+            out.payload = cmd::WithdrawMarriageEnvoy{in.u32()};
+            break;
         case CommandType::RecordChronicle: {
             cmd::RecordChronicle c;
             c.dynasty = DynastyId(in.u32());

@@ -74,7 +74,9 @@ ObjectSchema eligibility_schema() {
     s.required("mourning_days_female", i32())
         .required("mourning_days_male", i32())
         .required("require_opposite_sex", Type::boolean())
-        .required("forbid_same_house", Type::boolean());
+        .describe("Обязательное ограничение M1: только yes; проверяет sim::validate.")
+        .required("forbid_same_house", Type::boolean())
+        .describe("Обязательное ограничение M1: только yes; проверяет sim::validate.");
     return s;
 }
 

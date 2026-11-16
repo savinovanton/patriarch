@@ -104,6 +104,14 @@ TEST_CASE("marriage content: invalid fields retain the exact file and source pos
         replace_once(text, "answer_days = 30", "answer_days = -1");
         needle = "-1\n";
     }
+    SUBCASE("opposite sex restriction cannot be disabled in M1") {
+        replace_once(text, "require_opposite_sex = yes", "require_opposite_sex = no");
+        needle = "no\n";
+    }
+    SUBCASE("different house restriction cannot be disabled in M1") {
+        replace_once(text, "forbid_same_house = yes", "forbid_same_house = no");
+        needle = "no\n";
+    }
     REQUIRE_FALSE(needle.empty());
     const auto result = load_marriage(text);
     REQUIRE_FALSE(result.has_value());

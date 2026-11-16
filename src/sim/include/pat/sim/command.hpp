@@ -17,6 +17,9 @@
 namespace pat::sim {
 
 struct TraitCatalog;
+struct MarriageRules;
+struct SuccessionRules;
+class FaithPolicy;
 namespace economy {
 struct EconomyRules;
 }
@@ -57,6 +60,8 @@ enum class CommandType : std::uint16_t {
     CancelConstruction = 37,           // E9-T16
     TakeLoan = 38,                     // E9-T15
     RepayLoan = 39,                    // E9-T15
+    SendMarriageEnvoy = 64,            // E8-T08
+    WithdrawMarriageEnvoy = 65,        // E8-T08
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -339,6 +344,20 @@ struct EndMarriage {
     [[nodiscard]] bool operator==(const EndMarriage&) const = default;
 };
 
+/// Sends an envoy for this pair on behalf of Command::actor. Costs and dowry come from content.
+struct SendMarriageEnvoy {
+    CharacterId groom;
+    CharacterId bride;
+    std::uint8_t dispensation = 0;
+    [[nodiscard]] bool operator==(const SendMarriageEnvoy&) const = default;
+};
+
+/// Withdraws a pending negotiation on behalf of its initiator.
+struct WithdrawMarriageEnvoy {
+    std::uint32_t negotiation = 0;
+    [[nodiscard]] bool operator==(const WithdrawMarriageEnvoy&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
@@ -369,7 +388,9 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::StartConstruction,
                                     cmd::CancelConstruction,
                                     cmd::TakeLoan,
-                                    cmd::RepayLoan>;
+                                    cmd::RepayLoan,
+                                    cmd::SendMarriageEnvoy,
+                                    cmd::WithdrawMarriageEnvoy>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
@@ -411,6 +432,20 @@ static_assert(sizeof(CommandError) <= 2 * sizeof(void*), "CommandError must stay
 [[nodiscard]] std::string_view to_string(CommandType type) noexcept;
 [[nodiscard]] std::string_view to_string(Rejection reason) noexcept;
 
+/// Borrowed immutable content; all referenced objects must outlive the call. Null marriage rules
+/// use MarriageRules::defaults(). FaithPolicy may itself borrow house-faith strings and views.
+struct CommandContent {
+    const TraitCatalog* traits = nullptr;
+    const economy::EconomyRules* economy = nullptr;
+    const MarriageRules* marriage = nullptr;
+    const SuccessionRules* succession = nullptr;
+    const FaithPolicy* faith = nullptr;
+};
+
+[[nodiscard]] core::Result<void, CommandError>
+validate(const World& world, const Command& command, const CommandContent& content);
+void apply(World& world, const Command& command, const CommandContent& content);
+
 /// Checks the command against the world without changing it.
 /// `traits` and `economy` are the content the command needs besides the world (the trait catalogue of
 /// E7; the economy rules of E9, for construction and loans); null where the command needs none.
@@ -447,5 +482,12 @@ ApplyStats process_commands(World& world,
                             std::vector<DepartedHead>* departed_heads = nullptr,
                             const TraitCatalog* traits = nullptr,
                             const economy::EconomyRules* economy = nullptr);
+
+ApplyStats process_commands(World& world,
+                            std::span<const Command> commands,
+                            CommandSource source,
+                            CommandLog& log,
+                            const CommandContent& content,
+                            std::vector<DepartedHead>* departed_heads = nullptr);
 
 }  // namespace pat::sim
