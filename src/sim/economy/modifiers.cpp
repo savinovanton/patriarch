@@ -2,6 +2,7 @@
 
 #include "pat/core/assert.hpp"
 #include "pat/core/fixed.hpp"
+#include "pat/core/hash_stream.hpp"
 #include "pat/sim/economy/construction.hpp"
 #include "pat/sim/economy/policy.hpp"
 #include "pat/sim/economy/tables.hpp"
@@ -73,11 +74,6 @@ std::int16_t clamped16(std::int32_t value, std::int32_t lo, std::int32_t hi) noe
     return static_cast<std::int16_t>(std::clamp(value, lo, hi));
 }
 
-void mix(std::uint64_t& hash, std::int64_t value) noexcept {
-    hash ^= static_cast<std::uint64_t>(value);
-    hash *= 1099511628211ULL;
-}
-
 }  // namespace
 
 // ---- cache ---------------------------------------------------------------------------------------
@@ -109,22 +105,23 @@ void ModifierCache::mark_all() noexcept {
 // ---- the direct computation ----------------------------------------------------------------------
 
 std::uint64_t modifier_rules_stamp(const EconomyRules& rules) noexcept {
-    std::uint64_t hash = 14695981039346656037ULL;
-    mix(hash, rules.buildings.count);
+    core::HashStream hash;
+    hash.i64(rules.buildings.count);
     for (std::size_t i = 0; i < static_cast<std::size_t>(rules.buildings.count); ++i) {
         const BuildingDef& def = rules.buildings.defs[i];
-        mix(hash, def.slot);
+        hash.i64(def.slot);
         for (const std::int32_t m : def.output_permille) {
-            mix(hash, m);
+            hash.i64(m);
         }
-        mix(hash, def.control_points);
-        mix(hash, def.oversight_permille);
-        mix(hash, def.recruit_permille);
-        mix(hash, def.famine_protect_permille);
+        hash.i64(def.control_points);
+        hash.i64(def.oversight_permille);
+        hash.i64(def.recruit_permille);
+        hash.i64(def.famine_protect_permille);
     }
-    mix(hash, rules.tax.default_level);
-    mix(hash, rules.recruit.default_level);
-    return hash != 0 ? hash : 1;
+    hash.i64(rules.tax.default_level);
+    hash.i64(rules.recruit.default_level);
+    const std::uint64_t value = hash.value();
+    return value != 0 ? value : 1;
 }
 
 ProvinceModifiers compute_province_modifiers(const World& world,
