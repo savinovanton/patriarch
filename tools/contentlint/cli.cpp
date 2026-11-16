@@ -1,3 +1,4 @@
+#include "pat/core/path_utf8.hpp"
 #include "pat/data/content_source.hpp"
 
 #include <algorithm>
@@ -37,15 +38,6 @@ constexpr const char* kUsage =
     "  --no-rules           skip cross-object rules (lint a mod without the base game)\n"
     "  --help               this text\n"
     "exit codes: 0 clean, 1 errors (or warnings under --strict), 2 usage or I/O error\n";
-
-std::string to_utf8(const fs::path& p) {
-    const std::u8string u = p.generic_u8string();
-    return std::string(reinterpret_cast<const char*>(u.data()), u.size());
-}
-
-fs::path from_utf8(std::string_view s) {
-    return fs::path(std::u8string(reinterpret_cast<const char8_t*>(s.data()), s.size()));
-}
 
 bool is_language_code(std::string_view code) noexcept {
     if (code.empty() || code.size() > 16 || code.front() < 'a' || code.front() > 'z')
@@ -164,12 +156,12 @@ std::string parse_args(std::span<const std::string_view> args, Cli& cli) {
 
 bool is_directory(const std::string& path) {
     std::error_code ec;
-    return fs::is_directory(from_utf8(path), ec) && !ec;
+    return fs::is_directory(core::path_from_utf8(path), ec) && !ec;
 }
 
 /// Reads a `--used-keys` list: one key per line, blank lines and `#` comments ignored.
 std::string read_used_keys(const std::string& path, std::vector<UsedKey>& out) {
-    std::ifstream in(from_utf8(path), std::ios::binary);
+    std::ifstream in(core::path_from_utf8(path), std::ios::binary);
     if (!in)
         return std::format("cannot read '{}'", path);
     std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -233,13 +225,13 @@ int run_cli(std::span<const std::string_view> args, std::ostream& out, std::ostr
     if (scan_dirs.empty() && !cli.no_scan) {
         // Default: `src` and `apps` next to the first root (the repository root for `--root data`).
         std::error_code ec;
-        fs::path first = fs::absolute(from_utf8(cli.roots.front()), ec).lexically_normal();
+        fs::path first = fs::absolute(core::path_from_utf8(cli.roots.front()), ec).lexically_normal();
         if (!ec) {
             if (!first.has_filename())
                 first = first.parent_path();
             const fs::path base = first.parent_path();
             for (const char* name : {"src", "apps"}) {
-                const std::string candidate = to_utf8(base / name);
+                const std::string candidate = core::path_to_utf8(base / name);
                 if (is_directory(candidate))
                     scan_dirs.push_back(candidate);
             }
@@ -250,11 +242,11 @@ int run_cli(std::span<const std::string_view> args, std::ostream& out, std::ostr
     std::vector<const data::ContentSource*> roots;
     std::vector<const data::ContentSource*> scans;
     for (const std::string& root : cli.roots) {
-        owned.push_back(std::make_unique<data::DirectorySource>(from_utf8(root)));
+        owned.push_back(std::make_unique<data::DirectorySource>(core::path_from_utf8(root)));
         roots.push_back(owned.back().get());
     }
     for (const std::string& dir : scan_dirs) {
-        owned.push_back(std::make_unique<data::DirectorySource>(from_utf8(dir)));
+        owned.push_back(std::make_unique<data::DirectorySource>(core::path_from_utf8(dir)));
         scans.push_back(owned.back().get());
     }
 
