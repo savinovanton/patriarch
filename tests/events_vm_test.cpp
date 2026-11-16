@@ -1759,6 +1759,61 @@ TEST_CASE("events vm: golden result of a fixed program (guards the arithmetic an
     CHECK(r.hash() == 0x5F3F7E9D00EFBA28ULL);
 }
 
+TEST_CASE("events vm: canonical bytes of a Program and of a RunResult are pinned byte for byte") {
+    // Program::hash and RunResult::hash feed EventSet::hash (key 21 of the save summary), so the
+    // exact byte layout is part of the format: little-endian, fixed widths, no padding.
+    const auto bytes_of = [](std::initializer_list<unsigned> values) {
+        std::vector<std::byte> out;
+        for (const unsigned v : values) {
+            out.push_back(static_cast<std::byte>(v));
+        }
+        return out;
+    };
+
+    Program program;
+    program.code.push_back(Instr{0x0102, 0x0304, 0x05060708});
+    program.consts.push_back(-2);
+    CHECK(program.to_bytes() == bytes_of({0x01, 0x00, 0x00, 0x00,    // code count
+                                          0x02, 0x01, 0x04, 0x03,    // op, a
+                                          0x08, 0x07, 0x06, 0x05,    // b
+                                          0x01, 0x00, 0x00, 0x00,    // const count
+                                          0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}));
+
+    RunResult result;
+    result.ok = true;
+    result.reason = AbortReason::Explicit;
+    result.abort_pc = 1;
+    result.abort_detail = 2;
+    result.has_value = true;
+    result.value = -1;
+    result.instructions = 3;
+    result.wu = 4;
+    result.counters = RunCounters{5, 6, 7, 8};
+    const std::array<Word, 2> args{0x0A, -1};
+    result.commands.add(0x1234, Scope{ScopeKind::Province, 9}, args);
+    CHECK(result.to_bytes() == bytes_of({0x45, 0x56, 0x52, 0x31,  // "EVR1"
+                                         0x01,                    // ok
+                                         0x08, 0x00, 0x00, 0x00,  // reason
+                                         0x01, 0x00, 0x00, 0x00,  // abort_pc
+                                         0x02, 0x00, 0x00, 0x00,  // abort_detail
+                                         0x01,                    // has_value
+                                         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // value
+                                         0x03, 0x00, 0x00, 0x00,                          // instructions
+                                         0x04, 0x00, 0x00, 0x00,                          // wu
+                                         0x05, 0x00, 0x00, 0x00,                          // saturations
+                                         0x06, 0x00, 0x00, 0x00,                          // div_zero
+                                         0x07, 0x00, 0x00, 0x00,                          // truncated
+                                         0x08, 0x00, 0x00, 0x00,                          // draws
+                                         0x01, 0x00, 0x00, 0x00,                          // commands: count
+                                         0x34, 0x12, 0x00, 0x00,                          // code
+                                         0x03, 0x00, 0x00, 0x00,                          // target kind
+                                         0x09, 0x00, 0x00, 0x00,                          // target id
+                                         0x02, 0x00, 0x00, 0x00,                          // argc
+                                         0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // arg 0
+                                         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // arg 1
+                                         0x00, 0x00, 0x00, 0x00}));                       // state_ops: count
+}
+
 // ---- program: validation, disassembler, cost -----------------------------------------------------
 
 TEST_CASE("events program: validate rejects malformed programs with a precise error") {
