@@ -26,10 +26,6 @@ constexpr std::size_t kMinRecordBytes = 2 + 2 + 4 + 4 + 8 + 4 + 1 + 2;
 constexpr std::size_t kBorderBytes = 6;
 constexpr std::uint8_t kFlagCoastal = 1U;
 
-Error err(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
-
 std::uint64_t pack_pair(std::uint16_t a, std::uint16_t b) {
     return (static_cast<std::uint64_t>(std::min(a, b)) << 16U) | std::max(a, b);
 }
@@ -171,7 +167,9 @@ std::vector<std::uint8_t> encode_province_table(std::span<const ProvinceEntry> e
 Result<std::vector<ProvinceEntry>, Error> decode_province_table(std::span<const std::uint8_t> bytes,
                                                                 bool allow_trailing) {
     using R = Result<std::vector<ProvinceEntry>, Error>;
-    const auto truncated = [] { return R::err(err(province_error::kBadChunk, "PTBL: truncated")); };
+    const auto truncated = [] {
+        return R::err(codec::make_error(province_error::kBadChunk, "PTBL: truncated"));
+    };
     core::ByteReader r(bytes);
     const std::uint16_t count = r.u16();
     if (!r.ok() || static_cast<std::size_t>(count) * kMinRecordBytes > r.remaining()) {
@@ -197,7 +195,7 @@ Result<std::vector<ProvinceEntry>, Error> decode_province_table(std::span<const 
             return truncated();
         }
         if ((flags & ~kFlagCoastal) != 0) {
-            return R::err(err(province_error::kBadTable, "PTBL: unknown flag bits"));
+            return R::err(codec::make_error(province_error::kBadTable, "PTBL: unknown flag bits"));
         }
         e.coastal = (flags & kFlagCoastal) != 0;
         e.neighbors.reserve(neighbor_count);
@@ -209,11 +207,8 @@ Result<std::vector<ProvinceEntry>, Error> decode_province_table(std::span<const 
         }
         out.push_back(std::move(e));
     }
-    if (!r.ok()) {
-        return truncated();
-    }
-    if (!allow_trailing && !r.at_end()) {
-        return R::err(err(province_error::kBadChunk, "PTBL: trailing bytes"));
+    if (auto ok = codec::finish_blob(r, allow_trailing, kPtbl, province_error::kBadChunk); !ok) {
+        return R::err(ok.error());
     }
     return R::ok(std::move(out));
 }
@@ -223,38 +218,40 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
     using R = Result<void, Error>;
     const std::size_t n = entries.size();
     if (n == 0 || n > kMaxProvinceCount) {
-        return R::err(err(province_error::kBadTable, "province count must be in 1..65535"));
+        return R::err(codec::make_error(province_error::kBadTable, "province count must be in 1..65535"));
     }
     const std::uint64_t pixels = static_cast<std::uint64_t>(width) * height;
     for (std::size_t i = 0; i < n; ++i) {
         const ProvinceEntry& e = entries[i];
         const std::string label = "province " + std::to_string(i + 1) + ": ";
         if (e.id != i + 1) {
-            return R::err(err(province_error::kBadId, label + "ids must be dense 1..N"));
+            return R::err(codec::make_error(province_error::kBadId, label + "ids must be dense 1..N"));
         }
         if (!valid_province_key(e.key)) {
-            return R::err(err(province_error::kBadKey, label + "invalid key"));
+            return R::err(codec::make_error(province_error::kBadKey, label + "invalid key"));
         }
         if (e.area_px == 0 || e.area_px > pixels) {
-            return R::err(err(province_error::kBadTable, label + "area out of range"));
+            return R::err(codec::make_error(province_error::kBadTable, label + "area out of range"));
         }
         if (e.min_x > e.max_x || e.min_y > e.max_y || e.max_x >= width || e.max_y >= height) {
-            return R::err(err(province_error::kBadTable, label + "bounding box invalid"));
+            return R::err(codec::make_error(province_error::kBadTable, label + "bounding box invalid"));
         }
         const std::uint64_t box =
             static_cast<std::uint64_t>(e.max_x - e.min_x + 1U) * (e.max_y - e.min_y + 1U);
         if (e.area_px > box) {
-            return R::err(err(province_error::kBadTable, label + "area exceeds the bounding box"));
+            return R::err(
+                codec::make_error(province_error::kBadTable, label + "area exceeds the bounding box"));
         }
         if (e.centroid_x < e.min_x || e.centroid_x > e.max_x || e.centroid_y < e.min_y ||
             e.centroid_y > e.max_y) {
-            return R::err(err(province_error::kBadTable, label + "centroid outside the bounding box"));
+            return R::err(
+                codec::make_error(province_error::kBadTable, label + "centroid outside the bounding box"));
         }
         std::uint16_t previous = 0;
         for (const Border& b : e.neighbors) {
             if (b.neighbor == 0 || b.neighbor > n || b.neighbor == e.id || b.neighbor <= previous ||
                 b.length_px == 0) {
-                return R::err(err(province_error::kBadTable, label + "neighbour list invalid"));
+                return R::err(codec::make_error(province_error::kBadTable, label + "neighbour list invalid"));
             }
             previous = b.neighbor;
         }
@@ -267,7 +264,7 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
         }
         std::sort(keys.begin(), keys.end());
         if (std::adjacent_find(keys.begin(), keys.end()) != keys.end()) {
-            return R::err(err(province_error::kBadKey, "province keys are not unique"));
+            return R::err(codec::make_error(province_error::kBadKey, "province keys are not unique"));
         }
     }
     {
@@ -278,7 +275,8 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
         }
         std::sort(colors.begin(), colors.end());
         if (std::adjacent_find(colors.begin(), colors.end()) != colors.end()) {
-            return R::err(err(province_error::kDuplicateColor, "province colours are not unique"));
+            return R::err(
+                codec::make_error(province_error::kDuplicateColor, "province colours are not unique"));
         }
     }
     // Symmetry (same length from both sides).
@@ -290,8 +288,9 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
                     return x.neighbor < id;
                 });
             if (it == other.end() || it->neighbor != e.id || it->length_px != b.length_px) {
-                return R::err(err(province_error::kBadTable,
-                                  "province " + std::to_string(e.id) + ": adjacency is not symmetric"));
+                return R::err(
+                    codec::make_error(province_error::kBadTable,
+                                      "province " + std::to_string(e.id) + ": adjacency is not symmetric"));
             }
         }
     }
@@ -313,7 +312,8 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
             }
         }
         if (reached != n) {
-            return R::err(err(province_error::kGraphDisconnected, "the province graph is not connected"));
+            return R::err(
+                codec::make_error(province_error::kGraphDisconnected, "the province graph is not connected"));
         }
     }
     return R::ok();
@@ -379,10 +379,11 @@ Result<void, Error> check_layer(const ProvinceLayer& l, const PhysicalLayer* phy
     using R = Result<void, Error>;
     if (l.width == 0 || l.height == 0 || l.width > kPmd2MaxDimension || l.height > kPmd2MaxDimension ||
         static_cast<std::uint64_t>(l.width) * l.height > kPmd2MaxPixels) {
-        return R::err(err(province_error::kLayerSize, "invalid dimensions"));
+        return R::err(codec::make_error(province_error::kLayerSize, "invalid dimensions"));
     }
     if (l.province_id.size() != l.pixel_count()) {
-        return R::err(err(province_error::kLayerSize, "PIDX size does not match width x height"));
+        return R::err(
+            codec::make_error(province_error::kLayerSize, "PIDX size does not match width x height"));
     }
     if (auto ok = validate_province_table(l.entries, l.width, l.height); !ok) {
         return ok;
@@ -396,19 +397,20 @@ Result<void, Error> check_layer(const ProvinceLayer& l, const PhysicalLayer* phy
     for (std::size_t i = 0; i < l.province_id.size(); ++i) {
         const std::uint16_t p = l.province_id[i];
         if (p > n) {
-            return R::err(err(province_error::kBadId, "PIDX holds an id above the province count"));
+            return R::err(
+                codec::make_error(province_error::kBadId, "PIDX holds an id above the province count"));
         }
         if (physical != nullptr && (p != 0) != (physical->water_body[i] == 0)) {
-            return R::err(
-                err(province_error::kLandMask,
-                    "province must be non-zero exactly where WBOD is 0 (pixel " + std::to_string(i) + ")"));
+            return R::err(codec::make_error(province_error::kLandMask,
+                                            "province must be non-zero exactly where WBOD is 0 (pixel " +
+                                                std::to_string(i) + ")"));
         }
     }
     bool empty = false;
     if (const std::uint16_t bad = first_bad_region(l, empty); bad != 0) {
-        return R::err(err(province_error::kProvinceShape,
-                          "province " + std::to_string(bad) +
-                              (empty ? " has no pixels" : " is split into several regions")));
+        return R::err(codec::make_error(province_error::kProvinceShape,
+                                        "province " + std::to_string(bad) +
+                                            (empty ? " has no pixels" : " is split into several regions")));
     }
     std::vector<std::uint8_t> mask;
     if (physical != nullptr) {
@@ -424,9 +426,9 @@ Result<void, Error> check_layer(const ProvinceLayer& l, const PhysicalLayer* phy
                           a.centroid_y == b.centroid_y && a.neighbors == b.neighbors &&
                           (physical == nullptr || a.coastal == b.coastal);
         if (!same) {
-            return R::err(
-                err(province_error::kTableMismatch,
-                    "province table entry " + std::to_string(i + 1) + " does not match the pixels"));
+            return R::err(codec::make_error(province_error::kTableMismatch,
+                                            "province table entry " + std::to_string(i + 1) +
+                                                " does not match the pixels"));
         }
     }
     return R::ok();
@@ -442,10 +444,12 @@ Result<void, Error> validate_provinces(const PhysicalLayer& physical, const Prov
     using R = Result<void, Error>;
     if (provinces.width != physical.width || provinces.height != physical.height ||
         physical.water_body.size() != physical.pixel_count()) {
-        return R::err(err(province_error::kLayerSize, "province and physical layers differ in size"));
+        return R::err(
+            codec::make_error(province_error::kLayerSize, "province and physical layers differ in size"));
     }
     if (provinces.bind_key != coast_key(physical)) {
-        return R::err(err(province_error::kBindKey, "province borders were built for another coast"));
+        return R::err(
+            codec::make_error(province_error::kBindKey, "province borders were built for another coast"));
     }
     return check_layer(provinces, &physical);
 }
@@ -530,7 +534,7 @@ Result<Pmd2Reader, Error> open_checked(Open&& open, Peek&& peek) {
         auto any = peek();
         if (any && any.value().header().kind != Pmd2Kind::provinces) {
             return Result<Pmd2Reader, Error>::err(
-                err(province_error::kWrongKind, "not a provinces PMD2 container"));
+                codec::make_error(province_error::kWrongKind, "not a provinces PMD2 container"));
         }
     }
     return reader;
@@ -558,7 +562,7 @@ Result<Pmd2Reader, Error> open_path(const std::filesystem::path& path, const Pro
 Result<void, Error> check_kind(const Pmd2Reader& reader) {
     using R = Result<void, Error>;
     if (reader.header().kind != Pmd2Kind::provinces) {
-        return R::err(err(province_error::kWrongKind, "not a provinces PMD2 container"));
+        return R::err(codec::make_error(province_error::kWrongKind, "not a provinces PMD2 container"));
     }
     return R::ok();
 }
@@ -566,7 +570,7 @@ Result<void, Error> check_kind(const Pmd2Reader& reader) {
 Result<std::vector<ProvinceEntry>, Error> read_table(const Pmd2Reader& reader) {
     using R = Result<std::vector<ProvinceEntry>, Error>;
     if (reader.find(kPtbl) == nullptr) {
-        return R::err(err(province_error::kMissingChunk, "missing chunk PTBL"));
+        return R::err(codec::make_error(province_error::kMissingChunk, "missing chunk PTBL"));
     }
     auto bytes = reader.read_blob(kPtbl);
     if (!bytes) {
@@ -591,7 +595,7 @@ Result<ProvinceLayer, Error> read_layer(const Pmd2Reader& reader, const Province
     layer.entries = std::move(table.value());
 
     if (reader.find(kPidx) == nullptr) {
-        return R::err(err(province_error::kMissingChunk, "missing chunk PIDX"));
+        return R::err(codec::make_error(province_error::kMissingChunk, "missing chunk PIDX"));
     }
     auto info = reader.raster_info(kPidx);
     if (!info) {
@@ -599,7 +603,8 @@ Result<ProvinceLayer, Error> read_layer(const Pmd2Reader& reader, const Province
     }
     if (info.value().elem_bytes != 2 || info.value().shift != 0 || info.value().width != head.width ||
         info.value().height != head.height) {
-        return R::err(err(province_error::kLayerSize, "PIDX: raster is not full resolution u16"));
+        return R::err(
+            codec::make_error(province_error::kLayerSize, "PIDX: raster is not full resolution u16"));
     }
     auto ids = reader.read_raster_u16(kPidx, 0, options.threads);
     if (!ids) {
@@ -642,7 +647,7 @@ Result<ProvinceTable, Error> table_from(const Pmd2Reader& reader) {
         return R::err(ok.error());
     }
     if (reader.find(kPidx) == nullptr) {
-        return R::err(err(province_error::kMissingChunk, "missing chunk PIDX"));
+        return R::err(codec::make_error(province_error::kMissingChunk, "missing chunk PIDX"));
     }
     auto entries = read_table(reader);
     if (!entries) {
@@ -753,10 +758,12 @@ load_set(const Pmd2Reader& province_reader, PhysicalLayer&& physical, const Prov
     // Cheap check first: the header bind_key, before the province raster is decoded.
     const Pmd2Header& head = province_reader.header();
     if (head.width != physical.width || head.height != physical.height) {
-        return R::err(err(province_error::kLayerSize, "province and physical layers differ in size"));
+        return R::err(
+            codec::make_error(province_error::kLayerSize, "province and physical layers differ in size"));
     }
     if (head.bind_key != coast_key(physical)) {
-        return R::err(err(province_error::kBindKey, "province borders were built for another coast"));
+        return R::err(
+            codec::make_error(province_error::kBindKey, "province borders were built for another coast"));
     }
     auto layer = read_layer(province_reader, options);
     if (!layer) {

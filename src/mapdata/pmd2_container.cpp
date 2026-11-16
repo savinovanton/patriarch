@@ -13,6 +13,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
@@ -25,10 +27,6 @@ constexpr std::size_t kRasterPrefixFixed = 16;  // elem, shift, tile_log2, trans
 constexpr std::size_t kTileIndexEntry = 12;     // u32 stored_size + u64 stored_hash
 constexpr std::uint8_t kMaxShift = 3;
 constexpr std::uint16_t kKnownChunkFlags = kPmd2ChunkCritical | kPmd2ChunkTiled;
-
-Error pmd2_err(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
 
 bool printable_id(Pmd2ChunkId id) {
     for (unsigned shift = 0; shift < 32; shift += 8) {
@@ -216,18 +214,19 @@ Result<void, Error> Pmd2Writer::check_new_chunk(const Pmd2ChunkSpec& spec) const
     using R = Result<void, Error>;
     if (width_ == 0 || height_ == 0 || width_ > kPmd2MaxDimension || height_ > kPmd2MaxDimension ||
         static_cast<std::uint64_t>(width_) * height_ > kPmd2MaxPixels) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "invalid PMD2 dimensions"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument, "invalid PMD2 dimensions"));
     }
     if (!printable_id(spec.id)) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "chunk id must be four printable ASCII characters"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadArgument, "chunk id must be four printable ASCII characters"));
     }
     if (chunks_.size() >= kPmd2MaxChunks) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "too many chunks (limit 64)"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument, "too many chunks (limit 64)"));
     }
     for (const Chunk& c : chunks_) {
         if (c.info.id == spec.id && c.info.instance == spec.instance) {
-            return R::err(
-                pmd2_err(pmd2_error::kBadArgument, "duplicate chunk " + pmd2_chunk_id_string(spec.id)));
+            return R::err(codec::make_error(pmd2_error::kBadArgument,
+                                            "duplicate chunk " + pmd2_chunk_id_string(spec.id)));
         }
     }
     return R::ok();
@@ -237,7 +236,7 @@ Result<void, Error> Pmd2Writer::check_raster_params(const Pmd2RasterParams& para
     using R = Result<void, Error>;
     if (params.shift > kMaxShift || params.tile_log2 < kPmd2MinTileLog2 ||
         params.tile_log2 > kPmd2MaxTileLog2 || params.transform > 1) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "invalid raster parameters"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument, "invalid raster parameters"));
     }
     return R::ok();
 }
@@ -248,7 +247,7 @@ Result<void, Error> Pmd2Writer::add_blob(const Pmd2ChunkSpec& spec, std::span<co
         return ok;
     }
     if (bytes.size() > kPmd2MaxBlobBytes) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "blob chunk is too large"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument, "blob chunk is too large"));
     }
     Chunk c;
     c.info.id = spec.id;
@@ -282,9 +281,9 @@ Result<void, Error> Pmd2Writer::add_raster_typed(const Pmd2ChunkSpec& spec,
     const std::uint32_t w = ceil_shift(width_, params.shift);
     const std::uint32_t h = ceil_shift(height_, params.shift);
     if (pixels.size() != static_cast<std::size_t>(w) * h) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument,
-                               "raster " + pmd2_chunk_id_string(spec.id) + " must hold " + std::to_string(w) +
-                                   " x " + std::to_string(h) + " elements"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument,
+                                        "raster " + pmd2_chunk_id_string(spec.id) + " must hold " +
+                                            std::to_string(w) + " x " + std::to_string(h) + " elements"));
     }
     Pmd2RasterInfo info;
     info.elem_bytes = static_cast<std::uint8_t>(elem);
@@ -380,7 +379,8 @@ Result<void, Error> Pmd2Writer::add_stored_chunk(const Pmd2ChunkInfo& info,
         return ok;
     }
     if (stored_bytes.size() != info.stored_size) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "stored chunk size does not match its entry"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadArgument, "stored chunk size does not match its entry"));
     }
     Chunk c;
     c.info = info;
@@ -394,7 +394,7 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Writer::finish() const {
     using R = Result<std::vector<std::uint8_t>, Error>;
     if (width_ == 0 || height_ == 0 || width_ > kPmd2MaxDimension || height_ > kPmd2MaxDimension ||
         static_cast<std::uint64_t>(width_) * height_ > kPmd2MaxPixels) {
-        return R::err(pmd2_err(pmd2_error::kBadArgument, "invalid PMD2 dimensions"));
+        return R::err(codec::make_error(pmd2_error::kBadArgument, "invalid PMD2 dimensions"));
     }
     std::vector<const Chunk*> order;
     order.reserve(chunks_.size());
@@ -466,20 +466,21 @@ Result<void, Error> Pmd2Writer::write_file(const std::filesystem::path& path) co
     {
         std::ofstream out(temp, std::ios::binary | std::ios::trunc);
         if (!out) {
-            return R::err(pmd2_err(pmd2_error::kIo, "cannot create " + temp.string()));
+            return R::err(codec::make_error(pmd2_error::kIo, "cannot create " + temp.string()));
         }
         out.write(reinterpret_cast<const char*>(bytes.value().data()),
                   static_cast<std::streamsize>(bytes.value().size()));
         out.flush();
         if (!out) {
-            return R::err(pmd2_err(pmd2_error::kIo, "write failed: " + temp.string()));
+            return R::err(codec::make_error(pmd2_error::kIo, "write failed: " + temp.string()));
         }
     }
     std::error_code ec;
     std::filesystem::rename(temp, path, ec);  // Atomic replace on the same volume.
     if (ec) {
         std::filesystem::remove(temp, ec);
-        return R::err(pmd2_err(pmd2_error::kIo, "cannot move the file into place: " + path.string()));
+        return R::err(
+            codec::make_error(pmd2_error::kIo, "cannot move the file into place: " + path.string()));
     }
     return R::ok();
 }
@@ -502,17 +503,17 @@ Result<Pmd2Reader, Error> Pmd2Reader::open_file(const std::filesystem::path& pat
     using R = Result<Pmd2Reader, Error>;
     std::ifstream in(path, std::ios::binary | std::ios::ate);
     if (!in) {
-        return R::err(pmd2_err(pmd2_error::kIo, "cannot open " + path.string()));
+        return R::err(codec::make_error(pmd2_error::kIo, "cannot open " + path.string()));
     }
     const std::streamsize size = in.tellg();
     if (size < 0) {
-        return R::err(pmd2_err(pmd2_error::kIo, "cannot determine the size of " + path.string()));
+        return R::err(codec::make_error(pmd2_error::kIo, "cannot determine the size of " + path.string()));
     }
     in.seekg(0);
     std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
     in.read(reinterpret_cast<char*>(bytes.data()), size);
     if (!in) {
-        return R::err(pmd2_err(pmd2_error::kIo, "read failed: " + path.string()));
+        return R::err(codec::make_error(pmd2_error::kIo, "read failed: " + path.string()));
     }
     Pmd2Reader reader;
     reader.owned_ = std::move(bytes);
@@ -527,13 +528,13 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
     using R = Result<void, Error>;
     const std::span<const std::uint8_t> bytes = view_;
     if (bytes.size() < kMagic.size()) {
-        return R::err(pmd2_err(pmd2_error::kTruncated, "PMD2 file is truncated (header)"));
+        return R::err(codec::make_error(pmd2_error::kTruncated, "PMD2 file is truncated (header)"));
     }
     if (std::memcmp(bytes.data(), kMagic.data(), kMagic.size()) != 0) {
-        return R::err(pmd2_err(pmd2_error::kBadMagic, "not a PMD2 file (bad magic)"));
+        return R::err(codec::make_error(pmd2_error::kBadMagic, "not a PMD2 file (bad magic)"));
     }
     if (bytes.size() < kPmd2HeaderSize) {
-        return R::err(pmd2_err(pmd2_error::kTruncated, "PMD2 file is truncated (header)"));
+        return R::err(codec::make_error(pmd2_error::kTruncated, "PMD2 file is truncated (header)"));
     }
 
     core::ByteReader in(bytes);
@@ -551,39 +552,40 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
     const std::uint64_t header_hash = in.u64();
 
     if (header_.chunk_count > kPmd2MaxChunks) {
-        return R::err(pmd2_err(pmd2_error::kBadHeader, "too many chunks (limit 64)"));
+        return R::err(codec::make_error(pmd2_error::kBadHeader, "too many chunks (limit 64)"));
     }
     const std::size_t table_end = kPmd2HeaderSize + kPmd2ChunkEntrySize * header_.chunk_count;
     if (bytes.size() < table_end) {
-        return R::err(pmd2_err(pmd2_error::kTruncated, "PMD2 file is truncated (chunk table)"));
+        return R::err(codec::make_error(pmd2_error::kTruncated, "PMD2 file is truncated (chunk table)"));
     }
     {
         core::HashStream h;
         h.bytes(bytes.first(kPmd2HeaderSize - 8));
         h.bytes(bytes.subspan(kPmd2HeaderSize, table_end - kPmd2HeaderSize));
         if (h.value() != header_hash) {
-            return R::err(pmd2_err(pmd2_error::kHeaderHash, "PMD2 header is corrupted (hash mismatch)"));
+            return R::err(
+                codec::make_error(pmd2_error::kHeaderHash, "PMD2 header is corrupted (hash mismatch)"));
         }
     }
 
     if (kind < 1 || kind > 3) {
-        return R::err(pmd2_err(pmd2_error::kBadHeader, "unknown PMD2 kind " + std::to_string(kind)));
+        return R::err(codec::make_error(pmd2_error::kBadHeader, "unknown PMD2 kind " + std::to_string(kind)));
     }
     header_.kind = static_cast<Pmd2Kind>(kind);
     const bool strict_fields = header_.minor <= kPmd2KnownMinor;
     if (strict_fields && (header_.flags != 0 || reserved != 0)) {
-        return R::err(pmd2_err(pmd2_error::kBadHeader, "unsupported PMD2 flags or reserved fields"));
+        return R::err(codec::make_error(pmd2_error::kBadHeader, "unsupported PMD2 flags or reserved fields"));
     }
     if (header_.width == 0 || header_.height == 0 || header_.width > kPmd2MaxDimension ||
         header_.height > kPmd2MaxDimension ||
         static_cast<std::uint64_t>(header_.width) * header_.height > kPmd2MaxPixels) {
-        return R::err(pmd2_err(pmd2_error::kBadHeader, "invalid PMD2 dimensions"));
+        return R::err(codec::make_error(pmd2_error::kBadHeader, "invalid PMD2 dimensions"));
     }
     if (header_.file_size != bytes.size()) {
-        return R::err(pmd2_err(pmd2_error::kFileSize,
-                               header_.file_size > bytes.size()
-                                   ? "PMD2 file is truncated (shorter than file_size)"
-                                   : "trailing bytes after the last PMD2 chunk"));
+        return R::err(codec::make_error(pmd2_error::kFileSize,
+                                        header_.file_size > bytes.size()
+                                            ? "PMD2 file is truncated (shorter than file_size)"
+                                            : "trailing bytes after the last PMD2 chunk"));
     }
 
     // Chunk table.
@@ -607,31 +609,35 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
         c.stored_hash = in.u64();
         c.codec = static_cast<Pmd2Codec>(codec);
         if (!in.ok()) {
-            return R::err(pmd2_err(pmd2_error::kTruncated, "PMD2 file is truncated (chunk table)"));
+            return R::err(codec::make_error(pmd2_error::kTruncated, "PMD2 file is truncated (chunk table)"));
         }
         const std::string name = pmd2_chunk_id_string(c.id);
         if (!printable_id(c.id)) {
-            return R::err(pmd2_err(pmd2_error::kBadChunkEntry, "chunk id is not ASCII"));
+            return R::err(codec::make_error(pmd2_error::kBadChunkEntry, "chunk id is not ASCII"));
         }
         if (strict_fields && (pad != 0 || (c.flags & ~kKnownChunkFlags) != 0)) {
-            return R::err(pmd2_err(pmd2_error::kBadChunkEntry, "chunk " + name + " has reserved bits set"));
+            return R::err(
+                codec::make_error(pmd2_error::kBadChunkEntry, "chunk " + name + " has reserved bits set"));
         }
         const bool codec_known = codec <= static_cast<std::uint8_t>(Pmd2Codec::zstd);
         if (!codec_known && strict_fields) {
-            return R::err(pmd2_err(pmd2_error::kBadChunkEntry, "chunk " + name + " has an unknown codec"));
+            return R::err(
+                codec::make_error(pmd2_error::kBadChunkEntry, "chunk " + name + " has an unknown codec"));
         }
         // Ranges: inside the file, after the table.
         if (c.offset < table_end || c.offset > header_.file_size ||
             c.stored_size > header_.file_size - c.offset) {
-            return R::err(pmd2_err(pmd2_error::kChunkRange, "chunk " + name + " is outside the file"));
+            return R::err(
+                codec::make_error(pmd2_error::kChunkRange, "chunk " + name + " is outside the file"));
         }
         for (const Pmd2ChunkInfo& o : chunks_) {
             if (o.id == c.id && o.instance == c.instance) {
-                return R::err(pmd2_err(pmd2_error::kDuplicateChunk, "duplicate chunk " + name));
+                return R::err(codec::make_error(pmd2_error::kDuplicateChunk, "duplicate chunk " + name));
             }
             if (o.stored_size != 0 && c.stored_size != 0 && c.offset < o.offset + o.stored_size &&
                 o.offset < c.offset + c.stored_size) {
-                return R::err(pmd2_err(pmd2_error::kChunkRange, "chunk " + name + " overlaps another chunk"));
+                return R::err(
+                    codec::make_error(pmd2_error::kChunkRange, "chunk " + name + " overlaps another chunk"));
             }
         }
 
@@ -643,9 +649,9 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
                 if (k.id == c.id) {
                     understood = c.version <= k.max_version;
                     if (!understood && c.critical()) {
-                        return R::err(pmd2_err(pmd2_error::kUnsupportedChunk,
-                                               "chunk " + name + " has an unsupported version " +
-                                                   std::to_string(c.version)));
+                        return R::err(codec::make_error(pmd2_error::kUnsupportedChunk,
+                                                        "chunk " + name + " has an unsupported version " +
+                                                            std::to_string(c.version)));
                     }
                     break;
                 }
@@ -654,22 +660,24 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
                 std::none_of(options.known.begin(), options.known.end(), [&](const Pmd2KnownChunk& k) {
                     return k.id == c.id;
                 })) {
-                return R::err(pmd2_err(pmd2_error::kUnknownCritical, "unknown critical chunk " + name));
+                return R::err(
+                    codec::make_error(pmd2_error::kUnknownCritical, "unknown critical chunk " + name));
             }
         } else if (!understood && c.critical()) {
             return R::err(
-                pmd2_err(pmd2_error::kUnsupportedChunk, "chunk " + name + " uses an unknown codec"));
+                codec::make_error(pmd2_error::kUnsupportedChunk, "chunk " + name + " uses an unknown codec"));
         }
         c.understood = understood;
 
         // Sizes that do not depend on the content.
         if (!c.tiled()) {
             if (c.raw_size > kPmd2MaxBlobBytes) {
-                return R::err(pmd2_err(pmd2_error::kBadChunkEntry, "chunk " + name + " is too large"));
+                return R::err(
+                    codec::make_error(pmd2_error::kBadChunkEntry, "chunk " + name + " is too large"));
             }
             if (c.codec == Pmd2Codec::raw && codec_known && c.stored_size != c.raw_size) {
-                return R::err(
-                    pmd2_err(pmd2_error::kBadChunkEntry, "chunk " + name + " has inconsistent sizes"));
+                return R::err(codec::make_error(pmd2_error::kBadChunkEntry,
+                                                "chunk " + name + " has inconsistent sizes"));
             }
         }
         chunks_.push_back(c);
@@ -680,11 +688,12 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
             sum += c.stored_size;  // Each is bounded by file_size and ranges do not overlap: no overflow.
         }
         if (table_end + sum != header_.file_size) {
-            return R::err(pmd2_err(pmd2_error::kChunkRange, "chunk sizes do not add up to the file size"));
+            return R::err(
+                codec::make_error(pmd2_error::kChunkRange, "chunk sizes do not add up to the file size"));
         }
     }
     if (content_id_of(header_.kind, chunks_) != header_.content_id) {
-        return R::err(pmd2_err(pmd2_error::kContentId, "content_id does not match the chunk table"));
+        return R::err(codec::make_error(pmd2_error::kContentId, "content_id does not match the chunk table"));
     }
 
     // stored_hash of every chunk (raster: the prefix; tiles are checked when read).
@@ -694,8 +703,8 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
         const std::string name = pmd2_chunk_id_string(c.id);
         if (!c.tiled()) {
             if (core::hash_bytes(stored_bytes(c)) != c.stored_hash) {
-                return R::err(
-                    pmd2_err(pmd2_error::kStoredHash, "chunk " + name + " is corrupted (hash mismatch)"));
+                return R::err(codec::make_error(pmd2_error::kStoredHash,
+                                                "chunk " + name + " is corrupted (hash mismatch)"));
             }
             continue;
         }
@@ -720,7 +729,7 @@ Result<Pmd2Reader::RasterLayout, Error> Pmd2Reader::parse_raster(const Pmd2Chunk
     const std::string name = pmd2_chunk_id_string(info.id);
     const std::span<const std::uint8_t> body = stored_bytes(info);
     if (body.size() < kRasterPrefixFixed) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " is truncated"));
+        return R::err(codec::make_error(pmd2_error::kBadRaster, "raster " + name + " is truncated"));
     }
     core::ByteReader in(body);
     RasterLayout layout;
@@ -734,28 +743,32 @@ Result<Pmd2Reader::RasterLayout, Error> Pmd2Reader::parse_raster(const Pmd2Chunk
     const std::uint32_t tile_count = in.u32();
     layout.prefix_size = kRasterPrefixFixed + static_cast<std::uint64_t>(tile_count) * kTileIndexEntry;
     if (layout.prefix_size > body.size()) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has a truncated tile index"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadRaster, "raster " + name + " has a truncated tile index"));
     }
     if (core::hash_bytes(body.first(static_cast<std::size_t>(layout.prefix_size))) != info.stored_hash) {
-        return R::err(
-            pmd2_err(pmd2_error::kStoredHash, "raster " + name + " is corrupted (index hash mismatch)"));
+        return R::err(codec::make_error(pmd2_error::kStoredHash,
+                                        "raster " + name + " is corrupted (index hash mismatch)"));
     }
 
     if ((r.elem_bytes != 1 && r.elem_bytes != 2) || r.shift > kMaxShift || r.tile_log2 < kPmd2MinTileLog2 ||
         r.tile_log2 > kPmd2MaxTileLog2 || r.transform > 1) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has unsupported parameters"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadRaster, "raster " + name + " has unsupported parameters"));
     }
     if (r.width != ceil_shift(header_.width, r.shift) || r.height != ceil_shift(header_.height, r.shift)) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " does not match the grid size"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadRaster, "raster " + name + " does not match the grid size"));
     }
     const std::uint32_t size = 1U << r.tile_log2;
     r.tiles_x = div_ceil(r.width, size);
     r.tiles_y = div_ceil(r.height, size);
     if (static_cast<std::uint64_t>(r.tiles_x) * r.tiles_y != tile_count) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has a wrong tile count"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadRaster, "raster " + name + " has a wrong tile count"));
     }
     if (info.raw_size != static_cast<std::uint64_t>(r.width) * r.height * r.elem_bytes) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has a wrong raw size"));
+        return R::err(codec::make_error(pmd2_error::kBadRaster, "raster " + name + " has a wrong raw size"));
     }
 
     layout.tile_offset.reserve(tile_count);
@@ -769,8 +782,8 @@ Result<Pmd2Reader::RasterLayout, Error> Pmd2Reader::parse_raster(const Pmd2Chunk
         if (info.codec == Pmd2Codec::raw) {
             const Pmd2TileRect rect = r.tile_rect(t);
             if (stored != static_cast<std::uint64_t>(rect.w) * rect.h * r.elem_bytes) {
-                return R::err(
-                    pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has a wrong raw tile size"));
+                return R::err(codec::make_error(pmd2_error::kBadRaster,
+                                                "raster " + name + " has a wrong raw tile size"));
             }
         }
         layout.tile_offset.push_back(cursor);
@@ -779,11 +792,13 @@ Result<Pmd2Reader::RasterLayout, Error> Pmd2Reader::parse_raster(const Pmd2Chunk
         cursor += stored;
         sum += stored;
         if (sum > info.stored_size) {
-            return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " tiles exceed the chunk"));
+            return R::err(
+                codec::make_error(pmd2_error::kBadRaster, "raster " + name + " tiles exceed the chunk"));
         }
     }
     if (!in.ok() || sum != info.stored_size) {
-        return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " tile sizes do not add up"));
+        return R::err(
+            codec::make_error(pmd2_error::kBadRaster, "raster " + name + " tile sizes do not add up"));
     }
     return R::ok(std::move(layout));
 }
@@ -810,12 +825,12 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Reader::read_blob(Pmd2ChunkId id, s
     using R = Result<std::vector<std::uint8_t>, Error>;
     const auto index = find_index(id, instance);
     if (!index) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no chunk " + pmd2_chunk_id_string(id)));
+        return R::err(codec::make_error(pmd2_error::kNotFound, "no chunk " + pmd2_chunk_id_string(id)));
     }
     const Pmd2ChunkInfo& c = chunks_[*index];
     if (c.tiled() || static_cast<std::uint8_t>(c.codec) > static_cast<std::uint8_t>(Pmd2Codec::zstd)) {
         return R::err(
-            pmd2_err(pmd2_error::kNotFound, "chunk " + pmd2_chunk_id_string(id) + " is not a blob"));
+            codec::make_error(pmd2_error::kNotFound, "chunk " + pmd2_chunk_id_string(id) + " is not a blob"));
     }
     const std::span<const std::uint8_t> stored = stored_bytes(c);
     if (c.codec == Pmd2Codec::raw) {
@@ -824,8 +839,8 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Reader::read_blob(Pmd2ChunkId id, s
     auto raw = core::decompress(stored, static_cast<std::size_t>(c.raw_size));
     if (!raw) {
         return R::err(
-            pmd2_err(pmd2_error::kDecode,
-                     "chunk " + pmd2_chunk_id_string(id) + " is corrupted: " + raw.error().message));
+            codec::make_error(pmd2_error::kDecode,
+                              "chunk " + pmd2_chunk_id_string(id) + " is corrupted: " + raw.error().message));
     }
     return R::ok(std::move(raw).value());
 }
@@ -834,7 +849,8 @@ Result<Pmd2RasterInfo, Error> Pmd2Reader::raster_info(Pmd2ChunkId id, std::uint8
     using R = Result<Pmd2RasterInfo, Error>;
     const auto index = find_index(id, instance);
     if (!index || !layouts_[*index]) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
+        return R::err(
+            codec::make_error(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
     }
     return R::ok(layouts_[*index]->info);
 }
@@ -848,7 +864,7 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Reader::decode_tile(std::size_t chu
     const std::span<const std::uint8_t> stored =
         view_.subspan(static_cast<std::size_t>(layout.tile_offset[tile]), layout.tile_size[tile]);
     if (core::hash_bytes(stored) != layout.tile_hash[tile]) {
-        return R::err(pmd2_err(pmd2_error::kTileHash, name + " is corrupted (hash mismatch)"));
+        return R::err(codec::make_error(pmd2_error::kTileHash, name + " is corrupted (hash mismatch)"));
     }
     const Pmd2TileRect rect = layout.info.tile_rect(tile);
     const std::size_t raw_size = static_cast<std::size_t>(rect.w) * rect.h * layout.info.elem_bytes;
@@ -856,7 +872,8 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Reader::decode_tile(std::size_t chu
     if (c.codec == Pmd2Codec::zstd) {
         auto raw = core::decompress(stored, raw_size);
         if (!raw) {
-            return R::err(pmd2_err(pmd2_error::kDecode, name + " is corrupted: " + raw.error().message));
+            return R::err(
+                codec::make_error(pmd2_error::kDecode, name + " is corrupted: " + raw.error().message));
         }
         payload = std::move(raw).value();
     } else {
@@ -870,10 +887,11 @@ Pmd2Reader::read_tile(Pmd2ChunkId id, std::uint32_t tile_index, std::uint8_t ins
     using R = Result<std::vector<std::uint8_t>, Error>;
     const auto index = find_index(id, instance);
     if (!index || !layouts_[*index]) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
+        return R::err(
+            codec::make_error(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
     }
     if (tile_index >= layouts_[*index]->info.tile_count()) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "tile index out of range"));
+        return R::err(codec::make_error(pmd2_error::kNotFound, "tile index out of range"));
     }
     return decode_tile(*index, tile_index);
 }
@@ -914,7 +932,8 @@ Pmd2Reader::read_raster(Pmd2ChunkId id, std::uint8_t instance, unsigned threads)
     using R = Result<std::vector<std::uint8_t>, Error>;
     const auto index = find_index(id, instance);
     if (!index || !layouts_[*index]) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
+        return R::err(
+            codec::make_error(pmd2_error::kNotFound, "no raster chunk " + pmd2_chunk_id_string(id)));
     }
     return read_raster_at(*index, threads);
 }
@@ -924,7 +943,8 @@ Pmd2Reader::read_raster_u8(Pmd2ChunkId id, std::uint8_t instance, unsigned threa
     using R = Result<std::vector<std::uint8_t>, Error>;
     const auto index = find_index(id, instance);
     if (!index || !layouts_[*index] || layouts_[*index]->info.elem_bytes != 1) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no 8-bit raster chunk " + pmd2_chunk_id_string(id)));
+        return R::err(
+            codec::make_error(pmd2_error::kNotFound, "no 8-bit raster chunk " + pmd2_chunk_id_string(id)));
     }
     return read_raster_at(*index, threads);
 }
@@ -934,7 +954,8 @@ Pmd2Reader::read_raster_u16(Pmd2ChunkId id, std::uint8_t instance, unsigned thre
     using R = Result<std::vector<std::uint16_t>, Error>;
     const auto index = find_index(id, instance);
     if (!index || !layouts_[*index] || layouts_[*index]->info.elem_bytes != 2) {
-        return R::err(pmd2_err(pmd2_error::kNotFound, "no 16-bit raster chunk " + pmd2_chunk_id_string(id)));
+        return R::err(
+            codec::make_error(pmd2_error::kNotFound, "no 16-bit raster chunk " + pmd2_chunk_id_string(id)));
     }
     auto bytes = read_raster_at(*index, threads);
     if (!bytes) {
@@ -965,8 +986,9 @@ Result<void, Error> Pmd2Reader::verify_chunk_raw(std::size_t chunk_index, unsign
         hash = core::hash_bytes(blob.value());
     }
     if (hash != c.raw_hash) {
-        return R::err(pmd2_err(pmd2_error::kRawHash,
-                               "chunk " + pmd2_chunk_id_string(c.id) + " content does not match raw_hash"));
+        return R::err(
+            codec::make_error(pmd2_error::kRawHash,
+                              "chunk " + pmd2_chunk_id_string(c.id) + " content does not match raw_hash"));
     }
     return R::ok();
 }

@@ -10,6 +10,8 @@
 #include <string>
 #include <system_error>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
@@ -27,10 +29,6 @@ constexpr std::uint32_t kSectionTable = 4;
 constexpr std::uint32_t kMaxDimension = 65535;    // Coordinates are stored as u16.
 constexpr std::uint64_t kMaxPixels = 1ULL << 30;  // Sanity bound against absurd headers.
 constexpr std::uint64_t kMaxTableBytes = 64ULL << 20;
-
-Error map_error(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
 
 // Row-wise delta (wrapping) followed by splitting into low-byte and high-byte planes. Smooth terrain
 // and large constant regions become long runs of small values that zstd compresses very well.
@@ -138,25 +136,26 @@ Result<std::vector<std::uint8_t>, Error> read_section(core::ByteReader& in,
     const std::uint64_t hash = in.u64();
     const std::uint64_t packed_size = in.u64();
     if (!in.ok()) {
-        return R::err(map_error(30, "map file is truncated (section header)"));
+        return R::err(codec::make_error(30, "map file is truncated (section header)"));
     }
     if (id != expected_id) {
-        return R::err(map_error(31, "unexpected section id " + std::to_string(id)));
+        return R::err(codec::make_error(31, "unexpected section id " + std::to_string(id)));
     }
     if (raw_size > max_size || (expected_size != 0 && raw_size != expected_size)) {
-        return R::err(map_error(32, "section " + std::to_string(id) + " has an invalid size"));
+        return R::err(codec::make_error(32, "section " + std::to_string(id) + " has an invalid size"));
     }
     if (packed_size > in.remaining()) {
-        return R::err(map_error(30, "map file is truncated (section " + std::to_string(id) + ")"));
+        return R::err(codec::make_error(30, "map file is truncated (section " + std::to_string(id) + ")"));
     }
     const auto packed = in.bytes(static_cast<std::size_t>(packed_size));
     auto raw = core::decompress(packed, static_cast<std::size_t>(raw_size));
     if (!raw) {
         return R::err(
-            map_error(33, "section " + std::to_string(id) + " is corrupted: " + raw.error().message));
+            codec::make_error(33, "section " + std::to_string(id) + " is corrupted: " + raw.error().message));
     }
     if (core::hash_bytes(raw.value()) != hash) {
-        return R::err(map_error(34, "section " + std::to_string(id) + " is corrupted (hash mismatch)"));
+        return R::err(
+            codec::make_error(34, "section " + std::to_string(id) + " is corrupted (hash mismatch)"));
     }
     return R::ok(std::move(raw).value());
 }
@@ -196,7 +195,7 @@ Result<MapData, Error> deserialize_map(std::span<const std::uint8_t> bytes) {
 
     const auto magic = in.bytes(kMagic.size());
     if (!in.ok() || std::memcmp(magic.data(), kMagic.data(), kMagic.size()) != 0) {
-        return R::err(map_error(20, "not a Patriarch map file (bad magic)"));
+        return R::err(codec::make_error(20, "not a Patriarch map file (bad magic)"));
     }
     const std::uint16_t version = in.u16();
     const std::uint16_t flags = in.u16();
@@ -209,17 +208,17 @@ Result<MapData, Error> deserialize_map(std::span<const std::uint8_t> bytes) {
     map.seed = in.u64();
     const std::uint32_t sections = in.u32();
     if (!in.ok()) {
-        return R::err(map_error(21, "map file is truncated (header)"));
+        return R::err(codec::make_error(21, "map file is truncated (header)"));
     }
     if (version != kMapFormatVersion) {
-        return R::err(map_error(22, "unsupported map format version " + std::to_string(version)));
+        return R::err(codec::make_error(22, "unsupported map format version " + std::to_string(version)));
     }
     if (flags != 0 || sections != kSectionCount) {
-        return R::err(map_error(23, "unsupported map flags or section count"));
+        return R::err(codec::make_error(23, "unsupported map flags or section count"));
     }
     if (map.width == 0 || map.height == 0 || map.width > kMaxDimension || map.height > kMaxDimension ||
         static_cast<std::uint64_t>(map.width) * map.height > kMaxPixels) {
-        return R::err(map_error(24, "invalid map dimensions"));
+        return R::err(codec::make_error(24, "invalid map dimensions"));
     }
     const std::uint64_t pixels = static_cast<std::uint64_t>(map.width) * map.height;
 
@@ -240,23 +239,23 @@ Result<MapData, Error> deserialize_map(std::span<const std::uint8_t> bytes) {
         return R::err(table.error());
     }
     if (!in.at_end()) {
-        return R::err(map_error(35, "trailing bytes after the last section"));
+        return R::err(codec::make_error(35, "trailing bytes after the last section"));
     }
 
     map.heights = decode_u16_layer(heights.value(), map.width);
     map.provinces = decode_u16_layer(provinces.value(), map.width);
     map.materials = std::move(materials).value();
     if (!decode_table(table.value(), province_count, map.province_list)) {
-        return R::err(map_error(36, "province table is malformed"));
+        return R::err(codec::make_error(36, "province table is malformed"));
     }
     for (const std::uint16_t p : map.provinces) {
         if (p > province_count) {
-            return R::err(map_error(37, "province layer references an unknown province"));
+            return R::err(codec::make_error(37, "province layer references an unknown province"));
         }
     }
     for (const std::uint8_t m : map.materials) {
         if (m >= kMaterialCount) {
-            return R::err(map_error(38, "material layer contains an unknown material"));
+            return R::err(codec::make_error(38, "material layer contains an unknown material"));
         }
     }
     return R::ok(std::move(map));
@@ -271,19 +270,19 @@ write_map_file(const std::filesystem::path& path, const MapData& map, int zstd_l
     {
         std::ofstream out(temp, std::ios::binary | std::ios::trunc);
         if (!out) {
-            return R::err(map_error(40, "cannot create " + temp.string()));
+            return R::err(codec::make_error(40, "cannot create " + temp.string()));
         }
         out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
         out.flush();
         if (!out) {
-            return R::err(map_error(41, "write failed: " + temp.string()));
+            return R::err(codec::make_error(41, "write failed: " + temp.string()));
         }
     }
     std::error_code ec;
     std::filesystem::rename(temp, path, ec);  // Atomic replace on the same volume.
     if (ec) {
         std::filesystem::remove(temp, ec);
-        return R::err(map_error(42, "cannot move the map into place: " + path.string()));
+        return R::err(codec::make_error(42, "cannot move the map into place: " + path.string()));
     }
     return R::ok();
 }
@@ -292,17 +291,17 @@ core::Result<MapData, Error> read_map_file(const std::filesystem::path& path) {
     using R = Result<MapData, Error>;
     std::ifstream in(path, std::ios::binary | std::ios::ate);
     if (!in) {
-        return R::err(map_error(43, "cannot open " + path.string()));
+        return R::err(codec::make_error(43, "cannot open " + path.string()));
     }
     const std::streamsize size = in.tellg();
     if (size < 0) {
-        return R::err(map_error(44, "cannot determine the size of " + path.string()));
+        return R::err(codec::make_error(44, "cannot determine the size of " + path.string()));
     }
     in.seekg(0);
     std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
     in.read(reinterpret_cast<char*>(bytes.data()), size);
     if (!in) {
-        return R::err(map_error(45, "read failed: " + path.string()));
+        return R::err(codec::make_error(45, "read failed: " + path.string()));
     }
     return deserialize_map(bytes);
 }
