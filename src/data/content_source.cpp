@@ -1,5 +1,7 @@
 #include "pat/data/content_source.hpp"
 
+#include "pat/core/path_utf8.hpp"
+
 #include <algorithm>
 #include <fstream>
 #include <iterator>
@@ -66,19 +68,10 @@ namespace {
 
 namespace fs = std::filesystem;
 
-std::string to_utf8(const fs::path& p) {
-    const std::u8string u = p.generic_u8string();
-    return std::string(reinterpret_cast<const char*>(u.data()), u.size());
-}
-
-fs::path from_utf8(std::string_view s) {
-    return fs::path(std::u8string(reinterpret_cast<const char8_t*>(s.data()), s.size()));
-}
-
 }  // namespace
 
 std::string DirectorySource::name() const {
-    return to_utf8(directory_);
+    return core::path_to_utf8(directory_);
 }
 
 core::Result<std::vector<std::string>, std::string> DirectorySource::list_files() const {
@@ -99,7 +92,7 @@ core::Result<std::vector<std::string>, std::string> DirectorySource::list_files(
         const fs::directory_entry& entry = *it;
         std::error_code type_ec;
         if (entry.is_regular_file(type_ec) && !type_ec) {
-            paths.push_back(to_utf8(entry.path().lexically_relative(directory_)));
+            paths.push_back(core::path_to_utf8(entry.path().lexically_relative(directory_)));
         }
         it.increment(ec);
         if (ec)
@@ -110,7 +103,7 @@ core::Result<std::vector<std::string>, std::string> DirectorySource::list_files(
 
 core::Result<std::string, std::string> DirectorySource::read_file(std::string_view path) const {
     using R = core::Result<std::string, std::string>;
-    std::ifstream in(directory_ / from_utf8(path), std::ios::binary);
+    std::ifstream in(directory_ / core::path_from_utf8(path), std::ios::binary);
     if (!in)
         return R::err("cannot open the file");
     std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());

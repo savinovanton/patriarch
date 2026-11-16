@@ -1,6 +1,7 @@
 #include "pat/engine/ui.hpp"
 
 #include "pat/core/log.hpp"
+#include "pat/core/path_utf8.hpp"
 #include "pat/core/profile.hpp"
 #include "pat/engine/window.hpp"
 
@@ -21,15 +22,6 @@ namespace pat::engine {
 namespace {
 
 constexpr const char* kLogCat = "ui";
-
-std::string to_utf8(const std::filesystem::path& p) {
-    const std::u8string u = p.generic_u8string();
-    return std::string(reinterpret_cast<const char*>(u.data()), u.size());
-}
-
-std::filesystem::path from_utf8(const std::string& s) {
-    return std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(s.data()), s.size()));
-}
 
 bool g_ui_alive = false;  // RmlUi has process-global state: one UiContext at a time
 
@@ -217,7 +209,7 @@ public:
     void set_provider(UiContext::FileProvider provider) { provider_ = std::move(provider); }
 
     Rml::FileHandle Open(const Rml::String& path) override {
-        const std::filesystem::path p = from_utf8(path);
+        const std::filesystem::path p = core::path_from_utf8(path);
         if (provider_) {
             if (std::optional<std::string> content = provider_(p)) {
                 auto* handle = new Handle;
@@ -342,7 +334,7 @@ UiContext::UiContext(std::unique_ptr<Impl> impl) : impl_(std::move(impl)) {}
 UiContext::~UiContext() = default;
 
 std::optional<std::string> UiContext::read_text_file(const std::filesystem::path& path) {
-    const Rml::FileHandle handle = impl_->files.Open(to_utf8(path));
+    const Rml::FileHandle handle = impl_->files.Open(core::path_to_utf8(path));
     if (handle == 0) {
         return std::nullopt;
     }
@@ -385,7 +377,7 @@ UiContext::create(IRenderer& renderer, Window* window, const UiDesc& desc) {
 
     bool first = true;
     for (const auto& font : desc.font_files) {
-        if (!Rml::LoadFontFace(to_utf8(font), /*fallback_face=*/first)) {
+        if (!Rml::LoadFontFace(core::path_to_utf8(font), /*fallback_face=*/first)) {
             PAT_LOG_WARN(kLogCat, "cannot load font '{}'", font.generic_string());
         } else {
             first = false;
@@ -437,7 +429,7 @@ void UiContext::resize(PixelSize pixels, float ui_scale) {
 }
 
 Rml::ElementDocument* UiContext::load_document(const std::filesystem::path& path) {
-    Rml::ElementDocument* doc = impl_->context->LoadDocument(to_utf8(path));
+    Rml::ElementDocument* doc = impl_->context->LoadDocument(core::path_to_utf8(path));
     if (doc == nullptr) {
         return nullptr;
     }
@@ -461,7 +453,7 @@ bool UiContext::reload_if_changed() {
         if (w.document != nullptr) {
             w.document->Close();
         }
-        w.document = impl_->context->LoadDocument(to_utf8(w.path));
+        w.document = impl_->context->LoadDocument(core::path_to_utf8(w.path));
         if (w.document != nullptr && visible) {
             w.document->Show();
         }
