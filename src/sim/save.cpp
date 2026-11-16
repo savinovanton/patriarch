@@ -4,6 +4,7 @@
 #include "pat/core/bytes.hpp"
 #include "pat/core/compress.hpp"
 #include "pat/core/hash_stream.hpp"
+#include "pat/core/utf8.hpp"
 #include "pat/sim/command_log.hpp"
 
 #include <algorithm>
@@ -87,48 +88,10 @@ core::Result<std::vector<std::uint8_t>, Error> migrate_to_current(std::uint16_t 
 /// Length in bytes of the valid UTF-8 character at the start of `s`, 0 if it is malformed (overlong,
 /// surrogate, beyond U+10FFFF, truncated) or a NUL.
 std::size_t utf8_char_length(std::string_view s) {
-    if (s.empty()) {
+    if (!s.empty() && s[0] == '\0') {
         return 0;
     }
-    const auto b0 = static_cast<std::uint8_t>(s[0]);
-    if (b0 == 0) {
-        return 0;
-    }
-    if (b0 < 0x80) {
-        return 1;
-    }
-    std::size_t len = 0;
-    std::uint32_t cp = 0;
-    std::uint32_t min = 0;
-    if ((b0 & 0xE0U) == 0xC0U) {
-        len = 2;
-        cp = b0 & 0x1FU;
-        min = 0x80;
-    } else if ((b0 & 0xF0U) == 0xE0U) {
-        len = 3;
-        cp = b0 & 0x0FU;
-        min = 0x800;
-    } else if ((b0 & 0xF8U) == 0xF0U) {
-        len = 4;
-        cp = b0 & 0x07U;
-        min = 0x10000;
-    } else {
-        return 0;
-    }
-    if (s.size() < len) {
-        return 0;
-    }
-    for (std::size_t i = 1; i < len; ++i) {
-        const auto b = static_cast<std::uint8_t>(s[i]);
-        if ((b & 0xC0U) != 0x80U) {
-            return 0;
-        }
-        cp = (cp << 6) | (b & 0x3FU);
-    }
-    if (cp < min || cp > 0x10FFFFU || (cp >= 0xD800U && cp <= 0xDFFFU)) {
-        return 0;
-    }
-    return len;
+    return core::utf8_sequence_length(s);
 }
 
 /// Number of characters if `s` is valid UTF-8 without NUL, otherwise nullopt.

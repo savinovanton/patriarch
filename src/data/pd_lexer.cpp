@@ -1,3 +1,5 @@
+#include "pat/core/utf8.hpp"
+
 #include <algorithm>
 #include <format>
 
@@ -50,39 +52,10 @@ std::size_t find_invalid_utf8(std::string_view s) {
     const std::size_t n = s.size();
     std::size_t i = 0;
     while (i < n) {
-        const auto c = static_cast<unsigned char>(s[i]);
-        if (c < 0x80) {
-            ++i;
-            continue;
-        }
-        std::size_t len = 0;
-        std::uint32_t cp = 0;
-        std::uint32_t min_cp = 0;
-        if (c >= 0xC2 && c <= 0xDF) {
-            len = 2;
-            cp = c & 0x1Fu;
-            min_cp = 0x80;
-        } else if (c >= 0xE0 && c <= 0xEF) {
-            len = 3;
-            cp = c & 0x0Fu;
-            min_cp = 0x800;
-        } else if (c >= 0xF0 && c <= 0xF4) {
-            len = 4;
-            cp = c & 0x07u;
-            min_cp = 0x10000;
-        } else {
+        const std::size_t len = core::utf8_sequence_length(s.substr(i));
+        if (len == 0) {
             return i;
         }
-        if (i + len > n)
-            return i;
-        for (std::size_t k = 1; k < len; ++k) {
-            const auto cc = static_cast<unsigned char>(s[i + k]);
-            if ((cc & 0xC0) != 0x80)
-                return i;
-            cp = (cp << 6) | (cc & 0x3Fu);
-        }
-        if (cp < min_cp || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF))
-            return i;
         i += len;
     }
     return std::string_view::npos;
