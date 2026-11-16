@@ -133,50 +133,42 @@ void finalize_score(const MarriageRules& rules, AcceptScore& result) {
     return result;
 }
 
-struct TermKey {
-    std::uint16_t code;
-    std::string_view key;
-};
-
 // One row per issued code, ascending by code (checked by a test). Keys are localisation keys.
 constexpr std::array kMarriageTermKeys{
-    TermKey{marriage_term::kAcceptScore, "marriage.score.total"},
-    TermKey{marriage_term::kHonorGap, "marriage.score.honor_gap"},
-    TermKey{marriage_term::kRankGap, "marriage.score.rank_gap"},
-    TermKey{marriage_term::kDowry, "marriage.score.dowry"},
-    TermKey{marriage_term::kRelation, "marriage.score.relation"},
-    TermKey{marriage_term::kOpinionOfProposer, "marriage.score.opinion_of_proposer"},
-    TermKey{marriage_term::kMemberQuality, "marriage.score.member_quality"},
-    TermKey{marriage_term::kAgeGap, "marriage.score.age_gap"},
-    TermKey{marriage_term::kExternal, "marriage.score.external"},
-    TermKey{marriage_term::kPoliticalGain, "marriage.score.political_gain"},
-    TermKey{marriage_term::kHealth, "marriage.score.health"},
-    TermKey{marriage_term::kFertility, "marriage.score.fertility"},
-    TermKey{marriage_term::kSkills, "marriage.score.skills"},
-    TermKey{marriage_term::kFaithPenalty, "marriage.score.faith_penalty"},
-    TermKey{marriage_term::kRelationOpinionMean, "marriage.relation.opinion_mean"},
-    TermKey{marriage_term::kRelationMarriageTies, "marriage.relation.marriage_ties"},
-    TermKey{marriage_term::kRelationLimit, "marriage.relation.limit"},
-    TermKey{marriage_term::kEnvoyTotal, "marriage.envoy.total"},
-    TermKey{marriage_term::kEnvoyRoad, "marriage.envoy.road"},
-    TermKey{marriage_term::kEnvoyGifts, "marriage.envoy.gifts"},
-    TermKey{marriage_term::kEnvoyDispensation, "marriage.envoy.dispensation"},
-    TermKey{marriage_term::kDowryTotal, "marriage.dowry.total"},
-    TermKey{marriage_term::kDowryBase, "marriage.dowry.base"},
-    TermKey{marriage_term::kDowryHonor, "marriage.dowry.honor"},
-    TermKey{marriage_term::kDowryWidowClaim, "marriage.dowry.widow_claim"},
-    TermKey{marriage_term::kDowryLimit, "marriage.dowry.limit"},
+    economy::TermKey{marriage_term::kAcceptScore, "marriage.score.total"},
+    economy::TermKey{marriage_term::kHonorGap, "marriage.score.honor_gap"},
+    economy::TermKey{marriage_term::kRankGap, "marriage.score.rank_gap"},
+    economy::TermKey{marriage_term::kDowry, "marriage.score.dowry"},
+    economy::TermKey{marriage_term::kRelation, "marriage.score.relation"},
+    economy::TermKey{marriage_term::kOpinionOfProposer, "marriage.score.opinion_of_proposer"},
+    economy::TermKey{marriage_term::kMemberQuality, "marriage.score.member_quality"},
+    economy::TermKey{marriage_term::kAgeGap, "marriage.score.age_gap"},
+    economy::TermKey{marriage_term::kExternal, "marriage.score.external"},
+    economy::TermKey{marriage_term::kPoliticalGain, "marriage.score.political_gain"},
+    economy::TermKey{marriage_term::kHealth, "marriage.score.health"},
+    economy::TermKey{marriage_term::kFertility, "marriage.score.fertility"},
+    economy::TermKey{marriage_term::kSkills, "marriage.score.skills"},
+    economy::TermKey{marriage_term::kFaithPenalty, "marriage.score.faith_penalty"},
+    economy::TermKey{marriage_term::kRelationOpinionMean, "marriage.relation.opinion_mean"},
+    economy::TermKey{marriage_term::kRelationMarriageTies, "marriage.relation.marriage_ties"},
+    economy::TermKey{marriage_term::kRelationLimit, "marriage.relation.limit"},
+    economy::TermKey{marriage_term::kEnvoyTotal, "marriage.envoy.total"},
+    economy::TermKey{marriage_term::kEnvoyRoad, "marriage.envoy.road"},
+    economy::TermKey{marriage_term::kEnvoyGifts, "marriage.envoy.gifts"},
+    economy::TermKey{marriage_term::kEnvoyDispensation, "marriage.envoy.dispensation"},
+    economy::TermKey{marriage_term::kDowryTotal, "marriage.dowry.total"},
+    economy::TermKey{marriage_term::kDowryBase, "marriage.dowry.base"},
+    economy::TermKey{marriage_term::kDowryHonor, "marriage.dowry.honor"},
+    economy::TermKey{marriage_term::kDowryWidowClaim, "marriage.dowry.widow_claim"},
+    economy::TermKey{marriage_term::kDowryLimit, "marriage.dowry.limit"},
 };
+
+static_assert(economy::is_sorted_term_table(kMarriageTermKeys));
 
 }  // namespace
 
 std::string_view marriage_term_key(std::uint16_t code) noexcept {
-    for (const auto& row : kMarriageTermKeys) {
-        if (row.code == code) {
-            return row.key;
-        }
-    }
-    return {};
+    return economy::find_term_key(kMarriageTermKeys, code);
 }
 
 std::int32_t AcceptScore::sum_of_terms() const noexcept {

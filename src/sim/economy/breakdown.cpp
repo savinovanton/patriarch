@@ -6,11 +6,6 @@ namespace pat::sim::economy {
 
 namespace {
 
-struct TermKey {
-    std::uint16_t code;
-    std::string_view key;
-};
-
 // One row per issued term code, ascending by code (checked by a test). Keys are localisation keys.
 constexpr std::array kTermKeys{
     TermKey{term::kTaxBase, "economy.tax.base"},
@@ -119,6 +114,8 @@ constexpr std::array kTermKeys{
     TermKey{term::kUnrestLimit, "economy.unrest.limit"},
     TermKey{term::kUnrestTarget, "economy.unrest.target"},
 };
+
+static_assert(is_sorted_term_table(kTermKeys));
 
 }  // namespace
 
@@ -268,14 +265,7 @@ bool Breakdown::operator==(const Breakdown& other) const noexcept {
 // ---- term codes --------------------------------------------------------------------------------
 
 std::string_view term_key(std::uint16_t code) noexcept {
-    const auto it =
-        std::lower_bound(kTermKeys.begin(), kTermKeys.end(), code, [](const TermKey& row, std::uint16_t c) {
-            return row.code < c;
-        });
-    if (it == kTermKeys.end() || it->code != code) {
-        return {};
-    }
-    return it->key;
+    return find_term_key(kTermKeys, code);
 }
 
 std::size_t term_code_count() noexcept {
