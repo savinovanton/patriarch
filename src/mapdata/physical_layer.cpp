@@ -8,10 +8,14 @@
 #include <limits>
 #include <utility>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
 
+using codec::get_str;
+using codec::put_str;
 using core::Error;
 using core::Result;
 
@@ -38,17 +42,6 @@ std::string chunk_text(Pmd2ChunkId id) {
 
 // ---- string and blob helpers ---------------------------------------------------------------------
 
-void put_str(core::ByteWriter& w, const std::string& s) {
-    w.u16(static_cast<std::uint16_t>(s.size()));
-    w.bytes({reinterpret_cast<const std::uint8_t*>(s.data()), s.size()});
-}
-
-std::string get_str(core::ByteReader& r) {
-    const std::uint16_t n = r.u16();
-    const auto b = r.bytes(n);
-    return std::string(reinterpret_cast<const char*>(b.data()), b.size());
-}
-
 Result<void, Error> finish_blob(const core::ByteReader& r, bool allow_trailing, Pmd2ChunkId id) {
     using R = Result<void, Error>;
     if (!r.ok()) {
@@ -61,12 +54,7 @@ Result<void, Error> finish_blob(const core::ByteReader& r, bool allow_trailing, 
 }
 
 bool valid_key(const std::string& key) {
-    if (key.empty() || key.size() > kMaxWaterKeyLength) {
-        return false;
-    }
-    return std::all_of(key.begin(), key.end(), [](char c) {
-        return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
-    });
+    return codec::valid_ascii_key(key, kMaxWaterKeyLength);
 }
 
 bool valid_prov_string(const std::string& s) {

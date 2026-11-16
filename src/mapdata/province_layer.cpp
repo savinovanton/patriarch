@@ -6,10 +6,14 @@
 #include <string_view>
 #include <utility>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
 
+using codec::get_str;
+using codec::put_str;
 using core::Error;
 using core::Result;
 
@@ -26,17 +30,6 @@ Error err(int code, std::string message) {
     return Error{code, std::move(message)};
 }
 
-void put_str(core::ByteWriter& w, const std::string& s) {
-    w.u16(static_cast<std::uint16_t>(s.size()));
-    w.bytes({reinterpret_cast<const std::uint8_t*>(s.data()), s.size()});
-}
-
-std::string get_str(core::ByteReader& r) {
-    const std::uint16_t n = r.u16();
-    const auto b = r.bytes(n);
-    return std::string(reinterpret_cast<const char*>(b.data()), b.size());
-}
-
 std::uint64_t pack_pair(std::uint16_t a, std::uint16_t b) {
     return (static_cast<std::uint64_t>(std::min(a, b)) << 16U) | std::max(a, b);
 }
@@ -44,12 +37,7 @@ std::uint64_t pack_pair(std::uint16_t a, std::uint16_t b) {
 }  // namespace
 
 bool valid_province_key(const std::string& key) {
-    if (key.empty() || key.size() > kMaxProvinceKeyLength) {
-        return false;
-    }
-    return std::all_of(key.begin(), key.end(), [](char c) {
-        return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
-    });
+    return codec::valid_ascii_key(key, kMaxProvinceKeyLength);
 }
 
 // ---- geometry ------------------------------------------------------------------------------------

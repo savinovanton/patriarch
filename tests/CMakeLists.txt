@@ -48,6 +48,7 @@ add_executable(patriarch_tests
     log_test.cpp
     map_migrate_test.cpp
     mapdata_test.cpp
+    nature_layer_test.cpp
     physical_layer_test.cpp
     pmd2_container_test.cpp
     province_layer_test.cpp
