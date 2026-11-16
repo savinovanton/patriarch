@@ -11,17 +11,13 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::data;
 
 namespace {
 
-std::string read_file(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    REQUIRE_MESSAGE(in.good(), "cannot open " << path.string());
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
+using pat::test::read_text;
 
 std::filesystem::path corpus_dir() {
     return std::filesystem::path(PATRIARCH_TEST_DATA_DIR) / "pd";
@@ -57,7 +53,7 @@ TEST_CASE("pd corpus: every valid file parses to the expected canonical tree") {
     REQUIRE(files.size() >= 6);
     for (const auto& path : files) {
         CAPTURE(path.filename().string());
-        const std::string source = read_file(path);
+        const std::string source = read_text(path);
         const ParseResult r = parse_pd(source);
         for (const Diagnostic& d : r.errors)
             MESSAGE(format_diagnostic(path.filename().string(), d));
@@ -65,7 +61,7 @@ TEST_CASE("pd corpus: every valid file parses to the expected canonical tree") {
         CHECK(r.file.format_version == 1);
         auto tree_path = path;
         tree_path.replace_extension(".tree");
-        CHECK(dump_tree(r.file) == read_file(tree_path));
+        CHECK(dump_tree(r.file) == read_text(tree_path));
     }
 }
 
@@ -74,11 +70,11 @@ TEST_CASE("pd corpus: every invalid file yields exactly the expected errors") {
     REQUIRE(files.size() >= 20);
     for (const auto& path : files) {
         CAPTURE(path.filename().string());
-        const ParseResult r = parse_pd(read_file(path));
+        const ParseResult r = parse_pd(read_text(path));
         auto expect_path = path;
         expect_path.replace_extension(".expect");
         std::vector<std::string> expected;
-        std::istringstream in(read_file(expect_path));
+        std::istringstream in(read_text(expect_path));
         for (std::string line; std::getline(in, line);) {
             if (!line.empty())
                 expected.push_back(line);
@@ -246,7 +242,7 @@ TEST_CASE("pd parser: diagnostics format") {
 }
 
 TEST_CASE("pd parser: parsing is deterministic") {
-    const std::string source = read_file(corpus_dir() / "valid" / "blocks.pd");
+    const std::string source = read_text(corpus_dir() / "valid" / "blocks.pd");
     CHECK(dump_tree(parse_pd(source).file) == dump_tree(parse_pd(source).file));
 }
 
@@ -286,7 +282,7 @@ TEST_CASE("pd parser: random garbage never crashes and stays inside the file") {
         check(with_header(noise));
 
         // mutated corpus file
-        std::string text = read_file(seeds[rng.bounded(static_cast<std::uint32_t>(seeds.size()))]);
+        std::string text = read_text(seeds[rng.bounded(static_cast<std::uint32_t>(seeds.size()))]);
         const auto edits = 1 + rng.bounded(4);
         for (std::uint32_t e = 0; e < edits && !text.empty(); ++e) {
             const auto at = rng.bounded(static_cast<std::uint32_t>(text.size()));
@@ -307,7 +303,7 @@ TEST_CASE("pd parser: random garbage never crashes and stays inside the file") {
 
     // every prefix of every corpus file
     for (const auto& path : seeds) {
-        const std::string text = read_file(path);
+        const std::string text = read_text(path);
         for (std::size_t n = 0; n <= text.size(); n += 3)
             check(text.substr(0, n));
     }

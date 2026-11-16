@@ -19,6 +19,8 @@
 #include <sstream>
 #include <string>
 
+#include "test_files.hpp"
+
 #ifdef _WIN32
 
 namespace {
@@ -49,33 +51,10 @@ Rgba pixel(const std::vector<std::uint8_t>& px, int width, int x, int y) {
     return {px[i], px[i + 1], px[i + 2], px[i + 3]};
 }
 
-std::filesystem::path make_temp_dir(const char* name) {
-    const auto dir = std::filesystem::temp_directory_path() / name;
-    std::filesystem::remove_all(dir);
-    std::filesystem::create_directories(dir);
-    return dir;
-}
-
-std::string read_file(const std::filesystem::path& p) {
-    std::ifstream in(p, std::ios::binary);
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
-
-// Gives the file a strictly newer modification time than any previous touch() (file times can have
-// coarse granularity, so two quick writes may otherwise carry the same timestamp).
-void touch(const std::filesystem::path& p) {
-    static int generation = 0;
-    ++generation;
-    std::filesystem::last_write_time(
-        p, std::filesystem::file_time_type::clock::now() + std::chrono::seconds(10 * generation));
-}
-
-void write_file(const std::filesystem::path& p, const std::string& text) {
-    std::ofstream out(p, std::ios::binary | std::ios::trunc);
-    out << text;
-}
+using pat::test::fresh_dir;
+using pat::test::read_text;
+using pat::test::touch_newer;
+using pat::test::write_text;
 
 // Draws one full-target quad of `c` over black and returns the centre pixel.
 Rgba draw_fill(IRenderer& r, Color c) {
@@ -198,11 +177,11 @@ TEST_CASE("Renderer: markers and vsync toggles are safe no-ops offscreen") {
 }
 
 TEST_CASE("Renderer: shaders hot-reload from disk and bad shaders keep the old one") {
-    const auto dir = make_temp_dir("patriarch_shader_reload_test");
+    const auto dir = fresh_dir("patriarch_shader_reload_test");
     const auto shader = dir / "quad.hlsl";
-    const std::string original = read_file(std::filesystem::path(PATRIARCH_ENGINE_SHADER_DIR) / "quad.hlsl");
+    const std::string original = read_text(std::filesystem::path(PATRIARCH_ENGINE_SHADER_DIR) / "quad.hlsl");
     REQUIRE_FALSE(original.empty());
-    write_file(shader, original);
+    write_text(shader, original);
 
     auto r = make_renderer(dir);
     CHECK(r->shader_generation() == 1);
@@ -217,8 +196,8 @@ TEST_CASE("Renderer: shaders hot-reload from disk and bad shaders keep the old o
     const auto pos = swapped.find(needle);
     REQUIRE(pos != std::string::npos);
     swapped.replace(pos, needle.size(), "return float4(input.color.bgr, input.color.a);");
-    write_file(shader, swapped);
-    touch(shader);
+    write_text(shader, swapped);
+    touch_newer(shader);
 
     CHECK(r->reload_shaders_if_changed());
     CHECK(r->shader_generation() == 2);
@@ -227,16 +206,16 @@ TEST_CASE("Renderer: shaders hot-reload from disk and bad shaders keep the old o
     CHECK(after.b == 255);
 
     // A syntax error must not break rendering: the swapped shader stays active.
-    write_file(shader, "this is not hlsl");
-    touch(shader);
+    write_text(shader, "this is not hlsl");
+    touch_newer(shader);
     CHECK_FALSE(r->reload_shaders_if_changed());
     CHECK(r->shader_generation() == 2);
     const Rgba still = draw_fill(*r, {1, 0, 0, 1});
     CHECK(still.b == 255);
 
     // Fixing the file recovers.
-    write_file(shader, original);
-    touch(shader);
+    write_text(shader, original);
+    touch_newer(shader);
     CHECK(r->reload_shaders_if_changed());
     CHECK(draw_fill(*r, {1, 0, 0, 1}).r == 255);
 

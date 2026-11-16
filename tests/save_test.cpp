@@ -9,6 +9,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::sim;
 using pat::core::ByteReader;
 using pat::core::ByteWriter;
@@ -16,9 +18,7 @@ using pat::core::Pcg32;
 
 namespace {
 
-std::filesystem::path temp_path(const char* name) {
-    return std::filesystem::temp_directory_path() / name;
-}
+using pat::test::temp_path;
 
 /// A world with a messy history: dead slots, reused ids, swap-removed index entries, RNG streams.
 World messy_world() {

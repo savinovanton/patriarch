@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "test_files.hpp"
+
 // E11-T04: bytecode and virtual machine (docs/dev/event-engine.md section 7). The machine is tested
 // on hand-assembled programs over a fake host: no World, no compiler, no catalogs.
 
@@ -197,12 +199,7 @@ void each(ProgramBuilder& p, std::uint16_t list, const std::function<void(Progra
     p.emit(Op::kIterEnd);
 }
 
-std::string read_text(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::ostringstream out;
-    out << in.rdbuf();
-    return out.str();
-}
+using pat::test::read_text;
 
 }  // namespace
 

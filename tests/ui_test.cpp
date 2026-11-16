@@ -6,6 +6,8 @@
 
 #include <doctest/doctest.h>
 
+#include "test_files.hpp"
+
 #ifdef _WIN32
 
 #include <RmlUi/Core.h>
@@ -36,17 +38,8 @@ Rgb pixel(const std::vector<std::uint8_t>& px, int x, int y) {
     return {px[i], px[i + 1], px[i + 2]};
 }
 
-void write_text(const std::filesystem::path& p, const std::string& text) {
-    std::ofstream out(p, std::ios::binary | std::ios::trunc);
-    out << text;
-}
-
-void touch_newer(const std::filesystem::path& p) {
-    static int generation = 0;
-    ++generation;
-    std::filesystem::last_write_time(
-        p, std::filesystem::file_time_type::clock::now() + std::chrono::seconds(10 * generation));
-}
+using pat::test::touch_newer;
+using pat::test::write_text;
 
 const char* kRml = R"(<rml>
 <head><link type="text/rcss" href="ui_test.rcss"/></head>
@@ -78,9 +71,7 @@ struct UiFixture {
     Rml::ElementDocument* doc = nullptr;
 
     explicit UiFixture(const char* name, float scale = 1.0f) {
-        dir = std::filesystem::temp_directory_path() / name;
-        std::filesystem::remove_all(dir);
-        std::filesystem::create_directories(dir);
+        dir = pat::test::fresh_dir(name);
         write_text(dir / "ui_test.rml", kRml);
         write_text(dir / "ui_test.rcss", kRcss);
 

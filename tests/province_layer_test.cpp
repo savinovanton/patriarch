@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::mapdata;
 
 namespace {
@@ -277,9 +279,7 @@ std::vector<std::uint8_t> build_file(const ProvinceLayer& l, const Tweaks& t) {
     return bytes.value();
 }
 
-std::filesystem::path temp_path(const char* name) {
-    return std::filesystem::temp_directory_path() / name;
-}
+using pat::test::temp_path;
 
 }  // namespace
 
