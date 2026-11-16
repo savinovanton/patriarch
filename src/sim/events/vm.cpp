@@ -1,6 +1,7 @@
 #include "pat/sim/events/vm.hpp"
 
 #include "pat/core/detail/wide_math.hpp"
+#include "pat/core/hash_stream.hpp"
 
 #include <algorithm>
 #include <array>
@@ -1129,7 +1130,7 @@ std::vector<std::byte> RunResult::to_bytes() const {
 
 std::uint64_t RunResult::hash() const noexcept {
     const std::vector<std::byte> bytes = to_bytes();
-    return core::fnv1a64(std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
+    return core::hash_bytes(bytes);
 }
 
 RunResult Vm::run(const Program& program, VmHost& host, const RunOptions& options) {

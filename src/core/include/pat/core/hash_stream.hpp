@@ -3,10 +3,15 @@
 #include "pat/core/fixed.hpp"
 #include "pat/core/ids.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <span>
 
 namespace pat::core {
+
+/// FNV-1a 64 parameters: the single definition shared by HashStream, hash_bytes and fnv1a64.
+inline constexpr std::uint64_t kFnv1a64OffsetBasis = 0xCBF29CE484222325ULL;
+inline constexpr std::uint64_t kFnv1a64Prime = 0x100000001B3ULL;
 
 /// Incremental 64-bit FNV-1a hash over a canonical byte representation: every integer is fed as
 /// little-endian bytes of a fixed width, so the result is identical on all platforms and compilers.
@@ -40,7 +45,7 @@ public:
 private:
     constexpr void feed(std::uint8_t b) noexcept {
         state_ ^= b;
-        state_ *= 0x100000001B3ULL;
+        state_ *= kFnv1a64Prime;
     }
     constexpr void little_endian(std::uint64_t v, int width) noexcept {
         for (int i = 0; i < width; ++i) {
@@ -48,7 +53,23 @@ private:
         }
     }
 
-    std::uint64_t state_ = 0xCBF29CE484222325ULL;
+    std::uint64_t state_ = kFnv1a64OffsetBasis;
 };
+
+/// One-shot FNV-1a 64 of a byte buffer; equal to feeding the same bytes into a fresh HashStream.
+[[nodiscard]] constexpr std::uint64_t hash_bytes(std::span<const std::uint8_t> data) noexcept {
+    HashStream h;
+    h.bytes(data);
+    return h.value();
+}
+
+/// Same as above for `std::byte` buffers (identical result for identical byte values).
+[[nodiscard]] constexpr std::uint64_t hash_bytes(std::span<const std::byte> data) noexcept {
+    HashStream h;
+    for (const std::byte b : data) {
+        h.u8(static_cast<std::uint8_t>(b));
+    }
+    return h.value();
+}
 
 }  // namespace pat::core

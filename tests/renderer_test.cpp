@@ -1,6 +1,7 @@
 // Renderer tests run on an offscreen target with the WARP software rasterizer, so they work on
 // machines (and CI runners) without a GPU or a display.
 
+#include "pat/core/hash_stream.hpp"
 #include "pat/engine/camera.hpp"
 #include "pat/engine/renderer.hpp"
 #include "pat/game/season.hpp"
@@ -780,13 +781,7 @@ TEST_CASE(
 
     // The sky replaces the clear colour and nothing else: the terrain pixels are identical (except near the
     // map edge, which dissolves into the haze so that it runs into the sky without a seam).
-    const auto frame_hash = [](const std::vector<std::uint8_t>& px) {
-        std::uint64_t h = 1469598103934665603ULL;
-        for (const std::uint8_t b : px) {
-            h = (h ^ b) * 1099511628211ULL;
-        }
-        return h;
-    };
+    const auto frame_hash = [](const std::vector<std::uint8_t>& px) { return pat::core::hash_bytes(px); };
     CHECK(frame_hash(with_sky) == frame_hash(fx.render(styled)));  // deterministic
     CHECK(frame_hash(with_sky) != frame_hash(empty));
     std::size_t sky_pixels = 0;

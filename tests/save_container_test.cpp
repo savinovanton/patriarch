@@ -37,12 +37,6 @@ std::filesystem::path temp_path(const char* name) {
     return std::filesystem::temp_directory_path() / name;
 }
 
-std::uint64_t fnv(std::span<const std::uint8_t> bytes) {
-    pat::core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 std::uint32_t read_u32(const std::vector<std::uint8_t>& b, std::size_t off) {
     ByteReader r(std::span<const std::uint8_t>(b).subspan(off));
     return r.u32();
@@ -147,7 +141,7 @@ std::vector<std::uint8_t> with_summary(const std::vector<std::uint8_t>& good,
     const std::size_t old_size = read_u32(good, kOffSummarySize);
     std::vector<std::uint8_t> out(good.begin(), good.begin() + static_cast<std::ptrdiff_t>(kSaveHeaderSize));
     put_u32(out, kOffSummarySize, static_cast<std::uint32_t>(summary.size()));
-    put_u64(out, kOffSummaryHash, fix_hash ? fnv(summary) : 0);
+    put_u64(out, kOffSummaryHash, fix_hash ? pat::core::hash_bytes(summary) : 0);
     out.insert(out.end(), summary.begin(), summary.end());
     out.insert(out.end(), good.begin() + static_cast<std::ptrdiff_t>(kSaveHeaderSize + old_size), good.end());
     return out;
@@ -209,7 +203,8 @@ TEST_CASE("container v2: the layout is the one in docs/dev/save-format.md") {
     (void)r.u64();  // payload hash
     const std::uint64_t compressed_size = r.u64();
     CHECK(compressed_size == bytes.size() - kSaveHeaderSize - summary_size);
-    CHECK(summary_hash == fnv(std::span<const std::uint8_t>(bytes).subspan(kSaveHeaderSize, summary_size)));
+    CHECK(summary_hash ==
+          pat::core::hash_bytes(std::span<const std::uint8_t>(bytes).subspan(kSaveHeaderSize, summary_size)));
     // The summary is plain: the first field is key 1 (game_version), little endian.
     CHECK(bytes[kSaveHeaderSize] == 1);
     CHECK(bytes[kSaveHeaderSize + 1] == 0);

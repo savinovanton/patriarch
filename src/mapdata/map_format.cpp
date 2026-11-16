@@ -32,12 +32,6 @@ Error map_error(int code, std::string message) {
     return Error{code, std::move(message)};
 }
 
-std::uint64_t section_hash(std::span<const std::uint8_t> bytes) {
-    core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 // Row-wise delta (wrapping) followed by splitting into low-byte and high-byte planes. Smooth terrain
 // and large constant regions become long runs of small values that zstd compresses very well.
 std::vector<std::uint8_t> encode_u16_layer(const std::vector<std::uint16_t>& v, std::uint32_t width) {
@@ -128,7 +122,7 @@ void write_section(core::ByteWriter& out, std::uint32_t id, std::span<const std:
     const std::vector<std::uint8_t> packed = core::compress(raw, level);
     out.u32(id);
     out.u64(raw.size());
-    out.u64(section_hash(raw));
+    out.u64(core::hash_bytes(raw));
     out.u64(packed.size());
     out.bytes(packed);
 }
@@ -161,7 +155,7 @@ Result<std::vector<std::uint8_t>, Error> read_section(core::ByteReader& in,
         return R::err(
             map_error(33, "section " + std::to_string(id) + " is corrupted: " + raw.error().message));
     }
-    if (section_hash(raw.value()) != hash) {
+    if (core::hash_bytes(raw.value()) != hash) {
         return R::err(map_error(34, "section " + std::to_string(id) + " is corrupted (hash mismatch)"));
     }
     return R::ok(std::move(raw).value());
@@ -190,10 +184,10 @@ std::vector<std::uint8_t> serialize_map(const MapData& map, int zstd_level) {
 }
 
 std::array<std::uint64_t, 4> pmd1_section_hashes(const MapData& map) {
-    return {section_hash(encode_u16_layer(map.heights, map.width)),
-            section_hash(encode_u16_layer(map.provinces, map.width)),
-            section_hash(map.materials),
-            section_hash(encode_table(map.province_list))};
+    return {core::hash_bytes(encode_u16_layer(map.heights, map.width)),
+            core::hash_bytes(encode_u16_layer(map.provinces, map.width)),
+            core::hash_bytes(map.materials),
+            core::hash_bytes(encode_table(map.province_list))};
 }
 
 Result<MapData, Error> deserialize_map(std::span<const std::uint8_t> bytes) {
