@@ -1,5 +1,6 @@
 #include "pat/sim/events/vm.hpp"
 
+#include "pat/core/bytes.hpp"
 #include "pat/core/detail/wide_math.hpp"
 #include "pat/core/hash_stream.hpp"
 
@@ -1033,32 +1034,16 @@ RunResult execute(const Program& program, VmHost& host, const RunOptions& option
     return result;
 }
 
-void put_u8(std::vector<std::byte>& out, std::uint8_t v) {
-    out.push_back(static_cast<std::byte>(v));
-}
-
-void put_u32(std::vector<std::byte>& out, std::uint32_t v) {
-    for (int i = 0; i < 4; ++i) {
-        put_u8(out, static_cast<std::uint8_t>((v >> (8 * i)) & 0xFFU));
-    }
-}
-
-void put_u64(std::vector<std::byte>& out, std::uint64_t v) {
-    for (int i = 0; i < 8; ++i) {
-        put_u8(out, static_cast<std::uint8_t>((v >> (8 * i)) & 0xFFU));
-    }
-}
-
-void put_buffer(std::vector<std::byte>& out, const OpBuffer& buffer) {
-    put_u32(out, static_cast<std::uint32_t>(buffer.size()));
+void put_buffer(core::ByteWriter& out, const OpBuffer& buffer) {
+    out.u32(static_cast<std::uint32_t>(buffer.size()));
     for (std::size_t i = 0; i < buffer.size(); ++i) {
         const OpBuffer::Entry& e = buffer.entry(i);
-        put_u32(out, e.code);
-        put_u32(out, static_cast<std::uint32_t>(e.target.kind));
-        put_u32(out, e.target.id);
-        put_u32(out, e.argc);
+        out.u32(e.code);
+        out.u32(static_cast<std::uint32_t>(e.target.kind));
+        out.u32(e.target.id);
+        out.u32(e.argc);
         for (const Word w : buffer.args_of(i)) {
-            put_u64(out, static_cast<std::uint64_t>(w));
+            out.i64(w);
         }
     }
 }
@@ -1109,23 +1094,23 @@ void OpBuffer::clear() noexcept {
 }
 
 std::vector<std::byte> RunResult::to_bytes() const {
-    std::vector<std::byte> out;
-    put_u32(out, 0x31525645U);  // "EVR1"
-    put_u8(out, ok ? 1 : 0);
-    put_u32(out, static_cast<std::uint32_t>(reason));
-    put_u32(out, abort_pc);
-    put_u32(out, abort_detail);
-    put_u8(out, has_value ? 1 : 0);
-    put_u64(out, static_cast<std::uint64_t>(value));
-    put_u32(out, instructions);
-    put_u32(out, wu);
-    put_u32(out, counters.saturations);
-    put_u32(out, counters.div_zero);
-    put_u32(out, counters.truncated);
-    put_u32(out, counters.draws);
+    core::ByteWriter out;
+    out.u32(0x31525645U);  // "EVR1"
+    out.u8(ok ? 1 : 0);
+    out.u32(static_cast<std::uint32_t>(reason));
+    out.u32(abort_pc);
+    out.u32(abort_detail);
+    out.u8(has_value ? 1 : 0);
+    out.i64(value);
+    out.u32(instructions);
+    out.u32(wu);
+    out.u32(counters.saturations);
+    out.u32(counters.div_zero);
+    out.u32(counters.truncated);
+    out.u32(counters.draws);
     put_buffer(out, commands);
     put_buffer(out, state_ops);
-    return out;
+    return core::to_std_bytes(out.data());
 }
 
 std::uint64_t RunResult::hash() const noexcept {

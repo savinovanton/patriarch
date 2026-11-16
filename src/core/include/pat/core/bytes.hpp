@@ -33,6 +33,16 @@ private:
     std::vector<std::uint8_t> data_;
 };
 
+/// Copies bytes into a `std::vector<std::byte>` (for APIs that expose `std::byte` buffers).
+[[nodiscard]] inline std::vector<std::byte> to_std_bytes(std::span<const std::uint8_t> b) {
+    std::vector<std::byte> out;
+    out.reserve(b.size());
+    for (const std::uint8_t v : b) {
+        out.push_back(static_cast<std::byte>(v));
+    }
+    return out;
+}
+
 /// Reads values written by ByteWriter. Reading past the end returns 0 and puts the reader into a
 /// failed state (check ok() once after a group of reads) - no exceptions, no out-of-bounds access.
 class ByteReader {

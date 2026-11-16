@@ -1773,10 +1773,10 @@ TEST_CASE("events vm: canonical bytes of a Program and of a RunResult are pinned
     Program program;
     program.code.push_back(Instr{0x0102, 0x0304, 0x05060708});
     program.consts.push_back(-2);
-    CHECK(program.to_bytes() == bytes_of({0x01, 0x00, 0x00, 0x00,    // code count
-                                          0x02, 0x01, 0x04, 0x03,    // op, a
-                                          0x08, 0x07, 0x06, 0x05,    // b
-                                          0x01, 0x00, 0x00, 0x00,    // const count
+    CHECK(program.to_bytes() == bytes_of({0x01, 0x00, 0x00, 0x00,  // code count
+                                          0x02, 0x01, 0x04, 0x03,  // op, a
+                                          0x08, 0x07, 0x06, 0x05,  // b
+                                          0x01, 0x00, 0x00, 0x00,  // const count
                                           0xFE, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}));
 
     RunResult result;
@@ -1791,12 +1791,12 @@ TEST_CASE("events vm: canonical bytes of a Program and of a RunResult are pinned
     result.counters = RunCounters{5, 6, 7, 8};
     const std::array<Word, 2> args{0x0A, -1};
     result.commands.add(0x1234, Scope{ScopeKind::Province, 9}, args);
-    CHECK(result.to_bytes() == bytes_of({0x45, 0x56, 0x52, 0x31,  // "EVR1"
-                                         0x01,                    // ok
-                                         0x08, 0x00, 0x00, 0x00,  // reason
-                                         0x01, 0x00, 0x00, 0x00,  // abort_pc
-                                         0x02, 0x00, 0x00, 0x00,  // abort_detail
-                                         0x01,                    // has_value
+    CHECK(result.to_bytes() == bytes_of({0x45, 0x56, 0x52, 0x31,                          // "EVR1"
+                                         0x01,                                            // ok
+                                         0x08, 0x00, 0x00, 0x00,                          // reason
+                                         0x01, 0x00, 0x00, 0x00,                          // abort_pc
+                                         0x02, 0x00, 0x00, 0x00,                          // abort_detail
+                                         0x01,                                            // has_value
                                          0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // value
                                          0x03, 0x00, 0x00, 0x00,                          // instructions
                                          0x04, 0x00, 0x00, 0x00,                          // wu
