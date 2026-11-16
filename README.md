@@ -33,6 +33,7 @@ ctest --preset win-msvc-debug
 | [docs/dev/event-engine.md](docs/dev/event-engine.md) | Движок событий (E11, [ADR-0008](docs/adr/0008-event-engine.md)): формат `.pd`, байткод и ВМ, каталоги триггеров/эффектов/on-action, состояние, команды 96…109, очередь игрока, `contentlint`, пакеты контента |
 | [docs/dev/court-model.md](docs/dev/court-model.md) | Модель двора (E10, [ADR-0009](docs/adr/0009-court.md)): таблицы должностей, вакансий, челобитных, слуг, милости и партий, команды 128…143, формулы назначения, деньги без новых кодов ведомости, мост UI; §20 — портфели должностей (курсы и приказы, [GDD 04 §19](docs/gdd/04-court-intrigue.md)) |
 | [docs/dev/house-relations-model.md](docs/dev/house-relations-model.md) | Модель отношений и вражды внутри рода (E7-T25, GDD 01 §8.4): уровни из направленных мнений, каталог причин без ГСЧ, последствия, посредничество и дар, команды 22…24, раздел сейва 8, on-action 26…28, мост UI |
+| [docs/dev/influence-model.md](docs/dev/influence-model.md) | Ресурс «Влияние» и ресурсы рода в верхней панели HUD (E7-T38): запас или показатель, доход с разложением, предел, траты и цены, `pay`, команда 28, раздел сейва 10, часть хеша 40, мост HUD, задачи |
 | [docs/dev/economy-model.md](docs/dev/economy-model.md) | Модель данных экономики (E9): таблицы, проводки, ведомость, формулы |
 | [docs/dev/status.md](docs/dev/status.md) | Состояние проекта и ближайшие шаги |
 | [docs/dev/store-pages.md](docs/dev/store-pages.md) | Путь к вишлисту: чеклист страниц Steam, VK Play, EGS (условия, ассеты, сроки, ИИ-отметка, статусы) |
