@@ -45,6 +45,7 @@ add_executable(patriarch_tests
     save_capacity_test.cpp
     save_container_test.cpp
     credits_content_test.cpp
+    typed_access_test.cpp
     kinship_test.cpp
     localization_test.cpp
     log_test.cpp
@@ -96,6 +97,9 @@ add_executable(patriarch_tests
     traits_test.cpp
     world_model_test.cpp
     world_test.cpp)
+
+# typed_access_test.cpp checks the content module's internal accessors (src/content/typed_accessors.hpp).
+target_include_directories(patriarch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/content)
 
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core

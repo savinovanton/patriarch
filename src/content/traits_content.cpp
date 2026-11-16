@@ -11,9 +11,13 @@
 #include <tuple>
 #include <utility>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
+
+using detail::field_pos;
 
 using data::ContentObject;
 using data::LoadError;
@@ -29,15 +33,6 @@ template <class T>
 const T* field_value(const ContentObject& object, std::string_view name) {
     const auto* value = object.object.body.find(name);
     return value != nullptr ? value->get_if<T>() : nullptr;
-}
-
-SourcePos field_pos(const ContentObject& object, std::string_view name) {
-    for (const auto& field : object.object.body.fields) {
-        if (field.name == name) {
-            return field.pos;
-        }
-    }
-    return object.object.pos;
 }
 
 template <std::size_t N>

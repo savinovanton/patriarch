@@ -10,9 +10,17 @@
 #include <tuple>
 #include <utility>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
+
+using detail::enum_index_of;
+using detail::field_pos;
+using detail::has_field;
+using detail::i32_of;
+using detail::text_of;
 
 using data::ContentObject;
 using data::ContentTable;
@@ -21,50 +29,6 @@ using data::LoadError;
 using data::SourcePos;
 using data::TypedField;
 using data::TypedValue;
-
-std::string text_of(const ContentObject& object, std::string_view name) {
-    const TypedValue* value = object.object.body.find(name);
-    if (value != nullptr) {
-        if (const auto* s = value->get_if<std::string>()) {
-            return *s;
-        }
-    }
-    return {};
-}
-
-std::int32_t i32_of(const ContentObject& object, std::string_view name, std::int32_t fallback) {
-    const TypedValue* value = object.object.body.find(name);
-    if (value != nullptr) {
-        if (const auto* i = value->get_if<std::int64_t>()) {
-            return static_cast<std::int32_t>(*i);
-        }
-    }
-    return fallback;
-}
-
-std::size_t enum_index_of(const ContentObject& object, std::string_view name) {
-    const TypedValue* value = object.object.body.find(name);
-    if (value != nullptr) {
-        if (const auto* e = value->get_if<data::EnumValue>()) {
-            return e->index;
-        }
-    }
-    return 0;
-}
-
-bool has_field(const ContentObject& object, std::string_view name) {
-    return object.object.body.find(name) != nullptr;
-}
-
-/// Position of the key of a field (the object itself when the field is absent).
-SourcePos field_pos(const ContentObject& object, std::string_view name) {
-    for (const TypedField& field : object.object.body.fields) {
-        if (field.name == name) {
-            return field.pos;
-        }
-    }
-    return object.object.pos;
-}
 
 class Builder {
 public:

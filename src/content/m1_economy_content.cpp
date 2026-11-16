@@ -11,9 +11,13 @@
 #include <string_view>
 #include <tuple>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
+
+using detail::field_pos;
 
 using namespace sim::economy;
 using core::Fixed32;
@@ -49,15 +53,6 @@ const TypedMap* map(const TypedBlock& block, std::string_view key) {
     return value != nullptr ? value->get_if<TypedMap>() : nullptr;
 }
 
-data::SourcePos position(const ContentObject& object, std::string_view key) {
-    for (const auto& field : object.object.body.fields) {
-        if (field.name == key) {
-            return field.pos;
-        }
-    }
-    return object.object.pos;
-}
-
 bool populated(const ContentTable* table) {
     return table != nullptr && !table->empty();
 }
@@ -90,7 +85,7 @@ public:
             HoldingDef holding = read_holding(object);
             if (!covered.insert(holding.province).second) {
                 fail(object,
-                     position(object, "province"),
+                     field_pos(object, "province"),
                      std::format("duplicate holding for province '{}'", holding.province));
             }
             out_.holdings.push_back(std::move(holding));
@@ -140,7 +135,7 @@ private:
         for (const ContentObject& object : table.objects()) {
             const auto slot = static_cast<std::uint16_t>(integer(object.object.body, "slot"));
             if (!slots.insert(slot).second) {
-                fail(object, position(object, "slot"), std::format("duplicate trade node slot {}", slot));
+                fail(object, field_pos(object, "slot"), std::format("duplicate trade node slot {}", slot));
             }
             node_slots_.emplace(object.object.id, slot);
             const auto* key = object.object.body.find("name_key")->get_if<std::string>();
@@ -204,12 +199,12 @@ private:
         holding.province = reference(body, "province");
         if (registry_.find("province", holding.province) == nullptr) {
             fail(object,
-                 position(object, "province"),
+                 field_pos(object, "province"),
                  std::format("unknown holding province '{}'", holding.province));
         }
         const auto kind = province_kind_from_key(reference(body, "kind"));
         if (!kind) {
-            fail(object, position(object, "kind"), "unknown holding province kind");
+            fail(object, field_pos(object, "kind"), "unknown holding province kind");
         } else {
             holding.kind = *kind;
         }
@@ -218,14 +213,14 @@ private:
         holding.owner = reference(body, "owner");
         if (holding.owner_kind == OwnerKind::Dynasty) {
             if (holding.owner.empty() || registry_.find("dynasty", holding.owner) == nullptr) {
-                fail(object, position(object, "owner"), "dynasty holding needs an existing owner dynasty");
+                fail(object, field_pos(object, "owner"), "dynasty holding needs an existing owner dynasty");
             }
         } else if (!holding.owner.empty()) {
-            fail(object, position(object, "owner"), "owner is allowed only for owner_kind = dynasty");
+            fail(object, field_pos(object, "owner"), "owner is allowed only for owner_kind = dynasty");
         }
         const auto node = node_slots_.find(reference(body, "trade_node"));
         if (node == node_slots_.end()) {
-            fail(object, position(object, "trade_node"), "unknown holding trade node");
+            fail(object, field_pos(object, "trade_node"), "unknown holding trade node");
         } else {
             holding.trade_node = node->second;
         }
@@ -240,7 +235,8 @@ private:
             total += population;
         }
         if (total > kMaxProvincePersons) {
-            fail(object, position(object, "population"), "holding population total exceeds 32000000 persons");
+            fail(
+                object, field_pos(object, "population"), "holding population total exceeds 32000000 persons");
         }
         read_groups(object, "mood", [&](std::size_t group, const TypedValue& value) {
             holding.mood[group] = *value.get_if<Fixed32>();
@@ -278,7 +274,7 @@ private:
             return;
         }
         if (buildings->size() > holding.slots_total) {
-            fail(object, position(object, "buildings"), "holding buildings exceed its slots_total");
+            fail(object, field_pos(object, "buildings"), "holding buildings exceed its slots_total");
         }
         std::array<std::uint32_t, 256> counts{};
         for (const TypedValue& building : *buildings) {
