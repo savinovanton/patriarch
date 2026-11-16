@@ -2,6 +2,7 @@
 
 #include "pat/core/bytes.hpp"
 #include "pat/core/compress.hpp"
+#include "pat/core/file_io.hpp"
 #include "pat/core/hash_stream.hpp"
 
 #include <array>
@@ -265,24 +266,16 @@ core::Result<void, Error>
 write_map_file(const std::filesystem::path& path, const MapData& map, int zstd_level) {
     using R = Result<void, Error>;
     const std::vector<std::uint8_t> bytes = serialize_map(map, zstd_level);
-    std::filesystem::path temp = path;
-    temp += ".tmp";
-    {
-        std::ofstream out(temp, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return R::err(codec::make_error(40, "cannot create " + temp.string()));
+    if (const auto r = core::write_file_atomic(path, bytes); !r) {
+        const std::string temp = path.string() + ".tmp";
+        switch (r.error().stage) {
+            case core::FileIoStage::kOpen:
+                return R::err(codec::make_error(40, "cannot create " + temp));
+            case core::FileIoStage::kWrite:
+                return R::err(codec::make_error(41, "write failed: " + temp));
+            default:
+                return R::err(codec::make_error(42, "cannot move the map into place: " + path.string()));
         }
-        out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-        out.flush();
-        if (!out) {
-            return R::err(codec::make_error(41, "write failed: " + temp.string()));
-        }
-    }
-    std::error_code ec;
-    std::filesystem::rename(temp, path, ec);  // Atomic replace on the same volume.
-    if (ec) {
-        std::filesystem::remove(temp, ec);
-        return R::err(codec::make_error(42, "cannot move the map into place: " + path.string()));
     }
     return R::ok();
 }
