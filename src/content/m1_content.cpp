@@ -13,9 +13,13 @@
 #include <tuple>
 #include <utility>
 
+#include "typed_accessors.hpp"
+
 namespace pat::content {
 
 namespace {
+
+using detail::field_pos;
 
 using data::ContentObject;
 using data::LoadError;
@@ -35,15 +39,6 @@ constexpr std::array<SkillSlot, sim::kSkillCount> kSkills{{
     {"intrigue", sim::Skill::Intrigue},
     {"learning", sim::Skill::Learning},
 }};
-
-SourcePos field_pos(const ContentObject& object, std::string_view name) {
-    for (const TypedField& field : object.object.body.fields) {
-        if (field.name == name) {
-            return field.pos;
-        }
-    }
-    return object.object.pos;
-}
 
 template <class T>
 const T* field_value(const ContentObject& object, std::string_view name) {
