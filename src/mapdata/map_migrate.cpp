@@ -11,16 +11,14 @@
 #include <string>
 #include <system_error>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
 
 using core::Error;
 using core::Result;
-
-Error err(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
 
 /// Labels the 4-connected components of "height <= sea_level" in raster order of their first pixel.
 /// Returns the number of components (0 if there is no water); `overflow` is set if there are more
@@ -82,7 +80,8 @@ std::string province_key(std::uint16_t id) {
 Result<MigratedMap, Error> migrate_pmd1(const MapData& map) {
     using R = Result<MigratedMap, Error>;
     if (auto ok = validate_map(map); !ok) {
-        return R::err(err(migrate_error::kInvalidSource, "PMD1 map is invalid: " + ok.error().message));
+        return R::err(
+            codec::make_error(migrate_error::kInvalidSource, "PMD1 map is invalid: " + ok.error().message));
     }
 
     MigratedMap out;
@@ -99,8 +98,8 @@ Result<MigratedMap, Error> migrate_pmd1(const MapData& map) {
     bool overflow = false;
     const std::size_t seas = label_water(map, l.water_body, overflow);
     if (overflow) {
-        return R::err(
-            err(migrate_error::kTooManyWaters, "the map has more than 65535 separate water bodies"));
+        return R::err(codec::make_error(migrate_error::kTooManyWaters,
+                                        "the map has more than 65535 separate water bodies"));
     }
     const std::vector<std::uint32_t> area = count_water_area(l.water_body, seas);
     for (std::size_t k = 0; k < seas; ++k) {
@@ -163,7 +162,7 @@ Result<void, Error> write_map_set(const std::filesystem::path& directory,
     std::error_code ec;
     std::filesystem::create_directories(directory, ec);
     if (ec) {
-        return R::err(err(migrate_error::kIo, "cannot create " + directory.string()));
+        return R::err(codec::make_error(migrate_error::kIo, "cannot create " + directory.string()));
     }
     if (auto ok = write_physical_file(directory / kPhysicalFileName, layers.physical, options); !ok) {
         return ok;
@@ -179,7 +178,7 @@ Result<MapData, Error> load_map(const std::filesystem::path& path, const Provinc
     {
         std::ifstream in(path, std::ios::binary);
         if (!in) {
-            return R::err(err(migrate_error::kIo, "cannot open " + path.string()));
+            return R::err(codec::make_error(migrate_error::kIo, "cannot open " + path.string()));
         }
         in.read(reinterpret_cast<char*>(head.data()), static_cast<std::streamsize>(head.size()));
         got = static_cast<std::size_t>(in.gcount());
@@ -193,7 +192,8 @@ Result<MapData, Error> load_map(const std::filesystem::path& path, const Provinc
         return read_map_file(path);
     }
     if (!is_magic("PMD2") || got < head.size()) {
-        return R::err(err(migrate_error::kUnknownFormat, "not a Patriarch map file: " + path.string()));
+        return R::err(
+            codec::make_error(migrate_error::kUnknownFormat, "not a Patriarch map file: " + path.string()));
     }
     const auto kind = static_cast<std::uint16_t>(head[6] | (head[7] << 8U));
     const std::filesystem::path dir = path.parent_path();
@@ -206,15 +206,15 @@ Result<MapData, Error> load_map(const std::filesystem::path& path, const Provinc
         physical = dir / kPhysicalFileName;
         provinces = path;
     } else {
-        return R::err(
-            err(migrate_error::kUnsupportedKind,
-                "a PMD2 file of kind " + std::to_string(kind) + " is not a map layer: " + path.string()));
+        return R::err(codec::make_error(migrate_error::kUnsupportedKind,
+                                        "a PMD2 file of kind " + std::to_string(kind) +
+                                            " is not a map layer: " + path.string()));
     }
     for (const std::filesystem::path* file : {&physical, &provinces}) {
         std::error_code ec;
         if (!std::filesystem::is_regular_file(*file, ec)) {
-            return R::err(err(migrate_error::kMissingSibling,
-                              "the map set needs " + file->string() + " next to the file"));
+            return R::err(codec::make_error(migrate_error::kMissingSibling,
+                                            "the map set needs " + file->string() + " next to the file"));
         }
     }
     return load_map_set(physical, provinces, options);

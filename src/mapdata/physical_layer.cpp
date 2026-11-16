@@ -32,26 +32,11 @@ constexpr std::int32_t kMaxLonUdeg = 180'000'000;
 constexpr std::int64_t kMaxPlaneMm = 100'000'000'000'000LL;  // 100 000 km: far beyond any planet
 constexpr std::int64_t kMaxPixelMm = 1'000'000'000LL;        // 1000 km per pixel
 
-Error err(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
-
 std::string chunk_text(Pmd2ChunkId id) {
     return pmd2_chunk_id_string(id);
 }
 
 // ---- string and blob helpers ---------------------------------------------------------------------
-
-Result<void, Error> finish_blob(const core::ByteReader& r, bool allow_trailing, Pmd2ChunkId id) {
-    using R = Result<void, Error>;
-    if (!r.ok()) {
-        return R::err(err(physical_error::kBadChunk, chunk_text(id) + ": truncated"));
-    }
-    if (!allow_trailing && !r.at_end()) {
-        return R::err(err(physical_error::kBadChunk, chunk_text(id) + ": trailing bytes"));
-    }
-    return R::ok();
-}
 
 bool valid_key(const std::string& key) {
     return codec::valid_ascii_key(key, kMaxWaterKeyLength);
@@ -105,11 +90,11 @@ Result<Grid, Error> decode_grid(std::span<const std::uint8_t> bytes, bool allow_
     g.metres_per_unit_milli = r.u32();
     g.seed = r.u64();
     g.material_version = r.u16();
-    if (auto ok = finish_blob(r, allow_trailing, kGrid); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kGrid, physical_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     if (g.version != 1) {
-        return R::err(err(physical_error::kBadGrid, "GRID: unsupported version"));
+        return R::err(codec::make_error(physical_error::kBadGrid, "GRID: unsupported version"));
     }
     return R::ok(g);
 }
@@ -165,15 +150,15 @@ Result<GeoRef, Error> decode_georef(std::span<const std::uint8_t> bytes, bool al
     g.bbox_max_lat_udeg = r.i32();
     g.epsg = r.u32();
     g.proj_text = get_str(r);
-    if (auto ok = finish_blob(r, allow_trailing, kGeor); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kGeor, physical_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     if (g.version != 1) {
-        return R::err(err(physical_error::kBadGeoref, "GEOR: unsupported version"));
+        return R::err(codec::make_error(physical_error::kBadGeoref, "GEOR: unsupported version"));
     }
     if (projection > static_cast<std::uint8_t>(Projection::equirectangular) ||
         datum > static_cast<std::uint8_t>(Datum::wgs84)) {
-        return R::err(err(physical_error::kBadGeoref, "GEOR: unknown projection or datum"));
+        return R::err(codec::make_error(physical_error::kBadGeoref, "GEOR: unknown projection or datum"));
     }
     g.projection = static_cast<Projection>(projection);
     g.datum = static_cast<Datum>(datum);
@@ -210,12 +195,12 @@ Result<std::vector<WaterBody>, Error> decode_water_table(std::span<const std::ui
         b.key = get_str(r);
         if (kind < static_cast<std::uint8_t>(WaterKind::sea) ||
             kind > static_cast<std::uint8_t>(WaterKind::inland_sea)) {
-            return R::err(err(physical_error::kBadWaterTable, "WTBL: unknown water kind"));
+            return R::err(codec::make_error(physical_error::kBadWaterTable, "WTBL: unknown water kind"));
         }
         b.kind = static_cast<WaterKind>(kind);
         out.push_back(std::move(b));
     }
-    if (auto ok = finish_blob(r, allow_trailing, kWtbl); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kWtbl, physical_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     return R::ok(std::move(out));
@@ -287,11 +272,11 @@ Result<Provenance, Error> decode_provenance(std::span<const std::uint8_t> bytes,
         c.content_id = r.u64();
         p.corrections.push_back(std::move(c));
     }
-    if (auto ok = finish_blob(r, allow_trailing, kProv); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kProv, physical_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     if (p.provenance_version != 1) {
-        return R::err(err(physical_error::kBadProvenance, "PROV: unsupported version"));
+        return R::err(codec::make_error(physical_error::kBadProvenance, "PROV: unsupported version"));
     }
     return R::ok(std::move(p));
 }
@@ -322,7 +307,8 @@ Result<std::uint64_t, Error> coast_key(const Pmd2Reader& reader) {
     const Pmd2ChunkInfo* georef = reader.find(kGeor);
     const Pmd2ChunkInfo* water = reader.find(kWbod);
     if (georef == nullptr || water == nullptr) {
-        return R::err(err(physical_error::kMissingChunk, "GEOR and WBOD are needed for the coast key"));
+        return R::err(
+            codec::make_error(physical_error::kMissingChunk, "GEOR and WBOD are needed for the coast key"));
     }
     return R::ok(coast_key(reader.header().width, reader.header().height, georef->raw_hash, water->raw_hash));
 }
@@ -332,7 +318,7 @@ Result<std::uint64_t, Error> coast_key(const Pmd2Reader& reader) {
 Result<void, Error> validate_georef(const GeoRef& g, std::uint32_t width, std::uint32_t height) {
     using R = Result<void, Error>;
     const auto bad = [](std::string m) {
-        return R::err(err(physical_error::kBadGeoref, "GEOR: " + std::move(m)));
+        return R::err(codec::make_error(physical_error::kBadGeoref, "GEOR: " + std::move(m)));
     };
     if (g.version != 1) {
         return bad("unsupported version");
@@ -388,7 +374,7 @@ Result<void, Error> validate_georef(const GeoRef& g, std::uint32_t width, std::u
 Result<void, Error> validate_provenance(const Provenance& p) {
     using R = Result<void, Error>;
     const auto bad = [](std::string m) {
-        return R::err(err(physical_error::kBadProvenance, "PROV: " + std::move(m)));
+        return R::err(codec::make_error(physical_error::kBadProvenance, "PROV: " + std::move(m)));
     };
     constexpr std::size_t kMaxCount = std::numeric_limits<std::uint16_t>::max();
     if (p.provenance_version != 1) {
@@ -486,7 +472,7 @@ std::vector<std::uint32_t> count_water_area(std::span<const std::uint16_t> water
 
 Result<void, Error> validate_physical(const PhysicalLayer& l) {
     using R = Result<void, Error>;
-    const auto fail = [](int code, std::string m) { return R::err(err(code, std::move(m))); };
+    const auto fail = [](int code, std::string m) { return R::err(codec::make_error(code, std::move(m))); };
 
     if (l.width == 0 || l.height == 0 || l.width > kPmd2MaxDimension || l.height > kPmd2MaxDimension ||
         l.pixel_count() > kPmd2MaxPixels) {
@@ -664,7 +650,7 @@ Pmd2OpenOptions open_options(const PhysicalReadOptions& options) {
 Result<std::vector<std::uint8_t>, Error> require_blob(const Pmd2Reader& reader, Pmd2ChunkId id) {
     using R = Result<std::vector<std::uint8_t>, Error>;
     if (reader.find(id) == nullptr) {
-        return R::err(err(physical_error::kMissingChunk, "missing chunk " + chunk_text(id)));
+        return R::err(codec::make_error(physical_error::kMissingChunk, "missing chunk " + chunk_text(id)));
     }
     return reader.read_blob(id);
 }
@@ -673,7 +659,7 @@ Result<std::vector<std::uint16_t>, Error>
 require_raster16(const Pmd2Reader& reader, Pmd2ChunkId id, unsigned threads) {
     using R = Result<std::vector<std::uint16_t>, Error>;
     if (reader.find(id) == nullptr) {
-        return R::err(err(physical_error::kMissingChunk, "missing chunk " + chunk_text(id)));
+        return R::err(codec::make_error(physical_error::kMissingChunk, "missing chunk " + chunk_text(id)));
     }
     auto info = reader.raster_info(id);
     if (!info) {
@@ -681,7 +667,8 @@ require_raster16(const Pmd2Reader& reader, Pmd2ChunkId id, unsigned threads) {
     }
     if (info.value().shift != 0 || info.value().width != reader.header().width ||
         info.value().height != reader.header().height) {
-        return R::err(err(physical_error::kLayerSize, chunk_text(id) + ": raster is not full resolution"));
+        return R::err(codec::make_error(physical_error::kLayerSize,
+                                        chunk_text(id) + ": raster is not full resolution"));
     }
     return reader.read_raster_u16(id, 0, threads);
 }
@@ -690,7 +677,7 @@ Result<PhysicalLayer, Error> read_from(const Pmd2Reader& reader, const PhysicalR
     using R = Result<PhysicalLayer, Error>;
     const Pmd2Header& head = reader.header();
     if (head.kind != Pmd2Kind::physical) {
-        return R::err(err(physical_error::kWrongKind, "not a physical PMD2 container"));
+        return R::err(codec::make_error(physical_error::kWrongKind, "not a physical PMD2 container"));
     }
     const bool allow_trailing = head.minor > kPmd2KnownMinor;
 
@@ -707,7 +694,7 @@ Result<PhysicalLayer, Error> read_from(const Pmd2Reader& reader, const PhysicalR
         return R::err(grid.error());
     }
     if (grid.value().width != head.width || grid.value().height != head.height) {
-        return R::err(err(physical_error::kGridHeader, "GRID size differs from the header"));
+        return R::err(codec::make_error(physical_error::kGridHeader, "GRID size differs from the header"));
     }
     layer.sea_level = grid.value().sea_level;
     layer.metres_per_unit_milli = grid.value().metres_per_unit_milli;
@@ -747,10 +734,11 @@ Result<PhysicalLayer, Error> read_from(const Pmd2Reader& reader, const PhysicalR
 
     const Pmd2ChunkInfo* matl = reader.find(kMatl);
     if (matl == nullptr) {
-        return R::err(err(physical_error::kMissingChunk, "missing chunk MATL"));
+        return R::err(codec::make_error(physical_error::kMissingChunk, "missing chunk MATL"));
     }
     if (matl->version != layer.material_version) {
-        return R::err(err(physical_error::kBadGrid, "MATL version differs from the GRID material set"));
+        return R::err(
+            codec::make_error(physical_error::kBadGrid, "MATL version differs from the GRID material set"));
     }
     auto matl_info = reader.raster_info(kMatl);
     if (!matl_info) {
@@ -758,7 +746,7 @@ Result<PhysicalLayer, Error> read_from(const Pmd2Reader& reader, const PhysicalR
     }
     if (matl_info.value().shift != 0 || matl_info.value().width != head.width ||
         matl_info.value().height != head.height) {
-        return R::err(err(physical_error::kLayerSize, "MATL: raster is not full resolution"));
+        return R::err(codec::make_error(physical_error::kLayerSize, "MATL: raster is not full resolution"));
     }
     auto materials = reader.read_raster_u8(kMatl, 0, options.threads);
     if (!materials) {
@@ -782,7 +770,8 @@ Result<PhysicalLayer, Error> read_from(const Pmd2Reader& reader, const PhysicalR
         return R::err(ok.error());
     }
     if (head.bind_key != coast_key(layer)) {
-        return R::err(err(physical_error::kBindKey, "header bind_key differs from the coast key"));
+        return R::err(
+            codec::make_error(physical_error::kBindKey, "header bind_key differs from the coast key"));
     }
     return R::ok(std::move(layer));
 }

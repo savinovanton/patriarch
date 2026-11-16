@@ -6,16 +6,14 @@
 #include <cmath>
 #include <string>
 
+#include "layer_codec.hpp"
+
 namespace pat::mapdata {
 
 namespace {
 
 using core::Error;
 using core::Result;
-
-Error invalid(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
 
 }  // namespace
 
@@ -141,28 +139,28 @@ Result<void, Error> validate_map(const MapData& map) {
     using R = Result<void, Error>;
     const std::size_t pixels = map.pixel_count();
     if (map.width == 0 || map.height == 0) {
-        return R::err(invalid(1, "map has zero size"));
+        return R::err(codec::make_error(1, "map has zero size"));
     }
     if (map.heights.size() != pixels || map.provinces.size() != pixels || map.materials.size() != pixels) {
-        return R::err(invalid(2, "layer sizes do not match width x height"));
+        return R::err(codec::make_error(2, "layer sizes do not match width x height"));
     }
     const std::size_t n = map.province_list.size();
     if (n == 0 || n > 65535) {
-        return R::err(invalid(3, "province count must be in 1..65535"));
+        return R::err(codec::make_error(3, "province count must be in 1..65535"));
     }
 
     for (std::size_t i = 0; i < pixels; ++i) {
         if (map.materials[i] >= kMaterialCount) {
-            return R::err(invalid(4, "invalid material value"));
+            return R::err(codec::make_error(4, "invalid material value"));
         }
         const bool land = map.heights[i] > map.sea_level;
         const std::uint16_t p = map.provinces[i];
         if (land != (p != 0)) {
-            return R::err(
-                invalid(5, "province id must be non-zero exactly on land (pixel " + std::to_string(i) + ")"));
+            return R::err(codec::make_error(
+                5, "province id must be non-zero exactly on land (pixel " + std::to_string(i) + ")"));
         }
         if (p > n) {
-            return R::err(invalid(6, "province id out of range"));
+            return R::err(codec::make_error(6, "province id out of range"));
         }
     }
 
@@ -178,7 +176,8 @@ Result<void, Error> validate_map(const MapData& map) {
                 continue;
             }
             if (++regions[p] > 1) {
-                return R::err(invalid(7, "province " + std::to_string(p) + " is split into several regions"));
+                return R::err(
+                    codec::make_error(7, "province " + std::to_string(p) + " is split into several regions"));
             }
             visited[start] = 1;
             stack.push_back(start);
@@ -209,7 +208,7 @@ Result<void, Error> validate_map(const MapData& map) {
         }
         for (std::size_t p = 1; p <= n; ++p) {
             if (regions[p] == 0) {
-                return R::err(invalid(8, "province " + std::to_string(p) + " has no pixels"));
+                return R::err(codec::make_error(8, "province " + std::to_string(p) + " has no pixels"));
             }
         }
     }
@@ -220,8 +219,8 @@ Result<void, Error> validate_map(const MapData& map) {
         Province expect = expected[i];
         expect.color_rgb = map.province_list[i].color_rgb;
         if (!(expect == map.province_list[i])) {
-            return R::err(
-                invalid(9, "province table entry " + std::to_string(i + 1) + " does not match the pixels"));
+            return R::err(codec::make_error(
+                9, "province table entry " + std::to_string(i + 1) + " does not match the pixels"));
         }
     }
 
@@ -232,11 +231,11 @@ Result<void, Error> validate_map(const MapData& map) {
     }
     std::sort(colors.begin(), colors.end());
     if (std::adjacent_find(colors.begin(), colors.end()) != colors.end()) {
-        return R::err(invalid(10, "province colours are not unique"));
+        return R::err(codec::make_error(10, "province colours are not unique"));
     }
 
     if (reachable_province_count(map) != n) {
-        return R::err(invalid(11, "the province graph is not connected"));
+        return R::err(codec::make_error(11, "the province graph is not connected"));
     }
     return R::ok();
 }

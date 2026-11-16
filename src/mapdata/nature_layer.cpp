@@ -26,25 +26,6 @@ constexpr Pmd2ChunkId kNrtb = pmd2_chunk_id('N', 'R', 'T', 'B');
 constexpr std::size_t kPointBytes = 9;  // i32 x, i32 y, u8 width class
 constexpr std::uint8_t kMaxShift = 3;
 
-Error err(int code, std::string message) {
-    return Error{code, std::move(message)};
-}
-
-std::string chunk_text(Pmd2ChunkId id) {
-    return pmd2_chunk_id_string(id);
-}
-
-Result<void, Error> finish_blob(const core::ByteReader& r, bool allow_trailing, Pmd2ChunkId id) {
-    using R = Result<void, Error>;
-    if (!r.ok()) {
-        return R::err(err(nature_error::kBadChunk, chunk_text(id) + ": truncated"));
-    }
-    if (!allow_trailing && !r.at_end()) {
-        return R::err(err(nature_error::kBadChunk, chunk_text(id) + ": trailing bytes"));
-    }
-    return R::ok();
-}
-
 bool printable_name(const std::string& s) {
     return !s.empty() && s.size() <= kMaxRegionNameLength &&
            std::all_of(s.begin(), s.end(), [](char c) { return c >= 0x20 && c <= 0x7e; });
@@ -78,16 +59,17 @@ std::uint32_t region_raster_extent(std::uint32_t size, std::uint8_t shift) noexc
 Result<void, Error> validate_rivers(const RiverLayer& rivers, const PhysicalLayer& physical) {
     using R = Result<void, Error>;
     if (rivers.rank_raster.size() != physical.pixel_count()) {
-        return R::err(err(nature_error::kBadRiverRaster, "RIVR does not match the grid size"));
+        return R::err(codec::make_error(nature_error::kBadRiverRaster, "RIVR does not match the grid size"));
     }
     const std::vector<std::uint8_t> salt = salt_water_ids(physical);
     for (std::size_t i = 0; i < rivers.rank_raster.size(); ++i) {
         if (rivers.rank_raster[i] != 0 && in_salt_water(physical, salt, i)) {
-            return R::err(err(nature_error::kRiverInSea, "RIVR: a river pixel lies in the sea"));
+            return R::err(
+                codec::make_error(nature_error::kRiverInSea, "RIVR: a river pixel lies in the sea"));
         }
     }
     if (rivers.rivers.size() > 65535U) {
-        return R::err(err(nature_error::kBadRiverTable, "RVEC: too many rivers"));
+        return R::err(codec::make_error(nature_error::kBadRiverTable, "RVEC: too many rivers"));
     }
     const std::int64_t limit_x = static_cast<std::int64_t>(physical.width) * kRiverSubpixel;
     const std::int64_t limit_y = static_cast<std::int64_t>(physical.height) * kRiverSubpixel;
@@ -97,49 +79,52 @@ Result<void, Error> validate_rivers(const RiverLayer& rivers, const PhysicalLaye
         const River& river = rivers.rivers[i];
         const std::string who = "RVEC river " + std::to_string(i + 1) + ": ";
         if (river.id != i + 1) {
-            return R::err(err(nature_error::kBadRiverTable, who + "ids must be dense 1..N"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable, who + "ids must be dense 1..N"));
         }
         if (river.rank == 0) {
-            return R::err(err(nature_error::kBadRiverTable, who + "rank must be 1..255"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable, who + "rank must be 1..255"));
         }
         if (!codec::valid_ascii_key(river.key, kMaxRiverKeyLength) || !keys.insert(river.key).second) {
-            return R::err(err(nature_error::kBadRiverTable, who + "invalid or duplicate key"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable, who + "invalid or duplicate key"));
         }
         if (river.points.size() < 2 || river.points.size() > kMaxRiverPoints) {
-            return R::err(err(nature_error::kBadRiverTable,
-                              who + "needs 2.." + std::to_string(kMaxRiverPoints) + " points"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable,
+                                            who + "needs 2.." + std::to_string(kMaxRiverPoints) + " points"));
         }
         vertices += river.points.size();
         if (vertices > kMaxRiverVertices) {
-            return R::err(err(nature_error::kBadRiverTable, "RVEC: too many vertices"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable, "RVEC: too many vertices"));
         }
         for (std::size_t k = 0; k < river.points.size(); ++k) {
             const RiverPoint& p = river.points[k];
             if (p.x < 0 || p.y < 0 || p.x >= limit_x || p.y >= limit_y) {
-                return R::err(err(nature_error::kBadRiverGeometry, who + "vertex outside the grid"));
+                return R::err(
+                    codec::make_error(nature_error::kBadRiverGeometry, who + "vertex outside the grid"));
             }
             if (p.width_class == 0) {
-                return R::err(err(nature_error::kBadRiverTable, who + "width class must be 1..255"));
+                return R::err(
+                    codec::make_error(nature_error::kBadRiverTable, who + "width class must be 1..255"));
             }
             if (k > 0) {
                 const RiverPoint& q = river.points[k - 1];
                 if (p.x == q.x && p.y == q.y) {
-                    return R::err(err(nature_error::kBadRiverGeometry, who + "repeated vertex"));
+                    return R::err(
+                        codec::make_error(nature_error::kBadRiverGeometry, who + "repeated vertex"));
                 }
                 if (p.width_class < q.width_class) {
-                    return R::err(
-                        err(nature_error::kRankNotMonotonic, who + "width class decreases downstream"));
+                    return R::err(codec::make_error(nature_error::kRankNotMonotonic,
+                                                    who + "width class decreases downstream"));
                 }
             }
             const std::size_t pixel = static_cast<std::size_t>(p.y / kRiverSubpixel) * physical.width +
                                       static_cast<std::size_t>(p.x / kRiverSubpixel);
             if (in_salt_water(physical, salt, pixel)) {
-                return R::err(err(nature_error::kRiverInSea, who + "vertex lies in the sea"));
+                return R::err(codec::make_error(nature_error::kRiverInSea, who + "vertex lies in the sea"));
             }
         }
         if (river.points.back().width_class != river.rank) {
-            return R::err(
-                err(nature_error::kRankNotMonotonic, who + "rank differs from the mouth width class"));
+            return R::err(codec::make_error(nature_error::kRankNotMonotonic,
+                                            who + "rank differs from the mouth width class"));
         }
     }
     return R::ok();
@@ -148,45 +133,46 @@ Result<void, Error> validate_rivers(const RiverLayer& rivers, const PhysicalLaye
 Result<void, Error> validate_regions(const RegionLayer& regions, const PhysicalLayer& physical) {
     using R = Result<void, Error>;
     if (regions.shift > kMaxShift) {
-        return R::err(err(nature_error::kBadRegionRaster, "NREG: shift above 3"));
+        return R::err(codec::make_error(nature_error::kBadRegionRaster, "NREG: shift above 3"));
     }
     const std::size_t expected =
         static_cast<std::size_t>(region_raster_extent(physical.width, regions.shift)) *
         region_raster_extent(physical.height, regions.shift);
     if (regions.raster.size() != expected) {
-        return R::err(err(nature_error::kBadRegionRaster, "NREG does not match the grid size for its shift"));
+        return R::err(codec::make_error(nature_error::kBadRegionRaster,
+                                        "NREG does not match the grid size for its shift"));
     }
     if (regions.regions.size() > 255U) {
-        return R::err(err(nature_error::kBadRegionTable, "NRTB: too many regions"));
+        return R::err(codec::make_error(nature_error::kBadRegionTable, "NRTB: too many regions"));
     }
     std::set<std::string> keys;
     for (std::size_t i = 0; i < regions.regions.size(); ++i) {
         const NaturalRegion& r = regions.regions[i];
         const std::string who = "NRTB region " + std::to_string(i + 1) + ": ";
         if (r.id != i + 1) {
-            return R::err(err(nature_error::kBadRegionTable, who + "ids must be dense 1..N"));
+            return R::err(codec::make_error(nature_error::kBadRegionTable, who + "ids must be dense 1..N"));
         }
         if (r.kind != RegionKind::climate_zone && r.kind != RegionKind::orographic) {
-            return R::err(err(nature_error::kBadRegionTable, who + "unknown kind"));
+            return R::err(codec::make_error(nature_error::kBadRegionTable, who + "unknown kind"));
         }
         if (!codec::valid_ascii_key(r.key, kMaxRegionKeyLength) || !keys.insert(r.key).second) {
-            return R::err(err(nature_error::kBadRegionTable, who + "invalid or duplicate key"));
+            return R::err(codec::make_error(nature_error::kBadRegionTable, who + "invalid or duplicate key"));
         }
         if (!printable_name(r.name)) {
-            return R::err(err(nature_error::kBadRegionTable, who + "invalid name"));
+            return R::err(codec::make_error(nature_error::kBadRegionTable, who + "invalid name"));
         }
     }
     std::array<bool, 256> used{};
     for (const std::uint8_t id : regions.raster) {
         if (id > regions.regions.size()) {
-            return R::err(err(nature_error::kBadRegionId, "NREG: id without a table entry"));
+            return R::err(codec::make_error(nature_error::kBadRegionId, "NREG: id without a table entry"));
         }
         used[id] = true;
     }
     for (std::size_t i = 0; i < regions.regions.size(); ++i) {
         if (!used[i + 1]) {
-            return R::err(
-                err(nature_error::kBadRegionId, "NRTB region " + std::to_string(i + 1) + " has no pixels"));
+            return R::err(codec::make_error(nature_error::kBadRegionId,
+                                            "NRTB region " + std::to_string(i + 1) + " has no pixels"));
         }
     }
     return R::ok();
@@ -231,7 +217,7 @@ Result<std::vector<River>, Error> decode_river_vectors(std::span<const std::uint
     core::ByteReader r(bytes);
     const std::uint32_t count = r.u32();
     if (r.ok() && count > 65535U) {
-        return R::err(err(nature_error::kBadRiverTable, "RVEC: too many rivers"));
+        return R::err(codec::make_error(nature_error::kBadRiverTable, "RVEC: too many rivers"));
     }
     std::vector<River> rivers;
     std::size_t vertices = 0;
@@ -245,7 +231,7 @@ Result<std::vector<River>, Error> decode_river_vectors(std::span<const std::uint
         }
         vertices += n;
         if (n > kMaxRiverPoints || vertices > kMaxRiverVertices) {
-            return R::err(err(nature_error::kBadRiverTable, "RVEC: too many points"));
+            return R::err(codec::make_error(nature_error::kBadRiverTable, "RVEC: too many points"));
         }
         if (static_cast<std::uint64_t>(n) * kPointBytes > r.remaining()) {
             r.fail();
@@ -260,7 +246,7 @@ Result<std::vector<River>, Error> decode_river_vectors(std::span<const std::uint
         river.key = get_str(r);
         rivers.push_back(std::move(river));
     }
-    if (auto ok = finish_blob(r, allow_trailing, kRvec); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kRvec, nature_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     return R::ok(std::move(rivers));
@@ -292,7 +278,7 @@ Result<std::vector<NaturalRegion>, Error> decode_region_table(std::span<const st
         n.name = get_str(r);
         regions.push_back(std::move(n));
     }
-    if (auto ok = finish_blob(r, allow_trailing, kNrtb); !ok) {
+    if (auto ok = codec::finish_blob(r, allow_trailing, kNrtb, nature_error::kBadChunk); !ok) {
         return R::err(ok.error());
     }
     return R::ok(std::move(regions));
@@ -319,7 +305,7 @@ Result<Pmd2Writer, Error> build_attached(std::span<const std::uint8_t> physical_
     }
     const Pmd2Header& head = reader.value().header();
     if (head.kind != Pmd2Kind::physical) {
-        return R::err(err(nature_error::kWrongKind, "not a physical PMD2 container"));
+        return R::err(codec::make_error(nature_error::kWrongKind, "not a physical PMD2 container"));
     }
     auto physical = read_physical(physical_bytes);
     if (!physical) {
@@ -425,7 +411,7 @@ read_from(const Pmd2Reader& reader, const PhysicalLayer& physical, const Physica
     using R = Result<NatureLayer, Error>;
     const Pmd2Header& head = reader.header();
     if (head.kind != Pmd2Kind::physical) {
-        return R::err(err(nature_error::kWrongKind, "not a physical PMD2 container"));
+        return R::err(codec::make_error(nature_error::kWrongKind, "not a physical PMD2 container"));
     }
     const bool allow_trailing = head.minor > kPmd2KnownMinor;
     NatureLayer nature;
@@ -433,7 +419,7 @@ read_from(const Pmd2Reader& reader, const PhysicalLayer& physical, const Physica
     const Pmd2ChunkInfo* rivr = usable(reader, kRivr);
     const Pmd2ChunkInfo* rvec = usable(reader, kRvec);
     if ((rivr == nullptr) != (rvec == nullptr)) {
-        return R::err(err(nature_error::kMissingChunk, "RIVR and RVEC must come together"));
+        return R::err(codec::make_error(nature_error::kMissingChunk, "RIVR and RVEC must come together"));
     }
     if (rivr != nullptr) {
         auto info = reader.raster_info(kRivr);
@@ -442,7 +428,8 @@ read_from(const Pmd2Reader& reader, const PhysicalLayer& physical, const Physica
         }
         if (info.value().elem_bytes != 1 || info.value().shift != 0 || info.value().width != head.width ||
             info.value().height != head.height) {
-            return R::err(err(nature_error::kBadRiverRaster, "RIVR: not a full-resolution u8 raster"));
+            return R::err(
+                codec::make_error(nature_error::kBadRiverRaster, "RIVR: not a full-resolution u8 raster"));
         }
         auto raster = reader.read_raster_u8(kRivr, 0, options.threads);
         if (!raster) {
@@ -465,7 +452,7 @@ read_from(const Pmd2Reader& reader, const PhysicalLayer& physical, const Physica
     const Pmd2ChunkInfo* nreg = usable(reader, kNreg);
     const Pmd2ChunkInfo* nrtb = usable(reader, kNrtb);
     if ((nreg == nullptr) != (nrtb == nullptr)) {
-        return R::err(err(nature_error::kMissingChunk, "NREG and NRTB must come together"));
+        return R::err(codec::make_error(nature_error::kMissingChunk, "NREG and NRTB must come together"));
     }
     if (nreg != nullptr) {
         auto info = reader.raster_info(kNreg);
@@ -473,7 +460,7 @@ read_from(const Pmd2Reader& reader, const PhysicalLayer& physical, const Physica
             return R::err(info.error());
         }
         if (info.value().elem_bytes != 1) {
-            return R::err(err(nature_error::kBadRegionRaster, "NREG: not a u8 raster"));
+            return R::err(codec::make_error(nature_error::kBadRegionRaster, "NREG: not a u8 raster"));
         }
         auto raster = reader.read_raster_u8(kNreg, 0, options.threads);
         if (!raster) {
