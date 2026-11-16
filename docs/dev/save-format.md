@@ -91,7 +91,8 @@ off  size
 | 20 | `preview` | bytes | нет | зарезервировано под скриншот-превью M2 (E5/E26) |
 | 21 | `events_hash` | u64 | нет | хеш скомпилированного набора событий (`EventSet::hash()`, [event-engine.md](event-engine.md) §20.1); нет ключа — партия без событий; при загрузке сверяется так же, как `content_hash` (кроме `--dev`) — сверку добавляет E13-T07; пишет E11-T03 |
 | 22 | `court_hash` | u64 | нет | `CourtRules::hash()` ([court-model.md](court-model.md) §13.2); пишется, только если системы двора установлены (E10-T20); нет ключа — партия без двора |
-| 23…63 | — | | | свободны для сводки; выдаёт T02/следующие эпики строкой в этой таблице |
+| 23 | `crisis_hash` | u64 | нет | `CrisisRules::hash()` ([throne-crisis-model.md](throne-crisis-model.md) §13.2); пишется, только если кризис включён (E12-T22); нет ключа — партия без кризиса; при загрузке сверяется так же, как `events_hash` и `court_hash` |
+| 24…63 | — | | | свободны для сводки; выдаёт T02/следующие эпики строкой в этой таблице |
 
 **Реализовано (T02):** `SaveSummary`, `summary_from_world(world)` (схема, дата, тик, хеш набора контента, `world_hash`, версия сборки; **часы не читаются** — `saved_at`, `play_time_s`, сценарий, род игрока, глава, казна, вид и имя заполняет вызывающий, T05), `serialize_save(world, pending, summary)` и прежняя перегрузка без сводки (минимум из мира, детерминированно), `read_save_summary(bytes[, file_size])` / `read_save_summary(path)` (читает не больше 44 + 16 КиБ, zstd не трогает; для версии 1 возвращает `SaveInfo` без сводки — каталог показывает «Старый»), `SaveData::summary` и `SaveData::format_version` у `deserialize_save` (для версии 1 — минимум из мира, `game_version` пуст). Писатель **подрезает** строки до пределов по границе символа, выбрасывает NUL и невалидный UTF-8, ограничивает прогресс цели 10⁶ и неизвестный вид приводит к ручному, а превью, которое не помещается в 16 КиБ, не пишет: он не способен создать файл, который не прочтёт читатель. Известные ключи 1…20 читаются строго (длины, диапазоны), неизвестные пропускаются. Порядок проверки схемы: п. 7 §2.4 выполняется после чтения мира, как записано; отказ 28 — раньше разжатия.
 
@@ -215,7 +216,14 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 69 | `court_favor` | E10-T03 (милость, услуги, партия по роду) | схема E10-T03 | 1 | спецификация |
 | 70 | `court_portfolio` | E10-T03 ([court-model.md](court-model.md) §20.13: портфели должностей, 44 байта на строку) | схема E10-T03 | 1 | спецификация E10-T22 |
 | 71 | `court_orders` | E10-T03 (кольцо приказов портфелей, 64 записи) | схема E10-T03 | 1 | спецификация E10-T22 |
-| 72…83 | — | **E12** (император и кризис: `realm`, `suspicion`, `throne`, `plots`, `coup_log` + резерв; E12-T03) | | | резерв (12 id) |
+| 72 | `realm` | E12-T03 ([throne-crisis-model.md](throne-crisis-model.md) §13.1: единственная строка `Realm`: государь, стабильность и вклады, фаза, входы, авторитет, болезнь, защитное окно, повестка, гвардия, курсоры E9, счётчики) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 73 | `suspicion` | E12-T03 (подозрение императора к родам) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 74 | `throne` | E12-T03 (претензии и поддержка) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 75 | `plots` | E12-T03 (заговоры и участники с взносами) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 76 | `denunciations` | E12-T03 (доносы) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 77 | `stances` | E12-T03 (позиции ИИ-родов) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 78 | `coup_log` | E12-T03 (кольцо журнала переворотов, 32 записи) | схема E12-T03 | 1 | спецификация E12-T01 |
+| 79…83 | — | **E12** (резерв: E18 блоки и фаза 4, M2) | | | резерв (5 id) |
 | 84…91 | — | **E30** (`game_setup`, `goals`, `key_decisions`, `score_history`; E30-T03) | | | резерв (8 id) |
 | 92…95 | — | **E13** (метаданные мира, если понадобятся; иначе свободны) | | | резерв (4 id) |
 | 96… | — | следующие эпики (E14, E31, E33, E34, …) | | | назначает ADR эпика по правилу §5.2 |
@@ -249,7 +257,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 64…95 | E8 | выпущены спецификацией E8-T01 ([marriage-succession-model.md](marriage-succession-model.md) §7.1): 64 `SendMarriageEnvoy`, 65 `WithdrawMarriageEnvoy`, 66 `RespondMarriage`, 67 `Betroth`, 68 `BreakBetrothal`, 69 `Tonsure`, 70 `SetHeir`, 71 `ChangeSuccessionLaw`, 72 `Disown`, 73 `AssignRegent`, 74 `DismissRegent`, 75 `ResolveSuccessionDispute`, 76 `GrantLand`, 77 `AssignGodparents`, 78 `Wed`, 79 `OpenSuccessionDispute`, 80 `Succeed`, 81 `SettleWidowhood`, 82 `RegencyCheck`, 83 `PartitionEstate` (в коде пока нет) | 84…95 |
 | 96…127 | E11 | выпущены спецификацией E11-T01 ([event-engine.md](event-engine.md) §8.4): 96 `ChooseEventOption`, 97 `DeferEvent`, 98 `AcknowledgeJournal`, 99 `SetEventSettings`, 100 `FireEvent`, 101 `SetEventFlag`, 102 `SetEventVariable`, 103 `PostEventMoney`, 104 `AdjustSkill`, 105 `AdjustHealth`, 106 `AdjustStress`, 107 `AdjustProvinceUnrest`, 108 `AdjustProvinceControl`, 109 `AdjustGroupMood` (в коде пока нет) | 110…127 |
 | 128…143 | E10 | выпущены спецификацией E10-T01 ([court-model.md](court-model.md) §7.1): 128 `AssignOffice`, 129 `ResignOffice`, 130 `DismissOffice`, 131 `PetitionForOffice`, 132 `WithdrawPetition`, 133 `DecideAppointment`, 134 `HireServant`, 135 `FireServant`, 136 `GiftToEmperor`, 137 `AdjustFavor`, 138 `AdjustServantLoyalty`, 139 `OpenVacancy`, 140 `AssignParty`, 141 `EndDisgrace`, 142 `SetServantMarket`, **143 `SetPortfolioCourse`** (E10-T22; в коде пока нет) | — (блок исчерпан) |
-| 144…167 | E12 | — | 144…167 |
+| 144…167 | E12 | выпущены спецификацией E12-T01 ([throne-crisis-model.md](throne-crisis-model.md) §7.1): 144 `SetRealmState`, 145 `SetCrisisPhase`, 146 `SetEmperorAgenda`, 147 `AdjustSuspicion`, 148 `Denounce`, 149 `PressClaim`, 150 `WithdrawClaim`, 151 `SupportClaim` (вместо `DesignateHeir`: он дублировал E8 `SetHeir`), 152 `StartPlot`, 153 `JoinPlot`, 154 `LeavePlot`, 155 `ContributeToPlot`, 156 `ExecuteCoup`, 157 `ResolveCoup`, 158 `TransferThrone`, 159 `SetGuardControl`, 160 `SetRealmInput`, 161 `AdvancePlot`, 162 `ResolveDenunciation`, 163 `SetStance` (в коде пока нет) | 164…167 |
 | 168…175 | E30 | — | 168…175 |
 | 176…255 | E14, E15, E16, E17, E20, E31, E33, E34 — порядка 10 тегов на эпик | — | 176…255 (точные блоки назначает ADR эпика по §5.2-подобному правилу) |
 | 256…263 | E10 (портфели) | выпущены спецификацией E10-T22 ([court-model.md](court-model.md) §20.7): 256 `IssuePortfolioOrder`, 257 `AdvancePortfolio` (в коде пока нет) | 258…263 |
