@@ -43,7 +43,7 @@
 | Тема | Issue | Рекомендация (действует до ответа) |
 |---|---|---|
 | Вражда направленная или парная | [#526](https://github.com/savinovanton/patriarch/issues/526) | A: направленные уровни, пара — по большему |
-| Цена посредничества и дара | [#527](https://github.com/savinovanton/patriarch/issues/527) | A: деньги рода (статья 106) |
+| Цена посредничества и дара | [#527](https://github.com/savinovanton/patriarch/issues/527) | **решено владельцем (2026-11-15): деньги рода (статья 106) и/или ресурс «влияние», выбор при каждом действии** — [influence-model.md](influence-model.md) (E7-T38), поле `pay`; детали выбора — [#572](https://github.com/savinovanton/patriarch/issues/572) |
 | Скорость затухания враждебных мнений | [#528](https://github.com/savinovanton/patriarch/issues/528) | A: оставить 1 очко/мес |
 | Враги и приказы: отказ или принуждение | [#529](https://github.com/savinovanton/patriarch/issues/529) | A: мягко на соперничестве, жёсткий отказ на вражде |
 | Брак как путь к примирению | [#530](https://github.com/savinovanton/patriarch/issues/530) | A: компенсационный и межродовой |
@@ -277,7 +277,7 @@ enum class CooperationKind : u8 { Marriage, Office, Council, Regency, Order };
 | **Брак** | компенсационный брак обиженного (причина 53), межродовое +10 `MarriedInto` (E8) | условия брака |
 | **События E11** | эффекты `mediate_feud`, `gift_to_member`, `change_opinion` (54, 55) | по событию |
 
-Цена в «влиянии» — [#527](https://github.com/savinovanton/patriarch/issues/527): до ответа платим деньгами рода (статья 106).
+Цена: по решению владельца ([#527](https://github.com/savinovanton/patriarch/issues/527)) **деньги рода (статья 106) или ресурс «влияние»**, выбор при каждом действии — поле `pay` команд 23 и 24; у действия две цены в данных, обе видны в предпросмотре ([influence-model.md](influence-model.md) §6; значения влияния — «3,0 × уровень» для смягчения и «6,0 × уровень» для примирения `[предл.]`).
 
 ### 7.2 `MediateFeud{a, b, mode}`
 
@@ -299,9 +299,9 @@ power = 10                               (15001 основа)
 Δ = clamp(power / 2, mediate_min = 3, mediate_max = 20)
 ```
 
-**Soften:** каждой стороне, чьё мнение о другой **отрицательно**, `add_opinion(+Δ, 50 Mediated)`; `mediation_ready = today + 180`; `mark_feud_dirty`. Цена: `mediation_cost_kop × эффективный_уровень` (3 000 коп × уровень).
+**Soften:** каждой стороне, чьё мнение о другой **отрицательно**, `add_opinion(+Δ, 50 Mediated)`; `mediation_ready = today + 180`; `mark_feud_dirty`. Цена: `mediation_cost_kop × эффективный_уровень` (3 000 коп × уровень) **или** `mediation_soften_influence × уровень` (3,0 очка × уровень) по полю `pay`.
 
-**Reconcile** (оба направленных уровня ≤ `Rivalry`): каждой стороне с мнением < −10 `add_opinion(−10 − мнение, 51 Reconciled)`; `truce_until = today + truce_months`, `peak = 0`, `Reconciled`; `AdjustUnity(+2, 11)`; заметка летописи 111; `mediation_ready = today + 365`. Цена: `reconcile_cost_kop × уровень` (8 000 коп × уровень).
+**Reconcile** (оба направленных уровня ≤ `Rivalry`): каждой стороне с мнением < −10 `add_opinion(−10 − мнение, 51 Reconciled)`; `truce_until = today + truce_months`, `peak = 0`, `Reconciled`; `AdjustUnity(+2, 11)`; заметка летописи 111; `mediation_ready = today + 365`. Цена: `reconcile_cost_kop × уровень` (8 000 коп × уровень) **или** 6,0 очка × уровень по полю `pay`.
 
 Если мощность мала (Δ = 3), эффект всё равно применяется: игрок видит его в предпросмотре заранее, **случайности нет**.
 
@@ -309,9 +309,9 @@ power = 10                               (15001 основа)
 
 `since` обновляется, когда эффективный уровень вырос. Посредничество сразу после ссоры слабее — этим дизайн заставляет подождать, а не «закрывать» ссору деньгами в тот же день.
 
-### 7.4 `GiftToMember{recipient, amount_kop}`
+### 7.4 `GiftToMember{recipient, pay, amount}`
 
-Актор — род (глава). Получатель — живой взрослый член рода (не сам глава). `amount_kop ≥ gift_min_kop` (1 000). Эффект: деньги — расход 106; `recipient → acting_head`: `+min(2 × amount/1000, 10)` (причина 52, потолок вклада +30); если у получателя есть направленный уровень ≥ `Cooling` к кому-то в роду — самому враждебному (мнение ниже всех, ничья — меньший id) ещё `+½` от этой дельты (утешение). Причина 44 `Favouritism` может сработать на **других** равных получателю (§4.2).
+Актор — род (глава). Получатель — живой взрослый член рода (не сам глава). При `pay = Money`: `amount` — копейки, `amount ≥ gift_min_kop` (1 000), деньги — расход 106; при `pay = Influence` («покровительство», [influence-model.md](influence-model.md) §6): `amount` — сотые очка, `amount ≥ 100`, деньги не списываются, эффект на мнение тот же из расчёта 1,0 очка ≈ 1 000 коп (`+2` за 1,0 очка, ≤ +10). Эффект: `recipient → acting_head`: `+min(2 × amount/1000, 10)` (причина 52, потолок вклада +30); если у получателя есть направленный уровень ≥ `Cooling` к кому-то в роду — самому враждебному (мнение ниже всех, ничья — меньший id) ещё `+½` от этой дельты (утешение). Причина 44 `Favouritism` может сработать на **других** равных получателю (§4.2).
 
 ### 7.5 Брак как примирение ([#530](https://github.com/savinovanton/patriarch/issues/530))
 
@@ -353,12 +353,12 @@ E8 `Wed` (хук E7-T29): если женится член M с направле
 | Тег | Команда | Актор | Поля | Кто выпускает |
 |---:|---|---|---|---|
 | 22 | `SetFeudLevel` | системный | `holder`, `target`, `level (0…3)`, `reason` (`Escalated`, `Cooled`, `TruceEnded`, `TruceBroken`, `PartnerDied`) | `dynasty.relations` |
-| 23 | `MediateFeud` | `DynastyId` | `a`, `b`, `mode (1 Soften, 2 Reconcile)` | игрок, ИИ, события E11 |
-| 24 | `GiftToMember` | `DynastyId` | `recipient`, `amount_kop` | игрок, события E11 |
+| 23 | `MediateFeud` | `DynastyId` | `a`, `b`, `mode (1 Soften, 2 Reconcile)`, `pay (0 Money, 1 Influence)` | игрок, ИИ, события E11 |
+| 24 | `GiftToMember` | `DynastyId` | `recipient`, `pay`, `amount` (копейки при `Money`, сотые очка при `Influence`) | игрок, события E11 |
 
 `SetFeudLevel.apply` меняет уровень в строке (создаёт или удаляет её), обновляет `peak`, `since`, снимает перемирие при `TruceBroken`; заметка летописи только при входе в `Feud` (`kNoteFeudBegan = 110`) и выходе из него (`kNoteFeudEnded = 112`); хук журнала → `on_feud_level_changed` (§12).
 
-Коды `FeudDenial` (причины отказа, ключи тултипов `relations.denial.<code>`): `NotDynastyMode`, `NotMember`, `SameCharacter`, `NotAdult`, `NoConflict`, `OnCooldown`, `FeudTooDeep`, `NotEnoughMoney`, `AmountTooSmall`, `FeudRefusal` (из `cooperation`), `RegencyForbids` (пока действует регентство, посредничество главы-регента разрешено; реформа закона — нет, E8).
+Коды `FeudDenial` (причины отказа, ключи тултипов `relations.denial.<code>`): `NotDynastyMode`, `NotMember`, `SameCharacter`, `NotAdult`, `NoConflict`, `OnCooldown`, `FeudTooDeep`, `NotEnoughMoney`, `NotEnoughInfluence` (E7-T38; недостача в сотых очка), `AmountTooSmall`, `FeudRefusal` (из `cooperation`), `RegencyForbids` (пока действует регентство, посредничество главы-регента разрешено; реформа закона — нет, E8).
 
 Все изменения единства — `AdjustUnity` с кодами `kStandingReasonHouseConflict = 10`, `kStandingReasonReconciliation = 11`; мнений — `AdjustOpinion`/`add_opinion` с кодами §4.2.
 
@@ -533,7 +533,7 @@ trait_pair { a = "ambitious" b = "cautious" ab = -2.0 ba = -1.5 cap = 20 }
 | E7-T28 | `feud_level_for`, `dynasty.relations`, `dynasty.relations.unity`, давление черт и спора | L |
 | E7-T29 | причины E8 (41, 42б, 44, 45, 46, 47, 53) | M |
 | E7-T30 | причины E10 (43, 44) | S |
-| E7-T31 | `MediateFeud`, `GiftToMember`, предпросмотр, ИИ-посредничество | M |
+| E7-T31 | `MediateFeud`, `GiftToMember` (с полем `pay`, две цены в предпросмотре, +0,5 дн. по E7-T38), предпросмотр, ИИ-посредничество | M |
 | E7-T32 | `cooperation` и подключение к E8/E10 | M |
 | E7-T33 | on-action 26…28, триггеры, эффекты, летопись | M |
 | E7-T34 | пакет «Семейные ссоры» (≈ 8 событий) | M |

@@ -321,7 +321,8 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 5 `chronicle` | T16 | записи по родам, с ограничением объёма | 1 |
 | 6 `opinion` | T17 | мнения: держатель, цель, значение, причина, срок | 1 |
 | 8 `feud_pairs` | E7-T26 (выдан спецификацией E7-T25, [house-relations-model.md](../dev/house-relations-model.md) §16) | пары членов рода: уровни вражды, перемирие, кулдаун посредничества; часть хеша `ExtPart` 38 (блок 38…39 выдан E7-T25) | 1 |
-| 9…15 | резерв E7 | | |
+| 10 `influence` | E7-T38 (выдан спецификацией, [influence-model.md](../dev/influence-model.md) §17; объявляет E10-T02, сохраняет E10-T03 тем же подъёмом схемы) | запас влияния по родам (8 Б на строку) и кольцо трат (64 записи); часть хеша `ExtPart` 40 (блок 40…41 выдан E7-T38) | 1 |
+| 9, 11…15 | резерв E7 | | |
 | 16…31 | E8 (подтверждено E8-T01: выпущены 16…23 `family_counters`, `negotiations`, `betrothals`, `marriages`, `person_status`, `succession`, `regency`, `dispute`; 24…31 резерв — [marriage-succession-model.md](../dev/marriage-succession-model.md) §13.1; части хеша `ExtPart` 8…14) | | |
 | 32 `economy` | E9-T03 | заголовок экономики: `present`, `rules_hash`, `crown_dynasty`, ведомость (даты), счётчики | 1 |
 | 33 `economy_dynasty` … 39 `economy_incidents` | E9-T03 | роды, провинции, население, счета с кольцами ведомости, очередь стройки, займы/квоты/итоги, журнал происшествий; раскладка — `economy-model.md` §13.5 и комментарий в `src/sim/world_economy_io.cpp` | 1 |
