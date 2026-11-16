@@ -13,6 +13,7 @@ add_executable(patriarch_tests
     content_loader_test.cpp
     core_path_utf8_test.cpp
     core_smoke.cpp
+    core_utf8_test.cpp
     date_test.cpp
     demo_growth_test.cpp
     demography_content_test.cpp

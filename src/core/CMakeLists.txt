@@ -8,6 +8,7 @@ add_library(patriarch_core STATIC
     include/pat/core/bytes.hpp
     include/pat/core/fixed.hpp
     include/pat/core/hash_stream.hpp
+    include/pat/core/utf8.hpp
     include/pat/core/ids.hpp
     include/pat/core/profile.hpp
     include/pat/core/result.hpp
