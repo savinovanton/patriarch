@@ -62,6 +62,16 @@ public:
     [[nodiscard]] bool at_end() const noexcept { return pos_ == data_.size(); }
     [[nodiscard]] std::size_t remaining() const noexcept { return data_.size() - pos_; }
     [[nodiscard]] std::size_t position() const noexcept { return pos_; }
+
+    /// True while the reader has not failed and `count` entries of at least `bytes_each` bytes could
+    /// still be present in the input: guards allocations against absurd counts in damaged files.
+    /// Overflow-safe for any `count`; zero-sized entries are always plausible.
+    [[nodiscard]] bool can_hold(std::uint64_t count, std::uint64_t bytes_each) const noexcept {
+        if (failed_) {
+            return false;
+        }
+        return bytes_each == 0 || count <= remaining() / bytes_each;
+    }
     void fail() noexcept { failed_ = true; }
 
 private:

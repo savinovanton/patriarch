@@ -174,7 +174,7 @@ Result<std::vector<ProvinceEntry>, Error> decode_province_table(std::span<const 
     const auto truncated = [] { return R::err(err(province_error::kBadChunk, "PTBL: truncated")); };
     core::ByteReader r(bytes);
     const std::uint16_t count = r.u16();
-    if (!r.ok() || static_cast<std::size_t>(count) * kMinRecordBytes > r.remaining()) {
+    if (!r.can_hold(count, kMinRecordBytes)) {
         return truncated();
     }
     std::vector<ProvinceEntry> out;
@@ -193,7 +193,7 @@ Result<std::vector<ProvinceEntry>, Error> decode_province_table(std::span<const 
         e.centroid_y = r.u16();
         const std::uint8_t flags = r.u8();
         const std::uint16_t neighbor_count = r.u16();
-        if (!r.ok() || static_cast<std::size_t>(neighbor_count) * kBorderBytes > r.remaining()) {
+        if (!r.can_hold(neighbor_count, kBorderBytes)) {
             return truncated();
         }
         if ((flags & ~kFlagCoastal) != 0) {

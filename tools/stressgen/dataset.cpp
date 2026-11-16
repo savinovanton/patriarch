@@ -249,7 +249,7 @@ core::Result<Workload> deserialize_workload(std::span<const std::uint8_t> bytes,
     }
     auto read_count = [&](std::uint32_t record_size) {
         const auto count = in.u32();
-        if (count > kMaxRecords || static_cast<std::uint64_t>(count) * record_size > in.remaining()) {
+        if (count > kMaxRecords || !in.can_hold(count, record_size)) {
             in.fail();
             return 0U;
         }

@@ -21,8 +21,6 @@
 namespace pat::sim {
 namespace {
 
-using detail::plausible;
-
 constexpr std::size_t kNegotiationRowBytes = 55;
 constexpr std::size_t kOutcomeRowBytes = 75;
 constexpr std::size_t kBetrothalRowBytes = 50;
@@ -337,7 +335,7 @@ template <class Rows, class Projection>
 bool read_rows(
     core::ByteReader& in, Rows& rows, std::size_t limit, std::size_t row_bytes, Projection projection) {
     const std::uint32_t count = in.u32();
-    if (count > limit || !plausible(in, count, row_bytes)) {
+    if (count > limit || !in.can_hold(count, row_bytes)) {
         return false;
     }
     using Row = typename Rows::value_type;

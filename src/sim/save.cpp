@@ -573,7 +573,7 @@ core::Result<SaveData, Error> deserialize_save(std::span<const std::uint8_t> byt
     }
 
     const std::uint32_t pending_count = in.u32();
-    if (!in.ok() || static_cast<std::uint64_t>(pending_count) * 6 > in.remaining()) {
+    if (!in.can_hold(pending_count, 6)) {
         return R::err(save_error(kErrPending, "invalid pending command list"));
     }
     std::vector<Command> pending;

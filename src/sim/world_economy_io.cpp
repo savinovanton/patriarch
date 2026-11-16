@@ -60,7 +60,6 @@ namespace pat::sim {
 namespace {
 
 using core::Fixed32;
-using detail::plausible;
 
 constexpr std::size_t kLines = economy::kLedgerLineCount;
 constexpr std::size_t kRing = economy::kLedgerRingMonths;
@@ -547,7 +546,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyDynasty: {
             const std::uint32_t rows = in.u32();
-            if (rows != dynasty_count || !plausible(in, rows, kDynastyRowBytes)) {
+            if (rows != dynasty_count || !in.can_hold(rows, kDynastyRowBytes)) {
                 return "the economy dynasty rows do not match the dynasties";
             }
             e.dynasties.manpower_reserve.resize(rows);
@@ -560,7 +559,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyProvince: {
             const std::uint32_t rows = in.u32();
-            if (rows != province_count || !plausible(in, rows, kProvinceRowBytes)) {
+            if (rows != province_count || !in.can_hold(rows, kProvinceRowBytes)) {
                 return "the economy province rows do not match the provinces";
             }
             economy::ProvinceEconomy& p = e.provinces;
@@ -608,7 +607,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyPopulation: {
             const std::uint32_t rows = in.u32();
-            if (rows != province_count * economy::kGroupCount || !plausible(in, rows, kGroupRowBytes)) {
+            if (rows != province_count * economy::kGroupCount || !in.can_hold(rows, kGroupRowBytes)) {
                 return "the economy population rows do not match the provinces";
             }
             economy::PopulationGroups& g = e.groups;
@@ -628,7 +627,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyAccounts: {
             const std::uint16_t line_count = in.u16();
-            if (line_count > kLines || !plausible(in, line_count, 2)) {
+            if (line_count > kLines || !in.can_hold(line_count, 2)) {
                 return "the economy statement has an impossible number of lines";
             }
             // The codes tell where each stored line goes; an unissued or unordered code is damage.
@@ -679,7 +678,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyConstruction: {
             const std::uint32_t rows = in.u32();
-            if (!plausible(in, rows, kConstructionRowBytes)) {
+            if (!in.can_hold(rows, kConstructionRowBytes)) {
                 return "the construction queue has an impossible length";
             }
             economy::ConstructionQueue& q = e.construction;
@@ -697,7 +696,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyCredit: {
             const std::uint32_t loans = in.u32();
-            if (!plausible(in, loans, kLoanRowBytes)) {
+            if (!in.can_hold(loans, kLoanRowBytes)) {
                 return "the loan table has an impossible length";
             }
             economy::LoanTable& l = e.loans;
@@ -713,7 +712,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
                 l.collateral.emplace_back(in.u32());
             }
             const std::uint32_t quotas = in.u32();
-            if (!plausible(in, quotas, kQuotaRowBytes)) {
+            if (!in.can_hold(quotas, kQuotaRowBytes)) {
                 return "the quota table has an impossible length";
             }
             economy::QuotaTable& q = e.quotas;
@@ -726,7 +725,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
                 q.deadline.push_back(Date::from_days(in.i32()));
             }
             const std::uint32_t outcomes = in.u32();
-            if (outcomes > economy::kQuotaOutcomeRingSize || !plausible(in, outcomes, kOutcomeRowBytes)) {
+            if (outcomes > economy::kQuotaOutcomeRingSize || !in.can_hold(outcomes, kOutcomeRowBytes)) {
                 return "the ring of quota outcomes has an impossible length";
             }
             economy::QuotaOutcomeRing& o = e.outcomes;
@@ -743,7 +742,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
         }
         case detail::kSectionEconomyIncidents: {
             const std::uint32_t rows = in.u32();
-            if (rows > economy::kIncidentLogSize || !plausible(in, rows, kIncidentRowBytes)) {
+            if (rows > economy::kIncidentLogSize || !in.can_hold(rows, kIncidentRowBytes)) {
                 return "the incident log has an impossible length";
             }
             economy::IncidentLog& l = e.incidents;
@@ -761,7 +760,7 @@ const char* World::economy_read_section(std::uint16_t id, core::ByteReader& in) 
             e.meta.tax_levels = in.u8();
             e.meta.recruit_levels = in.u8();
             const std::uint32_t rows = in.u32();
-            if (rows != dynasty_count || !plausible(in, rows, kPolicyRowBytes)) {
+            if (rows != dynasty_count || !in.can_hold(rows, kPolicyRowBytes)) {
                 return "the economy policy rows do not match the dynasties";
             }
             e.dynasties.tax_policy.resize(rows);
