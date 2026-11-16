@@ -66,12 +66,6 @@ constexpr std::size_t kMaxName = 256;
 constexpr std::size_t kMaxNameChars = 64;
 constexpr std::uint32_t kMaxGoalProgressPpm = 1000000;
 
-std::uint64_t payload_hash(std::span<const std::uint8_t> payload) {
-    core::HashStream h;
-    h.bytes(payload);
-    return h.value();
-}
-
 Error save_error(int code, const char* message) {
     return Error{code, message};
 }
@@ -474,7 +468,7 @@ core::Result<Container, Error> parse_container(std::span<const std::uint8_t> byt
     }
 
     const auto summary_bytes = bytes.subspan(kSaveHeaderSize, summary_size);
-    if (payload_hash(summary_bytes) != summary_hash) {
+    if (core::hash_bytes(summary_bytes) != summary_hash) {
         return R::err(save_error(kErrSummaryCorrupt, "save summary is corrupted (hash mismatch)"));
     }
     auto summary = decode_summary(summary_bytes);
@@ -518,9 +512,9 @@ serialize_save(const World& world, std::span<const Command> pending_internal, co
     out.u16(kSaveFormatVersion);
     out.u16(0);  // flags
     out.u32(static_cast<std::uint32_t>(summary_bytes.size()));
-    out.u64(payload_hash(summary_bytes));
+    out.u64(core::hash_bytes(summary_bytes));
     out.u64(payload.size());
-    out.u64(payload_hash(payload.data()));
+    out.u64(core::hash_bytes(payload.data()));
     out.u64(compressed.size());
     out.bytes(summary_bytes);
     out.bytes(compressed);
@@ -599,7 +593,7 @@ core::Result<SaveData, Error> deserialize_save(std::span<const std::uint8_t> byt
     if (!decompressed.has_value()) {
         return R::err(decompressed.error());
     }
-    if (payload_hash(decompressed.value()) != c.payload_hash) {
+    if (core::hash_bytes(decompressed.value()) != c.payload_hash) {
         return R::err(save_error(kErrPayloadHash, "save is corrupted (hash mismatch)"));
     }
 

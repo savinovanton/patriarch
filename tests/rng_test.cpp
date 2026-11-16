@@ -1,3 +1,4 @@
+#include "pat/core/hash_stream.hpp"
 #include "pat/core/rng.hpp"
 
 #include <doctest/doctest.h>
@@ -29,6 +30,24 @@ TEST_CASE("rng: SplitMix64 and FNV-1a known answers") {
     CHECK(fnv1a64("") == 0xcbf29ce484222325ULL);
     CHECK(fnv1a64("events") == 0xdd63d0cec6bb7d04ULL);
     CHECK(fnv1a64("ai.dynasty.17") == 0x2464419d2c15c2e1ULL);
+}
+
+TEST_CASE("hash_bytes: FNV-1a 64 known vectors, HashStream equality, both overloads") {
+    const std::array<std::uint8_t, 6> foobar = {'f', 'o', 'o', 'b', 'a', 'r'};
+    const std::array<std::byte, 6> foobar_b = {
+        std::byte{'f'}, std::byte{'o'}, std::byte{'o'}, std::byte{'b'}, std::byte{'a'}, std::byte{'r'}};
+    CHECK(hash_bytes(std::span<const std::uint8_t>{}) == 0xcbf29ce484222325ULL);
+    CHECK(hash_bytes(std::span<const std::byte>{}) == 0xcbf29ce484222325ULL);
+    CHECK(hash_bytes(std::span<const std::uint8_t>(foobar)) == 0x85944171f73967e8ULL);
+    CHECK(hash_bytes(std::span<const std::byte>(foobar_b)) == 0x85944171f73967e8ULL);
+    const std::uint8_t a = 'a';
+    CHECK(hash_bytes(std::span<const std::uint8_t>(&a, 1)) == 0xaf63dc4c8601ec8cULL);
+
+    HashStream h;
+    h.bytes(foobar);
+    CHECK(h.value() == hash_bytes(std::span<const std::uint8_t>(foobar)));
+    CHECK(fnv1a64("foobar") == hash_bytes(std::span<const std::uint8_t>(foobar)));
+    static_assert(hash_bytes(std::span<const std::uint8_t>{}) == kFnv1a64OffsetBasis);
 }
 
 TEST_CASE("rng: same seed gives the same sequence, different streams differ") {

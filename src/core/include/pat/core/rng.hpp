@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pat/core/assert.hpp"
+#include "pat/core/hash_stream.hpp"
 
 #include <cstddef>
 #include <cstdint>
@@ -32,10 +33,10 @@ namespace pat::core {
 
 /// 64-bit FNV-1a hash of raw bytes; platform independent (unlike std::hash).
 [[nodiscard]] constexpr std::uint64_t fnv1a64(std::string_view bytes) noexcept {
-    std::uint64_t hash = 0xCBF29CE484222325ULL;
+    std::uint64_t hash = kFnv1a64OffsetBasis;
     for (const char c : bytes) {
         hash ^= static_cast<std::uint8_t>(c);
-        hash *= 0x100000001B3ULL;
+        hash *= kFnv1a64Prime;
     }
     return hash;
 }

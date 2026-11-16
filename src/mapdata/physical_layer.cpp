@@ -74,12 +74,6 @@ bool valid_prov_string(const std::string& s) {
            std::none_of(s.begin(), s.end(), [](char c) { return static_cast<unsigned char>(c) < 0x20U; });
 }
 
-std::uint64_t fnv(std::span<const std::uint8_t> bytes) {
-    core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 std::uint64_t raster_hash(std::span<const std::uint16_t> pixels) {
     core::HashStream h;
     for (const std::uint16_t v : pixels) {
@@ -329,8 +323,10 @@ std::uint64_t coast_key(std::uint32_t width,
 }
 
 std::uint64_t coast_key(const PhysicalLayer& layer) {
-    return coast_key(
-        layer.width, layer.height, fnv(encode_georef(layer.georef)), raster_hash(layer.water_body));
+    return coast_key(layer.width,
+                     layer.height,
+                     core::hash_bytes(encode_georef(layer.georef)),
+                     raster_hash(layer.water_body));
 }
 
 Result<std::uint64_t, Error> coast_key(const Pmd2Reader& reader) {

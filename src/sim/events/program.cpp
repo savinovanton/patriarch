@@ -1,6 +1,6 @@
 #include "pat/sim/events/program.hpp"
 
-#include "pat/core/rng.hpp"
+#include "pat/core/hash_stream.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -224,7 +224,7 @@ std::vector<std::byte> Program::to_bytes() const {
 
 std::uint64_t Program::hash() const noexcept {
     const std::vector<std::byte> bytes = to_bytes();
-    return core::fnv1a64(std::string_view(reinterpret_cast<const char*>(bytes.data()), bytes.size()));
+    return core::hash_bytes(bytes);
 }
 
 // ---- validation -----------------------------------------------------------------------------------

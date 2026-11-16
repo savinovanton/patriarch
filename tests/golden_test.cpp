@@ -58,12 +58,6 @@ std::string describe(const WorldHash& h) {
                        h.characters);
 }
 
-std::uint64_t hash_bytes(const std::vector<std::uint8_t>& bytes) {
-    pat::core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 demo::Config golden_config() {
     demo::Config c;
     c.seed = kSeed;
@@ -99,7 +93,7 @@ TEST_CASE("golden: replay file bytes are pinned") {
         (void)sim.tick();
         recorder.after_tick(sim);
     }
-    const std::uint64_t actual = hash_bytes(serialize_replay(recorder.finish(sim)));
+    const std::uint64_t actual = pat::core::hash_bytes(serialize_replay(recorder.finish(sim)));
     MESSAGE("actual replay bytes hash: " << std::format("{:#018x}", actual));
     CHECK(actual == kExpectedReplayBytesHash);
 }
@@ -117,7 +111,8 @@ TEST_CASE("golden: save file bytes are pinned") {
     REQUIRE(bytes.size() > 4);
     pat::core::ByteReader schema_word(std::span<const std::uint8_t>(bytes.data(), 4));
     CHECK(schema_word.u32() == World::kStateSchema);
-    const std::uint64_t actual = hash_bytes(std::vector<std::uint8_t>(bytes.begin() + 4, bytes.end()));
+    const std::uint64_t actual =
+        pat::core::hash_bytes(std::vector<std::uint8_t>(bytes.begin() + 4, bytes.end()));
     MESSAGE("actual save payload hash: " << std::format("{:#018x}", actual));
     CHECK(actual == kExpectedSaveBytesHash);
 }

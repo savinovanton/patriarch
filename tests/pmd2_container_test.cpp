@@ -123,12 +123,6 @@ int open_code(const std::vector<std::uint8_t>& bytes, const Pmd2OpenOptions& o =
     return r.has_value() ? 0 : r.error().code;
 }
 
-std::uint64_t fnv(std::span<const std::uint8_t> b) {
-    pat::core::HashStream h;
-    h.bytes(b);
-    return h.value();
-}
-
 void put64(std::vector<std::uint8_t>& b, std::size_t pos, std::uint64_t v) {
     for (std::size_t i = 0; i < 8; ++i) {
         b[pos + i] = static_cast<std::uint8_t>((v >> (8U * i)) & 0xFFU);
@@ -452,7 +446,7 @@ TEST_CASE("pmd2: corrupt bytes are caught in every area") {
         for (std::size_t i = 0; i < 8; ++i) {
             b[at + i] = 0xEE;  // destroys the frame header
         }
-        put64(b, e + 48, fnv(std::span<const std::uint8_t>(b).subspan(at, size)));
+        put64(b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, size)));
         refresh_header(b);
         auto r = Pmd2Reader::open(b, known_all());
         REQUIRE(r.has_value());
@@ -548,7 +542,7 @@ TEST_CASE("pmd2: table inconsistencies are rejected") {
         const std::size_t at = static_cast<std::size_t>(get64(b, e + 16));
         put32(b, at + 4, 149);
         const std::size_t prefix = 16 + 12 * 6;
-        put64(b, e + 48, fnv(std::span<const std::uint8_t>(b).subspan(at, prefix)));
+        put64(b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, prefix)));
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadRaster);
     }

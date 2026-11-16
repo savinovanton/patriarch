@@ -30,12 +30,6 @@ Error pmd2_err(int code, std::string message) {
     return Error{code, std::move(message)};
 }
 
-std::uint64_t fnv(std::span<const std::uint8_t> bytes) {
-    core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 bool printable_id(Pmd2ChunkId id) {
     for (unsigned shift = 0; shift < 32; shift += 8) {
         const std::uint32_t c = (id >> shift) & 0xFFU;
@@ -263,11 +257,11 @@ Result<void, Error> Pmd2Writer::add_blob(const Pmd2ChunkSpec& spec, std::span<co
     c.info.codec = options_.codec;
     c.info.instance = spec.instance;
     c.info.raw_size = bytes.size();
-    c.info.raw_hash = fnv(bytes);
+    c.info.raw_hash = core::hash_bytes(bytes);
     c.body = options_.codec == Pmd2Codec::zstd ? core::compress(bytes, options_.zstd_level)
                                                : std::vector<std::uint8_t>(bytes.begin(), bytes.end());
     c.info.stored_size = c.body.size();
-    c.info.stored_hash = fnv(c.body);
+    c.info.stored_hash = core::hash_bytes(c.body);
     chunks_.push_back(std::move(c));
     return R::ok();
 }
@@ -332,7 +326,7 @@ Result<void, Error> Pmd2Writer::add_raster_typed(const Pmd2ChunkSpec& spec,
     std::uint64_t total = prefix.size() + static_cast<std::uint64_t>(tile_count) * kTileIndexEntry;
     for (const auto& s : stored) {
         prefix.u32(static_cast<std::uint32_t>(s.size()));
-        prefix.u64(fnv(s));
+        prefix.u64(core::hash_bytes(s));
         total += s.size();
     }
 
@@ -353,7 +347,7 @@ Result<void, Error> Pmd2Writer::add_raster_typed(const Pmd2ChunkSpec& spec,
     c.info.instance = spec.instance;
     c.info.raw_size = static_cast<std::uint64_t>(pixels.size()) * elem;
     c.info.raw_hash = raw.value();
-    c.info.stored_hash = fnv(prefix.data());
+    c.info.stored_hash = core::hash_bytes(prefix.data());
     c.info.stored_size = total;
     c.body = prefix.take();
     c.body.reserve(static_cast<std::size_t>(total));
@@ -699,7 +693,7 @@ Result<void, Error> Pmd2Reader::parse(const Pmd2OpenOptions& options) {
         const Pmd2ChunkInfo& c = chunks_[i];
         const std::string name = pmd2_chunk_id_string(c.id);
         if (!c.tiled()) {
-            if (fnv(stored_bytes(c)) != c.stored_hash) {
+            if (core::hash_bytes(stored_bytes(c)) != c.stored_hash) {
                 return R::err(
                     pmd2_err(pmd2_error::kStoredHash, "chunk " + name + " is corrupted (hash mismatch)"));
             }
@@ -742,7 +736,7 @@ Result<Pmd2Reader::RasterLayout, Error> Pmd2Reader::parse_raster(const Pmd2Chunk
     if (layout.prefix_size > body.size()) {
         return R::err(pmd2_err(pmd2_error::kBadRaster, "raster " + name + " has a truncated tile index"));
     }
-    if (fnv(body.first(static_cast<std::size_t>(layout.prefix_size))) != info.stored_hash) {
+    if (core::hash_bytes(body.first(static_cast<std::size_t>(layout.prefix_size))) != info.stored_hash) {
         return R::err(
             pmd2_err(pmd2_error::kStoredHash, "raster " + name + " is corrupted (index hash mismatch)"));
     }
@@ -853,7 +847,7 @@ Result<std::vector<std::uint8_t>, Error> Pmd2Reader::decode_tile(std::size_t chu
     const std::string name = pmd2_chunk_id_string(c.id) + " tile " + std::to_string(tile);
     const std::span<const std::uint8_t> stored =
         view_.subspan(static_cast<std::size_t>(layout.tile_offset[tile]), layout.tile_size[tile]);
-    if (fnv(stored) != layout.tile_hash[tile]) {
+    if (core::hash_bytes(stored) != layout.tile_hash[tile]) {
         return R::err(pmd2_err(pmd2_error::kTileHash, name + " is corrupted (hash mismatch)"));
     }
     const Pmd2TileRect rect = layout.info.tile_rect(tile);
@@ -962,13 +956,13 @@ Result<void, Error> Pmd2Reader::verify_chunk_raw(std::size_t chunk_index, unsign
         if (!raster) {
             return R::err(raster.error());
         }
-        hash = fnv(raster.value());
+        hash = core::hash_bytes(raster.value());
     } else {
         auto blob = read_blob(c.id, c.instance);
         if (!blob) {
             return R::err(blob.error());
         }
-        hash = fnv(blob.value());
+        hash = core::hash_bytes(blob.value());
     }
     if (hash != c.raw_hash) {
         return R::err(pmd2_err(pmd2_error::kRawHash,

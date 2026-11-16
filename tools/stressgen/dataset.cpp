@@ -12,12 +12,6 @@ namespace {
 constexpr std::uint32_t kMaxRecords = 1'000'000;
 constexpr std::array<std::uint8_t, 4> kMagic{'P', 'S', 'L', '1'};
 
-std::uint64_t hash_bytes(std::span<const std::uint8_t> bytes) {
-    core::HashStream h;
-    h.bytes(bytes);
-    return h.value();
-}
-
 // Draw another valid index without rejection sampling or a self-reference.
 std::uint32_t other_index(core::Pcg32& rng, std::uint32_t index, std::uint32_t count) {
     const auto other = rng.bounded(count - 1);
@@ -232,7 +226,7 @@ std::vector<std::uint8_t> serialize_workload(const sim::World& world, const Work
     out.u16(kWorkloadFormatVersion);
     out.u16(0);
     out.u64(world.compute_hash().total);
-    out.u64(hash_bytes(payload.data()));
+    out.u64(core::hash_bytes(payload.data()));
     out.bytes(payload.data());
     return out.take();
 }
@@ -250,7 +244,7 @@ core::Result<Workload> deserialize_workload(std::span<const std::uint8_t> bytes,
     if (!in.ok() || world_hash != world.compute_hash().total) {
         return R::err({3, "stress workload belongs to a different world"});
     }
-    if (hash_bytes(bytes.subspan(in.position())) != payload_hash) {
+    if (core::hash_bytes(bytes.subspan(in.position())) != payload_hash) {
         return R::err({3, "stress workload checksum mismatch"});
     }
     auto read_count = [&](std::uint32_t record_size) {
@@ -301,7 +295,7 @@ core::Result<Workload> deserialize_workload(std::span<const std::uint8_t> bytes,
 }
 
 std::uint64_t compute_hash(const Dataset& dataset) {
-    return hash_bytes(serialize_workload(dataset.world, dataset.workload));
+    return core::hash_bytes(serialize_workload(dataset.world, dataset.workload));
 }
 
 }  // namespace pat::stress
