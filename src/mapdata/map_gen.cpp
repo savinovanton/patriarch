@@ -10,42 +10,16 @@
 #include <numeric>
 #include <thread>
 
+#include "parallel.hpp"
+
 namespace pat::mapdata {
 
 namespace {
 
 using Clock = std::chrono::steady_clock;
 
-// ------------------------------------------------------------------ parallel helper
-
-unsigned resolve_threads(unsigned requested) {
-    if (requested != 0) {
-        return requested;
-    }
-    return std::max(1U, std::thread::hardware_concurrency());
-}
-
-/// Runs fn(row_begin, row_end) over contiguous row ranges on `threads` workers.
-template <class Fn>
-void parallel_rows(std::uint32_t rows, unsigned threads, Fn&& fn) {
-    threads = std::max(1U, std::min<unsigned>(threads, rows));
-    if (threads == 1) {
-        fn(0U, rows);
-        return;
-    }
-    std::vector<std::thread> pool;
-    pool.reserve(threads);
-    for (unsigned t = 0; t < threads; ++t) {
-        const std::uint32_t begin =
-            static_cast<std::uint32_t>(static_cast<std::uint64_t>(rows) * t / threads);
-        const std::uint32_t end =
-            static_cast<std::uint32_t>(static_cast<std::uint64_t>(rows) * (t + 1) / threads);
-        pool.emplace_back([&fn, begin, end] { fn(begin, end); });
-    }
-    for (std::thread& th : pool) {
-        th.join();
-    }
-}
+using parallel::parallel_rows;
+using parallel::resolve_threads;
 
 // ------------------------------------------------------------------ noise
 

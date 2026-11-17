@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "layer_codec.hpp"
+#include "parallel.hpp"
 
 namespace pat::mapdata {
 
@@ -47,39 +48,7 @@ std::uint32_t div_ceil(std::uint32_t v, std::uint32_t d) {
     return static_cast<std::uint32_t>((static_cast<std::uint64_t>(v) + d - 1U) / d);
 }
 
-unsigned resolve_threads(unsigned requested) {
-    if (requested != 0) {
-        return requested;
-    }
-    return std::max(1U, std::thread::hardware_concurrency());
-}
-
-/// Runs fn(i) for i in [0, count) on up to `threads` workers (i % workers == worker). The work items
-/// must write to disjoint memory; with one worker (or one item) everything runs on the caller.
-template <class Fn>
-void parallel_for(std::size_t count, unsigned threads, Fn&& fn) {
-    const std::size_t workers = std::min<std::size_t>(resolve_threads(threads), count);
-    if (workers <= 1) {
-        for (std::size_t i = 0; i < count; ++i) {
-            fn(i);
-        }
-        return;
-    }
-    const auto run = [&](std::size_t first) {
-        for (std::size_t i = first; i < count; i += workers) {
-            fn(i);
-        }
-    };
-    std::vector<std::thread> pool;
-    pool.reserve(workers - 1);
-    for (std::size_t w = 1; w < workers; ++w) {
-        pool.emplace_back(run, w);
-    }
-    run(0);
-    for (std::thread& t : pool) {
-        t.join();
-    }
-}
+using parallel::parallel_for;
 
 // ---- tile transform -------------------------------------------------------------------------------
 // Canonical tile bytes: elements row-major, u16 little endian. transform 1 turns every row into
