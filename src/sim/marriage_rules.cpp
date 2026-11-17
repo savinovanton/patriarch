@@ -206,6 +206,13 @@ Check check_eligibility(const MarriageEligibilityRules& e) {
     }
     PAT_MARRIAGE_CHECK(in_range("eligibility.mourning_days_female", e.mourning_days_female, 0, 36'500));
     PAT_MARRIAGE_CHECK(in_range("eligibility.mourning_days_male", e.mourning_days_male, 0, 36'500));
+    if (!e.require_opposite_sex) {
+        return fail("eligibility.require_opposite_sex must stay enabled in M1",
+                    "eligibility.require_opposite_sex");
+    }
+    if (!e.forbid_same_house) {
+        return fail("eligibility.forbid_same_house must stay enabled in M1", "eligibility.forbid_same_house");
+    }
     return Check::ok();
 }
 

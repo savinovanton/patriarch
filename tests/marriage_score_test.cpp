@@ -373,7 +373,7 @@ TEST_CASE("marriage rules: eligibility rejects out-of-range and inconsistent lim
     }
 }
 
-TEST_CASE("marriage rules: eligibility accepts boundary values and configurable flags") {
+TEST_CASE("marriage rules: eligibility accepts numeric boundaries with mandatory M1 pair restrictions") {
     auto rules = MarriageRules::defaults();
     auto& e = rules.eligibility;
     e.min_marriage_age_male = 1;
@@ -384,8 +384,8 @@ TEST_CASE("marriage rules: eligibility accepts boundary values and configurable 
     e.affinity_forbidden_degree = 0;
     e.mourning_days_female = 0;
     e.mourning_days_male = 0;
-    e.require_opposite_sex = false;
-    e.forbid_same_house = false;
+    e.require_opposite_sex = true;
+    e.forbid_same_house = true;
     CHECK(validate(rules).has_value());
 
     e.min_marriage_age_male = 150;

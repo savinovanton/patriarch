@@ -32,6 +32,10 @@ struct SimulationConfig {
     /// The rules that the commands of the economy are validated and applied by (the building types
     /// of StartConstruction, E9-T16). install_economy_systems sets it; null = such commands are refused.
     std::shared_ptr<const economy::EconomyRules> economy_rules = {};
+    /// Immutable command content, retained for live commands and replay. Null uses default rules.
+    std::shared_ptr<const MarriageRules> marriage_rules = {};
+    /// Owns the policy object only: any borrowed house-faith table and strings must outlive its use.
+    std::shared_ptr<const FaithPolicy> faith_policy = {};
 };
 
 struct SystemRun {

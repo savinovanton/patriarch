@@ -102,6 +102,7 @@ struct MarriageEligibilityRules {
     std::int32_t affinity_forbidden_degree = 0;
     std::int32_t mourning_days_female = 0;
     std::int32_t mourning_days_male = 0;
+    /// Mandatory World restrictions in M1: validate() requires both flags to remain enabled.
     bool require_opposite_sex = true;
     bool forbid_same_house = true;
 

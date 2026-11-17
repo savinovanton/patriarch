@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include <string>
+#include <string_view>
 
 namespace {
 
@@ -114,4 +115,21 @@ TEST_CASE("marriage rules: consistency errors identify the exact offending field
     error = validate(rules);
     REQUIRE_FALSE(error.has_value());
     CHECK(error.error().field == "eligibility.blood_absolute_degree");
+}
+
+TEST_CASE("marriage rules: M1 pair restrictions cannot be disabled") {
+    auto rules = MarriageRules::defaults();
+    REQUIRE(validate(rules).has_value());
+    std::string_view expected_field;
+    SUBCASE("opposite sex is mandatory") {
+        rules.eligibility.require_opposite_sex = false;
+        expected_field = "eligibility.require_opposite_sex";
+    }
+    SUBCASE("different houses are mandatory") {
+        rules.eligibility.forbid_same_house = false;
+        expected_field = "eligibility.forbid_same_house";
+    }
+    const auto result = validate(rules);
+    REQUIRE_FALSE(result.has_value());
+    CHECK(result.error().field == expected_field);
 }

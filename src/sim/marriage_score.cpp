@@ -1,5 +1,7 @@
 #include "pat/sim/marriage_score.hpp"
 
+#include "pat/sim/marriage_envoy.hpp"
+
 #include <algorithm>
 #include <cstdlib>
 
@@ -29,15 +31,6 @@ clamp_i32(std::int64_t value, std::int64_t lo, std::int64_t hi) noexcept {
 
 [[nodiscard]] constexpr std::int32_t whole(core::Fixed32 value) noexcept {
     return static_cast<std::int32_t>(value.to_int());
-}
-
-/// The living head of a house, or an invalid id.
-[[nodiscard]] CharacterId living_head(const World& world, DynastyId house) noexcept {
-    if (!world.exists(house)) {
-        return CharacterId{};
-    }
-    const CharacterId head = world.dynasties().head[house.index()];
-    return head.valid() && world.is_alive(head) ? head : CharacterId{};
 }
 
 /// The terms that vary with the members, even when their house facts stay the same.
@@ -217,8 +210,8 @@ prepare_match_house(const World& world, const MarriageRules& rules, DynastyId ho
     facts.honor = world.dynasties().honor[house.index()];
     facts.rank = honor_rank(rules, facts.honor);
     if (initiator.valid() && house != initiator) {
-        const CharacterId own_head = living_head(world, house);
-        const CharacterId proposer_head = living_head(world, initiator);
+        const CharacterId own_head = family_acting_head(world, house);
+        const CharacterId proposer_head = family_acting_head(world, initiator);
         if (own_head.valid() && proposer_head.valid()) {
             facts.opinion_of_proposer = clamp_i32(
                 whole(world.get_opinion(own_head, proposer_head)), -kMaxOpinionPoints, kMaxOpinionPoints);

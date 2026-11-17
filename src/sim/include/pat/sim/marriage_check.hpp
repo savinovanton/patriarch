@@ -105,6 +105,7 @@ private:
 
 /// Pure, complete eligibility query. Known archived people still contribute their retained facts;
 /// unknown ids contribute NotAlive and are never indexed. No random draws, payments or mutations.
+/// Rules must pass validate(); M1 keeps the structural sex and house restrictions enabled.
 /// With dispensation only BloodKinshipDispensable is removed; envoy_cost() prices it separately.
 /// When supplied, kinship receives the same result used for the denials (zero for unknown people).
 [[nodiscard]] MarriageDenials check_marriage(const World& world,

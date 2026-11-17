@@ -557,8 +557,8 @@
 | `affinity_forbidden_degree` | `int` | обязательное | — | диапазон -2147483648..2147483647 | — |
 | `mourning_days_female` | `int` | обязательное | — | диапазон -2147483648..2147483647 | — |
 | `mourning_days_male` | `int` | обязательное | — | диапазон -2147483648..2147483647 | — |
-| `require_opposite_sex` | `bool` | обязательное | — | — | — |
-| `forbid_same_house` | `bool` | обязательное | — | — | — |
+| `require_opposite_sex` | `bool` | обязательное | — | — | Обязательное ограничение M1: только yes; проверяет sim::validate. |
+| `forbid_same_house` | `bool` | обязательное | — | — | Обязательное ограничение M1: только yes; проверяет sim::validate. |
 
 ### Блок `marriage_rules.relation`
 

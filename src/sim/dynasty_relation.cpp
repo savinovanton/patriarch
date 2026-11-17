@@ -1,5 +1,6 @@
 #include "pat/sim/dynasty_relation.hpp"
 
+#include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/marriage_score.hpp"
 
 #include <algorithm>
@@ -34,8 +35,8 @@ std::int32_t dynasty_relation(
     }
 
     const auto& characters = world.characters();
-    const CharacterId head_a = world.dynasties().head[a.index()];
-    const CharacterId head_b = world.dynasties().head[b.index()];
+    const CharacterId head_a = family_acting_head(world, a);
+    const CharacterId head_b = family_acting_head(world, b);
     std::int64_t sum_raw = 0;
     std::int64_t count = 0;
     const auto collect = [&](DynastyId from, DynastyId to, CharacterId head, CharacterId other_head) {
