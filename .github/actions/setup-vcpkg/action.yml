@@ -3,6 +3,14 @@ description: >
   Fetches vcpkg at the commit pinned in vcpkg.json (builtin-baseline), bootstraps it,
   exports VCPKG_ROOT and restores/saves the vcpkg binary cache.
 
+inputs:
+  cache-flavor:
+    description: >
+      Extra part of the binary cache key for jobs whose manifest features differ from the default set
+      (for example "tracy"), so each set of ports is saved under its own key.
+    required: false
+    default: base
+
 runs:
   using: composite
   steps:
@@ -15,6 +23,7 @@ runs:
           vcpkg-downloads-${{ runner.os }}-
 
     - name: Fetch vcpkg at the pinned baseline
+      id: fetch
       shell: pwsh
       run: |
         $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
@@ -50,11 +59,18 @@ runs:
         "VCPKG_DEFAULT_BINARY_CACHE=$cache" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
         "VCPKG_DOWNLOADS=$downloads" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
         "VCPKG_DISABLE_METRICS=1" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+        # The ABI hashes of the cached ports include the compiler, which changes with the runner image
+        # (weekly updates). The image is part of the cache key, so a new image saves a fresh cache instead
+        # of restoring a stale one forever (actions/cache does not save over an exact key hit).
+        $image = "$env:ImageOS-$env:ImageVersion"
+        if ($image -eq '-') { $image = 'unknown-image' }
+        "image=$image" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
     - name: Cache vcpkg binaries
       uses: actions/cache@v6
       with:
         path: .vcpkg-binary-cache
-        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
+        key: vcpkg-bin-${{ runner.os }}-${{ steps.fetch.outputs.image }}-${{ inputs.cache-flavor }}-${{ hashFiles('vcpkg.json', 'CMakePresets.json') }}
         restore-keys: |
-          vcpkg-${{ runner.os }}-
+          vcpkg-bin-${{ runner.os }}-${{ steps.fetch.outputs.image }}-${{ inputs.cache-flavor }}-
+          vcpkg-bin-${{ runner.os }}-${{ steps.fetch.outputs.image }}-
