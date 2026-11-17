@@ -1,5 +1,6 @@
 #include "pat/sim/events/program.hpp"
 
+#include "pat/core/bytes.hpp"
 #include "pat/core/hash_stream.hpp"
 
 #include <algorithm>
@@ -82,18 +83,6 @@ const OpInfo* find_op(std::uint16_t code) noexcept {
         }
     }
     return nullptr;
-}
-
-void put_u32(std::vector<std::byte>& out, std::uint32_t v) {
-    for (int i = 0; i < 4; ++i) {
-        out.push_back(static_cast<std::byte>((v >> (8 * i)) & 0xFFU));
-    }
-}
-
-void put_u64(std::vector<std::byte>& out, std::uint64_t v) {
-    for (int i = 0; i < 8; ++i) {
-        out.push_back(static_cast<std::byte>((v >> (8 * i)) & 0xFFU));
-    }
 }
 
 ProgramError error_at(ProgramErrorCode code, std::uint32_t pc, std::string message) {
@@ -205,21 +194,18 @@ const SourcePos* Program::source_at(std::uint32_t pc) const noexcept {
 }
 
 std::vector<std::byte> Program::to_bytes() const {
-    std::vector<std::byte> out;
-    out.reserve(8 + code.size() * 8 + consts.size() * 8);
-    put_u32(out, static_cast<std::uint32_t>(code.size()));
+    core::ByteWriter out;
+    out.u32(static_cast<std::uint32_t>(code.size()));
     for (const Instr& in : code) {
-        out.push_back(static_cast<std::byte>(in.op & 0xFFU));
-        out.push_back(static_cast<std::byte>((in.op >> 8) & 0xFFU));
-        out.push_back(static_cast<std::byte>(in.a & 0xFFU));
-        out.push_back(static_cast<std::byte>((in.a >> 8) & 0xFFU));
-        put_u32(out, static_cast<std::uint32_t>(in.b));
+        out.u16(in.op);
+        out.u16(in.a);
+        out.i32(in.b);
     }
-    put_u32(out, static_cast<std::uint32_t>(consts.size()));
+    out.u32(static_cast<std::uint32_t>(consts.size()));
     for (const std::int64_t c : consts) {
-        put_u64(out, static_cast<std::uint64_t>(c));
+        out.i64(c);
     }
-    return out;
+    return core::to_std_bytes(out.data());
 }
 
 std::uint64_t Program::hash() const noexcept {
