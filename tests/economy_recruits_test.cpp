@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T13: the recruit potential of a province (F11), the monthly regeneration of the pool (step 6 of the
@@ -38,10 +39,8 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 void require_valid(const World& world) {
     pat::test::require_valid(world, rules());
 }
@@ -73,11 +72,8 @@ World make_world(std::uint32_t provinces,
 }
 
 Simulation economy_sim(World world) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, rules());
-    return sim;
+    return pat::test::economy_sim(std::move(world), rules());
 }
-
 Command conscript(DynastyId actor, std::uint32_t province, std::uint32_t count) {
     return Command{actor, cmd::ConscriptRecruits{ProvinceId(province), count}};
 }

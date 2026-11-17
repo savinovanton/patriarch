@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T11: the mood of the population groups (docs/dev/economy-model.md section 9 formula F8, section 7.3
@@ -41,10 +42,8 @@ Fixed32 raw(std::int64_t value) {
 }
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 /// The default rules with control, unrest and riots standing still, so that a test of the mood sees
 /// only the mood move.
 EconomyRules mood_only_rules() {

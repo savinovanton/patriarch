@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T17: the effects of buildings and the cache of the province modifiers (docs/dev/economy-model.md
@@ -54,10 +55,8 @@ constexpr std::uint8_t kChurch = 7;
 constexpr std::uint8_t kGranary = 8;
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 /// Frozen dynamics of mood, unrest and riots: what the steps read does not depend on the history.
 EconomyRules calm_rules() {
     EconomyRules r = EconomyRules::defaults();
@@ -141,11 +140,8 @@ void build(World& world, std::uint32_t province, std::size_t slot, std::uint8_t 
 }
 
 Simulation economy_sim(World world, const EconomyRules& with = rules()) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, with);
-    return sim;
+    return pat::test::economy_sim(std::move(world), with);
 }
-
 std::size_t clean_provinces(const World& world) {
     std::size_t clean = 0;
     for (std::size_t p = 0; p < world.provinces().size(); ++p) {
