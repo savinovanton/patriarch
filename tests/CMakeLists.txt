@@ -140,6 +140,7 @@ if(PATRIARCH_BUILD_ENGINE)
         province_window_test.cpp
         menu_test.cpp
         renderer_test.cpp
+        save_catalog_test.cpp
         season_test.cpp
         time_bar_test.cpp
         ui_components_test.cpp

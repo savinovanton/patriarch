@@ -4,6 +4,7 @@ add_library(patriarch_game STATIC
     include/pat/game/hud_view.hpp
     include/pat/game/map_overview.hpp
     include/pat/game/province_view.hpp
+    include/pat/game/save_catalog.hpp
     include/pat/game/season.hpp
     include/pat/game/tooltip_view.hpp
     include/pat/game/world_view.hpp
@@ -13,6 +14,7 @@ add_library(patriarch_game STATIC
     map_overview.cpp
     province_economy_view.cpp
     province_view.cpp
+    save_catalog.cpp
     season.cpp
     treasury_view.cpp
     tooltip_view.cpp
