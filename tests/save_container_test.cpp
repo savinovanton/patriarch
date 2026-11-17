@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "test_bytes.hpp"
 #include "test_files.hpp"
 
 using namespace pat::sim;
@@ -36,23 +37,6 @@ std::filesystem::path fixture(const char* name) {
 }
 
 using pat::test::temp_path;
-
-std::uint32_t read_u32(const std::vector<std::uint8_t>& b, std::size_t off) {
-    ByteReader r(std::span<const std::uint8_t>(b).subspan(off));
-    return r.u32();
-}
-
-void put_u32(std::vector<std::uint8_t>& b, std::size_t off, std::uint32_t v) {
-    for (int i = 0; i < 4; ++i) {
-        b[off + static_cast<std::size_t>(i)] = static_cast<std::uint8_t>((v >> (8 * i)) & 0xFFU);
-    }
-}
-
-void put_u64(std::vector<std::uint8_t>& b, std::size_t off, std::uint64_t v) {
-    for (int i = 0; i < 8; ++i) {
-        b[off + static_cast<std::size_t>(i)] = static_cast<std::uint8_t>((v >> (8 * i)) & 0xFFU);
-    }
-}
 
 /// A world a few months into the demo scenario, with pending internal commands.
 Simulation demo_sim() {
@@ -138,10 +122,10 @@ std::vector<std::uint8_t> encode_fields(const std::vector<Field>& fields) {
 std::vector<std::uint8_t> with_summary(const std::vector<std::uint8_t>& good,
                                        const std::vector<std::uint8_t>& summary,
                                        bool fix_hash = true) {
-    const std::size_t old_size = read_u32(good, kOffSummarySize);
+    const std::size_t old_size = pat::test::load_le<std::uint32_t>(good, kOffSummarySize);
     std::vector<std::uint8_t> out(good.begin(), good.begin() + static_cast<std::ptrdiff_t>(kSaveHeaderSize));
-    put_u32(out, kOffSummarySize, static_cast<std::uint32_t>(summary.size()));
-    put_u64(out, kOffSummaryHash, fix_hash ? pat::core::hash_bytes(summary) : 0);
+    pat::test::store_le<std::uint32_t>(out, kOffSummarySize, static_cast<std::uint32_t>(summary.size()));
+    pat::test::store_le<std::uint64_t>(out, kOffSummaryHash, fix_hash ? pat::core::hash_bytes(summary) : 0);
     out.insert(out.end(), summary.begin(), summary.end());
     out.insert(out.end(), good.begin() + static_cast<std::ptrdiff_t>(kSaveHeaderSize + old_size), good.end());
     return out;
@@ -273,7 +257,7 @@ TEST_CASE("container v2: the summary is read without touching the zstd frame") {
     Simulation sim = demo_sim();
     const SaveSummary summary = full_summary();
     auto bytes = serialize_save(sim.world(), sim.pending_internal(), summary);
-    const std::size_t body = kSaveHeaderSize + read_u32(bytes, kOffSummarySize);
+    const std::size_t body = kSaveHeaderSize + pat::test::load_le<std::uint32_t>(bytes, kOffSummarySize);
 
     // Destroy the whole compressed frame: the summary is still readable, the world is not.
     auto broken = bytes;
@@ -328,14 +312,14 @@ TEST_CASE("container v2: an unknown summary key is skipped, the summary may grow
     const std::size_t used = encode_fields(big).size();
     big.push_back({40, std::vector<std::uint8_t>(kMaxSaveSummary - used - 4, 1)});
     const auto biggest = with_summary(good, encode_fields(big));
-    CHECK(read_u32(biggest, kOffSummarySize) == kMaxSaveSummary);
+    CHECK(pat::test::load_le<std::uint32_t>(biggest, kOffSummarySize) == kMaxSaveSummary);
     CHECK(deserialize_save(biggest).has_value());
 }
 
 TEST_CASE("container v2: a damaged summary is an error and never a crash") {
     Simulation sim = demo_sim();
     const auto good = serialize_save(sim.world(), sim.pending_internal(), full_summary());
-    const std::size_t summary_size = read_u32(good, kOffSummarySize);
+    const std::size_t summary_size = pat::test::load_le<std::uint32_t>(good, kOffSummarySize);
 
     SUBCASE("every flipped byte of the summary is caught by its hash (code 25)") {
         for (std::size_t i = 0; i < summary_size; ++i) {
@@ -354,10 +338,11 @@ TEST_CASE("container v2: a damaged summary is an error and never a crash") {
     }
     SUBCASE("a summary larger than 16 KiB is refused from the header alone (code 27)") {
         auto bad = good;
-        put_u32(bad, kOffSummarySize, static_cast<std::uint32_t>(kMaxSaveSummary + 1));
+        pat::test::store_le<std::uint32_t>(
+            bad, kOffSummarySize, static_cast<std::uint32_t>(kMaxSaveSummary + 1));
         CHECK(error_code(read_save_summary(bad)) == 27);
         CHECK_FALSE(deserialize_save(bad).has_value());
-        put_u32(bad, kOffSummarySize, 0xFFFFFFFFU);
+        pat::test::store_le<std::uint32_t>(bad, kOffSummarySize, 0xFFFFFFFFU);
         CHECK(error_code(read_save_summary(bad)) == 27);
         // ... also with a well-formed oversized summary body behind a correct hash
         auto fields = required_fields();
@@ -446,7 +431,7 @@ TEST_CASE("container v2: a damaged summary is an error and never a crash") {
 TEST_CASE("container v2: truncated files are rejected at every length") {
     Simulation sim = demo_sim();
     const auto good = serialize_save(sim.world(), sim.pending_internal(), full_summary());
-    const std::size_t summary_size = read_u32(good, kOffSummarySize);
+    const std::size_t summary_size = pat::test::load_le<std::uint32_t>(good, kOffSummarySize);
 
     // A truncated header, then a truncated summary: both are errors of the file layout (code 20).
     for (std::size_t n = 0; n < kSaveHeaderSize + summary_size; ++n) {
@@ -527,7 +512,7 @@ TEST_CASE("container v1: a version 1 file made from the current payload loads li
     Simulation sim = demo_sim();
     REQUIRE_FALSE(sim.pending_internal().empty());
     const auto v2 = serialize_save(sim.world(), sim.pending_internal());
-    const std::size_t summary_size = read_u32(v2, kOffSummarySize);
+    const std::size_t summary_size = pat::test::load_le<std::uint32_t>(v2, kOffSummarySize);
 
     ByteWriter w;
     w.bytes(std::span<const std::uint8_t>(v2).subspan(0, 4));

@@ -8,6 +8,8 @@
 #include <filesystem>
 #include <fstream>
 
+#include "test_bytes.hpp"
+
 using namespace pat::mapdata;
 
 namespace {
@@ -123,36 +125,10 @@ int open_code(const std::vector<std::uint8_t>& bytes, const Pmd2OpenOptions& o =
     return r.has_value() ? 0 : r.error().code;
 }
 
-void put64(std::vector<std::uint8_t>& b, std::size_t pos, std::uint64_t v) {
-    for (std::size_t i = 0; i < 8; ++i) {
-        b[pos + i] = static_cast<std::uint8_t>((v >> (8U * i)) & 0xFFU);
-    }
-}
-void put16(std::vector<std::uint8_t>& b, std::size_t pos, std::uint16_t v) {
-    b[pos] = static_cast<std::uint8_t>(v & 0xFFU);
-    b[pos + 1] = static_cast<std::uint8_t>(v >> 8U);
-}
-void put32(std::vector<std::uint8_t>& b, std::size_t pos, std::uint32_t v) {
-    for (std::size_t i = 0; i < 4; ++i) {
-        b[pos + i] = static_cast<std::uint8_t>((v >> (8U * i)) & 0xFFU);
-    }
-}
-std::uint64_t get64(const std::vector<std::uint8_t>& b, std::size_t pos) {
-    std::uint64_t v = 0;
-    for (std::size_t i = 0; i < 8; ++i) {
-        v |= static_cast<std::uint64_t>(b[pos + i]) << (8U * i);
-    }
-    return v;
-}
-std::uint32_t get32(const std::vector<std::uint8_t>& b, std::size_t pos) {
-    return static_cast<std::uint32_t>(b[pos] | (b[pos + 1] << 8U) | (b[pos + 2] << 16U) |
-                                      (static_cast<std::uint32_t>(b[pos + 3]) << 24U));
-}
-
 /// Recomputes content_id (from the table) and header_hash, so a test can alter a table field and
 /// still reach the check it is aimed at.
 void refresh_header(std::vector<std::uint8_t>& b, bool recompute_content_id = true) {
-    const std::uint32_t count = get32(b, 20);
+    const std::uint32_t count = pat::test::load_le<std::uint32_t>(b, 20);
     if (recompute_content_id) {
         pat::core::HashStream c;
         c.u16(static_cast<std::uint16_t>(b[6] | (b[7] << 8U)));
@@ -163,18 +139,18 @@ void refresh_header(std::vector<std::uint8_t>& b, bool recompute_content_id = tr
             }
             c.u16(static_cast<std::uint16_t>(b[e + 4] | (b[e + 5] << 8U)));
             c.u8(b[e + 9]);
-            c.u64(get64(b, e + 40));
+            c.u64(pat::test::load_le<std::uint64_t>(b, e + 40));
         }
-        put64(b, 32, c.value());
+        pat::test::store_le<std::uint64_t>(b, 32, c.value());
     }
     pat::core::HashStream h;
     h.bytes(std::span<const std::uint8_t>(b).first(56));
     h.bytes(std::span<const std::uint8_t>(b).subspan(kTable, kEntry * count));
-    put64(b, 56, h.value());
+    pat::test::store_le<std::uint64_t>(b, 56, h.value());
 }
 
 std::size_t entry_of(const std::vector<std::uint8_t>& b, Pmd2ChunkId id) {
-    const std::uint32_t count = get32(b, 20);
+    const std::uint32_t count = pat::test::load_le<std::uint32_t>(b, 20);
     for (std::uint32_t i = 0; i < count; ++i) {
         const std::size_t e = kTable + kEntry * i;
         const Pmd2ChunkId got = (static_cast<std::uint32_t>(b[e]) << 24U) |
@@ -196,13 +172,14 @@ TEST_CASE("pmd2: header and table layout follow the specification") {
     REQUIRE(bytes.size() > kTable + 4 * kEntry);
     CHECK(std::equal(
         bytes.begin(), bytes.begin() + 4, std::array<std::uint8_t, 4>{'P', 'M', 'D', '2'}.begin()));
-    CHECK(get32(bytes, 20) == 4);             // chunk_count
-    CHECK(get64(bytes, 24) == bytes.size());  // file_size
-    CHECK(get64(bytes, 40) == 0xABCDEF0123456789ULL);
+    CHECK(pat::test::load_le<std::uint32_t>(bytes, 20) == 4);             // chunk_count
+    CHECK(pat::test::load_le<std::uint64_t>(bytes, 24) == bytes.size());  // file_size
+    CHECK(pat::test::load_le<std::uint64_t>(bytes, 40) == 0xABCDEF0123456789ULL);
     // Chunks are listed by id: HGHT, MATL, PTBL, REGN.
     CHECK(entry_of(bytes, kHght) == kTable);
     CHECK(entry_of(bytes, kRegn) == kTable + 3 * kEntry);
-    CHECK(get64(bytes, kTable + 16) == kTable + 4 * kEntry);  // first body follows the table
+    CHECK(pat::test::load_le<std::uint64_t>(bytes, kTable + 16) ==
+          kTable + 4 * kEntry);  // first body follows the table
     // Flags: critical + tiled for HGHT; optional + tiled for REGN; critical blob for PTBL.
     CHECK(bytes[entry_of(bytes, kHght) + 6] == 3);
     CHECK(bytes[entry_of(bytes, kRegn) + 6] == 2);
@@ -313,7 +290,7 @@ TEST_CASE("pmd2: parallel decode equals sequential decode") {
 TEST_CASE("pmd2: content_id and raw hashes do not depend on tile size, zstd level or codec") {
     const Sample s = make_sample(200, 130);
     const auto reference = build(s, options(3), 6);
-    const std::uint64_t id = get64(reference, 32);
+    const std::uint64_t id = pat::test::load_le<std::uint64_t>(reference, 32);
     struct Variant {
         int level;
         std::uint8_t tile_log2;
@@ -327,7 +304,7 @@ TEST_CASE("pmd2: content_id and raw hashes do not depend on tile size, zstd leve
         CAPTURE(v.level);
         CAPTURE(static_cast<int>(v.tile_log2));
         const auto other = build(s, options(v.level, 1, v.codec), v.tile_log2);
-        CHECK(get64(other, 32) == id);
+        CHECK(pat::test::load_le<std::uint64_t>(other, 32) == id);
         auto a = Pmd2Reader::open(reference, known_all());
         auto b = Pmd2Reader::open(other, known_all());
         REQUIRE(a.has_value());
@@ -340,7 +317,7 @@ TEST_CASE("pmd2: content_id and raw hashes do not depend on tile size, zstd leve
     // Different content gives a different id.
     Sample changed = s;
     changed.heights[17] = static_cast<std::uint16_t>(changed.heights[17] + 1U);
-    CHECK(get64(build(changed, options()), 32) != id);
+    CHECK(pat::test::load_le<std::uint64_t>(build(changed, options()), 32) != id);
 }
 
 TEST_CASE("pmd2: every truncation is detected") {
@@ -393,7 +370,8 @@ TEST_CASE("pmd2: corrupt bytes are caught in every area") {
     }
     SUBCASE("blob body") {
         auto b = good;
-        const std::size_t at = static_cast<std::size_t>(get64(b, entry_of(b, kPtbl) + 16)) + 3;
+        const std::size_t at =
+            static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, entry_of(b, kPtbl) + 16)) + 3;
         b[at] = static_cast<std::uint8_t>(b[at] ^ 0xFFU);
         CHECK(open_code(b) == pmd2_error::kStoredHash);
     }
@@ -401,14 +379,17 @@ TEST_CASE("pmd2: corrupt bytes are caught in every area") {
         for (const std::size_t delta : {std::size_t{0}, std::size_t{4}, std::size_t{17}, std::size_t{22}}) {
             CAPTURE(delta);
             auto b = good;
-            const std::size_t at = static_cast<std::size_t>(get64(b, entry_of(b, kHght) + 16)) + delta;
+            const std::size_t at =
+                static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, entry_of(b, kHght) + 16)) +
+                delta;
             b[at] = static_cast<std::uint8_t>(b[at] ^ 0x10U);
             CHECK(open_code(b) == pmd2_error::kStoredHash);
         }
     }
     SUBCASE("tile bytes: found when the tile is read, other tiles stay readable") {
         auto b = good;
-        const std::size_t base = static_cast<std::size_t>(get64(b, entry_of(b, kHght) + 16));
+        const std::size_t base =
+            static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, entry_of(b, kHght) + 16));
         const std::size_t prefix = 16 + 12 * 6;
         b[base + prefix + 5] = static_cast<std::uint8_t>(b[base + prefix + 5] ^ 0x08U);  // inside tile 0
         auto r = Pmd2Reader::open(b, known_all());
@@ -425,7 +406,7 @@ TEST_CASE("pmd2: corrupt bytes are caught in every area") {
     SUBCASE("raw_hash is checked only in strict mode") {
         auto b = good;
         const std::size_t e = entry_of(b, kMatl);
-        put64(b, e + 40, get64(b, e + 40) ^ 1U);
+        pat::test::store_le<std::uint64_t>(b, e + 40, pat::test::load_le<std::uint64_t>(b, e + 40) ^ 1U);
         refresh_header(b);
         CHECK(open_code(b) == 0);
         Pmd2OpenOptions strict = known_all();
@@ -434,19 +415,20 @@ TEST_CASE("pmd2: corrupt bytes are caught in every area") {
     }
     SUBCASE("content_id that disagrees with the table") {
         auto b = good;
-        put64(b, 32, get64(b, 32) ^ 1U);
+        pat::test::store_le<std::uint64_t>(b, 32, pat::test::load_le<std::uint64_t>(b, 32) ^ 1U);
         refresh_header(b, false);
         CHECK(open_code(b) == pmd2_error::kContentId);
     }
     SUBCASE("corrupt zstd data with consistent hashes is a decode error") {
         auto b = good;
         const std::size_t e = entry_of(b, kPtbl);
-        const auto at = static_cast<std::size_t>(get64(b, e + 16));
-        const auto size = static_cast<std::size_t>(get64(b, e + 24));
+        const auto at = static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, e + 16));
+        const auto size = static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, e + 24));
         for (std::size_t i = 0; i < 8; ++i) {
             b[at + i] = 0xEE;  // destroys the frame header
         }
-        put64(b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, size)));
+        pat::test::store_le<std::uint64_t>(
+            b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, size)));
         refresh_header(b);
         auto r = Pmd2Reader::open(b, known_all());
         REQUIRE(r.has_value());
@@ -462,30 +444,30 @@ TEST_CASE("pmd2: table inconsistencies are rejected") {
 
     SUBCASE("too many chunks") {
         auto b = good;
-        put32(b, 20, 65);
+        pat::test::store_le<std::uint32_t>(b, 20, 65);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
     }
     SUBCASE("unknown kind, flags, reserved") {
         auto b = good;
-        put16(b, 6, 9);
+        pat::test::store_le<std::uint16_t>(b, 6, 9);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
         b = good;
-        put32(b, 8, 1);
+        pat::test::store_le<std::uint32_t>(b, 8, 1);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
         b = good;
-        put64(b, 48, 1);
+        pat::test::store_le<std::uint64_t>(b, 48, 1);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
     }
     SUBCASE("zero or huge dimensions") {
         auto b = good;
-        put32(b, 12, 0);
+        pat::test::store_le<std::uint32_t>(b, 12, 0);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
         b = good;
-        put32(b, 16, 70000);
+        pat::test::store_le<std::uint32_t>(b, 16, 70000);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadHeader);
     }
@@ -499,19 +481,21 @@ TEST_CASE("pmd2: table inconsistencies are rejected") {
     }
     SUBCASE("overlapping ranges") {
         auto b = good;
-        put64(b, kTable + kEntry + 16, get64(b, kTable + 16) + 1);
+        pat::test::store_le<std::uint64_t>(
+            b, kTable + kEntry + 16, pat::test::load_le<std::uint64_t>(b, kTable + 16) + 1);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kChunkRange);
     }
     SUBCASE("range outside the file") {
         auto b = good;
-        put64(b, kTable + 24, 1ULL << 40);
+        pat::test::store_le<std::uint64_t>(b, kTable + 24, 1ULL << 40);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kChunkRange);
     }
     SUBCASE("gap before the first chunk") {
         auto b = good;
-        put64(b, kTable + 16, get64(b, kTable + 16) - 1);
+        pat::test::store_le<std::uint64_t>(
+            b, kTable + 16, pat::test::load_le<std::uint64_t>(b, kTable + 16) - 1);
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kChunkRange);
     }
@@ -539,10 +523,11 @@ TEST_CASE("pmd2: table inconsistencies are rejected") {
         // Change the raster's w field and fix the prefix hash so only the geometry is wrong.
         auto b = good;
         const std::size_t e = entry_of(b, kHght);
-        const std::size_t at = static_cast<std::size_t>(get64(b, e + 16));
-        put32(b, at + 4, 149);
+        const std::size_t at = static_cast<std::size_t>(pat::test::load_le<std::uint64_t>(b, e + 16));
+        pat::test::store_le<std::uint32_t>(b, at + 4, 149);
         const std::size_t prefix = 16 + 12 * 6;
-        put64(b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, prefix)));
+        pat::test::store_le<std::uint64_t>(
+            b, e + 48, pat::core::hash_bytes(std::span<const std::uint8_t>(b).subspan(at, prefix)));
         refresh_header(b);
         CHECK(open_code(b) == pmd2_error::kBadRaster);
     }
@@ -615,10 +600,10 @@ TEST_CASE("pmd2: a larger minor version is readable") {
     const auto good = build(s, options());
 
     auto b = good;
-    put16(b, 4, 3);      // minor 3
-    put32(b, 8, 0xF0);   // flags the 2.0 reader does not know
-    put64(b, 48, 77);    // reserved field used by a later minor
-    b[kTable + 10] = 9;  // reserved bytes of a chunk entry
+    pat::test::store_le<std::uint16_t>(b, 4, 3);     // minor 3
+    pat::test::store_le<std::uint32_t>(b, 8, 0xF0);  // flags the 2.0 reader does not know
+    pat::test::store_le<std::uint64_t>(b, 48, 77);   // reserved field used by a later minor
+    b[kTable + 10] = 9;                              // reserved bytes of a chunk entry
     refresh_header(b);
     auto r = Pmd2Reader::open(b, known_all());
     REQUIRE(r.has_value());
@@ -627,7 +612,7 @@ TEST_CASE("pmd2: a larger minor version is readable") {
 
     // The same fields are errors while the minor is the one we know.
     auto strict_minor = b;
-    put16(strict_minor, 4, 0);
+    pat::test::store_le<std::uint16_t>(strict_minor, 4, 0);
     refresh_header(strict_minor);
     CHECK(open_code(strict_minor) == pmd2_error::kBadHeader);
 }

@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "economy_test_access.hpp"
+#include "test_bytes.hpp"
 
 using namespace pat::sim;
 using namespace pat::sim::economy;
@@ -216,22 +217,6 @@ std::vector<std::uint8_t> edit_sections(const std::vector<std::uint8_t>& bytes,
     }
     out.bytes(std::span<const std::uint8_t>(bytes.data() + layout.end, bytes.size() - layout.end));
     return out.take();
-}
-
-std::uint32_t get32(const std::vector<std::uint8_t>& b, std::size_t at) {
-    return static_cast<std::uint32_t>(b[at]) | (static_cast<std::uint32_t>(b[at + 1]) << 8) |
-           (static_cast<std::uint32_t>(b[at + 2]) << 16) | (static_cast<std::uint32_t>(b[at + 3]) << 24);
-}
-
-void put32(std::vector<std::uint8_t>& b, std::size_t at, std::uint32_t v) {
-    for (std::size_t i = 0; i < 4; ++i) {
-        b[at + i] = static_cast<std::uint8_t>((v >> (8 * i)) & 0xFFU);
-    }
-}
-
-void put16(std::vector<std::uint8_t>& b, std::size_t at, std::uint16_t v) {
-    b[at] = static_cast<std::uint8_t>(v & 0xFFU);
-    b[at + 1] = static_cast<std::uint8_t>(v >> 8);
 }
 
 // Ids of the economy sections (src/sim/state_sections.hpp is internal; the numbers are the format).
@@ -542,7 +527,7 @@ TEST_CASE("migration 9 -> 10: loan carries keep their fractional kopecks and mig
     // Section 38 keeps its byte layout in schema 10. These are valid schema-9 bytes: its carries
     // counted millionths of a kopeck, including the largest value the old reader admitted.
     std::vector<std::uint8_t> fixture = state_bytes(old);
-    put32(fixture, 0, 9);
+    pat::test::store_le<std::uint32_t>(fixture, 0, 9);
     auto migrated = load(fixture);
     REQUIRE(migrated.has_value());
     CHECK(migrated.value().economy().loans.interest_carry[0] == 148'140);
@@ -557,7 +542,7 @@ TEST_CASE("migration 9 -> 10: loan carries keep their fractional kopecks and mig
     require_valid(migrated.value());
 
     const std::vector<std::uint8_t> current = state_bytes(migrated.value());
-    CHECK(get32(current, 0) == World::kStateSchema);
+    CHECK(pat::test::load_le<std::uint32_t>(current, 0) == World::kStateSchema);
     CHECK(current == state_bytes(expected));
     auto again = load(current);
     REQUIRE(again.has_value());
@@ -576,7 +561,7 @@ TEST_CASE("save: loan interest carry bounds follow the declared schema") {
     for (const std::int32_t invalid : {std::int32_t{-1}, std::int32_t{1'000'000}, kMaxInterestCarry}) {
         state(world).loans.interest_carry[0] = invalid;
         std::vector<std::uint8_t> old = state_bytes(world);
-        put32(old, 0, 9);
+        pat::test::store_le<std::uint32_t>(old, 0, 9);
         expect_refused(old, "old loan interest carry");
     }
     state(world).loans.interest_carry[0] = kMaxInterestCarry + 1;
@@ -1162,14 +1147,22 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
     for (const std::uint16_t id : {kSecDynasty, kSecProvince, kSecPopulation}) {
         refuse(
             "rows + 1",
-            [id](auto& secs) { put32(body_of(secs, id), 0, get32(body_of(secs, id), 0) + 1); },
+            [id](auto& secs) {
+                pat::test::store_le<std::uint32_t>(
+                    body_of(secs, id), 0, pat::test::load_le<std::uint32_t>(body_of(secs, id), 0) + 1);
+            },
             "do not match");
         refuse(
             "rows - 1",
-            [id](auto& secs) { put32(body_of(secs, id), 0, get32(body_of(secs, id), 0) - 1); },
+            [id](auto& secs) {
+                pat::test::store_le<std::uint32_t>(
+                    body_of(secs, id), 0, pat::test::load_le<std::uint32_t>(body_of(secs, id), 0) - 1);
+            },
             "do not match");
         refuse(
-            "rows is huge", [id](auto& secs) { put32(body_of(secs, id), 0, 0xFFFFFFFFU); }, "do not match");
+            "rows is huge",
+            [id](auto& secs) { pat::test::store_le<std::uint32_t>(body_of(secs, id), 0, 0xFFFFFFFFU); },
+            "do not match");
     }
     // a missing table stays empty: the invariant E-S1 notices
     refuse(
@@ -1184,13 +1177,17 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
     // ---- the statement
     refuse(
         "too many lines",
-        [](auto& secs) { put16(body_of(secs, kSecAccounts), 0, kLedgerLineCount + 1); },
+        [](auto& secs) {
+            pat::test::store_le<std::uint16_t>(body_of(secs, kSecAccounts), 0, kLedgerLineCount + 1);
+        },
         "number of lines");
     refuse(
-        "0xFFFF lines", [](auto& secs) { put16(body_of(secs, kSecAccounts), 0, 0xFFFF); }, "number of lines");
+        "0xFFFF lines",
+        [](auto& secs) { pat::test::store_le<std::uint16_t>(body_of(secs, kSecAccounts), 0, 0xFFFF); },
+        "number of lines");
     refuse(
         "an unissued code",
-        [](auto& secs) { put16(body_of(secs, kSecAccounts), 2 + 2 * 3, 7); },
+        [](auto& secs) { pat::test::store_le<std::uint16_t>(body_of(secs, kSecAccounts), 2 + 2 * 3, 7); },
         "ledger code");
     refuse(
         "codes out of order",
@@ -1213,12 +1210,14 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
         [](auto& secs) {
             std::vector<std::uint8_t>& b = body_of(secs, kSecAccounts);
             const std::size_t at = 2 + 2 * kLedgerLineCount;
-            put32(b, at, get32(b, at) + 1);
+            pat::test::store_le<std::uint32_t>(b, at, pat::test::load_le<std::uint32_t>(b, at) + 1);
         },
         "do not match");
     refuse(
         "no accounts",
-        [](auto& secs) { put32(body_of(secs, kSecAccounts), 2 + 2 * kLedgerLineCount, 0); },
+        [](auto& secs) {
+            pat::test::store_le<std::uint32_t>(body_of(secs, kSecAccounts), 2 + 2 * kLedgerLineCount, 0);
+        },
         "do not match");
     refuse(
         "the statement is cut",
@@ -1231,31 +1230,38 @@ TEST_CASE("sections: a damaged table of the economy is refused with a reason, ne
     // ---- the lists
     refuse(
         "the construction queue claims more than it has",
-        [](auto& secs) { put32(body_of(secs, kSecConstruction), 0, 3); },
+        [](auto& secs) { pat::test::store_le<std::uint32_t>(body_of(secs, kSecConstruction), 0, 3); },
         "impossible length");
     refuse(
         "the construction queue is huge",
-        [](auto& secs) { put32(body_of(secs, kSecConstruction), 0, 0x7FFFFFFFU); },
+        [](auto& secs) {
+            pat::test::store_le<std::uint32_t>(body_of(secs, kSecConstruction), 0, 0x7FFFFFFFU);
+        },
         "impossible length");
     refuse(
         "loans claim more than they have",
-        [](auto& secs) { put32(body_of(secs, kSecCredit), 0, 1000); },
+        [](auto& secs) { pat::test::store_le<std::uint32_t>(body_of(secs, kSecCredit), 0, 1000); },
         "impossible length");
     refuse(
         "quotas claim more",
-        [](auto& secs) { put32(body_of(secs, kSecCredit), 4 + 2 * kLoanRow, 100'000); },
+        [](auto& secs) {
+            pat::test::store_le<std::uint32_t>(body_of(secs, kSecCredit), 4 + 2 * kLoanRow, 100'000);
+        },
         "impossible length");
     refuse(
         "17 outcomes",
-        [](auto& secs) { put32(body_of(secs, kSecCredit), 4 + 2 * kLoanRow + 4 + 2 * kQuotaRow, 17); },
+        [](auto& secs) {
+            pat::test::store_le<std::uint32_t>(
+                body_of(secs, kSecCredit), 4 + 2 * kLoanRow + 4 + 2 * kQuotaRow, 17);
+        },
         "impossible length");
     refuse(
         "257 incidents",
-        [](auto& secs) { put32(body_of(secs, kSecIncidents), 0, 257); },
+        [](auto& secs) { pat::test::store_le<std::uint32_t>(body_of(secs, kSecIncidents), 0, 257); },
         "impossible length");
     refuse(
         "incidents claim more",
-        [](auto& secs) { put32(body_of(secs, kSecIncidents), 0, 7); },
+        [](auto& secs) { pat::test::store_le<std::uint32_t>(body_of(secs, kSecIncidents), 0, 7); },
         "impossible length");
 
     // ---- an economy has no place in a file of an older schema
@@ -1275,9 +1281,10 @@ TEST_CASE("sections: a lie about the length of a section is an error") {
     for (const SectionSpan& span : layout.sections) {
         for (const std::int64_t delta : {std::int64_t{-1}, std::int64_t{1}, std::int64_t{1000}}) {
             std::vector<std::uint8_t> bytes = good;
-            put32(bytes,
-                  span.body - 4,
-                  static_cast<std::uint32_t>(static_cast<std::int64_t>(span.length) + delta));
+            pat::test::store_le<std::uint32_t>(
+                bytes,
+                span.body - 4,
+                static_cast<std::uint32_t>(static_cast<std::int64_t>(span.length) + delta));
             CAPTURE(span.id);
             CAPTURE(delta);
             CHECK_FALSE(load(bytes).has_value());
@@ -1293,9 +1300,7 @@ TEST_CASE("sections: values and references inside well-formed sections are check
         const auto it = std::find_if(
             layout.sections.begin(), layout.sections.end(), [&](const SectionSpan& s) { return s.id == id; });
         REQUIRE(it != layout.sections.end());
-        for (std::size_t i = 0; i < width; ++i) {
-            bytes[it->body + at + i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFU);
-        }
+        pat::test::store_le_bytes(bytes, it->body + at, value, width);
         return bytes;
     };
     constexpr const char* kBad = "violates invariants";

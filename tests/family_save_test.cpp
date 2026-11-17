@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "test_bytes.hpp"
+
 using namespace pat::sim;
 using pat::core::ByteReader;
 using pat::core::ByteWriter;
@@ -343,19 +345,6 @@ std::vector<std::uint8_t> edit_sections(const std::vector<std::uint8_t>& bytes,
     return out.take();
 }
 
-std::uint32_t get32(const std::vector<std::uint8_t>& bytes, std::size_t at) {
-    REQUIRE(at + 4 <= bytes.size());
-    ByteReader in(std::span<const std::uint8_t>(bytes).subspan(at, 4));
-    return in.u32();
-}
-
-void put32(std::vector<std::uint8_t>& bytes, std::size_t at, std::uint32_t value) {
-    REQUIRE(at + 4 <= bytes.size());
-    for (std::size_t i = 0; i < 4; ++i) {
-        bytes[at + i] = static_cast<std::uint8_t>((value >> (8 * i)) & 0xFFU);
-    }
-}
-
 void expect_rejected(const std::vector<std::uint8_t>& bytes) {
     const auto result = load_state(bytes);
     REQUIRE_FALSE(result.has_value());
@@ -585,18 +574,20 @@ TEST_CASE("family sections: lengths versions counts and row order are checked be
             edit_sections(bytes, [&](Sections& sections) { section(sections, id).body.push_back(0); }));
         if (id == 16) {
             for (std::size_t counter = 0; counter < 4; ++counter) {
-                expect_rejected(edit_sections(
-                    bytes, [&](Sections& sections) { put32(section(sections, 16).body, counter * 4, 0); }));
+                expect_rejected(edit_sections(bytes, [&](Sections& sections) {
+                    pat::test::store_le<std::uint32_t>(section(sections, 16).body, counter * 4, 0);
+                }));
             }
             continue;
         }
         const std::size_t count_at = id == 21 ? 4 : 0;
         expect_rejected(edit_sections(bytes, [&](Sections& sections) {
-            put32(section(sections, id).body, count_at, std::numeric_limits<std::uint32_t>::max());
+            pat::test::store_le<std::uint32_t>(
+                section(sections, id).body, count_at, std::numeric_limits<std::uint32_t>::max());
         }));
         expect_rejected(edit_sections(bytes, [&](Sections& sections) {
             auto& body = section(sections, id).body;
-            const auto n = get32(body, count_at);
+            const auto n = pat::test::load_le<std::uint32_t>(body, count_at);
             REQUIRE(n > 0);
             const auto row_size = row_sizes[id - 16];
             const auto start = count_at + 4;
@@ -604,7 +595,7 @@ TEST_CASE("family sections: lengths versions counts and row order are checked be
                                                   body.begin() +
                                                       static_cast<std::ptrdiff_t>(start + row_size));
             body.insert(body.begin() + static_cast<std::ptrdiff_t>(start), first.begin(), first.end());
-            put32(body, count_at, n + 1);
+            pat::test::store_le<std::uint32_t>(body, count_at, n + 1);
         }));
     }
 }
@@ -620,29 +611,32 @@ TEST_CASE("family sections: bounded malformed enum reference date and counter co
         [](Sections& s) { section(s, 22).body[4 + 12] = 255; },
         [](Sections& s) { section(s, 23).body[4 + 8] = 255; },
         [](Sections& s) { section(s, 23).body[4 + 17] = 5; },
-        [](Sections& s) { put32(section(s, 17).body, 4 + 8, 999'999); },
-        [](Sections& s) { put32(section(s, 18).body, 4 + 24, 0); },
-        [](Sections& s) { put32(section(s, 16).body, 0, 1); },
-        [](Sections& s) { put32(section(s, 16).body, 4, 1); },
-        [](Sections& s) { put32(section(s, 16).body, 8, 1); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 17).body, 4 + 8, 999'999); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 18).body, 4 + 24, 0); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 16).body, 0, 1); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 16).body, 4, 1); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 16).body, 8, 1); },
         [](Sections& s) {
             auto& body = section(s, 17).body;
-            const auto outcomes_at = 4 + 55 * static_cast<std::size_t>(get32(body, 0));
-            put32(body, outcomes_at, 65);
+            const auto outcomes_at =
+                4 + 55 * static_cast<std::size_t>(pat::test::load_le<std::uint32_t>(body, 0));
+            pat::test::store_le<std::uint32_t>(body, outcomes_at, 65);
         },
         [](Sections& s) {
             auto& body = section(s, 17).body;
-            const auto outcome_at = 8 + 55 * static_cast<std::size_t>(get32(body, 0));
+            const auto outcome_at =
+                8 + 55 * static_cast<std::size_t>(pat::test::load_le<std::uint32_t>(body, 0));
             body[outcome_at + 32] = 255;
         },
         [](Sections& s) {
             auto& body = section(s, 17).body;
-            const auto outcome_at = 8 + 55 * static_cast<std::size_t>(get32(body, 0));
-            put32(body, outcome_at + 35, 999);
+            const auto outcome_at =
+                8 + 55 * static_cast<std::size_t>(pat::test::load_le<std::uint32_t>(body, 0));
+            pat::test::store_le<std::uint32_t>(body, outcome_at + 35, 999);
         },
-        [](Sections& s) { put32(section(s, 21).body, 0, 999'999); },
-        [](Sections& s) { put32(section(s, 22).body, 4 + 4, 999'999); },
-        [](Sections& s) { put32(section(s, 23).body, 4 + 18, 999'999); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 21).body, 0, 999'999); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 22).body, 4 + 4, 999'999); },
+        [](Sections& s) { pat::test::store_le<std::uint32_t>(section(s, 23).body, 4 + 18, 999'999); },
     };
     for (std::size_t i = 0; i < damage.size(); ++i) {
         CAPTURE(i);
@@ -651,7 +645,7 @@ TEST_CASE("family sections: bounded malformed enum reference date and counter co
     expect_rejected(
         edit_sections(bytes, [](Sections& sections) { sections.rows.push_back(section(sections, 16)); }));
     auto earlier_schema = bytes;
-    put32(earlier_schema, 0, 11);
+    pat::test::store_le<std::uint32_t>(earlier_schema, 0, 11);
     expect_rejected(earlier_schema);
 }
 
