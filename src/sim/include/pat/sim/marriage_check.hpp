@@ -50,6 +50,7 @@ enum class MarriageDenial : std::uint16_t {
     NotMarried = 80,
     CannotTonsureHead = 81,
     NotYourSpouse = 82,
+    HouseChanged = 83,
 };
 
 /// Unique reasons in ascending numeric order. No reason is lost to a fixed-capacity buffer.
@@ -76,6 +77,8 @@ struct MarriageCheckOptions {
     bool dispensation = false;
     /// Invalid = a system checking both houses. A house checks Disowned only for its own members.
     DynastyId actor;
+    /// Rechecking a pending answer ignores only this negotiation, never another engagement.
+    family::NegotiationId ignore_negotiation = 0;
 };
 
 /// Reuses the fixed member's eligibility and bounded kinship facts across a read-only request.

@@ -791,15 +791,22 @@ public:
     [[nodiscard]] const family::State& family() const noexcept { return family_; }
     /// Pure storage availability, including monotone-id exhaustion (the outcome ring evicts).
     [[nodiscard]] bool has_family_negotiation_capacity() const;
+    [[nodiscard]] bool has_family_betrothal_capacity() const;
     [[nodiscard]] bool has_family_outcome_capacity() const;
     /// The same structural predicate used by creation, without writing a row or allocating an id.
     [[nodiscard]] bool can_create_family_negotiation(const family::Negotiation& row) const;
+    /// A response may replace only its own negotiation; all other engagements still block it.
+    [[nodiscard]] bool can_create_family_betrothal(const family::Betrothal& row,
+                                                   family::NegotiationId replacing_negotiation = 0) const;
     /// Creation assigns the next monotone id; the supplied id must be zero. Rejected mutations
     /// leave every family row and counter unchanged. These operations apply structural checks only.
     [[nodiscard]] std::optional<family::NegotiationId> create_family_negotiation(family::Negotiation row);
     bool update_family_negotiation(family::NegotiationId id, const family::Negotiation& row);
     bool close_family_negotiation(family::NegotiationId id);
     [[nodiscard]] std::optional<family::BetrothalId> create_family_betrothal(family::Betrothal row);
+    /// Atomically changes the active engagement from the named negotiation into a betrothal.
+    [[nodiscard]] std::optional<family::BetrothalId>
+    accept_family_negotiation(family::NegotiationId negotiation, family::Betrothal row);
     bool update_family_betrothal(family::BetrothalId id, const family::Betrothal& row);
     bool close_family_betrothal(family::BetrothalId id);
     /// An Active record describes an existing World::marry pair; this does not marry the people.
@@ -952,6 +959,8 @@ private:
     void check_pregnancy_invariants(std::vector<std::string>& bad) const;
     [[nodiscard]] std::uint64_t pregnancy_hash() const;
     void family_on_death(CharacterId character);
+    void cancel_family_negotiations(CharacterId character, std::uint16_t reason);
+    void family_on_marriage(CharacterId a, CharacterId b);
     void check_family_invariants(std::vector<std::string>& bad) const;
     // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
     struct StateSection {

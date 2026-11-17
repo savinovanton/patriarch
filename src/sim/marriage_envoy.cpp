@@ -220,15 +220,8 @@ void withdraw_marriage_envoy(World& world, const MarriageRules& rules, family::N
     if (row == nullptr) {
         return;
     }
-    family::NegotiationOutcome outcome;
-    outcome.negotiation = row->id;
-    outcome.initiator = row->initiator;
-    outcome.groom = row->groom;
-    outcome.bride = row->bride;
-    outcome.responder = row->initiator == row->groom_house ? row->bride_house : row->groom_house;
-    outcome.sent = row->sent;
-    outcome.answered = world.today();
-    outcome.result = family::NegotiationResult::Withdrawn;
+    const auto outcome =
+        family::negotiation_outcome(*row, world.today(), family::NegotiationResult::Withdrawn);
     const auto refund = economy::mul_permille(row->cost_kop, rules.negotiation.withdraw_refund_permille);
     const auto sequence = world.append_family_outcome(outcome);
     PAT_ASSERT(sequence.has_value(), "validated marriage withdrawal must fit the outcome ring");

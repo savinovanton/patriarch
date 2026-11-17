@@ -172,6 +172,9 @@ struct AcceptScore {
     [[nodiscard]] bool operator==(const AcceptScore&) const = default;
 };
 
+/// The lowest score term, using the first term on a tie. Shared by scoring and response validation.
+[[nodiscard]] ScoreTerm weakest_score_term(const std::array<std::int32_t, kScoreTermCount>& terms) noexcept;
+
 /// The evaluation of a match for both houses.
 struct MatchEvaluation {
     MatchParty groom;

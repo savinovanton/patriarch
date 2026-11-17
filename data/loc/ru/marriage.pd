@@ -37,6 +37,7 @@ marriage.denial.not_betrothal_party = "Род не участвует в это�
 marriage.denial.not_married = "Участник не состоит в браке"
 marriage.denial.cannot_tonsure_head = "Нельзя постричь действующего главу рода"
 marriage.denial.not_your_spouse = "Супруг не принадлежит вашему роду"
+marriage.denial.house_changed = "Участник сменил род"
 
 marriage.score.total = "Оценка брачной партии"
 marriage.score.honor_gap = "Разница чести родов"

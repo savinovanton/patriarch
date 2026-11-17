@@ -115,7 +115,9 @@ bool valid_negotiation(const World& world, const family::Negotiation& row) {
            !engaged_elsewhere(world, row.groom, row.id, 0) && !engaged_elsewhere(world, row.bride, row.id, 0);
 }
 
-bool valid_betrothal(const World& world, const family::Betrothal& row) {
+bool valid_betrothal(const World& world,
+                     const family::Betrothal& row,
+                     family::NegotiationId replacing_negotiation = 0) {
     if (!world.dynasty_mode() || !pair_exists(world, row.groom, row.bride) || !world.is_alive(row.groom) ||
         !world.is_alive(row.bride) || !world.exists(row.groom_house) || !world.exists(row.bride_house) ||
         row.groom_house == row.bride_house || !world.exists(row.dowry_source) ||
@@ -131,7 +133,8 @@ bool valid_betrothal(const World& world, const family::Betrothal& row) {
     }
     return !world.characters().spouse[row.groom.index()].valid() &&
            !world.characters().spouse[row.bride.index()].valid() &&
-           !engaged_elsewhere(world, row.groom, 0, row.id) && !engaged_elsewhere(world, row.bride, 0, row.id);
+           !engaged_elsewhere(world, row.groom, replacing_negotiation, row.id) &&
+           !engaged_elsewhere(world, row.bride, replacing_negotiation, row.id);
 }
 
 bool valid_marriage(const World& world, const family::Marriage& row, bool pending_death) {
@@ -425,6 +428,10 @@ bool World::has_family_negotiation_capacity() const {
     return allocatable(family_.next_negotiation_id) && family_.negotiations.size() < family::kMaxNegotiations;
 }
 
+bool World::has_family_betrothal_capacity() const {
+    return allocatable(family_.next_betrothal_id) && family_.betrothals.size() < family::kMaxBetrothals;
+}
+
 bool World::has_family_outcome_capacity() const {
     return allocatable(family_.next_outcome_seq);
 }
@@ -432,6 +439,18 @@ bool World::has_family_outcome_capacity() const {
 bool World::can_create_family_negotiation(const family::Negotiation& row) const {
     return row.id == 0 && has_family_negotiation_capacity() && valid_negotiation(*this, row) &&
            current_houses(*this, row);
+}
+
+bool World::can_create_family_betrothal(const family::Betrothal& row,
+                                        family::NegotiationId replacing_negotiation) const {
+    if (replacing_negotiation != 0) {
+        const auto* pending = find_family_negotiation(replacing_negotiation);
+        if (pending == nullptr || pending->groom != row.groom || pending->bride != row.bride) {
+            return false;
+        }
+    }
+    return row.id == 0 && has_family_betrothal_capacity() &&
+           valid_betrothal(*this, row, replacing_negotiation) && current_houses(*this, row);
 }
 
 std::optional<family::NegotiationId> World::create_family_negotiation(family::Negotiation row) {
@@ -458,14 +477,24 @@ bool World::close_family_negotiation(family::NegotiationId id) {
 }
 
 std::optional<family::BetrothalId> World::create_family_betrothal(family::Betrothal row) {
-    if (row.id != 0 || !allocatable(family_.next_betrothal_id) ||
-        family_.betrothals.size() >= family::kMaxBetrothals || !valid_betrothal(*this, row) ||
-        !current_houses(*this, row)) {
+    if (!can_create_family_betrothal(row)) {
         return std::nullopt;
     }
     row.id = family_.next_betrothal_id;
     family_.betrothals.push_back(row);
     ++family_.next_betrothal_id;
+    return row.id;
+}
+
+std::optional<family::BetrothalId> World::accept_family_negotiation(family::NegotiationId negotiation,
+                                                                    family::Betrothal row) {
+    if (negotiation == 0 || !can_create_family_betrothal(row, negotiation)) {
+        return std::nullopt;
+    }
+    row.id = family_.next_betrothal_id;
+    family_.betrothals.push_back(row);
+    ++family_.next_betrothal_id;
+    (void)close_family_negotiation(negotiation);
     return row.id;
 }
 
@@ -612,24 +641,20 @@ bool World::set_family_godparent_cursor(std::uint32_t cursor) {
     return true;
 }
 
-void World::family_on_death(CharacterId character) {
+void World::cancel_family_negotiations(CharacterId character, std::uint16_t reason) {
     for (const auto& row : family_.negotiations) {
         if (row.groom == character || row.bride == character) {
-            family::NegotiationOutcome outcome;
-            outcome.negotiation = row.id;
-            outcome.initiator = row.initiator;
-            outcome.groom = row.groom;
-            outcome.bride = row.bride;
-            outcome.responder = row.initiator == row.groom_house ? row.bride_house : row.groom_house;
-            outcome.sent = row.sent;
-            outcome.answered = today();
-            outcome.result = family::NegotiationResult::Void;
-            outcome.reason = 1;  // MarriageDenial::NotAlive (E8-T04).
+            auto outcome = family::negotiation_outcome(row, today(), family::NegotiationResult::Void);
+            outcome.reason = reason;
             (void)append_family_outcome(outcome);
         }
     }
     std::erase_if(family_.negotiations,
                   [&](const auto& row) { return row.groom == character || row.bride == character; });
+}
+
+void World::family_on_death(CharacterId character) {
+    cancel_family_negotiations(character, 1);  // MarriageDenial::NotAlive (E8-T04).
     std::erase_if(family_.betrothals,
                   [&](const auto& row) { return row.groom == character || row.bride == character; });
     std::erase_if(family_.regencies, [&](const auto& row) { return row.ward == character; });
@@ -640,6 +665,22 @@ void World::family_on_death(CharacterId character) {
             family_.person_statuses.erase(position);
         }
     }
+}
+
+void World::family_on_marriage(CharacterId a, CharacterId b) {
+    cancel_family_negotiations(a, 20);  // MarriageDenial::AlreadyMarried (E8-T04).
+    cancel_family_negotiations(b, 20);
+    std::erase_if(family_.betrothals, [&](const auto& row) {
+        if (row.groom != a && row.groom != b && row.bride != a && row.bride != b) {
+            return false;
+        }
+        const bool fulfilled = (row.groom == a && row.bride == b) || (row.groom == b && row.bride == a);
+        if (!fulfilled) {
+            (void)record_chronicle_note(row.groom_house, row.groom, row.bride, 205);
+            (void)record_chronicle_note(row.bride_house, row.groom, row.bride, 205);
+        }
+        return true;
+    });
 }
 
 void World::check_family_invariants(std::vector<std::string>& bad) const {

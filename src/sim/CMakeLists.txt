@@ -32,6 +32,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/events/vm.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/family/tables.hpp
+    include/pat/sim/family_systems.hpp
     include/pat/sim/kinship.hpp
     include/pat/sim/conception.hpp
     include/pat/sim/education.hpp
@@ -40,6 +41,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/marriage_text.hpp
     include/pat/sim/marriage_check.hpp
     include/pat/sim/marriage_envoy.hpp
+    include/pat/sim/marriage_negotiations.hpp
     include/pat/sim/marriage_candidates.hpp
     include/pat/sim/dynasty_relation.hpp
     include/pat/sim/marriage_score.hpp
@@ -64,6 +66,7 @@ add_library(patriarch_sim STATIC
     demography.cpp
     demo_scenario.cpp
     dynasty_standing.cpp
+    family_systems.cpp
     economy/administrator.cpp
     economy/breakdown.cpp
     economy/construction.cpp
@@ -92,6 +95,7 @@ add_library(patriarch_sim STATIC
     marriage_text.cpp
     marriage_check.cpp
     marriage_envoy.cpp
+    marriage_negotiations.cpp
     marriage_candidates.cpp
     dynasty_relation.cpp
     marriage_score.cpp

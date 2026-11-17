@@ -88,6 +88,8 @@ constexpr MarriageRules kDefaultMarriageRules{
             .max_parallel_negotiations = 3,
             .refusal_cooldown_days = 365,
             .withdraw_refund_permille = 0,
+            .wedding_delay_days = 0,
+            .wedding_grace_days = 365,
         },
     // Specification sections 5 and 8.8. Penalties are magnitudes, not signed changes.
     .consequences =
@@ -230,6 +232,8 @@ Check check_negotiation(const MarriageNegotiationRules& n) {
                                 static_cast<std::int64_t>(family::kMaxNegotiations)));
     PAT_MARRIAGE_CHECK(in_range("negotiation.refusal_cooldown_days", n.refusal_cooldown_days, 0, 36'500));
     PAT_MARRIAGE_CHECK(in_range("negotiation.withdraw_refund_permille", n.withdraw_refund_permille, 0, 1000));
+    PAT_MARRIAGE_CHECK(in_range("negotiation.wedding_delay_days", n.wedding_delay_days, 0, 36'500));
+    PAT_MARRIAGE_CHECK(in_range("negotiation.wedding_grace_days", n.wedding_grace_days, 1, 36'500));
     return Check::ok();
 }
 

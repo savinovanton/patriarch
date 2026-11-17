@@ -225,9 +225,18 @@ TEST_CASE("marriage check: both participant positions expose engagements without
     envoy.sent = negotiating.world.today();
     envoy.answer_due = envoy.sent + 30;
     envoy.dowry_source = negotiating.bride_house;
-    REQUIRE(negotiating.world.create_family_negotiation(envoy).has_value());
+    const auto negotiation_id = negotiating.world.create_family_negotiation(envoy);
+    REQUIRE(negotiation_id.has_value());
     expect_reasons(query(negotiating), {Denial::InNegotiation});
     CHECK(query(negotiating) == query(negotiating, negotiating.bride, negotiating.groom));
+    MarriageCheckOptions answering;
+    answering.ignore_negotiation = *negotiation_id;
+    expect_reasons(query(negotiating, answering), {});
+    answering.ignore_negotiation = *negotiation_id + 1;
+    expect_reasons(query(negotiating, answering), {Denial::InNegotiation});
+    answering.ignore_negotiation = *negotiation_id;
+    status(negotiating, negotiating.bride, family::kPersonTonsured);
+    expect_reasons(query(negotiating, answering), {Denial::Tonsured});
 
     Scene engaged;
     family::Betrothal contract;

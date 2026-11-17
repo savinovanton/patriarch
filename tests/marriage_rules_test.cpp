@@ -55,6 +55,8 @@ TEST_CASE("marriage rules: negotiation bounds preserve usable dates, capacity an
                            static_cast<std::int32_t>(family::kMaxNegotiations)},
             FieldBounds<G>{"negotiation.refusal_cooldown_days", &G::refusal_cooldown_days, 0, 36'500},
             FieldBounds<G>{"negotiation.withdraw_refund_permille", &G::withdraw_refund_permille, 0, 1000},
+            FieldBounds<G>{"negotiation.wedding_delay_days", &G::wedding_delay_days, 0, 36'500},
+            FieldBounds<G>{"negotiation.wedding_grace_days", &G::wedding_grace_days, 1, 36'500},
         });
 }
 

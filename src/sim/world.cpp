@@ -775,13 +775,17 @@ void World::set_character_dynasty(CharacterId id, DynastyId dynasty) {
         return;
     }
     DynastyId& current = characters_.dynasty[id.index()];
+    const auto destination = exists(dynasty) ? dynasty : DynastyId();
+    if (current != destination) {
+        cancel_family_negotiations(id, 83);  // MarriageDenial::HouseChanged (E8-T09).
+    }
     if (current.valid()) {
         member_remove(current, id);
         if (dynasties_.head[current.index()] == id) {
             dynasties_.head[current.index()] = CharacterId();
         }
     }
-    current = exists(dynasty) ? dynasty : DynastyId();
+    current = destination;
     if (current.valid()) {
         member_add(current, id);
     }
@@ -980,6 +984,7 @@ bool World::marry(CharacterId a, CharacterId b) {
     c.spouse[ib] = a;
     ++c.marriages[ia];
     ++c.marriages[ib];
+    family_on_marriage(a, b);
     return true;
 }
 

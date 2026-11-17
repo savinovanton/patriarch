@@ -117,12 +117,14 @@ struct MarriageRelationRules {
     [[nodiscard]] bool operator==(const MarriageRelationRules&) const = default;
 };
 
-/// Negotiation timing, capacity and withdrawal (specification sections 5, 7.3 and 8.3).
+/// Negotiation/betrothal timing, capacity and withdrawal (specification sections 4.3, 5, 7.3 and 8.3).
 struct MarriageNegotiationRules {
     std::int32_t answer_days = 0;
     std::int32_t max_parallel_negotiations = 0;
     std::int32_t refusal_cooldown_days = 0;
     std::int32_t withdraw_refund_permille = 0;
+    std::int32_t wedding_delay_days = 0;
+    std::int32_t wedding_grace_days = 0;
 
     [[nodiscard]] bool operator==(const MarriageNegotiationRules&) const = default;
 };
