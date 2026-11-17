@@ -26,7 +26,6 @@ constexpr std::uint16_t kTraitEmperorFavorite = 24;
 
 // Skill indices (Skill of world.hpp; a test pins them).
 constexpr std::size_t kStewardship = 0;
-constexpr std::size_t kDiplomacy = 1;
 constexpr std::size_t kMartial = 2;
 constexpr std::size_t kIntrigue = 3;
 constexpr std::size_t kLearning = 4;
