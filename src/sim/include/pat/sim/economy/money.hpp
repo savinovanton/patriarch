@@ -40,25 +40,6 @@ inline constexpr std::int32_t kPermilleOne = 1000;
 
 namespace detail {
 
-[[nodiscard]] constexpr std::uint64_t magnitude(Kopecks v) noexcept {
-    return v < 0 ? (0ULL - static_cast<std::uint64_t>(v)) : static_cast<std::uint64_t>(v);
-}
-
-/// Sign + magnitude -> int64; nullopt when it does not fit.
-[[nodiscard]] constexpr std::optional<Kopecks> from_magnitude(std::uint64_t mag, bool negative) noexcept {
-    constexpr auto kMax = static_cast<std::uint64_t>(std::numeric_limits<Kopecks>::max());
-    if (negative) {
-        if (mag > kMax + 1) {
-            return std::nullopt;
-        }
-        return static_cast<Kopecks>(0ULL - mag);
-    }
-    if (mag > kMax) {
-        return std::nullopt;
-    }
-    return static_cast<Kopecks>(mag);
-}
-
 /// floor(a * b / d) for unsigned operands; nullopt when the quotient exceeds 64 bits or d == 0.
 [[nodiscard]] constexpr std::optional<std::uint64_t>
 mul_div_u64(std::uint64_t a, std::uint64_t b, std::uint64_t d) noexcept {
@@ -75,16 +56,16 @@ mul_div_u64(std::uint64_t a, std::uint64_t b, std::uint64_t d) noexcept {
 // ---- checked and saturating arithmetic ---------------------------------------------------------
 
 [[nodiscard]] constexpr std::optional<Kopecks> checked_add(Kopecks a, Kopecks b) noexcept {
-    const auto r = static_cast<Kopecks>(static_cast<std::uint64_t>(a) + static_cast<std::uint64_t>(b));
-    if (((a ^ r) & (b ^ r)) < 0) {
+    const Kopecks r = core::detail::wrap_add(a, b);
+    if (core::detail::add_overflowed(a, b, r)) {
         return std::nullopt;
     }
     return r;
 }
 
 [[nodiscard]] constexpr std::optional<Kopecks> checked_sub(Kopecks a, Kopecks b) noexcept {
-    const auto r = static_cast<Kopecks>(static_cast<std::uint64_t>(a) - static_cast<std::uint64_t>(b));
-    if (((a ^ b) & (a ^ r)) < 0) {
+    const Kopecks r = core::detail::wrap_sub(a, b);
+    if (core::detail::sub_overflowed(a, b, r)) {
         return std::nullopt;
     }
     return r;
@@ -95,11 +76,12 @@ mul_div_u64(std::uint64_t a, std::uint64_t b, std::uint64_t d) noexcept {
 }
 
 [[nodiscard]] constexpr std::optional<Kopecks> checked_mul(Kopecks a, Kopecks b) noexcept {
-    const core::detail::U128 product = core::detail::mul_u64(detail::magnitude(a), detail::magnitude(b));
+    const core::detail::U128 product =
+        core::detail::mul_u64(core::detail::abs_u64(a), core::detail::abs_u64(b));
     if (product.hi != 0) {
         return std::nullopt;
     }
-    return detail::from_magnitude(product.lo, (a < 0) != (b < 0));
+    return core::detail::from_magnitude<Kopecks>(product.lo, (a < 0) != (b < 0));
 }
 
 [[nodiscard]] constexpr Kopecks saturating_add(Kopecks a, Kopecks b) noexcept {
@@ -131,11 +113,11 @@ checked_mul_div(Kopecks amount, Kopecks num, Kopecks den) noexcept {
         return std::nullopt;
     }
     const auto q = detail::mul_div_u64(
-        detail::magnitude(amount), detail::magnitude(num), static_cast<std::uint64_t>(den));
+        core::detail::abs_u64(amount), core::detail::abs_u64(num), static_cast<std::uint64_t>(den));
     if (!q) {
         return std::nullopt;
     }
-    return detail::from_magnitude(*q, (amount < 0) != (num < 0));
+    return core::detail::from_magnitude<Kopecks>(*q, (amount < 0) != (num < 0));
 }
 
 /// amount x permille / 1000 truncated toward zero (so -1 x 500 / 1000 == 0, not -1). Exact for every
@@ -235,7 +217,7 @@ split_by_weights(Kopecks amount, std::span<const std::uint32_t> weights, std::sp
         return false;
     }
     const bool negative = amount < 0;
-    std::uint64_t remaining = detail::magnitude(amount);
+    std::uint64_t remaining = core::detail::abs_u64(amount);
     for (std::size_t i = 0; i < weights.size(); ++i) {
         const std::uint64_t w = weights[i];
         if (w == 0) {
@@ -243,7 +225,7 @@ split_by_weights(Kopecks amount, std::span<const std::uint32_t> weights, std::sp
         }
         // remaining * w / remaining_weight <= remaining (w <= remaining_weight), so it fits.
         const std::uint64_t part = detail::mul_div_u64(remaining, w, remaining_weight).value_or(remaining);
-        out[i] = detail::from_magnitude(part, negative).value_or(0);
+        out[i] = core::detail::from_magnitude<Kopecks>(part, negative).value_or(0);
         remaining -= part;
         remaining_weight -= w;
     }
