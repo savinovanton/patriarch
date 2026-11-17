@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T16: buildings. The types of the rules (8 of GDD 03 section 15), the slots of a province, the
@@ -50,10 +51,8 @@ constexpr std::uint8_t kGranary = 8;
 constexpr Kopecks kRich = 100'000'000;  // a million roubles
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 void require_valid(const World& world, const EconomyRules& with = rules()) {
     pat::test::require_valid(world, with);
 }
@@ -84,11 +83,8 @@ World make_world(std::uint32_t provinces = 2,
 }
 
 Simulation economy_sim(World world, const EconomyRules& with = rules()) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, with);
-    return sim;
+    return pat::test::economy_sim(std::move(world), with);
 }
-
 /// A simulation that has lived through 1 January 1703: the December of the scenario is closed, the
 /// open month is January, and province 0 (slot day 1) has paid its taxes, so that the postings of the
 /// next days are exactly the ones of the commands.

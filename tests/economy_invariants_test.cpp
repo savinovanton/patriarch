@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "economy_fixture.hpp"
+
 // Level R of the economy invariants (E9 #243, docs/dev/economy-model.md section 12): the checks that need
 // the rules. The damage is written around the API on purpose, as in economy_world_test.cpp.
 
@@ -24,10 +26,8 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 EconomyState& state(World& world) {
     return const_cast<EconomyState&>(world.economy());
 }

@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T12: the policies of a dynasty (GDD 03 section 9) and the commands SetTaxPolicy (tag 32) and
@@ -37,10 +38,8 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 using pat::test::require_valid;
 
 /// Three dynasties and `provinces` provinces: owned by dynasty 0, except the last one that is the
@@ -66,11 +65,8 @@ World make_world(std::uint32_t provinces, Date start = Date::from_ymd(1702, 12, 
 }
 
 Simulation economy_sim(World world) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, rules());
-    return sim;
+    return pat::test::economy_sim(std::move(world), rules());
 }
-
 Command tax(DynastyId actor, DynastyId dynasty, std::uint8_t level) {
     return Command{actor, cmd::SetTaxPolicy{dynasty, level}};
 }

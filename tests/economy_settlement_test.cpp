@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T09: closing of the month, flat expenses (upkeep of the buildings, ExpenseSource), the order of
@@ -38,22 +39,8 @@ namespace {
 constexpr std::uint8_t kMill = 1;  // the building of the default rules: 30 roubles a month
 
 const EconomyRules& rules() {
-    static const EconomyRules value = [] {
-        EconomyRules r = EconomyRules::defaults();
-        // E9-T10: the administration is frozen here, control and corruption stay as the test sets them
-        // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
-        r.control.control_inertia_permille = 0;
-        r.control.corruption_inertia_permille = 0;
-        // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
-        r.mood.inertia_permille = 0;
-        r.unrest.inertia_permille = 0;
-        r.unrest.riot_chance_min_permille = 0;
-        r.unrest.riot_chance_max_permille = 0;
-        return r;
-    }();
-    return value;
+    return pat::test::frozen_admin_rules();
 }
-
 using pat::test::require_valid;
 
 Date first_of(int year, int month) {

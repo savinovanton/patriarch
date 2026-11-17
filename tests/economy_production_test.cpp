@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T07: production, consumption, the grain stock and wealth (docs/dev/economy-model.md section 9,
@@ -32,22 +33,8 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = [] {
-        EconomyRules r = EconomyRules::defaults();
-        // E9-T10: the administration is frozen here, control and corruption stay as the test sets them
-        // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
-        r.control.control_inertia_permille = 0;
-        r.control.corruption_inertia_permille = 0;
-        // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
-        r.mood.inertia_permille = 0;
-        r.unrest.inertia_permille = 0;
-        r.unrest.riot_chance_min_permille = 0;
-        r.unrest.riot_chance_max_permille = 0;
-        return r;
-    }();
-    return value;
+    return pat::test::frozen_admin_rules();
 }
-
 constexpr Quantity units(std::int64_t whole) {
     return whole * kQuantityOne;
 }
@@ -90,11 +77,8 @@ Quantity grain_capacity_for(const World& world, std::uint32_t province, std::int
 }
 
 Simulation economy_sim(World world, std::shared_ptr<const PriceSource> prices = nullptr) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, rules(), std::move(prices));
-    return sim;
+    return pat::test::economy_sim(std::move(world), rules(), std::move(prices));
 }
-
 /// Runs to the end of the next calendar month (the world starts on the last day of a month).
 void run_months(Simulation& sim, int months) {
     for (int i = 0; i < months; ++i) {

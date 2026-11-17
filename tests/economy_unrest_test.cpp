@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T11: the unrest of a province and one-off riots (docs/dev/economy-model.md section 9 formulas F9 and
@@ -47,10 +48,8 @@ Fixed32 raw(std::int64_t value) {
 }
 
 const EconomyRules& rules() {
-    static const EconomyRules value = EconomyRules::defaults();
-    return value;
+    return pat::test::default_rules();
 }
-
 using pat::test::require_valid;
 
 /// A province with the people of a small estate: 30 nobles, 20 clergy, 150 townsfolk, 700 peasants and

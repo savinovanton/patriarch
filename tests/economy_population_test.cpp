@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "economy_fixture.hpp"
 #include "world_fixture.hpp"
 
 // E9-T06: monthly growth of the population and the system `economy.provinces`
@@ -34,22 +35,8 @@ using pat::core::StringId;
 namespace {
 
 const EconomyRules& rules() {
-    static const EconomyRules value = [] {
-        EconomyRules r = EconomyRules::defaults();
-        // E9-T10: the administration is frozen here, control and corruption stay as the test sets them
-        // (the dynamics of F7 have their own tests in economy_administrator_test.cpp)
-        r.control.control_inertia_permille = 0;
-        r.control.corruption_inertia_permille = 0;
-        // E9-T11: mood, unrest and riots are frozen too (their dynamics have their own tests)
-        r.mood.inertia_permille = 0;
-        r.unrest.inertia_permille = 0;
-        r.unrest.riot_chance_min_permille = 0;
-        r.unrest.riot_chance_max_permille = 0;
-        return r;
-    }();
-    return value;
+    return pat::test::frozen_admin_rules();
 }
-
 GrowthInput input_of(std::uint32_t size, Group group = Group::Peasants) {
     GrowthInput in;
     in.group = group;
@@ -112,11 +99,8 @@ World peaceful_world(std::uint32_t provinces, int year = 1703, std::int32_t fill
 }
 
 Simulation economy_sim(World world) {
-    Simulation sim(std::move(world));
-    install_economy_systems(sim, rules());
-    return sim;
+    return pat::test::economy_sim(std::move(world), rules());
 }
-
 std::uint64_t economy_part(const World& world) {
     return world.compute_hash().ext[static_cast<std::size_t>(ExtPart::Economy)];
 }
