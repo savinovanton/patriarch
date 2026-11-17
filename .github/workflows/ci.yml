@@ -208,7 +208,7 @@ jobs:
         # EnforceProcessCountAcrossBuilds caps the total across the projects that /m builds side by side.
         run: >-
           cmake --build --preset win-clangcl-${{ matrix.preset }} --parallel --
-          -p:UseMultiToolTask=true -p:EnforceProcessCountAcrossBuilds=true
+          /p:UseMultiToolTask=true /p:EnforceProcessCountAcrossBuilds=true
       - name: Test
         run: ctest --preset win-clangcl-${{ matrix.preset }}
       - name: Compare hashes with the golden values
