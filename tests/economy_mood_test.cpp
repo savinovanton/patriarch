@@ -16,6 +16,8 @@
 #include <cstdint>
 #include <utility>
 
+#include "world_fixture.hpp"
+
 // E9-T11: the mood of the population groups (docs/dev/economy-model.md section 9 formula F8, section 7.3
 // step 5; GDD 03 section 4.2): the terms, the order, the truncation, the Breakdown, the movement toward
 // the target and the single place the shortage of bread reaches the mood (through wealth).
@@ -67,13 +69,7 @@ MoodInput neutral_input() {
     return in;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 World make_world(std::uint32_t provinces,
                  std::uint32_t peasants = 1000,

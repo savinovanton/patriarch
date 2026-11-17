@@ -27,6 +27,8 @@
 #include <tuple>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 using namespace pat::sim;
 using pat::core::ByteReader;
 using pat::core::ByteWriter;
@@ -56,13 +58,7 @@ CharacterInit adult(DynastyId dynasty, Sex sex = Sex::Male) {
     return init;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& p : problems) {
-        MESSAGE(p);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 bool all_ext_parts_empty(const WorldHash& hash) {
     return std::all_of(hash.ext.begin(), hash.ext.end(), [](std::uint64_t part) { return part == 0; });

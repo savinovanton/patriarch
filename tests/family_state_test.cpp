@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <limits>
 
+#include "world_fixture.hpp"
+
 using namespace pat::sim;
 using pat::core::Fixed32;
 using pat::core::StringId;
@@ -123,13 +125,7 @@ family::NegotiationOutcome outcome(const Pair& participants, family::Negotiation
     return row;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 template <typename Mutation>
 void reject_atomically(World& world, Mutation mutate) {

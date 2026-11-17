@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T12: the policies of a dynasty (GDD 03 section 9) and the commands SetTaxPolicy (tag 32) and
 // SetRecruitPolicy (tag 33): validation, the log, replays, the level a province is processed at, the
 // effect in the monthly pass, saves (section 40, schema 9) and the migration of schema 8.
@@ -39,13 +41,7 @@ const EconomyRules& rules() {
     return value;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 /// Three dynasties and `provinces` provinces: owned by dynasty 0, except the last one that is the
 /// crown's; economy on, the levels of the rules known to the world; peasants and townsfolk set.

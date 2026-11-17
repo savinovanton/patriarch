@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T08: taxes of the groups of a province and the posting of the income (docs/dev/economy-model.md
 // section 9 formula F6, section 7.3 step 4; GDD 03 sections 3.2, 3.2a and 7.1).
 
@@ -48,13 +50,7 @@ const EconomyRules& rules() {
     return value;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 Fixed32 points(std::int64_t whole) {
     return Fixed32::from_int(static_cast<std::int32_t>(whole));

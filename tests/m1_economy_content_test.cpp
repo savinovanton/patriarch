@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 namespace {
 
 using namespace pat;
@@ -131,18 +133,7 @@ content::M1Scenario scenario() {
     return std::move(result).value();
 }
 
-void require_valid(const World& world, const EconomyRules& rules) {
-    const auto structural = world.check_invariants();
-    for (const auto& problem : structural) {
-        INFO(problem);
-    }
-    REQUIRE(structural.empty());
-    const auto semantic = check_rules_invariants(world, rules);
-    for (const auto& problem : semantic) {
-        INFO(problem);
-    }
-    REQUIRE(semantic.empty());
-}
+using pat::test::require_valid;
 
 }  // namespace
 

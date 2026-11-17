@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "test_bytes.hpp"
+#include "world_fixture.hpp"
 
 using namespace pat::sim;
 using pat::core::ByteReader;
@@ -38,13 +39,7 @@ std::filesystem::path fixture_path(const char* name) {
     return std::filesystem::path(PATRIARCH_TEST_DATA_DIR) / "saves" / name;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 CharacterId person(World& world,
                    DynastyId house,
