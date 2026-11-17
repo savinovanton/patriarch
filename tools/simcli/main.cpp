@@ -31,6 +31,8 @@
 #include <utility>
 #include <vector>
 
+#include "cli_args.hpp"
+
 namespace {
 
 using namespace pat::sim;
@@ -107,21 +109,6 @@ Checks and output:
 Exit codes: 0 ok, 1 usage or I/O error, 2 replay diverged, 3 determinism check failed, 4 bad save
 )";
 
-bool parse_u64(std::string_view text, std::uint64_t& out) {
-    if (text.empty() || text.size() > 19) {
-        return false;
-    }
-    std::uint64_t value = 0;
-    for (const char c : text) {
-        if (c < '0' || c > '9') {
-            return false;
-        }
-        value = value * 10 + static_cast<std::uint64_t>(c - '0');
-    }
-    out = value;
-    return true;
-}
-
 /// Returns an error message, or an empty string on success.
 std::string parse_args(int argc, char** argv, Options& options) {
     for (int i = 1; i < argc; ++i) {
@@ -147,7 +134,12 @@ std::string parse_args(int argc, char** argv, Options& options) {
             if (!takes_value(name, text)) {
                 return 0;
             }
-            return parse_u64(text, n) ? 1 : -1;
+            const auto parsed = pat::tools::parse_u64(text);
+            if (!parsed) {
+                return -1;
+            }
+            n = *parsed;
+            return 1;
         };
 
         if (arg == "--help" || arg == "-h") {

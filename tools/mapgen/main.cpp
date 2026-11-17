@@ -20,8 +20,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <limits>
 #include <string>
 #include <vector>
+
+#include "cli_args.hpp"
 
 namespace {
 
@@ -36,6 +39,17 @@ struct Options {
     std::string preview;
     bool validate = true;
 };
+
+/// Strict unsigned parse of an option value that must fit in `T`.
+template <typename T>
+bool parse_number(const char* text, T& out) {
+    const auto parsed = pat::tools::parse_u64(text);
+    if (!parsed || *parsed > std::numeric_limits<T>::max()) {
+        return false;
+    }
+    out = static_cast<T>(*parsed);
+    return true;
+}
 
 bool parse(int argc, char** argv, Options& o) {
     for (int i = 1; i < argc; ++i) {
@@ -56,15 +70,25 @@ bool parse(int argc, char** argv, Options& o) {
         } else if (a == "--preview" && (v = next()) != nullptr) {
             o.preview = v;
         } else if (a == "--width" && (v = next()) != nullptr) {
-            o.gen.width = static_cast<std::uint32_t>(std::strtoul(v, nullptr, 10));
+            if (!parse_number(v, o.gen.width)) {
+                return false;
+            }
         } else if (a == "--height" && (v = next()) != nullptr) {
-            o.gen.height = static_cast<std::uint32_t>(std::strtoul(v, nullptr, 10));
+            if (!parse_number(v, o.gen.height)) {
+                return false;
+            }
         } else if (a == "--seed" && (v = next()) != nullptr) {
-            o.gen.seed = std::strtoull(v, nullptr, 10);
+            if (!parse_number(v, o.gen.seed)) {
+                return false;
+            }
         } else if (a == "--provinces" && (v = next()) != nullptr) {
-            o.gen.province_count = static_cast<std::uint32_t>(std::strtoul(v, nullptr, 10));
+            if (!parse_number(v, o.gen.province_count)) {
+                return false;
+            }
         } else if (a == "--threads" && (v = next()) != nullptr) {
-            o.gen.threads = static_cast<unsigned>(std::strtoul(v, nullptr, 10));
+            if (!parse_number(v, o.gen.threads)) {
+                return false;
+            }
         } else if (a == "--no-validate") {
             o.validate = false;
         } else {
