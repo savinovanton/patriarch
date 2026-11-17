@@ -66,6 +66,7 @@ add_executable(patriarch_tests
     events_vm_test.cpp
     health_test.cpp
     marriage_score_test.cpp
+    term_key_test.cpp
     marriage_check_test.cpp
     marriage_candidates_test.cpp
     marriage_content_test.cpp

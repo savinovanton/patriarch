@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
 // Breakdown: the explanation of a computed number (E9-T04, docs/dev/economy-model.md section 10,
@@ -250,6 +251,43 @@ inline constexpr std::uint16_t kBuildingTermFirst = 4100;
 }
 
 }  // namespace term
+
+/// One row of a code -> localisation key table. Every family of term codes (economy, marriage, ...)
+/// keeps its own constexpr table, ascending by code and without duplicates (see is_sorted_term_table).
+struct TermKey {
+    std::uint16_t code;
+    std::string_view key;
+};
+
+/// True when the rows are strictly ascending by code: the precondition of find_term_key.
+[[nodiscard]] constexpr bool is_sorted_term_table(std::span<const TermKey> table) noexcept {
+    for (std::size_t i = 1; i < table.size(); ++i) {
+        if (table[i - 1].code >= table[i].code) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/// Localisation key of `code` in a table sorted by code (binary search), or an empty view if absent.
+/// The returned view refers to the table's (static) storage.
+[[nodiscard]] constexpr std::string_view find_term_key(std::span<const TermKey> table,
+                                                       std::uint16_t code) noexcept {
+    std::size_t lo = 0;
+    std::size_t hi = table.size();
+    while (lo < hi) {
+        const std::size_t mid = lo + (hi - lo) / 2;
+        if (table[mid].code < code) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+    if (lo == table.size() || table[lo].code != code) {
+        return {};
+    }
+    return table[lo].key;
+}
 
 /// Localisation key of a term code ("economy.tax.base"), or an empty view for an unknown code.
 /// The returned view refers to static storage.
