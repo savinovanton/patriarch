@@ -1,9 +1,13 @@
 name: CI
 
 on:
+  # Markdown-only changes build and test nothing, so they skip CI entirely (owner rule 2026-11-17).
+  # The generated docs/dev/data-reference.md is the exception: schemadoc --check validates it.
   push:
     branches: [main]
+    paths: ['**', '!**/*.md', 'docs/dev/data-reference.md']
   pull_request:
+    paths: ['**', '!**/*.md', 'docs/dev/data-reference.md']
   workflow_dispatch:
 
 concurrency:
