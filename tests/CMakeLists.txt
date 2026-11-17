@@ -53,6 +53,7 @@ add_executable(patriarch_tests
     localization_test.cpp
     log_test.cpp
     map_migrate_test.cpp
+    mapdata_parallel_test.cpp
     mapdata_test.cpp
     nature_layer_test.cpp
     physical_layer_test.cpp
@@ -105,7 +106,7 @@ add_executable(patriarch_tests
     world_test.cpp)
 
 # typed_access_test.cpp checks the content module's internal accessors (src/content/typed_accessors.hpp).
-target_include_directories(patriarch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/content ${CMAKE_SOURCE_DIR}/tools/common)
+target_include_directories(patriarch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/content ${CMAKE_SOURCE_DIR}/src/mapdata ${CMAKE_SOURCE_DIR}/tools/common)
 
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core
