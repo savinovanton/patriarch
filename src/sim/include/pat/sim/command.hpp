@@ -3,6 +3,7 @@
 #include "pat/core/result.hpp"
 #include "pat/sim/world.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -62,6 +63,7 @@ enum class CommandType : std::uint16_t {
     RepayLoan = 39,                    // E9-T15
     SendMarriageEnvoy = 64,            // E8-T08
     WithdrawMarriageEnvoy = 65,        // E8-T08
+    RespondMarriage = 66,              // E8-T09
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -358,6 +360,23 @@ struct WithdrawMarriageEnvoy {
     [[nodiscard]] bool operator==(const WithdrawMarriageEnvoy&) const = default;
 };
 
+/// The answer command excludes withdrawal, which has its own command and wire representation.
+[[nodiscard]] constexpr bool is_marriage_response_result(family::NegotiationResult result) noexcept {
+    return result == family::NegotiationResult::Accepted || result == family::NegotiationResult::Refused ||
+           result == family::NegotiationResult::Void;
+}
+
+/// Resolves a pending negotiation with the answer calculated by the system. System only.
+struct RespondMarriage {
+    family::NegotiationId negotiation = 0;
+    family::NegotiationResult result = family::NegotiationResult::Accepted;
+    std::uint16_t reason = 0;
+    std::int32_t score = 0;
+    std::int32_t threshold = 0;
+    std::array<std::int32_t, family::kNegotiationScoreTerms> terms{};
+    [[nodiscard]] bool operator==(const RespondMarriage&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
@@ -390,7 +409,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::TakeLoan,
                                     cmd::RepayLoan,
                                     cmd::SendMarriageEnvoy,
-                                    cmd::WithdrawMarriageEnvoy>;
+                                    cmd::WithdrawMarriageEnvoy,
+                                    cmd::RespondMarriage>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

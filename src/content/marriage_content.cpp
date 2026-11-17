@@ -107,6 +107,8 @@ sim::MarriageRules read_rules(const data::TypedBlock& body) {
         rules.negotiation.max_parallel_negotiations = detail::i32_of(*block, "max_parallel_negotiations");
         rules.negotiation.refusal_cooldown_days = detail::i32_of(*block, "refusal_cooldown_days");
         rules.negotiation.withdraw_refund_permille = detail::i32_of(*block, "withdraw_refund_permille");
+        rules.negotiation.wedding_delay_days = detail::i32_of(*block, "wedding_delay_days");
+        rules.negotiation.wedding_grace_days = detail::i32_of(*block, "wedding_grace_days");
     }
     if (const auto* block = detail::block_of(body, "consequences")) {
         rules.consequences.dispensation_honor = detail::i32_of(*block, "dispensation_honor");

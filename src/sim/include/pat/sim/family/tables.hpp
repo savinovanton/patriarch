@@ -106,6 +106,21 @@ struct NegotiationOutcome {
     [[nodiscard]] bool operator==(const NegotiationOutcome&) const = default;
 };
 
+/// Preserve the immutable facts shared by every way a negotiation can finish.
+[[nodiscard]] inline NegotiationOutcome
+negotiation_outcome(const Negotiation& row, Date answered, NegotiationResult result) {
+    NegotiationOutcome outcome;
+    outcome.negotiation = row.id;
+    outcome.initiator = row.initiator;
+    outcome.groom = row.groom;
+    outcome.bride = row.bride;
+    outcome.responder = row.initiator == row.groom_house ? row.bride_house : row.groom_house;
+    outcome.sent = row.sent;
+    outcome.answered = answered;
+    outcome.result = result;
+    return outcome;
+}
+
 /// An active betrothal, keyed by id. No dowry has been transferred yet.
 struct Betrothal {
     BetrothalId id = 0;

@@ -124,6 +124,16 @@ struct Writer {
         out.u8(c.dispensation);
     }
     void operator()(const cmd::WithdrawMarriageEnvoy& c) const { out.u32(c.negotiation); }
+    void operator()(const cmd::RespondMarriage& c) const {
+        out.u32(c.negotiation);
+        out.u8(static_cast<std::uint8_t>(c.result));
+        out.u16(c.reason);
+        out.i32(c.score);
+        out.i32(c.threshold);
+        for (const auto term : c.terms) {
+            out.i32(term);
+        }
+    }
     void operator()(const cmd::PlanDeath& c) const {
         out.u32(c.character.value());
         out.i32(c.date.days());
@@ -418,6 +428,22 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::WithdrawMarriageEnvoy:
             out.payload = cmd::WithdrawMarriageEnvoy{in.u32()};
             break;
+        case CommandType::RespondMarriage: {
+            cmd::RespondMarriage c;
+            c.negotiation = in.u32();
+            c.result = static_cast<family::NegotiationResult>(in.u8());
+            if (!cmd::is_marriage_response_result(c.result)) {
+                return false;
+            }
+            c.reason = in.u16();
+            c.score = in.i32();
+            c.threshold = in.i32();
+            for (auto& term : c.terms) {
+                term = in.i32();
+            }
+            out.payload = c;
+            break;
+        }
         case CommandType::RecordChronicle: {
             cmd::RecordChronicle c;
             c.dynasty = DynastyId(in.u32());

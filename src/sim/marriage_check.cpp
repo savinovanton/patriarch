@@ -59,7 +59,10 @@ void append_person_denials(const World& world,
     }
     const auto engagement = world.engagement_of(person);
     if (engagement == 1) {
-        add(MarriageDenial::InNegotiation);
+        const auto* negotiation = world.family_negotiation_of(person);
+        if (negotiation == nullptr || negotiation->id != options.ignore_negotiation) {
+            add(MarriageDenial::InNegotiation);
+        }
     } else if (engagement == 2) {
         add(MarriageDenial::Betrothed);
     }
@@ -293,6 +296,7 @@ std::string_view marriage_denial_key(MarriageDenial reason) noexcept {
         PAT_MARRIAGE_DENIAL_KEY(NotMarried, not_married)
         PAT_MARRIAGE_DENIAL_KEY(CannotTonsureHead, cannot_tonsure_head)
         PAT_MARRIAGE_DENIAL_KEY(NotYourSpouse, not_your_spouse)
+        PAT_MARRIAGE_DENIAL_KEY(HouseChanged, house_changed)
 #undef PAT_MARRIAGE_DENIAL_KEY
     }
     return {};

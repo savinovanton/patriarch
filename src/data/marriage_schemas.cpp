@@ -91,7 +91,11 @@ ObjectSchema negotiation_schema() {
     s.required("answer_days", i32())
         .required("max_parallel_negotiations", i32())
         .required("refusal_cooldown_days", i32())
-        .required("withdraw_refund_permille", i32());
+        .required("withdraw_refund_permille", i32())
+        .required("wedding_delay_days", i32())
+        .describe("Дополнительная пауза от заключения помолвки до ранней даты свадьбы, в днях.")
+        .required("wedding_grace_days", i32())
+        .describe("Срок проведения свадьбы после ранней разрешённой даты, в днях.");
     return s;
 }
 

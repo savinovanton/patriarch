@@ -59,6 +59,8 @@ marriage_rules "main" {
         max_parallel_negotiations = 3
         refusal_cooldown_days = 365
         withdraw_refund_permille = 0
+        wedding_delay_days = 0
+        wedding_grace_days = 365
     }
     consequences {
         bride_joins_groom_house = yes

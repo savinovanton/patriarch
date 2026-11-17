@@ -6,6 +6,7 @@
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/marriage_envoy.hpp"
+#include "pat/sim/marriage_negotiations.hpp"
 #include "pat/sim/traits.hpp"
 
 #include <algorithm>
@@ -127,6 +128,12 @@ struct Validator {
     }
     Result<void, CommandError> operator()(const cmd::WithdrawMarriageEnvoy& c) const {
         return marriage_verdict(can_withdraw_envoy(world, actor, c.negotiation));
+    }
+    Result<void, CommandError> operator()(const cmd::RespondMarriage& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may answer a marriage proposal");
+        }
+        return validate_marriage_response(world, rules_or_default(marriage), c, faith);
     }
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
@@ -775,6 +782,9 @@ struct Applier {
     void operator()(const cmd::WithdrawMarriageEnvoy& c) const {
         withdraw_marriage_envoy(world, rules_or_default(marriage), c.negotiation);
     }
+    void operator()(const cmd::RespondMarriage& c) const {
+        respond_marriage(world, rules_or_default(marriage), c, faith);
+    }
 
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {
@@ -1026,6 +1036,10 @@ template <>
 struct CommandTag<cmd::WithdrawMarriageEnvoy> {
     static constexpr CommandType value = CommandType::WithdrawMarriageEnvoy;
 };
+template <>
+struct CommandTag<cmd::RespondMarriage> {
+    static constexpr CommandType value = CommandType::RespondMarriage;
+};
 
 template <class Variant>
 struct TagTable;
@@ -1118,6 +1132,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "SendMarriageEnvoy";
         case CommandType::WithdrawMarriageEnvoy:
             return "WithdrawMarriageEnvoy";
+        case CommandType::RespondMarriage:
+            return "RespondMarriage";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

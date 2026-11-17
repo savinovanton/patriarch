@@ -89,6 +89,13 @@ public:
     void set_economy_rules(std::shared_ptr<const economy::EconomyRules> rules) {
         config_.economy_rules = std::move(rules);
     }
+    /// Shares the immutable family content with commands and installed family systems. Call before
+    /// the first tick. Any strings borrowed by the faith policy must outlive the simulation.
+    void set_family_content(std::shared_ptr<const MarriageRules> rules,
+                            std::shared_ptr<const FaithPolicy> faith = {}) {
+        config_.marriage_rules = std::move(rules);
+        config_.faith_policy = std::move(faith);
+    }
 
     /// Diagnostic observer, independent of World/save/replay. Enable after registering systems;
     /// add_system() disables it, restore_state() clears its window. Simulation thread, between ticks.

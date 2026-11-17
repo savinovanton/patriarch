@@ -195,7 +195,8 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
     INFO(report);
     REQUIRE(loaded.ok());
     const auto& strings = loaded.localizer;
-    for (std::uint16_t value = 1; value <= 82; ++value) {
+    for (std::uint16_t value = 1; value <= static_cast<std::uint16_t>(sim::MarriageDenial::HouseChanged);
+         ++value) {
         const auto key = sim::marriage_denial_key(static_cast<sim::MarriageDenial>(value));
         if (!key.empty()) {
             CAPTURE(key);

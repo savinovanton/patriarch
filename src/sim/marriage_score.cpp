@@ -7,6 +7,16 @@
 
 namespace pat::sim {
 
+ScoreTerm weakest_score_term(const std::array<std::int32_t, kScoreTermCount>& terms) noexcept {
+    std::size_t weakest = 0;
+    for (std::size_t i = 1; i < kScoreTermCount; ++i) {
+        if (terms[i] < terms[weakest]) {
+            weakest = i;
+        }
+    }
+    return static_cast<ScoreTerm>(weakest);
+}
+
 namespace {
 
 using economy::Breakdown;
@@ -64,14 +74,7 @@ void finalize_score(const MarriageRules& rules, AcceptScore& result) {
     result.accepted = result.score >= result.threshold;
     result.refusal_code = 0;
     if (!result.accepted) {
-        // The term that pulls the score down most: the lowest value, the first one on a tie.
-        std::size_t weakest = 0;
-        for (std::size_t i = 1; i < kScoreTermCount; ++i) {
-            if (result.terms[i] < result.terms[weakest]) {
-                weakest = i;
-            }
-        }
-        result.refusal_code = score_term_code(static_cast<ScoreTerm>(weakest));
+        result.refusal_code = score_term_code(weakest_score_term(result.terms));
     }
 }
 
