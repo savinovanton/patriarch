@@ -88,8 +88,7 @@ jobs:
         with:
           args: --preset win-msvc
       - name: Build
-        # --parallel: MSBuild /m builds independent projects side by side (cl.exe adds /MP inside a project).
-        run: cmake --build --preset win-msvc-${{ matrix.preset }} --parallel
+        run: cmake --build --preset win-msvc-${{ matrix.preset }}
       - name: Test
         run: ctest --preset win-msvc-${{ matrix.preset }}
       # Same check as the Linux job, so the hashes of both platforms appear in the logs.
@@ -204,7 +203,8 @@ jobs:
         with:
           args: --preset win-clangcl
       - name: Build
-        # clang-cl has no /MP: MultiToolTask runs the compiler on several files of a project at once, and
+        # clang-cl has no /MP (cl.exe gets it from cmake/PatriarchCompileOptions.cmake, which already keeps the
+        # MSVC jobs busy; /m on top of it measured no gain there): MultiToolTask runs the compiler on several files of a project at once, and
         # EnforceProcessCountAcrossBuilds caps the total across the projects that /m builds side by side.
         run: >-
           cmake --build --preset win-clangcl-${{ matrix.preset }} --parallel --
@@ -273,7 +273,7 @@ jobs:
         with:
           args: --preset win-msvc-asan
       - name: Build
-        run: cmake --build --preset win-msvc-asan-debug --parallel
+        run: cmake --build --preset win-msvc-asan-debug
       - name: Test
         run: ctest --preset win-msvc-asan-debug
       - name: Upload test logs
