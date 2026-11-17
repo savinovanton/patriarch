@@ -1,5 +1,6 @@
 #include "pat/engine/sdf_font.hpp"
 
+#include "pat/core/file_io.hpp"
 #include "pat/core/log.hpp"
 
 #include <ft2build.h>
@@ -104,12 +105,11 @@ core::Result<SdfAtlas> build_sdf_atlas(const std::filesystem::path& font_file,
                                        const SdfAtlasOptions& options) {
     using R = core::Result<SdfAtlas>;
 
-    std::ifstream in(font_file, std::ios::binary);
-    if (!in) {
+    auto read = core::read_file_bytes(font_file);
+    if (!read) {
         return R::err(core::Error{100, "cannot open font " + font_file.generic_string()});
     }
-    const std::vector<unsigned char> font_data((std::istreambuf_iterator<char>(in)),
-                                               std::istreambuf_iterator<char>());
+    const std::vector<unsigned char> font_data = std::move(read).value();
 
     Library library;
     if (const FT_Error e = FT_Init_FreeType(&library.lib); e != 0) {

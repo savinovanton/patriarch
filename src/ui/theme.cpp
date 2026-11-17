@@ -1,5 +1,6 @@
 #include "pat/ui/theme.hpp"
 
+#include "pat/core/file_io.hpp"
 #include "pat/core/log.hpp"
 #include "pat/data/pd_parser.hpp"
 #include "pat/engine/ui.hpp"
@@ -123,15 +124,9 @@ bool read_numbers(const data::Entry* group, std::vector<ThemeNumber>& numbers, c
 }
 
 std::string read_file(const std::filesystem::path& path, bool& ok) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in.good()) {
-        ok = false;
-        return {};
-    }
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    ok = true;
-    return buffer.str();
+    auto text = core::read_file_text(path);
+    ok = text.has_value();
+    return ok ? std::move(text).value() : std::string();
 }
 
 bool is_token_char(char c) {

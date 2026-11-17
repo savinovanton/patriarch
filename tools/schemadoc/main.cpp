@@ -10,6 +10,7 @@
 //
 // Exit codes: 0 ok / up to date, 1 the file is out of date, 2 usage or I/O error.
 
+#include "pat/core/file_io.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/schema_doc.hpp"
 
@@ -40,11 +41,12 @@ void usage() {
 }
 
 bool read_file(const std::string& path, std::string& out) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in)
+    auto text = pat::core::read_file_text(path);
+    if (!text) {
         return false;
-    out.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-    return !in.bad();
+    }
+    out = std::move(text).value();
+    return true;
 }
 
 std::string strip_cr(const std::string& text) {

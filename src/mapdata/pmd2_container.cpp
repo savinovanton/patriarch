@@ -493,20 +493,19 @@ Result<Pmd2Reader, Error> Pmd2Reader::open(std::span<const std::uint8_t> bytes,
 Result<Pmd2Reader, Error> Pmd2Reader::open_file(const std::filesystem::path& path,
                                                 const Pmd2OpenOptions& options) {
     using R = Result<Pmd2Reader, Error>;
-    std::ifstream in(path, std::ios::binary | std::ios::ate);
-    if (!in) {
-        return R::err(codec::make_error(pmd2_error::kIo, "cannot open " + path.string()));
+    auto read = core::read_file_bytes(path);
+    if (!read) {
+        switch (read.error().stage) {
+            case core::FileIoStage::kOpen:
+                return R::err(codec::make_error(pmd2_error::kIo, "cannot open " + path.string()));
+            case core::FileIoStage::kSize:
+                return R::err(
+                    codec::make_error(pmd2_error::kIo, "cannot determine the size of " + path.string()));
+            default:
+                return R::err(codec::make_error(pmd2_error::kIo, "read failed: " + path.string()));
+        }
     }
-    const std::streamsize size = in.tellg();
-    if (size < 0) {
-        return R::err(codec::make_error(pmd2_error::kIo, "cannot determine the size of " + path.string()));
-    }
-    in.seekg(0);
-    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
-    in.read(reinterpret_cast<char*>(bytes.data()), size);
-    if (!in) {
-        return R::err(codec::make_error(pmd2_error::kIo, "read failed: " + path.string()));
-    }
+    std::vector<std::uint8_t> bytes = std::move(read).value();
     Pmd2Reader reader;
     reader.owned_ = std::move(bytes);
     reader.view_ = reader.owned_;
