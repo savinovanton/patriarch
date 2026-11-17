@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T16: buildings. The types of the rules (8 of GDD 03 section 15), the slots of a province, the
 // commands StartConstruction (tag 36) and CancelConstruction (tag 37), the queue of the world, the
 // system economy.construction and the upkeep of the finished buildings in the statement. ECO-A4: the
@@ -53,16 +55,7 @@ const EconomyRules& rules() {
 }
 
 void require_valid(const World& world, const EconomyRules& with = rules()) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-    const auto broken = check_rules_invariants(world, with);
-    for (const auto& problem : broken) {
-        MESSAGE(problem);
-    }
-    REQUIRE(broken.empty());
+    pat::test::require_valid(world, with);
 }
 
 /// Three dynasties; `provinces` provinces of dynasty 0, each with `slots` slots, development 4 and kind

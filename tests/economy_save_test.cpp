@@ -32,6 +32,7 @@
 
 #include "economy_test_access.hpp"
 #include "test_bytes.hpp"
+#include "world_fixture.hpp"
 
 using namespace pat::sim;
 using namespace pat::sim::economy;
@@ -49,13 +50,7 @@ std::filesystem::path fixture_path(const char* name) {
     return std::filesystem::path(PATRIARCH_TEST_DATA_DIR) / "saves" / name;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& p : problems) {
-        MESSAGE(p);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 bool mentions(const std::vector<std::string>& problems, const char* text) {
     return std::any_of(problems.begin(), problems.end(), [&](const std::string& p) {

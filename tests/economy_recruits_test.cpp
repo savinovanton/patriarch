@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T13: the recruit potential of a province (F11), the monthly regeneration of the pool (step 6 of the
 // slot), the command ConscriptRecruits (tag 34) and its effects: the pool, the groups, the manpower
 // reserve of the owner, the output (ECO-A2), the log, replays, saves and the invariants.
@@ -41,16 +43,7 @@ const EconomyRules& rules() {
 }
 
 void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-    const auto broken = check_rules_invariants(world, rules());
-    for (const auto& problem : broken) {
-        MESSAGE(problem);
-    }
-    REQUIRE(broken.empty());
+    pat::test::require_valid(world, rules());
 }
 
 /// Three dynasties; `provinces` provinces held by dynasty 0, except the last one when `crown_last`

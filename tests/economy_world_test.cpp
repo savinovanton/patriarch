@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "economy_test_access.hpp"
+#include "world_fixture.hpp"
 
 // E9-T02: the economy tables of the World, the single money function with its double entry, and the
 // invariants (docs/dev/economy-model.md sections 4, 5, 6, 12).
@@ -72,13 +73,7 @@ AccountTable& accounts(World& world) {
     return state(world).accounts;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 bool mentions(const std::vector<std::string>& problems, const std::string& fragment) {
     return std::any_of(problems.begin(), problems.end(), [&](const std::string& problem) {

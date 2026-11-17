@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T15: crown loans, paired money postings, exact monthly interest, overdue and bankruptcy.
 
 using namespace pat::sim;
@@ -52,18 +54,7 @@ World make_world(DynastyId crown_holder = DynastyId()) {
     return world;
 }
 
-void require_valid(const World& world, const EconomyRules& rules) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-    const auto rules_problems = check_rules_invariants(world, rules);
-    for (const auto& problem : rules_problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(rules_problems.empty());
-}
+using pat::test::require_valid;
 
 Date next_month(Date date) {
     const auto ymd = date.ymd();

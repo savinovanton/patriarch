@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T10: the administrator of a province, control and corruption (docs/dev/economy-model.md section 9
 // formula F7, section 7.3 step 1; GDD 03 sections 3.2 and 7.4), the command AssignProvinceAdministrator
 // and the entry "Anarchy" of the incident log.
@@ -65,13 +67,7 @@ const EconomyRules& frozen_rules() {
     return value;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 Fixed32 points(std::int64_t whole) {
     return Fixed32::from_int(static_cast<std::int32_t>(whole));

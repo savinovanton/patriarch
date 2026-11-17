@@ -25,6 +25,8 @@
 #include <variant>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 namespace {
 
 using namespace pat::sim;
@@ -84,11 +86,7 @@ Pregnancy pregnancy_of(CharacterId mother,
     return p;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    INFO((problems.empty() ? std::string() : problems.front()));
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 std::uint64_t pregnancy_part(const World& world) {
     return world.compute_hash().ext[static_cast<std::size_t>(ExtPart::Pregnancy)];

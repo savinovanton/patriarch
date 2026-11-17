@@ -21,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T11: the unrest of a province and one-off riots (docs/dev/economy-model.md section 9 formulas F9 and
 // F10, section 7.3 steps 5 and 7, section 7.4; GDD 03 section 4.3): the states and their limits, the
 // weighted average and its Breakdown, the chance and the single draw, the loot, the fall of control, the
@@ -49,13 +51,7 @@ const EconomyRules& rules() {
     return value;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 /// A province with the people of a small estate: 30 nobles, 20 clergy, 150 townsfolk, 700 peasants and
 /// 100 cossacks, bread for all, the usual policies, dynasty 0 as the owner.

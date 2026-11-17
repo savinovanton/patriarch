@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T06: monthly growth of the population and the system `economy.provinces`
 // (docs/dev/economy-model.md sections 7 and 9, formula F1; GDD 03 sections 4.2 and 14.1).
 
@@ -55,13 +57,7 @@ GrowthInput input_of(std::uint32_t size, Group group = Group::Peasants) {
     return in;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 /// The start of a world whose first tick is 1 January `year`.
 World empty_world(int year) {

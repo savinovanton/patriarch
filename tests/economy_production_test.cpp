@@ -18,6 +18,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T07: production, consumption, the grain stock and wealth (docs/dev/economy-model.md section 9,
 // formulas F2-F5; GDD 03 sections 5.2 and 5.3).
 
@@ -50,13 +52,7 @@ constexpr Quantity units(std::int64_t whole) {
     return whole * kQuantityOne;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 /// A world with `provinces` provinces of the economy; the people of every province are `peasants`
 /// peasants and `townsfolk` townsfolk, the rest is empty.

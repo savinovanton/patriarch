@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T17: the effects of buildings and the cache of the province modifiers (docs/dev/economy-model.md
 // sections 4.10, 9 F16 and 17.10). What is checked: the set of modifiers of a province (what each of the
 // eight types gives, how effects add and clamp, what a construction under way does not give), the
@@ -77,16 +79,7 @@ EconomyRules open_rules(EconomyRules r = EconomyRules::defaults()) {
 }
 
 void require_valid(const World& world, const EconomyRules& with = rules()) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-    const auto broken = check_rules_invariants(world, with);
-    for (const auto& problem : broken) {
-        MESSAGE(problem);
-    }
-    REQUIRE(broken.empty());
+    pat::test::require_valid(world, with);
 }
 
 /// Three dynasties; `provinces` provinces of dynasty 0 with `slots` slots, development 4 and 8000

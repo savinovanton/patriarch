@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "world_fixture.hpp"
+
 // E9-T09: closing of the month, flat expenses (upkeep of the buildings, ExpenseSource), the order of
 // the first of the month, the books over fifty years, the forecast and the affordability rule
 // (docs/dev/economy-model.md sections 6.3, 7.1, 12 and D12).
@@ -52,13 +54,7 @@ const EconomyRules& rules() {
     return value;
 }
 
-void require_valid(const World& world) {
-    const auto problems = world.check_invariants();
-    for (const auto& problem : problems) {
-        MESSAGE(problem);
-    }
-    REQUIRE(problems.empty());
-}
+using pat::test::require_valid;
 
 Date first_of(int year, int month) {
     return Date::from_ymd(year, month, 1);
