@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "map_fixture.hpp"
+
 using namespace pat::mapdata;
 
 namespace {
@@ -68,37 +70,9 @@ Provenance provenance() {
     return p;
 }
 
-/// 64x48: sea band on top (id 1), a lake above sea level (id 2), land elsewhere.
+/// 64x48: sea band on top (id 1), a lake above sea level (id 2), land elsewhere (see map_fixture.hpp).
 PhysicalLayer make_layer() {
-    PhysicalLayer l;
-    l.width = 64;
-    l.height = 48;
-    l.sea_level = kSea;
-    l.metres_per_unit_milli = 250;
-    l.seed = 77;
-    const std::size_t n = l.pixel_count();
-    l.heights.assign(n, 0);
-    l.water_body.assign(n, 0);
-    l.materials.assign(n, static_cast<std::uint8_t>(Material::Plains));
-    for (std::uint32_t y = 0; y < l.height; ++y) {
-        for (std::uint32_t x = 0; x < l.width; ++x) {
-            const std::size_t i = static_cast<std::size_t>(y) * l.width + x;
-            if (y < 6) {
-                l.water_body[i] = 1;
-                l.heights[i] = static_cast<std::uint16_t>(400 + x);
-                l.materials[i] = static_cast<std::uint8_t>(Material::DeepWater);
-            } else if (x >= 20 && x < 30 && y >= 20 && y < 28) {
-                l.water_body[i] = 2;
-                l.heights[i] = (x + y) % 3 == 0 ? 2500 : 2400;  // flat bed allowed up to the surface
-                l.materials[i] = static_cast<std::uint8_t>(Material::ShallowWater);
-            } else {
-                l.heights[i] = static_cast<std::uint16_t>(2000 + (x * 13U + y * 7U) % 900U);
-            }
-        }
-    }
-    const auto area = count_water_area(l.water_body, 2);
-    l.water_bodies.push_back({1, WaterKind::sea, 0, kSea, area[0], "sea"});
-    l.water_bodies.push_back({2, WaterKind::lake, 0, 2500, area[1], "lake-test"});
+    PhysicalLayer l = pat::test::make_test_terrain(/*varied_lake_bed=*/true);
     l.georef = albers();
     l.provenance = provenance();
     return l;
