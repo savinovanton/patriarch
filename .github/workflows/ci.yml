@@ -17,6 +17,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Every doctest case is a separate ctest process (doctest_discover_tests), and the test presets set no
+  # job count, so ctest ran them one at a time. Hosted runners have 4 vCPUs; scratch files in tests/ are
+  # named per test case, so the cases can run side by side.
+  CTEST_PARALLEL_LEVEL: 4
+
 jobs:
   format:
     name: clang-format
