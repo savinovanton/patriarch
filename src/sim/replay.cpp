@@ -225,7 +225,7 @@ core::Result<Replay, core::Error> deserialize_replay(std::span<const std::uint8_
     }
 
     const std::uint32_t command_count = in.u32();
-    if (!in.ok() || static_cast<std::uint64_t>(command_count) * 9 > in.remaining()) {
+    if (!in.can_hold(command_count, 9)) {
         return R::err(replay_error("invalid command count"));
     }
     replay.commands.reserve(command_count);
@@ -242,7 +242,7 @@ core::Result<Replay, core::Error> deserialize_replay(std::span<const std::uint8_
     }
 
     const std::uint32_t checkpoint_count = in.u32();
-    if (!in.ok() || static_cast<std::uint64_t>(checkpoint_count) * 56 > in.remaining()) {
+    if (!in.can_hold(checkpoint_count, 56)) {
         return R::err(replay_error("invalid checkpoint count"));
     }
     replay.checkpoints.reserve(checkpoint_count);

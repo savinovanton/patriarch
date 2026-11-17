@@ -79,7 +79,6 @@ using detail::kSectionOpinion;
 using detail::kSectionPerson;
 using detail::kSectionPregnancy;
 using detail::kSectionStanding;
-using detail::plausible;
 
 // The limit of the section count of one file: a sanity check of the header, not the size of a
 // registry. 96 is the first id that no epic has been given yet (docs/dev/save-format.md section 5.1,
@@ -474,7 +473,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     core::RngSnapshot rng;
     rng.master_seed = in.u64();
     const std::uint32_t stream_count = in.u32();
-    if (!plausible(in, stream_count, 24)) {
+    if (!in.can_hold(stream_count, 24)) {
         return fail("invalid random stream table");
     }
     rng.streams.reserve(stream_count);
@@ -495,7 +494,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     // Dynasty extensions (unity, law, prestige) start at their defaults before sections are read.
     const std::uint32_t dynasty_count = in.u32();
-    if (!plausible(in, dynasty_count, 12 + 8)) {
+    if (!in.can_hold(dynasty_count, 12 + 8)) {
         return fail("invalid dynasty table");
     }
     for (std::uint32_t i = 0; i < dynasty_count; ++i) {
@@ -513,7 +512,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     for (std::uint32_t d = 0; d < dynasty_count; ++d) {
         for (auto* list : {&member_lists[d], &owned_lists[d]}) {
             const std::uint32_t n = in.u32();
-            if (!plausible(in, n, 4)) {
+            if (!in.can_hold(n, 4)) {
                 return fail("invalid dynasty index list");
             }
             list->reserve(n);
@@ -525,7 +524,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     // provinces
     const std::uint32_t province_count = in.u32();
-    if (!plausible(in, province_count, 13)) {
+    if (!in.can_hold(province_count, 13)) {
         return fail("invalid province table");
     }
     for (std::uint32_t i = 0; i < province_count; ++i) {
@@ -537,7 +536,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
     // characters
     const std::uint32_t capacity = in.u32();
-    if (capacity > kMaxCharacterIds || !plausible(in, capacity, 1 + 4 + 21)) {
+    if (capacity > kMaxCharacterIds || !in.can_hold(capacity, 1 + 4 + 21)) {
         return fail("invalid character table");
     }
     const auto alive_span = in.bytes(capacity);
@@ -547,7 +546,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         g = in.u32();
     }
     const std::uint32_t free_count = in.u32();
-    if (!plausible(in, free_count, 4)) {
+    if (!in.can_hold(free_count, 4)) {
         return fail("invalid free list");
     }
     std::vector<std::uint32_t> free_list(free_count);
@@ -621,7 +620,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
 
         const std::uint16_t section_count = in.u16();
         // Every section has a header of 8 bytes, so a count the rest of the file cannot hold is damage.
-        if (!in.ok() || section_count > kMaxSections || !plausible(in, section_count, 8)) {
+        if (!in.ok() || section_count > kMaxSections || !in.can_hold(section_count, 8)) {
             return fail("invalid section count");
         }
         std::uint16_t previous_id = 0;
@@ -651,7 +650,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 }
             } else if (id == kSectionPerson) {
                 const std::uint32_t rows = sr.u32();
-                if (!plausible(sr, rows, kPersonRowBytes)) {
+                if (!sr.can_hold(rows, kPersonRowBytes)) {
                     return fail("invalid person section");
                 }
                 bool have_previous = false;
@@ -694,7 +693,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 }
             } else if (id == kSectionKin) {
                 const std::uint32_t rows = sr.u32();
-                if (!plausible(sr, rows, kKinRowBytes)) {
+                if (!sr.can_hold(rows, kKinRowBytes)) {
                     return fail("invalid kin section");
                 }
                 // A reference is either "none" or an id inside the table; whether it points to a
@@ -730,7 +729,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             } else if (id == kSectionPregnancy) {
                 const std::uint32_t rows = sr.u32();
                 if (!world.dynasty_mode() || rows == 0 || rows > capacity ||
-                    !plausible(sr, rows, kPregnancyRowBytes)) {
+                    !sr.can_hold(rows, kPregnancyRowBytes)) {
                     return fail("invalid pregnancy section");
                 }
                 world.pregnancies_.reserve(rows);
@@ -761,7 +760,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             } else if (id == kSectionChronicle) {
                 const std::uint32_t rows = sr.u32();
                 if (!world.dynasty_mode() || rows == 0 || rows > dynasty_count ||
-                    !plausible(sr, rows, kMinChronicleRowBytes)) {
+                    !sr.can_hold(rows, kMinChronicleRowBytes)) {
                     return fail("invalid chronicle section");
                 }
                 std::uint32_t previous_row = 0;
@@ -772,7 +771,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                         return fail("chronicle rows are out of range or out of order");
                     }
                     if (count == 0 || count > kMaxChronicleEntries ||
-                        !plausible(sr, count, kChronicleEntryBytes)) {
+                        !sr.can_hold(count, kChronicleEntryBytes)) {
                         return fail("invalid chronicle entry count");
                     }
                     previous_row = row;
@@ -793,7 +792,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             } else if (id == kSectionOpinion) {
                 const std::uint32_t rows = sr.u32();
                 if (!world.dynasty_mode() || rows == 0 || rows > chars.ids.alive_count() ||
-                    !plausible(sr, rows, kMinOpinionRowBytes)) {
+                    !sr.can_hold(rows, kMinOpinionRowBytes)) {
                     return fail("invalid opinion section");
                 }
                 world.opinions_.reserve(rows);
@@ -804,8 +803,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     if (!sr.ok() || holder >= capacity || (r != 0 && holder <= previous_holder)) {
                         return fail("opinion holders are out of range or out of order");
                     }
-                    if (count == 0 || count > kMaxOpinions ||
-                        !plausible(sr, count, kMinOpinionRelationBytes)) {
+                    if (count == 0 || count > kMaxOpinions || !sr.can_hold(count, kMinOpinionRelationBytes)) {
                         return fail("invalid opinion relation count");
                     }
                     previous_holder = holder;
@@ -820,7 +818,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                             return fail("opinion targets are out of range or out of order");
                         }
                         if (sources == 0 || sources > kMaxOpinionSources ||
-                            !plausible(sr, sources, kOpinionSourceBytes)) {
+                            !sr.can_hold(sources, kOpinionSourceBytes)) {
                             return fail("invalid opinion source count");
                         }
                         previous_target = target;
@@ -842,7 +840,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
             } else if (id == kSectionStanding) {
                 const std::uint32_t rows = sr.u32();
                 if (!world.dynasty_mode() || rows == 0 || rows > dynasty_count ||
-                    !plausible(sr, rows, kMinStandingRowBytes)) {
+                    !sr.can_hold(rows, kMinStandingRowBytes)) {
                     return fail("invalid standing section");
                 }
                 std::uint32_t previous_dynasty = 0;
@@ -853,7 +851,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     if (!sr.ok() || dynasty >= dynasty_count || (r != 0 && dynasty <= previous_dynasty)) {
                         return fail("standing dynasties are out of range or out of order");
                     }
-                    if (count > kMaxStandingChanges || !plausible(sr, count, kStandingChangeBytes) ||
+                    if (count > kMaxStandingChanges || !sr.can_hold(count, kStandingChangeBytes) ||
                         (count == 0 && prestige == kDefaultPrestige)) {
                         return fail("invalid standing change count or default row");
                     }
@@ -886,7 +884,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 }
             } else {  // kSectionDynasty
                 const std::uint32_t rows = sr.u32();
-                if (!plausible(sr, rows, kDynastyRowBytes)) {
+                if (!sr.can_hold(rows, kDynastyRowBytes)) {
                     return fail("invalid dynasty section");
                 }
                 bool have_previous = false;
@@ -906,7 +904,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                     world.dynasties_.succession_law[row] = static_cast<SuccessionLaw>(law);
                 }
                 const std::uint32_t branch_count = sr.u32();
-                if (!plausible(sr, branch_count, kBranchRowBytes)) {
+                if (!sr.can_hold(branch_count, kBranchRowBytes)) {
                     return fail("invalid branch table");
                 }
                 for (std::uint32_t b = 0; b < branch_count; ++b) {

@@ -233,7 +233,7 @@ Result<std::vector<River>, Error> decode_river_vectors(std::span<const std::uint
         if (n > kMaxRiverPoints || vertices > kMaxRiverVertices) {
             return R::err(codec::make_error(nature_error::kBadRiverTable, "RVEC: too many points"));
         }
-        if (static_cast<std::uint64_t>(n) * kPointBytes > r.remaining()) {
+        if (!r.can_hold(n, kPointBytes)) {
             r.fail();
             break;
         }

@@ -43,10 +43,4 @@ inline constexpr std::uint16_t kSectionEconomyIncidents = 39;     ///< incident 
 inline constexpr std::uint16_t kSectionEconomyPolicy =
     40;  ///< policy levels, dynasty policies (E9-T12, schema >= 9)
 
-/// True when `count` entries of at least `bytes_each` bytes could still be present in the input;
-/// guards allocations against absurd counts in damaged files.
-[[nodiscard]] inline bool plausible(const core::ByteReader& in, std::uint32_t count, std::size_t bytes_each) {
-    return in.ok() && static_cast<std::uint64_t>(count) * bytes_each <= in.remaining();
-}
-
 }  // namespace pat::sim::detail
