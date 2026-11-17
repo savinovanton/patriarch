@@ -203,9 +203,9 @@ jobs:
         with:
           args: --preset win-clangcl
       - name: Build
-        # clang-cl has no /MP (cl.exe gets it from cmake/PatriarchCompileOptions.cmake, which already keeps the
-        # MSVC jobs busy; /m on top of it measured no gain there): MultiToolTask runs the compiler on several files of a project at once, and
-        # EnforceProcessCountAcrossBuilds caps the total across the projects that /m builds side by side.
+        # clang-cl has no /MP (cl.exe gets it from cmake/PatriarchCompileOptions.cmake; /m on top of it measured
+        # no gain for MSVC). MultiToolTask runs clang-cl on several files of a project at once, /m builds
+        # independent projects side by side, and EnforceProcessCountAcrossBuilds caps the total process count.
         run: >-
           cmake --build --preset win-clangcl-${{ matrix.preset }} --parallel --
           /p:UseMultiToolTask=true /p:EnforceProcessCountAcrossBuilds=true
