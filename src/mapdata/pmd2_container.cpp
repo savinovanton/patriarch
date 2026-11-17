@@ -2,6 +2,7 @@
 
 #include "pat/core/bytes.hpp"
 #include "pat/core/compress.hpp"
+#include "pat/core/file_io.hpp"
 #include "pat/core/hash_stream.hpp"
 
 #include <algorithm>
@@ -461,26 +462,17 @@ Result<void, Error> Pmd2Writer::write_file(const std::filesystem::path& path) co
     if (!bytes) {
         return R::err(bytes.error());
     }
-    std::filesystem::path temp = path;
-    temp += ".tmp";
-    {
-        std::ofstream out(temp, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return R::err(codec::make_error(pmd2_error::kIo, "cannot create " + temp.string()));
+    if (const auto r = core::write_file_atomic(path, bytes.value()); !r) {
+        const std::string temp = path.string() + ".tmp";
+        switch (r.error().stage) {
+            case core::FileIoStage::kOpen:
+                return R::err(codec::make_error(pmd2_error::kIo, "cannot create " + temp));
+            case core::FileIoStage::kWrite:
+                return R::err(codec::make_error(pmd2_error::kIo, "write failed: " + temp));
+            default:
+                return R::err(
+                    codec::make_error(pmd2_error::kIo, "cannot move the file into place: " + path.string()));
         }
-        out.write(reinterpret_cast<const char*>(bytes.value().data()),
-                  static_cast<std::streamsize>(bytes.value().size()));
-        out.flush();
-        if (!out) {
-            return R::err(codec::make_error(pmd2_error::kIo, "write failed: " + temp.string()));
-        }
-    }
-    std::error_code ec;
-    std::filesystem::rename(temp, path, ec);  // Atomic replace on the same volume.
-    if (ec) {
-        std::filesystem::remove(temp, ec);
-        return R::err(
-            codec::make_error(pmd2_error::kIo, "cannot move the file into place: " + path.string()));
     }
     return R::ok();
 }

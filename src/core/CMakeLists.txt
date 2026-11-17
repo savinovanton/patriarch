@@ -19,10 +19,12 @@ add_library(patriarch_core STATIC
     include/pat/core/static_vec.hpp
     include/pat/core/string_interner.hpp
     include/pat/core/compress.hpp
+    include/pat/core/file_io.hpp
     arena.cpp
     assert.cpp
     build_info.cpp
     compress.cpp
+    file_io.cpp
     log.cpp
     rng.cpp
     string_interner.cpp)

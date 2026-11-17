@@ -3,6 +3,7 @@
 #include "pat/core/build_info.hpp"
 #include "pat/core/bytes.hpp"
 #include "pat/core/compress.hpp"
+#include "pat/core/file_io.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/core/utf8.hpp"
 #include "pat/sim/command_log.hpp"
@@ -608,26 +609,15 @@ core::Result<SaveData, Error> deserialize_save(std::span<const std::uint8_t> byt
 core::Result<void, Error> write_file_atomic(const std::filesystem::path& path,
                                             std::span<const std::uint8_t> bytes) {
     using R = core::Result<void, Error>;
-    std::filesystem::path temp = path;
-    temp += ".tmp";
-
-    {
-        std::ofstream out(temp, std::ios::binary | std::ios::trunc);
-        if (!out) {
-            return R::err(save_error(30, "cannot open the temporary file for writing"));
+    if (const auto r = core::write_file_atomic(path, bytes); !r) {
+        switch (r.error().stage) {
+            case core::FileIoStage::kOpen:
+                return R::err(save_error(30, "cannot open the temporary file for writing"));
+            case core::FileIoStage::kWrite:
+                return R::err(save_error(31, "failed while writing the temporary file"));
+            default:
+                return R::err(save_error(32, "cannot move the temporary file into place"));
         }
-        out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
-        out.flush();
-        if (!out) {
-            return R::err(save_error(31, "failed while writing the temporary file"));
-        }
-    }
-
-    std::error_code ec;
-    std::filesystem::rename(temp, path, ec);  // atomic replace on the same volume
-    if (ec) {
-        std::filesystem::remove(temp, ec);
-        return R::err(save_error(32, "cannot move the temporary file into place"));
     }
     return R::ok();
 }
