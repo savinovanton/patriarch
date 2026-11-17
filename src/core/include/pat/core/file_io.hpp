@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <span>
+#include <string>
+#include <vector>
 
 namespace pat::core {
 
@@ -25,5 +27,12 @@ struct FileIoError {
 /// volume). If the rename fails the temporary file is removed. Stages: kOpen, kWrite, kRename.
 [[nodiscard]] Result<void, FileIoError> write_file_atomic(const std::filesystem::path& path,
                                                           std::span<const std::uint8_t> bytes);
+
+/// Reads a whole file as bytes. Stages: kOpen, kSize (the size cannot be determined), kRead.
+[[nodiscard]] Result<std::vector<std::uint8_t>, FileIoError>
+read_file_bytes(const std::filesystem::path& path);
+
+/// Reads a whole file as text (bytes as they are, no newline translation). Stages: kOpen, kRead.
+[[nodiscard]] Result<std::string, FileIoError> read_file_text(const std::filesystem::path& path);
 
 }  // namespace pat::core

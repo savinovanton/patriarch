@@ -1,5 +1,7 @@
 #include "d3d11_common.hpp"
 
+#include "pat/core/file_io.hpp"
+
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
@@ -67,15 +69,13 @@ core::Result<std::string> ShaderSource::load() {
         return core::Result<std::string>::ok(embedded_);
     }
     const auto path = dir_ / file_name_;
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
+    auto text = core::read_file_text(path);
+    if (!text) {
         return core::Result<std::string>::err(core::Error{20, "cannot open shader file " + path.string()});
     }
-    std::ostringstream ss;
-    ss << in.rdbuf();
     std::error_code ec;
     stamp_ = std::filesystem::last_write_time(path, ec);
-    return core::Result<std::string>::ok(ss.str());
+    return core::Result<std::string>::ok(std::move(text).value());
 }
 
 bool ShaderSource::changed() const {

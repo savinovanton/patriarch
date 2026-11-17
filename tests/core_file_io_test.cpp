@@ -64,3 +64,29 @@ TEST_CASE("write_file_atomic: reports the failing stage") {
     CHECK_FALSE(fs::exists(dir / "target.tmp"));
     fs::remove_all(dir);
 }
+
+TEST_CASE("read_file_bytes / read_file_text: whole file, empty file, missing file") {
+    const fs::path dir = scratch_dir("read");
+    const std::vector<std::uint8_t> payload{0, 1, 2, 13, 10, 255};
+    REQUIRE(core::write_file_atomic(dir / "a.bin", payload).has_value());
+    REQUIRE(core::write_file_atomic(dir / "empty.bin", {}).has_value());
+
+    const auto bytes = core::read_file_bytes(dir / "a.bin");
+    REQUIRE(bytes.has_value());
+    CHECK(bytes.value() == payload);  // binary: no newline translation, NUL preserved
+
+    const auto text = core::read_file_text(dir / "a.bin");
+    REQUIRE(text.has_value());
+    CHECK(text.value() == std::string(payload.begin(), payload.end()));
+
+    CHECK(core::read_file_bytes(dir / "empty.bin").value().empty());
+    CHECK(core::read_file_text(dir / "empty.bin").value().empty());
+
+    const auto missing_bytes = core::read_file_bytes(dir / "missing.bin");
+    REQUIRE_FALSE(missing_bytes.has_value());
+    CHECK(missing_bytes.error().stage == core::FileIoStage::kOpen);
+    const auto missing_text = core::read_file_text(dir / "missing.bin");
+    REQUIRE_FALSE(missing_text.has_value());
+    CHECK(missing_text.error().stage == core::FileIoStage::kOpen);
+    fs::remove_all(dir);
+}

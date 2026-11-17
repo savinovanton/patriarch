@@ -282,21 +282,18 @@ write_map_file(const std::filesystem::path& path, const MapData& map, int zstd_l
 
 core::Result<MapData, Error> read_map_file(const std::filesystem::path& path) {
     using R = Result<MapData, Error>;
-    std::ifstream in(path, std::ios::binary | std::ios::ate);
-    if (!in) {
-        return R::err(codec::make_error(43, "cannot open " + path.string()));
+    const auto bytes = core::read_file_bytes(path);
+    if (!bytes) {
+        switch (bytes.error().stage) {
+            case core::FileIoStage::kOpen:
+                return R::err(codec::make_error(43, "cannot open " + path.string()));
+            case core::FileIoStage::kSize:
+                return R::err(codec::make_error(44, "cannot determine the size of " + path.string()));
+            default:
+                return R::err(codec::make_error(45, "read failed: " + path.string()));
+        }
     }
-    const std::streamsize size = in.tellg();
-    if (size < 0) {
-        return R::err(codec::make_error(44, "cannot determine the size of " + path.string()));
-    }
-    in.seekg(0);
-    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
-    in.read(reinterpret_cast<char*>(bytes.data()), size);
-    if (!in) {
-        return R::err(codec::make_error(45, "read failed: " + path.string()));
-    }
-    return deserialize_map(bytes);
+    return deserialize_map(bytes.value());
 }
 
 }  // namespace pat::mapdata

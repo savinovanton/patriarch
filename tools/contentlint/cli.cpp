@@ -1,3 +1,4 @@
+#include "pat/core/file_io.hpp"
 #include "pat/core/path_utf8.hpp"
 #include "pat/data/content_source.hpp"
 
@@ -161,12 +162,10 @@ bool is_directory(const std::string& path) {
 
 /// Reads a `--used-keys` list: one key per line, blank lines and `#` comments ignored.
 std::string read_used_keys(const std::string& path, std::vector<UsedKey>& out) {
-    std::ifstream in(core::path_from_utf8(path), std::ios::binary);
-    if (!in)
+    auto read = core::read_file_text(core::path_from_utf8(path));
+    if (!read)
         return std::format("cannot read '{}'", path);
-    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    if (in.bad())
-        return std::format("cannot read '{}'", path);
+    const std::string text = std::move(read).value();
     std::uint32_t line_no = 0;
     std::size_t start = 0;
     while (start <= text.size()) {

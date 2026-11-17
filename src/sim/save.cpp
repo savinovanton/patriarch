@@ -624,23 +624,18 @@ core::Result<void, Error> write_file_atomic(const std::filesystem::path& path,
 
 core::Result<std::vector<std::uint8_t>, Error> read_file(const std::filesystem::path& path) {
     using R = core::Result<std::vector<std::uint8_t>, Error>;
-    std::ifstream in(path, std::ios::binary | std::ios::ate);
-    if (!in) {
-        return R::err(save_error(33, "cannot open the file for reading"));
+    auto bytes = core::read_file_bytes(path);
+    if (bytes) {
+        return R::ok(std::move(bytes).value());
     }
-    const std::streamsize size = in.tellg();
-    if (size < 0) {
-        return R::err(save_error(33, "cannot determine the file size"));
+    switch (bytes.error().stage) {
+        case core::FileIoStage::kOpen:
+            return R::err(save_error(33, "cannot open the file for reading"));
+        case core::FileIoStage::kSize:
+            return R::err(save_error(33, "cannot determine the file size"));
+        default:
+            return R::err(save_error(34, "failed while reading the file"));
     }
-    in.seekg(0);
-    std::vector<std::uint8_t> bytes(static_cast<std::size_t>(size));
-    if (size > 0) {
-        in.read(reinterpret_cast<char*>(bytes.data()), size);
-    }
-    if (!in) {
-        return R::err(save_error(34, "failed while reading the file"));
-    }
-    return R::ok(std::move(bytes));
 }
 
 std::future<core::Result<void, Error>> save_async(std::shared_ptr<const World> snapshot,

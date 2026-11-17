@@ -1,5 +1,6 @@
 #include "pat/data/content_source.hpp"
 
+#include "pat/core/file_io.hpp"
 #include "pat/core/path_utf8.hpp"
 
 #include <algorithm>
@@ -103,13 +104,11 @@ core::Result<std::vector<std::string>, std::string> DirectorySource::list_files(
 
 core::Result<std::string, std::string> DirectorySource::read_file(std::string_view path) const {
     using R = core::Result<std::string, std::string>;
-    std::ifstream in(directory_ / core::path_from_utf8(path), std::ios::binary);
-    if (!in)
-        return R::err("cannot open the file");
-    std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    if (in.bad())
-        return R::err("read error");
-    return R::ok(std::move(text));
+    auto text = core::read_file_text(directory_ / core::path_from_utf8(path));
+    if (!text) {
+        return R::err(text.error().stage == core::FileIoStage::kOpen ? "cannot open the file" : "read error");
+    }
+    return R::ok(std::move(text).value());
 }
 
 }  // namespace pat::data
