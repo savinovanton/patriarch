@@ -10,6 +10,8 @@
 #include <cstring>
 #include <vector>
 
+#include "d3d11_common.hpp"
+
 // Defined in the generated embedded_shaders.cpp (the contents of shaders/ui.hlsl).
 namespace pat::engine::embedded {
 extern const char* const kUiHlsl;
@@ -49,12 +51,10 @@ bool decode_image_file(const std::string& utf8_path, std::vector<Rml::byte>& pix
             CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)))) {
         return false;
     }
-    const int wide_len = MultiByteToWideChar(CP_UTF8, 0, utf8_path.c_str(), -1, nullptr, 0);
-    if (wide_len <= 0) {
+    const std::wstring wide = utf8_to_wide(utf8_path);
+    if (wide.empty()) {
         return false;
     }
-    std::wstring wide(static_cast<std::size_t>(wide_len), L' ');
-    MultiByteToWideChar(CP_UTF8, 0, utf8_path.c_str(), -1, wide.data(), wide_len);
     ComPtr<IWICBitmapDecoder> decoder;
     if (FAILED(factory->CreateDecoderFromFilename(
             wide.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder))) {

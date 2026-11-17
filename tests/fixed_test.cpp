@@ -71,6 +71,16 @@ TEST_CASE("wide_math: division, shifts and square root") {
     CHECK(isqrt_u128(U128{0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFFFULL}) == 0xFFFFFFFFFFFFFFFFULL);
 }
 
+TEST_CASE_TEMPLATE("fixed: in_range is inclusive on both ends", F, Fixed32, Fixed64) {
+    const F lo = F::from_int(-2);
+    const F hi = F::from_int(5);
+    CHECK(in_range(F::from_int(0), lo, hi));
+    CHECK(in_range(lo, lo, hi));
+    CHECK(in_range(hi, lo, hi));
+    CHECK_FALSE(in_range(F::from_int(6), lo, hi));
+    CHECK_FALSE(in_range(F::from_int(-3), lo, hi));
+}
+
 TEST_CASE_TEMPLATE("fixed: construction and conversion", F, Fixed32, Fixed64) {
     CHECK(F().raw() == 0);
     CHECK(F::from_int(3).to_int() == 3);
