@@ -59,10 +59,12 @@ public:
 
     /// Builds a registry from effective objects given in ANY order (each (kind, id) at most once).
     /// `kinds` lists kinds that must have a table even when empty. Tables are sorted by kind, objects
-    /// by id, ids are interned in that order and the content hash is computed.
+    /// by id, ids are interned in that order and the content hash is computed. Objects of the kinds in
+    /// `last_kinds` are interned after all the others (see ObjectSchema::intern_last()).
     [[nodiscard]] static ContentRegistry build(std::vector<std::string> root_names,
                                                const std::vector<std::string>& kinds,
-                                               std::vector<ContentObject> objects);
+                                               std::vector<ContentObject> objects,
+                                               const std::vector<std::string>& last_kinds = {});
 
     [[nodiscard]] std::span<const ContentTable> tables() const noexcept { return tables_; }
     /// The table of a kind, or nullptr when the kind is unknown. O(log n).
@@ -86,9 +88,12 @@ public:
     [[nodiscard]] std::uint64_t content_hash() const noexcept { return content_hash_; }
     /// Same canonical hash with one non-simulation kind omitted.
     [[nodiscard]] std::uint64_t content_hash_excluding(std::string_view kind) const;
+    /// Same canonical hash with several non-simulation kinds omitted (unknown or empty kinds are
+    /// ignored, so the result equals content_hash() when none of them has objects).
+    [[nodiscard]] std::uint64_t content_hash_excluding(std::span<const std::string_view> kinds) const;
 
 private:
-    [[nodiscard]] std::uint64_t compute_hash(const ContentTable* excluded) const;
+    [[nodiscard]] std::uint64_t compute_hash(std::span<const ContentTable* const> excluded) const;
 
     std::vector<std::string> root_names_;
     std::vector<ContentTable> tables_;  // sorted by kind

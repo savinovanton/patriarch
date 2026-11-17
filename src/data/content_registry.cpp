@@ -125,7 +125,8 @@ const ContentObject* ContentTable::find(core::StringId id, const core::StringInt
 
 ContentRegistry ContentRegistry::build(std::vector<std::string> root_names,
                                        const std::vector<std::string>& kinds,
-                                       std::vector<ContentObject> objects) {
+                                       std::vector<ContentObject> objects,
+                                       const std::vector<std::string>& last_kinds) {
     ContentRegistry registry;
     registry.root_names_ = std::move(root_names);
 
@@ -144,29 +145,40 @@ ContentRegistry ContentRegistry::build(std::vector<std::string> root_names,
     for (std::string& kind : all_kinds)
         registry.tables_.emplace_back(std::move(kind));
 
-    // Objects are sorted by (kind, id), so one forward pass fills the tables in order and interns
-    // the ids in a content-determined order.
-    std::size_t table = 0;
-    for (ContentObject& o : objects) {
-        while (registry.tables_[table].kind_ != o.object.kind)
-            ++table;
-        o.id = registry.ids_.intern(o.object.id);
-        registry.tables_[table].objects_.push_back(std::move(o));
+    // Ids are interned in a content-determined order: objects sorted by (kind, id), except that the
+    // kinds of `last_kinds` come after all the others. Each table still receives its objects in id
+    // order, because every object of a kind belongs to one of the two passes.
+    const auto is_last = [&](const ContentObject& o) {
+        return std::ranges::find(last_kinds, o.object.kind) != last_kinds.end();
+    };
+    for (const bool last_pass : {false, true}) {
+        std::size_t table = 0;
+        for (ContentObject& o : objects) {
+            if (is_last(o) != last_pass)
+                continue;
+            while (registry.tables_[table].kind_ != o.object.kind)
+                table = (table + 1) % registry.tables_.size();
+            o.id = registry.ids_.intern(o.object.id);
+            registry.tables_[table].objects_.push_back(std::move(o));
+        }
     }
 
-    registry.content_hash_ = registry.compute_hash(nullptr);
+    registry.content_hash_ = registry.compute_hash({});
     return registry;
 }
 
-std::uint64_t ContentRegistry::compute_hash(const ContentTable* excluded) const {
+std::uint64_t ContentRegistry::compute_hash(std::span<const ContentTable* const> excluded) const {
+    const auto skipped = [&](const ContentTable& t) {
+        return t.empty() || std::ranges::find(excluded, &t) != excluded.end();
+    };
     core::HashStream h;
     h.u32(kHashMagic);
     std::uint64_t non_empty = 0;
     for (const ContentTable& t : tables_)
-        non_empty += t.empty() || &t == excluded ? 0U : 1U;
+        non_empty += skipped(t) ? 0U : 1U;
     h.u64(non_empty);
     for (const ContentTable& t : tables_) {
-        if (t.empty() || &t == excluded)
+        if (skipped(t))
             continue;
         feed_string(h, t.kind_);
         h.u64(t.objects_.size());
@@ -179,8 +191,17 @@ std::uint64_t ContentRegistry::compute_hash(const ContentTable* excluded) const 
 }
 
 std::uint64_t ContentRegistry::content_hash_excluding(std::string_view kind) const {
-    const ContentTable* excluded = table(kind);
-    return excluded != nullptr && !excluded->empty() ? compute_hash(excluded) : content_hash_;
+    return content_hash_excluding(std::span<const std::string_view>(&kind, 1));
+}
+
+std::uint64_t ContentRegistry::content_hash_excluding(std::span<const std::string_view> kinds) const {
+    std::vector<const ContentTable*> excluded;
+    for (const std::string_view kind : kinds) {
+        const ContentTable* found = table(kind);
+        if (found != nullptr && !found->empty())
+            excluded.push_back(found);
+    }
+    return excluded.empty() ? content_hash_ : compute_hash(excluded);
 }
 
 const ContentTable* ContentRegistry::table(std::string_view kind) const noexcept {

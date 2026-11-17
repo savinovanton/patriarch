@@ -11,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include "court_fixture.hpp"
 #include "lint.hpp"
 
 // contentlint (E4-T08, docs/dev/contentlint.md): the library API with in-memory corpora, the command
@@ -444,4 +445,32 @@ TEST_CASE("contentlint: a load error skips the rule builders with a note") {
     CHECK(!has_code(report, "PD115"));
     CHECK(std::ranges::any_of(
         report.notes, [](const std::string& n) { return n.find("not checked") != std::string::npos; }));
+}
+
+TEST_CASE("contentlint: a court balance number outside its corridor is PD115 at its key") {
+    namespace fx = pat::court_fixture;
+    std::string text = fx::shipped_text(fx::kBalance);
+    fx::replace_once(text, "retire_age = 65", "retire_age = 5");
+    auto source = fx::shipped_source();
+    source.add(std::string(fx::kBalance), text);
+    Options options;
+    options.check_unused = false;
+    const Report report = lint_memory(source, options);
+    std::string dump;
+    for (const auto& finding : report.findings) {
+        dump += finding.format_text() + "; ";
+    }
+    for (const auto& note : report.notes) {
+        dump += note + "; ";
+    }
+    INFO(dump);
+    const auto court_finding = std::ranges::find_if(report.findings, [](const Finding& finding) {
+        return finding.code == "PD115" && finding.file.ends_with("balance/court.pd");
+    });
+    REQUIRE(court_finding != report.findings.end());
+    CHECK(court_finding->message.find("limits.retire_age") != std::string::npos);
+    const auto position = fx::position_after(text, "limits", "retire_age");
+    CHECK(court_finding->line == position.line);
+    CHECK(court_finding->column == position.column);
+    CHECK(report.exit_code() == 1);
 }

@@ -176,6 +176,11 @@ ObjectSchema& ObjectSchema::describe_kind(std::string text) {
     return *this;
 }
 
+ObjectSchema& ObjectSchema::intern_last() {
+    interned_last_ = true;
+    return *this;
+}
+
 int ObjectSchema::find_field(std::string_view name) const noexcept {
     for (std::size_t i = 0; i < fields_.size(); ++i) {
         if (fields_[i].name == name)

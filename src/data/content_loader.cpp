@@ -63,15 +63,19 @@ public:
             load_root(static_cast<std::uint32_t>(r));
 
         std::vector<std::string> kinds;
-        for (const ObjectSchema& s : schemas_.schemas())
+        std::vector<std::string> last_kinds;
+        for (const ObjectSchema& s : schemas_.schemas()) {
             kinds.push_back(s.kind());
+            if (s.interned_last())
+                last_kinds.push_back(s.kind());
+        }
         std::vector<ContentObject> objects;
         objects.reserve(effective_.size());
         for (auto& [key, object] : effective_)
             objects.push_back(std::move(object));
 
         LoadResult result;
-        result.registry = ContentRegistry::build(root_names_, kinds, std::move(objects));
+        result.registry = ContentRegistry::build(root_names_, kinds, std::move(objects), last_kinds);
         resolve_references(result.registry);
 
         result.errors = std::move(errors_);

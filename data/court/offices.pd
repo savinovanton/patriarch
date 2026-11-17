@@ -1,0 +1,217 @@
+format_version = 1
+
+# Должности двора M1 (court-model §11.1, §11.2; Q2 #360): 12 должностей и фаворит. slot — стабильный
+# номер типа 1...63, записывается в сейвы; порядок объектов на него не влияет. Все числа [предл.]:
+# они продублированы в sim::CourtRules::defaults(), тест следит за совпадением. Исторические названия
+# и даты [проверить] отдельной сверкой данных.
+#   seats          — правила мест: fixed (slots мест), per_crown_province (по месту в государевой
+#                    провинции видов kinds, не более max), listed (провинции сценария, не более max);
+#   requirements   — min_age и sex_allowed жёсткие; min_honor и skills мягкие (допускают
+#                    «исключительный порядок»); not_traits жёсткие (черты из data/traits);
+#   skill_weights  — очки полезности за уровень навыка (слагаемое «способности»);
+#   salary_kop     — жалованье, копеек в месяц; honor_on_assign / honor_monthly — честь рода;
+#   decision_delay_days — дней от открытия вакансии до решения государя;
+#   from_date / to_date — окно дат (губернатор — после реформы 1708, #511);
+#   administrator_priority — какой держатель провинции управляет ею (больше — важнее);
+#   grants_trait   — черта держателя (фаворит); council_vote_weight — голос в Совете для E34.
+# Названия и описания — ключи data/loc/<язык>/court.pd.
+
+office "bedchamberman" {
+    slot = 1
+    group = court
+    name_key = "office.bedchamberman.name"
+    desc_key = "office.bedchamberman.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 2 }
+    requirements = { min_age = 16  sex_allowed = male  min_honor = 100 }
+    skill_weights = { diplomacy = 2 intrigue = 2 }
+    salary_kop = 600
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 90
+}
+
+office "orderly" {
+    slot = 2
+    group = court
+    name_key = "office.orderly.name"
+    desc_key = "office.orderly.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 2 }
+    requirements = { min_age = 16  sex_allowed = male  min_honor = 0  skills = { martial = 6 } }
+    skill_weights = { martial = 4 intrigue = 1 }
+    salary_kop = 500
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 90
+}
+
+office "tsarevich_tutor" {
+    slot = 3
+    group = court
+    name_key = "office.tsarevich_tutor.name"
+    desc_key = "office.tsarevich_tutor.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 1 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 500  skills = { learning = 10 }  not_traits = [ dimwitted, disgraced ] }
+    skill_weights = { diplomacy = 1 learning = 4 }
+    salary_kop = 1200
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 90
+}
+
+office "court_steward" {
+    slot = 4
+    group = court
+    name_key = "office.court_steward.name"
+    desc_key = "office.court_steward.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 1 }
+    requirements = { min_age = 25  sex_allowed = male  min_honor = 100  skills = { stewardship = 10 } }
+    skill_weights = { stewardship = 4 intrigue = 1 }
+    salary_kop = 1500
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 90
+}
+
+office "voivode" {
+    slot = 5
+    group = regional
+    name_key = "office.voivode.name"
+    desc_key = "office.voivode.desc"
+    appointer = emperor
+    seats = { rule = per_crown_province max = 64 kinds = [ rural, city ] }
+    requirements = { min_age = 25  sex_allowed = male  min_honor = 0  skills = { stewardship = 8 } }
+    skill_weights = { stewardship = 4 martial = 1 }
+    salary_kop = 1000
+    honor_on_assign = 5
+    honor_monthly = 0
+    decision_delay_days = 30
+    administrator_priority = 2
+}
+
+office "governor" {
+    slot = 6
+    group = regional
+    name_key = "office.governor.name"
+    desc_key = "office.governor.desc"
+    appointer = emperor
+    seats = { rule = listed max = 8 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 100  skills = { stewardship = 10 } }
+    skill_weights = { stewardship = 4 diplomacy = 1 martial = 1 }
+    salary_kop = 2500
+    honor_on_assign = 5
+    honor_monthly = 0
+    decision_delay_days = 30
+    from_date = 1708.12.18
+    administrator_priority = 3
+}
+
+office "fortress_commandant" {
+    slot = 7
+    group = regional
+    name_key = "office.fortress_commandant.name"
+    desc_key = "office.fortress_commandant.desc"
+    appointer = emperor
+    seats = { rule = per_crown_province max = 32 kinds = [ city ] }
+    requirements = { min_age = 25  sex_allowed = male  min_honor = 0  skills = { martial = 8 } }
+    skill_weights = { stewardship = 1 martial = 4 }
+    salary_kop = 800
+    honor_on_assign = 5
+    honor_monthly = 0
+    decision_delay_days = 30
+    administrator_priority = 1
+}
+
+office "guards_colonel" {
+    slot = 8
+    group = military
+    name_key = "office.guards_colonel.name"
+    desc_key = "office.guards_colonel.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 2 }
+    requirements = { min_age = 25  sex_allowed = male  min_honor = 100  skills = { martial = 12 } }
+    skill_weights = { martial = 4 intrigue = 1 }
+    salary_kop = 2000
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 60
+}
+
+office "general" {
+    slot = 9
+    group = military
+    name_key = "office.general.name"
+    desc_key = "office.general.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 3 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 500  skills = { martial = 14 } }
+    skill_weights = { stewardship = 1 martial = 5 }
+    salary_kop = 3000
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 60
+}
+
+office "ambassadorial_chief" {
+    slot = 10
+    group = chancery
+    name_key = "office.ambassadorial_chief.name"
+    desc_key = "office.ambassadorial_chief.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 1 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 100  skills = { diplomacy = 12 }  not_traits = [ dimwitted, disgraced ] }
+    skill_weights = { stewardship = 1 diplomacy = 4 }
+    salary_kop = 3500
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 60
+}
+
+office "treasurer" {
+    slot = 11
+    group = chancery
+    name_key = "office.treasurer.name"
+    desc_key = "office.treasurer.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 1 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 100  skills = { stewardship = 12 } }
+    skill_weights = { stewardship = 5 intrigue = 1 }
+    salary_kop = 3500
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 60
+}
+
+office "duma_boyar" {
+    slot = 12
+    group = council
+    name_key = "office.duma_boyar.name"
+    desc_key = "office.duma_boyar.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 6 }
+    requirements = { min_age = 30  sex_allowed = male  min_honor = 500 }
+    skill_weights = { stewardship = 1 diplomacy = 2 learning = 1 }
+    salary_kop = 2000
+    honor_on_assign = 10
+    honor_monthly = 1
+    decision_delay_days = 90
+    council_vote_weight = 1
+}
+
+office "favourite" {
+    slot = 13
+    group = favourite
+    name_key = "office.favourite.name"
+    desc_key = "office.favourite.desc"
+    appointer = emperor
+    seats = { rule = fixed slots = 1 }
+    requirements = { min_age = 16  sex_allowed = male  min_honor = 0 }
+    salary_kop = 0
+    honor_on_assign = 0
+    honor_monthly = 0
+    decision_delay_days = 30
+    grants_trait = emperor_favorite
+}

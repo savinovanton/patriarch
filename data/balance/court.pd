@@ -1,0 +1,119 @@
+format_version = 1
+
+# Баланс двора M1 (court-model §8, §11.4): веса, лимиты и пороги. Один объект court_balance, десять
+# блоков по назначению. Все числа [предл.]: они продублированы в sim::CourtBalance (список
+# PAT_COURT_BALANCE_FIELDS), тест следит за совпадением; калибровка — E10-T20 на ≥ 10 seed.
+# Суффиксы: _permille — доли в промилле (1000 = ×1,0); _x100 — сотые доли очка милости (5000 = 50,00);
+# _kop — копейки; _days / _months / _age — календарные величины.
+#   limits    — пределы челобитных, должностей, подарка, опалы, возраста ухода;
+#   decision  — решение государя о вакансии: отбор, порог полезности, отсрочки (§8.2, §8.3);
+#   utility   — слагаемые полезности назначения: веса, потолки, исключительный порядок (§8.2);
+#   support   — подкрепления челобитной: услуги и поддержка партии (§8.4);
+#   favor     — милость императора: месячный пересчёт, пороги, подарки (§8.5, §8.6);
+#   opinion   — мнения и разовые потери после решений;
+#   servants  — слуги: лояльность, просрочка, предательство (задел E14), управляющий (§8.7);
+#   parties   — статические партии: вес и сплочённость (§8.10);
+#   ai        — челобитные ИИ до утилити-ИИ E17 (§8.9);
+#   money     — возвраты денег при отмене вакансии и отзыве челобитной.
+
+court_balance "main" {
+    limits = {
+        max_petitions_per_dynasty = 3
+        max_offices_per_person = 1
+        gift_max_kop = 100000
+        disgrace_max_days = 730
+        retire_age = 65
+        quit_after_months = 3
+    }
+
+    decision = {
+        candidate_prefilter = 16
+        min_utility = 20
+        max_postponements = 2
+        postpone_days = 30
+        relax_after_days = 180
+        self_nomination_min_favor = 40
+    }
+
+    utility = {
+        favor_weight_permille = 300
+        opinion_weight_permille = 200
+        suspicion_weight_permille = 400
+        honor_per_point = 50
+        rank_cap = 20
+        party_balance_points = 15
+        gift_unit_kop = 5000
+        gift_cap = 25
+        service_points = 15
+        party_support_points = 10
+        favourite_points = 12
+        exceptional_penalty = 20
+        exceptional_max_honor_gap = 200
+        exceptional_max_skill_gap = 3
+    }
+
+    support = {
+        services_max = 5
+        party_support_cooldown_days = 365
+    }
+
+    favor = {
+        favor_base_x100 = 5000
+        opinion_to_favor_x100 = 25
+        suspicion_to_favor_x100 = 20
+        pull_permille = 100
+        service_per_office_x100 = 300
+        service_cap_x100 = 900
+        quota_met_x100 = 100
+        quota_short_x100 = 500
+        favourite_monthly_x100 = 150
+        arrears_favor_x100 = 200
+        disgrace_favor_x100 = 300
+        favor_month_cap_x100 = 600
+        favor_low_x100 = 2000
+        favor_high_x100 = 8000
+        favor_on_grant_x100 = 200
+        gift_per_100_rub_x100 = 25
+        gift_month_cap_x100 = 1000
+    }
+
+    opinion = {
+        reject_opinion = 8
+        grant_opinion = 5
+        dismiss_opinion = 15
+        disgrace_one_off_x100 = 500
+    }
+
+    servants = {
+        loyalty_base = 60
+        loyalty_pull_permille = 100
+        paid_bonus = 1
+        arrears_loss = 8
+        unreliable_below = 35
+        betrayal_base_permille = 50
+        betrayal_per_gap_permille = 10
+        betrayal_bribe_unit_kop = 10000
+        betrayal_per_unit_permille = 20
+        betrayal_per_secrecy_permille = 15
+        steward_control_per_skill_x100 = 50
+        steward_corruption_per_skill_permille = 5
+    }
+
+    parties = {
+        party_base_weight = 100
+        party_honor_cap = 1500
+        party_honor_div = 10
+        cohesion_pair_cap = 200
+    }
+
+    ai = {
+        ai_min_utility = 25
+        ai_gift_permille = 50
+        ai_gift_cap_kop = 30000
+    }
+
+    money = {
+        refund_void_permille = 1000
+        refund_withdraw_permille = 0
+    }
+}
