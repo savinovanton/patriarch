@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "cli_args.hpp"
+
 namespace {
 
 constexpr const char* kUsage = R"(Usage: stressgen --output FILE [options]
@@ -99,11 +101,11 @@ int main(int argc, char** argv) {
     config.economy.enabled = economy || bench;
     stress::EconomyBenchOptions bench_options;
     for (const auto& [name, text] : flags) {
-        std::uint64_t value = 0;
-        const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), value);
-        if (error != std::errc{} || end != text.data() + text.size()) {
+        const auto parsed = pat::tools::parse_u64(text);
+        if (!parsed) {
             return fail(std::string(name) + " requires an unsigned integer");
         }
+        const std::uint64_t value = *parsed;
         if (name == "--seed") {
             config.world.seed = value;
             continue;

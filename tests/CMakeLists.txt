@@ -14,6 +14,7 @@ add_executable(patriarch_tests
     core_path_utf8_test.cpp
     core_bytes_test.cpp
     core_file_io_test.cpp
+    cli_args_test.cpp
     core_smoke.cpp
     core_utf8_test.cpp
     date_test.cpp
@@ -104,7 +105,7 @@ add_executable(patriarch_tests
     world_test.cpp)
 
 # typed_access_test.cpp checks the content module's internal accessors (src/content/typed_accessors.hpp).
-target_include_directories(patriarch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/content)
+target_include_directories(patriarch_tests PRIVATE ${CMAKE_SOURCE_DIR}/src/content ${CMAKE_SOURCE_DIR}/tools/common)
 
 target_link_libraries(patriarch_tests PRIVATE
     patriarch::core

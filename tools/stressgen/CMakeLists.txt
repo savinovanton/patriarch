@@ -16,6 +16,7 @@ set_target_properties(patriarch_stress PROPERTIES FOLDER "tools")
 
 add_executable(stressgen main.cpp)
 target_link_libraries(stressgen PRIVATE patriarch_stress)
+target_include_directories(stressgen PRIVATE "${PROJECT_SOURCE_DIR}/tools/common")
 patriarch_set_target_options(stressgen)
 patriarch_copy_asan_runtime(stressgen)
 set_target_properties(stressgen PROPERTIES FOLDER "tools")
