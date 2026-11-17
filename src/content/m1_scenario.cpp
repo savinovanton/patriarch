@@ -9,6 +9,7 @@
 #include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/content_schemas.hpp"
+#include "pat/data/court_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
 #include "pat/data/m1_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -20,6 +21,7 @@
 #include <map>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace pat::content {
 
@@ -170,7 +172,11 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     if (!world.enable_dynasty_mode() || !world.enable_economy()) {
         return fail("cannot initialize M1 world modes");
     }
-    const std::uint64_t content_hash = definitions.registry.content_hash_excluding(data::kHonorRankKind);
+    // Presentation-only ranks and the court kinds stay out of the compatibility hash until the court
+    // systems are installed in the scenario (E10-T20, court-model.md section 13.2).
+    std::vector<std::string_view> excluded_kinds{data::kHonorRankKind};
+    excluded_kinds.insert(excluded_kinds.end(), data::kCourtKinds.begin(), data::kCourtKinds.end());
+    const std::uint64_t content_hash = definitions.registry.content_hash_excluding(excluded_kinds);
     world.set_economy_rules_hash(content_hash);
 
     std::map<std::string_view, sim::DynastyId, std::less<>> dynasties;

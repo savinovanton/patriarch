@@ -1,0 +1,22 @@
+format_version = 1
+
+# Статические партии двора M1 (court-model §8.10). slot — стабильный номер 1...7 (0 — вне партий).
+# Членство родов задаёт сценарий; повестка — только текст data/loc/<язык>/court.pd.
+
+court_party "old_nobility" {
+    slot = 1
+    name_key = "court.party.old_nobility.name"
+    agenda_key = "court.party.old_nobility.agenda"
+}
+
+court_party "new_service" {
+    slot = 2
+    name_key = "court.party.new_service.name"
+    agenda_key = "court.party.new_service.agenda"
+}
+
+court_party "church" {
+    slot = 3
+    name_key = "court.party.church.name"
+    agenda_key = "court.party.church.agenda"
+}

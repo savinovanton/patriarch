@@ -1,4 +1,5 @@
 add_library(patriarch_content STATIC
+    include/pat/content/court_content.hpp
     include/pat/content/credits_content.hpp
     include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
@@ -11,6 +12,7 @@ add_library(patriarch_content STATIC
     include/pat/content/names_content.hpp
     include/pat/content/province_bindings.hpp
     include/pat/content/traits_content.hpp
+    court_content.cpp
     credits_content.cpp
     demography_content.cpp
     economy_content.cpp

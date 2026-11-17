@@ -1,0 +1,58 @@
+format_version = 1
+
+# Роли слуг двора M1 (court-model §11.3, §8.7). slot — стабильный номер роли 1...15. Слуг каждой роли
+# у рода — slots (1, вопрос #510). Навык кандидата на рынке — skill_min...skill_max; жалованье —
+# wage_base_kop + навык * wage_per_skill_kop в месяц; плата за найм — fee_months жалований.
+# Все числа [предл.]; дублируются в sim::CourtRules::defaults().
+
+servant_role "steward" {
+    slot = 1
+    name_key = "servant.role.steward.name"
+    effect_key = "servant.role.steward.effect"
+    skill = stewardship
+    slots = 1
+    skill_min = 6
+    skill_max = 15
+    wage_base_kop = 500
+    wage_per_skill_kop = 100
+    fee_months = 2
+}
+
+servant_role "spy" {
+    slot = 2
+    name_key = "servant.role.spy.name"
+    effect_key = "servant.role.spy.effect"
+    skill = intrigue
+    slots = 1
+    skill_min = 6
+    skill_max = 15
+    wage_base_kop = 500
+    wage_per_skill_kop = 100
+    fee_months = 2
+}
+
+servant_role "secretary" {
+    slot = 3
+    name_key = "servant.role.secretary.name"
+    effect_key = "servant.role.secretary.effect"
+    skill = learning
+    slots = 1
+    skill_min = 6
+    skill_max = 15
+    wage_base_kop = 500
+    wage_per_skill_kop = 100
+    fee_months = 2
+}
+
+servant_role "guard" {
+    slot = 4
+    name_key = "servant.role.guard.name"
+    effect_key = "servant.role.guard.effect"
+    skill = martial
+    slots = 1
+    skill_min = 6
+    skill_max = 15
+    wage_base_kop = 500
+    wage_per_skill_kop = 100
+    fee_months = 2
+}

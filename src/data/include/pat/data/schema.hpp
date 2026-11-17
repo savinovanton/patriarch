@@ -194,9 +194,14 @@ public:
     ObjectSchema& describe(std::string text);
     /// Sets the one-line description of the whole kind (or nested block).
     ObjectSchema& describe_kind(std::string text);
+    /// Marks a kind whose object ids are interned AFTER all other kinds. Ids reach the simulation
+    /// (world name ids), so a kind that is not part of the simulation compatibility hash must not shift
+    /// the ids of the definitions; such a kind is added without touching any golden value.
+    ObjectSchema& intern_last();
 
     [[nodiscard]] const std::string& kind() const noexcept { return kind_; }
     [[nodiscard]] const std::string& description() const noexcept { return description_; }
+    [[nodiscard]] bool interned_last() const noexcept { return interned_last_; }
     [[nodiscard]] const std::vector<FieldSpec>& fields() const noexcept { return fields_; }
     /// Index of the field with this exact name, or -1.
     [[nodiscard]] int find_field(std::string_view name) const noexcept;
@@ -204,6 +209,7 @@ public:
 private:
     std::string kind_;
     std::string description_;
+    bool interned_last_ = false;
     std::vector<FieldSpec> fields_;
 };
 
