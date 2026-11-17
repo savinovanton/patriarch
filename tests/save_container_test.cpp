@@ -17,6 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::sim;
 using pat::core::ByteReader;
 using pat::core::ByteWriter;
@@ -33,9 +35,7 @@ std::filesystem::path fixture(const char* name) {
     return std::filesystem::path(PATRIARCH_TEST_DATA_DIR) / "saves" / name;
 }
 
-std::filesystem::path temp_path(const char* name) {
-    return std::filesystem::temp_directory_path() / name;
-}
+using pat::test::temp_path;
 
 std::uint32_t read_u32(const std::vector<std::uint8_t>& b, std::size_t off) {
     ByteReader r(std::span<const std::uint8_t>(b).subspan(off));

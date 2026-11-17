@@ -18,6 +18,8 @@
 #include <string_view>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat;
 using namespace pat::sim::economy;
 using pat::content::EconomyContentResult;
@@ -116,33 +118,7 @@ Fixed32 fixed(double v) {
     return Fixed32::from_double(v);
 }
 
-class TempDir {
-public:
-    explicit TempDir(const std::string& tag) {
-        const auto ticks = std::chrono::steady_clock::now().time_since_epoch().count();
-        path_ = fs::temp_directory_path() / ("patriarch_e9t18_" + tag + "_" + std::to_string(ticks));
-        fs::remove_all(path_);
-        fs::create_directories(path_);
-    }
-    ~TempDir() {
-        std::error_code ec;
-        fs::remove_all(path_, ec);
-    }
-    TempDir(const TempDir&) = delete;
-    TempDir& operator=(const TempDir&) = delete;
-
-    [[nodiscard]] const fs::path& path() const { return path_; }
-
-    void write(const std::string& relative, const std::string& text) const {
-        const fs::path target = path_ / relative;
-        fs::create_directories(target.parent_path());
-        std::ofstream out(target, std::ios::binary);
-        out << text;
-    }
-
-private:
-    fs::path path_;
-};
+using pat::test::TempDir;
 
 }  // namespace
 

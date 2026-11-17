@@ -17,17 +17,13 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::data;
 
 namespace {
 
-std::string read_text(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    REQUIRE_MESSAGE(in.good(), "cannot open " << path.string());
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
+using pat::test::read_text;
 
 std::filesystem::path ui_dir() {
     return std::filesystem::path(PATRIARCH_DATA_DIR) / "ui";

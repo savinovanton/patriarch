@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::sim::economy;
 using pat::core::Fixed64;
 using pat::core::Pcg32;
@@ -44,12 +46,7 @@ Kopecks random_amount(Pcg32& rng) {
     }
 }
 
-std::string read_file(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    std::ostringstream out;
-    out << in.rdbuf();
-    return out.str();
-}
+using pat::test::read_text;
 
 bool contains_word(const std::string& text, const std::string& word) {
     const auto is_ident = [](char c) {
@@ -836,7 +833,7 @@ TEST_CASE("economy: the module contains no floating-point types") {
                              "include/pat/sim/economy/rules.hpp",
                              "economy/breakdown.cpp",
                              "economy/rules.cpp"}) {
-        const std::string text = read_file(root + file);
+        const std::string text = read_text(root + file);
         CAPTURE(file);
         REQUIRE_FALSE(text.empty());
         for (const char* word :

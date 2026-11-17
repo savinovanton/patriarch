@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
+
 using namespace pat::data;
 
 namespace fs = std::filesystem;
@@ -586,33 +588,7 @@ TEST_CASE("content hash: the empty content has a stable value") {
 
 namespace {
 
-class TempDir {
-public:
-    explicit TempDir(const std::string& tag) {
-        const auto ticks = std::chrono::steady_clock::now().time_since_epoch().count();
-        path_ = fs::temp_directory_path() / ("patriarch_e4t04_" + tag + "_" + std::to_string(ticks));
-        fs::remove_all(path_);
-        fs::create_directories(path_);
-    }
-    ~TempDir() {
-        std::error_code ec;
-        fs::remove_all(path_, ec);
-    }
-    TempDir(const TempDir&) = delete;
-    TempDir& operator=(const TempDir&) = delete;
-
-    [[nodiscard]] const fs::path& path() const { return path_; }
-
-    void write(const std::string& relative, const std::string& text) const {
-        const fs::path target = path_ / relative;
-        fs::create_directories(target.parent_path());
-        std::ofstream out(target, std::ios::binary);
-        out << text;
-    }
-
-private:
-    fs::path path_;
-};
+using pat::test::TempDir;
 
 }  // namespace
 

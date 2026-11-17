@@ -17,19 +17,14 @@
 #include <string>
 #include <vector>
 
+#include "test_files.hpp"
 #include "ui_theme_fixture.hpp"
 
 using namespace pat::ui;
 
 namespace {
 
-std::string read_text(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    REQUIRE_MESSAGE(in.good(), "cannot open " << path.string());
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
+using pat::test::read_text;
 
 std::filesystem::path theme_file() {
     return std::filesystem::path(PATRIARCH_DATA_DIR) / "ui" / "theme.pd";

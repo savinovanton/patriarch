@@ -10,6 +10,7 @@
 
 #include <doctest/doctest.h>
 
+#include "test_files.hpp"
 #include "ui_loc_fixture.hpp"
 
 #ifdef _WIN32
@@ -32,13 +33,7 @@ namespace {
 using namespace pat::engine;
 using pat::ui::ComponentGallery;
 
-std::string read_text(const std::filesystem::path& path) {
-    std::ifstream in(path, std::ios::binary);
-    REQUIRE_MESSAGE(in.good(), "cannot open " << path.string());
-    std::ostringstream buffer;
-    buffer << in.rdbuf();
-    return buffer.str();
-}
+using pat::test::read_text;
 
 struct Fixture {
     std::unique_ptr<IRenderer> renderer;
