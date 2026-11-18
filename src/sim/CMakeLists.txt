@@ -33,6 +33,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/events/character_triggers.hpp
     include/pat/sim/events/event_set.hpp
     include/pat/sim/events/program.hpp
+    include/pat/sim/events/state.hpp
     include/pat/sim/events/vm.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/family/tables.hpp
@@ -131,6 +132,7 @@ add_library(patriarch_sim STATIC
     succession.cpp
     traits.cpp
     world.cpp
+    world_events.cpp
     world_family.cpp
     world_family_io.cpp
     world_economy.cpp

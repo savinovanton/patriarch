@@ -751,6 +751,7 @@ bool World::destroy_character(CharacterId id) {
         }
     }
     economy_remove_administrator(id);
+    (void)clear_event_scope(events::Scope::make(events::ScopeKind::Character, id.value()), true);
     // Reset the slot so that a dead record never leaks old values into later reuse.
     characters_.dynasty[index] = DynastyId();
     characters_.birth_date[index] = Date();
@@ -1949,6 +1950,7 @@ std::vector<std::string> World::check_invariants() const {
 
     check_economy_invariants(bad);
     check_family_invariants(bad);
+    check_event_invariants(bad);
     return bad;
 }
 
