@@ -3,6 +3,7 @@
 // Runs the demo and M1 scenarios without graphics. See --help for the options.
 
 #include "pat/content/m1_scenario.hpp"
+#include "pat/content/session_assembly.hpp"
 #include "pat/core/log.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
@@ -286,47 +287,17 @@ int fail(int code, const std::string& message) {
 struct ScenarioStart {
     demo::Config demo_config;
     std::optional<World> m1_world;
-    DemographyRules demography = kDefaultDemography;
-    std::shared_ptr<const TraitCatalog> traits;
-    std::shared_ptr<const economy::EconomyRules> economy_rules;
+    pat::content::SessionContent session = pat::content::SessionContent::demo();
     std::uint64_t replay_id = demo::kScenarioId;
-    std::uint64_t content_hash = 0;
 
     [[nodiscard]] Simulation make_simulation() const {
         if (m1_world) {
-            SimulationConfig config;
-            config.traits = traits;
-            Simulation simulation(*m1_world, std::move(config));
-            simulation.add_system(make_mortality_system(demography, traits));
-            simulation.add_system(make_opinion_system());
-            simulation.add_system(make_dynasty_standing_system());
-            economy::install_economy_systems(simulation, *economy_rules);
-            return simulation;
+            return pat::content::assemble_session(session, *m1_world);
         }
         return demo::make_simulation(demo_config);
     }
 
-    [[nodiscard]] std::string save_error(const World& world) const {
-        if (!m1_world) {
-            return {};
-        }
-        if (!world.economy_present()) {
-            return "the save has no M1 economy state";
-        }
-        const std::uint64_t saved_hash = world.economy().meta.rules_hash;
-        if (saved_hash != content_hash) {
-            return std::format(
-                "M1 save content hash mismatch: saved {:016x}, loaded {:016x}", saved_hash, content_hash);
-        }
-        if (traits) {
-            for (const CharacterId id : world.living()) {
-                if (check_trait_set(*traits, world.characters().traits[id.index()]) != TraitStatus::Ok) {
-                    return std::format("M1 save has an incompatible trait set for character {}", id.value());
-                }
-            }
-        }
-        return {};
-    }
+    [[nodiscard]] std::string save_error(const World& world) const { return session.save_error(world); }
 };
 
 pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::uint64_t seed) {
@@ -358,11 +329,8 @@ pat::core::Result<ScenarioStart> prepare_scenario(const Options& options, std::u
             {loaded.error().code, std::format("cannot load M1 scenario: {}", loaded.error().message)});
     }
     start.m1_world.emplace(std::move(loaded.value().world));
-    start.demography = loaded.value().demography;
-    start.traits = loaded.value().traits;
-    start.economy_rules = loaded.value().economy_rules;
+    start.session = pat::content::SessionContent::from_scenario(loaded.value());
     start.replay_id = loaded.value().replay_id;
-    start.content_hash = loaded.value().content_hash;
     return Result::ok(std::move(start));
 }
 

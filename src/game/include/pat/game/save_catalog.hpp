@@ -50,6 +50,9 @@ struct ScanOptions {
     std::uint64_t expected_content_hash = 0;
 };
 
+/// True for the container error codes that mean "written by a newer build" (22 version, 28 schema).
+[[nodiscard]] bool is_newer_save_error(int code);
+
 /// Lists every `*.psv` file in `dir` (not recursive), newest first (sort_time descending, ties by file
 /// name). A missing directory gives an empty list; a damaged file never stops the scan.
 [[nodiscard]] std::vector<SaveEntry> scan_saves(const std::filesystem::path& dir,

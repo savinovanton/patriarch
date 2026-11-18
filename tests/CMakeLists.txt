@@ -86,6 +86,8 @@ add_executable(patriarch_tests
     names_test.cpp
     opinion_test.cpp
     province_bindings_test.cpp
+    session_assembly_test.cpp
+    session_assembly_test.cpp
     pd_parser_test.cpp
     profile_test.cpp
     replay_test.cpp
@@ -146,6 +148,8 @@ if(PATRIARCH_BUILD_ENGINE)
         menu_test.cpp
         renderer_test.cpp
         save_catalog_test.cpp
+        save_loader_test.cpp
+        save_loader_test.cpp
         save_service_test.cpp
         season_test.cpp
         time_bar_test.cpp
