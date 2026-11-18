@@ -97,9 +97,9 @@ struct Scope {
 // ---- instructions ---------------------------------------------------------------------------------
 
 /// Instruction codes. STABLE: never renumber or reuse (disassembler, golden programs, reports).
-/// Codes up to 91 are the table of the specification; 65..68, 73, 74 and 92 are additions made by
-/// E11-T04 (random_<list>, "ordered_" with a limit, the preview structure, hidden_effect and the
-/// breakdown steps); see docs/dev/event-engine.md section 7.2.
+/// Codes up to 91 are the table of the specification; 45 (E11-T06: a scope as an argument), 65..68, 73,
+/// 74 and 92 are additions made by E11-T04 (random_<list>, "ordered_" with a limit, the preview structure,
+/// hidden_effect and the breakdown steps); see docs/dev/event-engine.md section 7.2.
 enum class Op : std::uint16_t {
     kNop = 0,
     kPushInt = 1,
@@ -134,6 +134,7 @@ enum class Op : std::uint16_t {
     kScopeSave = 42,
     kScopeLoad = 43,
     kScopeRoot = 44,
+    kPushScope = 45,
     kLoad = 50,
     kPred = 51,
     kLoadVar = 52,

@@ -17,11 +17,17 @@ std::string format_errors(const std::vector<data::LoadError>& errors) {
 }
 
 void ErrorSink::fail(const data::ContentObject& object, data::SourcePos pos, std::string message) {
-    errors_.push_back(
-        data::LoadError{object.root,
-                        registry_->root_name(object.root),
-                        object.file,
-                        data::Diagnostic{pos, data::ErrorCode::ContentRule, std::move(message)}});
+    fail(object, pos, data::ErrorCode::ContentRule, std::move(message));
+}
+
+void ErrorSink::fail(const data::ContentObject& object,
+                     data::SourcePos pos,
+                     data::ErrorCode code,
+                     std::string message) {
+    errors_.push_back(data::LoadError{object.root,
+                                      registry_->root_name(object.root),
+                                      object.file,
+                                      data::Diagnostic{pos, code, std::move(message)}});
 }
 
 void ErrorSink::fail_general(std::string message) {

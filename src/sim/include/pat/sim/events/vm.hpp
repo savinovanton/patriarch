@@ -4,6 +4,7 @@
 #include "pat/sim/economy/breakdown.hpp"
 #include "pat/sim/events/program.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
@@ -163,7 +164,10 @@ public:
 struct RunOptions {
     Mode mode = Mode::Run;
     Kind kind = Kind::Trigger;
-    Scope root;                   // the scope the program starts in
+    Scope root;  // the scope the program starts in
+    /// Saved scopes at the start (SCOPE_SAVE slots): the scopes `save_scope_as` stored in earlier
+    /// programs of the same event instance (docs/dev/event-engine.md section 5.1, E11-T06).
+    std::array<Scope, limits::kMaxSavedScopes> saved{};
     std::uint32_t max_instr = 0;  // 0: kMaxTriggerInstr (Trigger, Value) or kMaxEffectInstr (Effect)
     std::uint32_t max_commands = limits::kMaxCommandsPerRun;
     std::uint32_t max_state_ops = limits::kMaxStateOpsPerRun;
@@ -191,6 +195,9 @@ struct RunResult {
     std::uint32_t instructions = 0;  // executed (an instruction refused by the budget is not counted)
     std::uint32_t wu = 0;            // work units spent (telemetry, section 7.4)
     RunCounters counters;
+    /// The saved scopes at the end of the run; the caller keeps them for the next program of the
+    /// instance (only meaningful when ok).
+    std::array<Scope, limits::kMaxSavedScopes> saved{};
     OpBuffer commands;   // Run: effects over foreign state, committed by the caller
     OpBuffer state_ops;  // Run: operations over the state of the events, committed by the caller
 

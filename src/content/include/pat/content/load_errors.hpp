@@ -21,6 +21,9 @@ public:
 
     /// A problem at `pos` of `object` (position {0, 0} when unknown).
     void fail(const data::ContentObject& object, data::SourcePos pos, std::string message);
+    /// The same with an explicit code (for example the EV1xx codes of the event compiler).
+    void
+    fail(const data::ContentObject& object, data::SourcePos pos, data::ErrorCode code, std::string message);
     /// A problem that belongs to no object (an object is missing).
     void fail_general(std::string message);
 

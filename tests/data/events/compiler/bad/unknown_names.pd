@@ -1,0 +1,13 @@
+format_version = 1
+# expect: EV101 11:15
+# expect: EV104 11:42
+# expect: EV101 11:58
+# expect: EV101 12:28
+event "bad.names" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+    trigger { is_adlt = yes  has_trait = greedyy  spouse.agee > 1 }
+    option "ok" { effect { change_honr = 1 } }
+}

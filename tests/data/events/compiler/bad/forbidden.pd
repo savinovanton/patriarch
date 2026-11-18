@@ -1,0 +1,11 @@
+format_version = 1
+# expect: EV107 9:15
+# expect: EV113 10:52
+event "bad.forbidden" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+    trigger { any_character = { age > 1 } }
+    option "ok" { ai_chance = { base = 1  divide = 0 } }
+}

@@ -1,0 +1,18 @@
+format_version = 1
+# expect: EV109 4:1
+# expect: EV110 16:5
+event "bad.modal" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+}
+event "bad.both" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+    mean_time_to_happen = { months = 6 }
+    chance = 10
+    option "ok" { }
+}

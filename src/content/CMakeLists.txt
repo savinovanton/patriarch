@@ -4,6 +4,7 @@ add_library(patriarch_content STATIC
     include/pat/content/crisis_content.hpp
     include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
+    include/pat/content/event_content.hpp
     include/pat/content/load_errors.hpp
     include/pat/content/m1_content.hpp
     include/pat/content/m1_economy_content.hpp
@@ -18,6 +19,8 @@ add_library(patriarch_content STATIC
     credits_content.cpp
     demography_content.cpp
     economy_content.cpp
+    event_compiler.cpp
+    event_content.cpp
     load_errors.cpp
     m1_content.cpp
     m1_economy_content.cpp
@@ -27,7 +30,7 @@ add_library(patriarch_content STATIC
     names_content.cpp
     province_bindings.cpp
     traits_content.cpp)
-target_sources(patriarch_content PRIVATE typed_accessors.hpp)
+target_sources(patriarch_content PRIVATE typed_accessors.hpp event_compiler.hpp)
 add_library(patriarch::content ALIAS patriarch_content)
 
 target_include_directories(patriarch_content PUBLIC

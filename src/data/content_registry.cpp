@@ -32,6 +32,7 @@ enum class Tag : std::uint8_t {
     List = 9,
     Block = 10,
     Map = 11,
+    Rules = 12,
 };
 
 void feed_string(core::HashStream& h, std::string_view s) {
@@ -42,12 +43,68 @@ void feed_string(core::HashStream& h, std::string_view s) {
 
 void feed_value(core::HashStream& h, const TypedValue& value);
 
+/// Marker before the label of a labeled field; no value tag uses it, and fields without a label
+/// feed nothing, so content that has no labels keeps the hash it had before labels existed.
+constexpr std::uint8_t kLabelMarker = 0xFF;
+
+// The parsed tree of a rules value, without source positions and comments.
+void feed_tree_value(core::HashStream& h, const Value& v);
+
+void feed_tree_entries(core::HashStream& h, const std::vector<Entry>& entries) {
+    h.u64(entries.size());
+    for (const Entry& e : entries) {
+        h.u8(static_cast<std::uint8_t>(e.key_kind));
+        feed_string(h, e.key);
+        h.boolean(e.label.has_value());
+        if (e.label)
+            feed_string(h, *e.label);
+        h.u8(static_cast<std::uint8_t>(e.op));
+        feed_tree_value(h, e.value);
+    }
+}
+
+void feed_tree_value(core::HashStream& h, const Value& v) {
+    h.u8(static_cast<std::uint8_t>(v.kind));
+    switch (v.kind) {
+        case ValueKind::Int:
+        case ValueKind::Bool:
+            h.i64(v.integer);
+            break;
+        case ValueKind::Decimal:
+            h.i64(v.integer);
+            h.u8(v.scale);
+            break;
+        case ValueKind::Date:
+            h.i32(v.year);
+            h.u8(v.month);
+            h.u8(v.day);
+            break;
+        case ValueKind::String:
+        case ValueKind::Ident:
+        case ValueKind::Ref:
+            feed_string(h, v.text);
+            break;
+        case ValueKind::Block:
+            feed_tree_entries(h, v.entries);
+            break;
+        case ValueKind::List:
+            h.u64(v.items.size());
+            for (const Value& item : v.items)
+                feed_tree_value(h, item);
+            break;
+    }
+}
+
 void feed_fields(core::HashStream& h, const std::vector<TypedField>& fields) {
     h.u64(fields.size());
     for (const TypedField& f : fields) {
         // Source positions and the `defaulted` flag are deliberately not hashed: an explicit value
         // equal to the schema default is the same effective content as an omitted one.
         feed_string(h, f.name);
+        if (!f.label.empty()) {
+            h.u8(kLabelMarker);
+            feed_string(h, f.label);
+        }
         feed_value(h, f.value);
     }
 }
@@ -92,6 +149,9 @@ void feed_value(core::HashStream& h, const TypedValue& value) {
     } else if (const auto* map = value.get_if<TypedMap>()) {
         h.u8(static_cast<std::uint8_t>(Tag::Map));
         feed_fields(h, map->entries);
+    } else if (const auto* rules = value.get_if<RulesValue>()) {
+        h.u8(static_cast<std::uint8_t>(Tag::Rules));
+        feed_tree_value(h, rules->value);
     }
 }
 
