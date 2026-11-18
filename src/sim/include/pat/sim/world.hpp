@@ -15,6 +15,7 @@
 #include "pat/sim/economy/tables.hpp"
 #include "pat/sim/entity_ids.hpp"
 #include "pat/sim/entity_table.hpp"
+#include "pat/sim/events/state.hpp"
 #include "pat/sim/family/tables.hpp"
 #include "pat/sim/scheduled_queue.hpp"
 
@@ -848,6 +849,68 @@ public:
     /// No final title is assigned.
     [[nodiscard]] CharacterId family_caretaker(DynastyId dynasty) const;
 
+    // ---- event engine tables (E11-T02; the dispatcher, the queue rules and persistence follow in E11) ----
+    // Storage only. Every writer checks structure (known scope, nonzero key, bounds, sane dates), returns
+    // false or nullopt and changes nothing when it refuses; a full table refuses a new row (the caller
+    // records HistoryOutcome::StateFull). Reads are the interface the event machine host uses over the
+    // tables.
+    [[nodiscard]] const events::State& event_state() const noexcept { return events_; }
+    /// A scope the tables may name: a living character, an existing dynasty or province, or the realm
+    /// (id 0). Other kinds are reserved (event-engine.md section 5).
+    [[nodiscard]] bool event_scope_valid(events::Scope scope) const noexcept;
+    /// Replaces the meta record. Counters never decrease, players are distinct existing dynasties.
+    bool set_event_meta(const events::Meta& meta);
+    // Flags and modifiers: present through their last day `expires` (kNoDate: unlimited).
+    bool set_event_flag(events::Scope scope, events::EventKey key, Date expires = kNoDate);
+    bool clear_event_flag(events::Scope scope, events::EventKey key);
+    [[nodiscard]] const events::Flag* find_event_flag(events::Scope scope, events::EventKey key) const;
+    [[nodiscard]] bool has_event_flag(events::Scope scope, events::EventKey key) const;
+    bool set_event_modifier(const events::Modifier& row);
+    bool clear_event_modifier(events::Scope scope, events::EventKey key);
+    [[nodiscard]] const events::Modifier* find_event_modifier(events::Scope scope,
+                                                              events::EventKey key) const;
+    [[nodiscard]] bool has_event_modifier(events::Scope scope, events::EventKey key) const;
+    // Variables: an absent variable reads as 0.
+    bool set_event_var(events::Scope scope, events::EventKey key, core::Fixed64 value);
+    bool clear_event_var(events::Scope scope, events::EventKey key);
+    [[nodiscard]] const events::Var* find_event_var(events::Scope scope, events::EventKey key) const;
+    [[nodiscard]] core::Fixed64 event_var(events::Scope scope, events::EventKey key) const;
+    // Cooldowns: `until` is the first free day (events::kForever: once).
+    bool set_event_cooldown(const events::Cooldown& row);
+    bool clear_event_cooldown(events::Scope scope, events::EventKey key);
+    [[nodiscard]] const events::Cooldown* find_event_cooldown(events::Scope scope,
+                                                              events::EventKey key) const;
+    [[nodiscard]] bool event_on_cooldown(events::Scope scope, events::EventKey key) const;
+    // Chains.
+    bool set_event_chain(const events::Chain& row);
+    bool clear_event_chain(events::Scope scope, events::EventKey key);
+    [[nodiscard]] const events::Chain* find_event_chain(events::Scope scope, events::EventKey key) const;
+    // Timers: `seq` is assigned here; the table stays ordered by (due, seq).
+    [[nodiscard]] std::optional<std::uint32_t> add_event_timer(events::Timer row);
+    bool cancel_event_timer(std::uint32_t seq);
+    [[nodiscard]] const events::Timer* find_event_timer(std::uint32_t seq) const;
+    // The queue of the player: `instance` is assigned here. The root scope of a row may be a dead
+    // character (the on_death event), the saved scopes may be dead (archive references).
+    [[nodiscard]] std::optional<events::InstanceId> enqueue_event_instance(events::Instance row);
+    bool update_event_instance(const events::Instance& row);
+    bool remove_event_instance(events::InstanceId instance);
+    [[nodiscard]] const events::Instance* find_event_instance(events::InstanceId instance) const;
+    // Rings: `seq` is assigned here; a full ring drops its oldest entry.
+    [[nodiscard]] std::optional<std::uint32_t> append_event_history(events::HistoryEntry entry);
+    [[nodiscard]] std::optional<std::uint32_t> append_event_journal(events::JournalEntry entry);
+    /// Removes every row that names `scope` (flags, variables, cooldowns, chains, modifiers, timers);
+    /// with `cancel_instances` also the Pending and Deferred queue rows rooted there, each leaving a
+    /// HistoryOutcome::Cancelled entry. A Chosen row is never removed (it is applied first). Returns
+    /// the number of rows removed. Used by the clean-up at the end of a tick after a death or an
+    /// extinction (section 9.5); a destroyed character (outside dynasty mode) is cleaned by World itself.
+    std::size_t clear_event_scope(events::Scope scope, bool cancel_instances = true);
+    /// How many table rows name `scope` (derived index; the queue counts by its root scope).
+    [[nodiscard]] std::uint32_t event_rows_of(events::Scope scope) const noexcept {
+        return event_scope_rows_.count(scope);
+    }
+    /// Rebuilds the derived per-scope counters from the tables (used after a load).
+    void rebuild_event_indexes();
+
     // ---- pregnancies (E7-T12) ----
     /// Pregnancies by ascending mother id. Dynasty mode only (empty otherwise).
     [[nodiscard]] std::span<const Pregnancy> pregnancies() const noexcept { return pregnancies_; }
@@ -966,6 +1029,12 @@ private:
     void cancel_family_negotiations(CharacterId character, std::uint16_t reason);
     void family_on_marriage(CharacterId a, CharacterId b);
     void check_family_invariants(std::vector<std::string>& bad) const;
+    void check_event_invariants(std::vector<std::string>& bad) const;
+    /// Resolves a scope for a table row: a living character (or, with `allow_dead`, any existing one).
+    [[nodiscard]] bool event_scope_ok(events::Scope scope, bool allow_dead) const noexcept;
+    void erase_event_timer_at(std::size_t index);
+    /// Shape of a queue row and its references (the root and the saved scopes may be dead characters).
+    [[nodiscard]] bool event_instance_ok(const events::Instance& row) const noexcept;
     // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
     struct StateSection {
         std::uint16_t id = 0;
@@ -1026,6 +1095,8 @@ private:
     std::vector<OpinionRow> opinions_;               // nonempty holders, ascending id
     std::vector<StandingHistory> standing_history_;  // nonempty histories, ascending dynasty id
     family::State family_;                           // E8-T03: sparse family tables and counters
+    events::State events_;                           // E11-T02: sparse event tables, empty without events
+    events::ScopeRows event_scope_rows_;             // E11-T02: derived, never saved, hashed or compared
     economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
     economy::ModifierCache modifier_cache_;          // E9-T17: derived, never saved, hashed or compared
 };

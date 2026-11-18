@@ -9,7 +9,8 @@
 // the readers share. Internal to src/sim: the layout itself is documented at the top of world_io.cpp
 // (sections 1..7), world_family_io.cpp (sections 16..23) and world_economy_io.cpp (sections 32..40).
 //
-// Ids are stable forever and are only ever added. Blocks: 1..15 E7, 16..31 E8, 32..47 E9.
+// Ids are stable forever and are only ever added. Blocks: 1..15 E7, 16..31 E8 (E8 uses 16..23), 32..47
+// E9, 48..63 E11 (event tables, 48..57 reserved by E11-T01, written by E11-T03).
 
 namespace pat::sim::detail {
 

@@ -7,47 +7,16 @@
 #include <limits>
 #include <tuple>
 
+#include "sorted_rows.hpp"
+
 namespace pat::sim {
 namespace {
 
-template <class Rows, class Key, class Projection>
-auto row_position(Rows& rows, const Key& key, Projection projection) {
-    return std::ranges::lower_bound(rows, key, {}, projection);
-}
-
-template <class Rows, class Key, class Projection>
-const typename Rows::value_type* find_row(const Rows& rows, const Key& key, Projection projection) {
-    const auto position = row_position(rows, key, projection);
-    return position != rows.end() && std::invoke(projection, *position) == key ? &*position : nullptr;
-}
-
-template <class Rows, class Row, class Projection>
-void replace_row(Rows& rows, const Row& row, Projection projection) {
-    const auto key = std::invoke(projection, row);
-    const auto position = row_position(rows, key, projection);
-    if (position != rows.end() && std::invoke(projection, *position) == key) {
-        *position = row;
-    } else {
-        rows.insert(position, row);
-    }
-}
-
-template <class Rows, class Key, class Projection>
-bool erase_row(Rows& rows, const Key& key, Projection projection) {
-    const auto position = row_position(rows, key, projection);
-    if (position == rows.end() || std::invoke(projection, *position) != key) {
-        return false;
-    }
-    rows.erase(position);
-    return true;
-}
-
-template <class Rows, class Projection>
-bool ordered_unique(const Rows& rows, Projection projection) {
-    return std::adjacent_find(rows.begin(), rows.end(), [&](const auto& a, const auto& b) {
-               return std::invoke(projection, a) >= std::invoke(projection, b);
-           }) == rows.end();
-}
+using detail::erase_row;
+using detail::find_row;
+using detail::ordered_unique;
+using detail::replace_row;
+using detail::row_position;
 
 bool past_date(const World& world, Date date) {
     return is_sane_date(date) && date <= world.today();
