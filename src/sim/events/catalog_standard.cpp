@@ -1,0 +1,15 @@
+#include "pat/sim/events/catalog.hpp"
+#include "pat/sim/events/character_triggers.hpp"
+
+// The one place that lists the registration functions of the catalog blocks; E11-T08 .. T11 add their
+// block here (one line each).
+
+namespace pat::sim::events {
+
+Catalog Catalog::standard() {
+    Catalog c = engine();
+    register_character_triggers(c);
+    return c;
+}
+
+}  // namespace pat::sim::events

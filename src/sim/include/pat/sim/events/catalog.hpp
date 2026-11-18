@@ -118,7 +118,23 @@ struct CatalogEntry {
     /// A retired entry (EV114): the text of the replacement, shown in the error.
     std::string retired_hint;
     bool retired = false;
+    /// Non-empty: the system behind the entry is not built yet ("E10"); the evaluator answers "no data"
+    /// (TriggerResult::has_data == false) and the reference marks the entry.
+    std::string stub;
+    /// One line of event-file syntax for the generated reference (`age >= 16`).
+    std::string example;
 };
+
+/// Keys of the auto-tooltip templates of a trigger or value entry (docs/dev/event-engine.md section 15.1):
+/// `tooltip.trigger.<name>` (the condition), `.not` (a predicate required to be `no`) and `.fail`
+/// (why a variant is unavailable). Effects and state operations use `tooltip.effect.<name>`.
+/// Shared keys: `tooltip.cmp.<ge|gt|le|lt|eq|ne>` (the comparison phrase of `{need}`, parameter `{value}`)
+/// and `tooltip.fail.required` (the wrapper of the `.not` text when a predicate is required to be `no`).
+inline constexpr std::string_view kTooltipComparePrefix = "tooltip.cmp.";
+inline constexpr std::string_view kTooltipRequiredKey = "tooltip.fail.required";
+[[nodiscard]] std::string tooltip_key(const CatalogEntry& entry);
+[[nodiscard]] std::string tooltip_not_key(const CatalogEntry& entry);
+[[nodiscard]] std::string tooltip_fail_key(const CatalogEntry& entry);
 
 // ---- on-actions (section 8.1) ----------------------------------------------------------------------
 
@@ -175,6 +191,9 @@ public:
 
     /// The entries that belong to the language: transitions (5.1), lists (5.2) and on-actions (8.1).
     [[nodiscard]] static Catalog engine();
+    /// The language plus every entry the game registers (E11-T07 .. T11): what the compiler of the game
+    /// and the generated reference use.
+    [[nodiscard]] static Catalog standard();
 
     // CatalogInfo
     [[nodiscard]] std::uint32_t cost(Op op, std::uint16_t code) const override;

@@ -41,6 +41,19 @@ std::string space_key(NameSpace space, std::string_view name) {
 
 }  // namespace
 
+std::string tooltip_key(const CatalogEntry& entry) {
+    const bool is_effect = entry.space == NameSpace::Effect || entry.space == NameSpace::StateOp;
+    return std::string(is_effect ? "tooltip.effect." : "tooltip.trigger.") + entry.name;
+}
+
+std::string tooltip_not_key(const CatalogEntry& entry) {
+    return tooltip_key(entry) + ".not";
+}
+
+std::string tooltip_fail_key(const CatalogEntry& entry) {
+    return tooltip_key(entry) + ".fail";
+}
+
 std::string_view scope_kind_name(ScopeKind kind) noexcept {
     for (const KindName& k : kKindNames) {
         if (k.kind == kind) {

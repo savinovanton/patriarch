@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "court_fixture.hpp"
+#include "event_compile_fixture.hpp"
 #include "event_fixture.hpp"
 #include "test_files.hpp"
 
@@ -35,22 +36,7 @@ using pat::data::ErrorCode;
 
 namespace {
 
-struct Compiled {
-    std::string text;  // the whole file, header included (positions refer to it)
-    std::vector<pat::data::LoadError> errors;
-    std::optional<ev::EventSet> set;
-    std::uint64_t content_hash = 0;
-
-    [[nodiscard]] bool ok() const { return errors.empty() && set.has_value(); }
-    [[nodiscard]] std::vector<ErrorCode> codes() const {
-        std::vector<ErrorCode> out;
-        for (const auto& e : errors) {
-            out.push_back(e.diagnostic.code);
-        }
-        return out;
-    }
-    [[nodiscard]] std::string all_errors() const { return pat::content::format_errors(errors); }
-};
+using fx::Compiled;
 
 const ev::Catalog& catalog() {
     static const ev::Catalog c = fx::test_catalog();
@@ -60,25 +46,7 @@ const ev::Catalog& catalog() {
 Compiled compile_files(const std::vector<std::pair<std::string, std::string>>& files,
                        const pat::content::EventBuildOptions& options = {},
                        const ev::Catalog& cat = catalog()) {
-    auto source = pat::court_fixture::shipped_source(false);
-    Compiled out;
-    for (const auto& [path, body] : files) {
-        out.text = "format_version = 1\n" + body;
-        source.add(path, out.text);
-    }
-    auto loaded = pat::data::load_content(source, pat::data::content_schemas());
-    if (!loaded.ok()) {
-        out.errors = std::move(loaded.errors);
-        return out;
-    }
-    out.content_hash = pat::content::event_content_hash(loaded.registry);
-    auto set = pat::content::build_event_set(loaded.registry, cat, options);
-    if (!set) {
-        out.errors = std::move(set).error();
-    } else {
-        out.set = std::move(set).value();
-    }
-    return out;
+    return fx::compile_event_files(files, options, cat);
 }
 
 Compiled compile(const std::string& body,
@@ -87,23 +55,7 @@ Compiled compile(const std::string& body,
     return compile_files({{"events/t.pd", body}}, options, cat);
 }
 
-// An event of the character scope; `fields` goes before the options, `options` replaces the default one.
-std::string character_event(std::string_view fields = {},
-                            std::string_view options = "option \"ok\" { }",
-                            std::string_view id = "t.ev") {
-    return std::format(R"(event "{}" {{
-    scope = character
-    type = personal
-    category = general
-    on = monthly_pulse
-    {}
-    {}
-}}
-)",
-                       id,
-                       fields,
-                       options);
-}
+using fx::character_event;
 
 pat::data::SourcePos where(const Compiled& c, std::string_view anchor, std::string_view needle) {
     return pat::court_fixture::position_after(c.text, anchor, needle);
