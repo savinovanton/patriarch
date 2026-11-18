@@ -23,10 +23,13 @@ env:
   # named per test case, so the cases can run side by side.
   CTEST_PARALLEL_LEVEL: 4
 
+# timeout-minutes: about 1.5-2x the slowest successful run (docs/dev/ci-audit.md), so a hung test frees the
+# runner instead of holding it for the default 6 hours.
 jobs:
   format:
     name: clang-format
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       # Pinned to the same version used locally (LLVM 19.1.5) to keep results identical.
@@ -39,6 +42,7 @@ jobs:
   assets:
     name: asset license registry
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - name: Check the registry against assets/
@@ -59,6 +63,7 @@ jobs:
   contentlint:
     name: contentlint (data/ and localisation)
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
@@ -76,6 +81,7 @@ jobs:
     # windows-2022 ships Visual Studio 2022 (the "Visual Studio 17 2022" generator used by the presets).
     # Do not use windows-latest/windows-2025: those labels now point to the Visual Studio 2026 image.
     runs-on: windows-2022
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -122,6 +128,7 @@ jobs:
   linux-determinism:
     name: Linux ${{ matrix.compiler }} ${{ matrix.build_type }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -163,6 +170,7 @@ jobs:
   linux-tracy:
     name: Linux gcc Tracy client
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
@@ -183,6 +191,7 @@ jobs:
   windows-clangcl:
     name: clang-cl ${{ matrix.preset }}
     runs-on: windows-2022
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -226,6 +235,7 @@ jobs:
   clang-tidy:
     name: clang-tidy (report only)
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
@@ -260,6 +270,7 @@ jobs:
   windows-asan:
     name: MSVC AddressSanitizer
     runs-on: windows-2022
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-vcpkg
