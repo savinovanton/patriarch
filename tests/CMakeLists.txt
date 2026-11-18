@@ -148,6 +148,7 @@ if(PATRIARCH_BUILD_ENGINE)
         province_view_test.cpp
         province_window_test.cpp
         menu_test.cpp
+        settings_file_test.cpp
         renderer_test.cpp
         autosave_test.cpp
         save_catalog_test.cpp
