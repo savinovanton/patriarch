@@ -390,7 +390,8 @@ bool settings_differ(const SettingsModel& a, const SettingsModel& b, SettingsTab
         case SettingsTab::Interface:
             return a.ui_scale != b.ui_scale || a.language != b.language || a.text_size != b.text_size ||
                    a.tooltips != b.tooltips || a.pause_on_events != b.pause_on_events ||
-                   a.reduce_motion != b.reduce_motion;
+                   a.reduce_motion != b.reduce_motion || a.autosave_interval_min != b.autosave_interval_min ||
+                   a.autosave_on_exit != b.autosave_on_exit;
         case SettingsTab::Audio:
             return a.master_volume != b.master_volume || a.music_volume != b.music_volume ||
                    a.ambient_volume != b.ambient_volume || a.interface_volume != b.interface_volume ||
@@ -420,6 +421,8 @@ void reset_settings_tab(SettingsModel& model, SettingsTab tab) {
             model.tooltips = defaults.tooltips;
             model.pause_on_events = defaults.pause_on_events;
             model.reduce_motion = defaults.reduce_motion;
+            model.autosave_interval_min = defaults.autosave_interval_min;
+            model.autosave_on_exit = defaults.autosave_on_exit;
             break;
         case SettingsTab::Audio:
             model.master_volume = defaults.master_volume;

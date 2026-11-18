@@ -167,8 +167,8 @@ enum class SettingsTab { Video, Interface, Audio, Controls };
 inline constexpr std::size_t kSettingsTabCount = 4;
 
 /// The actions that have a key binding (the rows of the tab "Управление").
-enum class KeyAction { Pause, Camera, Zoom, Select, Back, MapMode };
-inline constexpr std::size_t kKeyActionCount = 6;
+enum class KeyAction { Pause, Camera, Zoom, Select, Back, MapMode, QuickSave, QuickLoad };
+inline constexpr std::size_t kKeyActionCount = 8;
 
 /// The values of "Настройки": plain data, no RmlUi and no files. The window edits a copy and hands it to
 /// `MenuActions::apply_settings` on "Применить"; the host keeps what it applied and gives it back with
@@ -192,6 +192,8 @@ struct SettingsModel {
     int tooltips = 1;   ///< 0 off, 1 contextual, 2 detailed
     bool pause_on_events = true;
     bool reduce_motion = false;
+    int autosave_interval_min = 10;  ///< 0 (off), 5, 10 or 20 minutes of real time (E13-T06)
+    bool autosave_on_exit = true;    ///< write `_autoexit` when the game is left (E13-T06)
     // "Звук" (percent)
     int master_volume = 80;
     int music_volume = 65;
@@ -200,7 +202,8 @@ struct SettingsModel {
     int output_device = 0;  ///< 0: the default device
     bool mute_unfocused = true;
     // "Управление": a key id per `KeyAction` ("space", "m", "f5", "left", ...)
-    std::array<std::string, kKeyActionCount> keys = {"space", "wasd", "wheel", "lmb", "rmb_esc", "m"};
+    std::array<std::string, kKeyActionCount> keys = {
+        "space", "wasd", "wheel", "lmb", "rmb_esc", "m", "f5", "f9"};
 
     friend bool operator==(const SettingsModel&, const SettingsModel&) = default;
 };

@@ -1,4 +1,5 @@
 add_library(patriarch_game STATIC
+    include/pat/game/autosave.hpp
     include/pat/game/credits_view.hpp
     include/pat/game/economy_view.hpp
     include/pat/game/hud_view.hpp
@@ -10,6 +11,7 @@ add_library(patriarch_game STATIC
     include/pat/game/season.hpp
     include/pat/game/tooltip_view.hpp
     include/pat/game/world_view.hpp
+    autosave.cpp
     credits_view.cpp
     economy_number.cpp
     hud_view.cpp
