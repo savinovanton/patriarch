@@ -203,7 +203,12 @@ jobs:
         with:
           args: --preset win-clangcl
       - name: Build
-        run: cmake --build --preset win-clangcl-${{ matrix.preset }}
+        # clang-cl has no /MP (cl.exe gets it from cmake/PatriarchCompileOptions.cmake; /m on top of it measured
+        # no gain for MSVC). MultiToolTask runs clang-cl on several files of a project at once, /m builds
+        # independent projects side by side, and EnforceProcessCountAcrossBuilds caps the total process count.
+        run: >-
+          cmake --build --preset win-clangcl-${{ matrix.preset }} --parallel --
+          /p:UseMultiToolTask=true /p:EnforceProcessCountAcrossBuilds=true
       - name: Test
         run: ctest --preset win-clangcl-${{ matrix.preset }}
       - name: Compare hashes with the golden values
