@@ -58,6 +58,23 @@ def build(source, build_dir, installed_dir, log):
                        check=True, timeout=1800)
 
 
+def compare_with_retry(measure_and_compare):
+    """Run the paired measurement; on a regression verdict re-measure both sides once.
+
+    The gate fails only if the regression repeats (owner decision on #618, option 2b): a noisy first
+    sample on a shared runner no longer fails the job. The 10 % threshold is unchanged. The second
+    report replaces the first, so the artifact reflects the verdict that decided the outcome."""
+    report = measure_and_compare(0)
+    if report["status"] == "regression":
+        print("Regression on the first measurement; re-measuring both sides once.", flush=True)
+        retry = measure_and_compare(1)
+        if retry["status"] != "regression":
+            retry.setdefault("warnings", []).append(
+                "The first measurement showed a regression that did not repeat; the retry result is reported.")
+        report = retry
+    return report
+
+
 def record_summary(report):
     destination = os.environ.get("GITHUB_STEP_SUMMARY")
     if not destination:
@@ -121,11 +138,15 @@ def main():
             sources.append((label, source, build_dir))
         # Keep compilation outside both sampling phases, so one side is not measured directly
         # after a hot compiler while the other is measured after an idle/cached configure.
-        for label, source, build_dir in sources:
-            print("Measuring", label, flush=True)
-            bench_capture.capture(source, build_dir, suite_path, reports / (label + ".json"))
-        report = bench_compare.compare_measurements(bench_compare.read_json(reports / "baseline.json"),
-                                                    bench_compare.read_json(reports / "candidate.json"), suite)
+        def measure_and_compare(attempt):
+            suffix = "" if attempt == 0 else ".retry"
+            for label, source, build_dir in sources:
+                print("Measuring", label + (" (retry)" if attempt else ""), flush=True)
+                bench_capture.capture(source, build_dir, suite_path, reports / (label + suffix + ".json"))
+            return bench_compare.compare_measurements(
+                bench_compare.read_json(reports / ("baseline" + suffix + ".json")),
+                bench_compare.read_json(reports / ("candidate" + suffix + ".json")), suite)
+        report = compare_with_retry(measure_and_compare)
     except (ValueError, KeyError, OSError, subprocess.SubprocessError) as error:
         # Do not put local command lines/user paths in a public report. Logs remain separate.
         print("bench_gate:", error, file=sys.stderr)

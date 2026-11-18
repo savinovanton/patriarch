@@ -12,7 +12,9 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Pull-request runs are superseded by a newer push to the same branch. Runs on main queue instead, so
+  # a quick follow-up merge does not cancel the previous main run (docs/dev/ci-audit.md, #618/#630).
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
