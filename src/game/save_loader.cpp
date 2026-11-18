@@ -118,8 +118,12 @@ LoadResult load_game(const std::filesystem::path& path,
 
     // Stage 2: the content check (step 8) and the session assembly (step 9).
     progress.report(LoadStage::BuildingWorld, 60);
-    if (const std::string error = content.save_error(data.value().world, options.ignore_content_hash);
-        !error.empty()) {
+    // The demo systems cannot advance an economy world (simcli refuses it the same way).
+    std::string error = content.save_error(data.value().world, options.ignore_content_hash);
+    if (error.empty() && !content.has_content && data.value().world.economy_present()) {
+        error = "the demo systems cannot advance an economy save";
+    }
+    if (!error.empty()) {
         return fail(std::move(result), LoadOutcome::Incompatible, LoadReason::DifferentContent, error);
     }
     result.summary = data.value().summary;

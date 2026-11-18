@@ -30,7 +30,7 @@ SessionContent SessionContent::from_scenario(const M1Scenario& scenario) {
 
 std::string SessionContent::save_error(const sim::World& world, bool ignore_hash) const {
     if (!has_content) {
-        return world.economy_present() ? "the demo systems cannot advance an economy save" : std::string{};
+        return {};
     }
     if (!world.economy_present()) {
         return "the save has no M1 economy state";

@@ -71,7 +71,7 @@ TEST_CASE("SessionContent::save_error: refuses a world that belongs to other con
 
     CHECK(m1.save_error(scenario.world).empty());
     CHECK(demo.save_error(sim::demo::make_world({})).empty());
-    CHECK_FALSE(demo.save_error(scenario.world).empty());           // an economy the demo systems cannot run
+    CHECK(demo.save_error(scenario.world).empty());  // simcli and load_game guard this themselves
     CHECK_FALSE(m1.save_error(sim::demo::make_world({})).empty());  // no economy
 
     auto other = m1;
