@@ -612,6 +612,7 @@ public:
     /// Marries two living, unmarried characters. Fails when `a == b`, one of them is dead, already
     /// married or has used kMaxMarriages marriages, or they have been married to each other before.
     /// Sex, age, blood relationship and the Church's consent are rules for E8, not checked here.
+    [[nodiscard]] bool can_marry(CharacterId a, CharacterId b) const;
     bool marry(CharacterId a, CharacterId b);
     /// Ends the marriage of a living, married character with a living spouse, for any reason
     /// (annulment, tonsure, widowhood: Die calls this for the deceased before it is archived). Both
@@ -792,6 +793,7 @@ public:
     /// Pure storage availability, including monotone-id exhaustion (the outcome ring evicts).
     [[nodiscard]] bool has_family_negotiation_capacity() const;
     [[nodiscard]] bool has_family_betrothal_capacity() const;
+    [[nodiscard]] bool has_family_marriage_capacity() const;
     [[nodiscard]] bool has_family_outcome_capacity() const;
     /// The same structural predicate used by creation, without writing a row or allocating an id.
     [[nodiscard]] bool can_create_family_negotiation(const family::Negotiation& row) const;
@@ -809,6 +811,8 @@ public:
     accept_family_negotiation(family::NegotiationId negotiation, family::Betrothal row);
     bool update_family_betrothal(family::BetrothalId id, const family::Betrothal& row);
     bool close_family_betrothal(family::BetrothalId id);
+    /// Removes an engagement and writes the shared break note to both original houses.
+    bool break_family_betrothal(family::BetrothalId id, family::BetrothalBreakReason reason);
     /// An Active record describes an existing World::marry pair; this does not marry the people.
     [[nodiscard]] std::optional<family::MarriageId> create_family_marriage(family::Marriage row);
     bool update_family_marriage(family::MarriageId id, const family::Marriage& row);

@@ -79,6 +79,8 @@ struct MarriageCheckOptions {
     DynastyId actor;
     /// Rechecking a pending answer ignores only this negotiation, never another engagement.
     family::NegotiationId ignore_negotiation = 0;
+    /// A wedding rechecks its own participants while retaining other engagement denials.
+    family::BetrothalId ignore_betrothal = 0;
 };
 
 /// Reuses the fixed member's eligibility and bounded kinship facts across a read-only request.

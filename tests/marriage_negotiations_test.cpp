@@ -341,6 +341,7 @@ TEST_CASE("marriage negotiations: daily answers cross calendar boundaries exactl
         CAPTURE(due.days());
         Scene scene(due - 2);
         scene.rules.negotiation.answer_days = 2;
+        scene.rules.negotiation.wedding_delay_days = 3;
         scene.rules.score.accept_threshold = -1000;
         const auto row = scene.send(scene.groom_house);
         CHECK(row.answer_due == due);

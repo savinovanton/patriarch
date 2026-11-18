@@ -7,6 +7,7 @@
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
+#include "pat/sim/marriage_weddings.hpp"
 #include "pat/sim/traits.hpp"
 
 #include <algorithm>
@@ -134,6 +135,28 @@ struct Validator {
             return reject(Rejection::NotAuthorized, "only the system may answer a marriage proposal");
         }
         return validate_marriage_response(world, rules_or_default(marriage), c, faith);
+    }
+
+    Result<void, CommandError> operator()(const cmd::Betroth& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may contract a betrothal");
+        }
+        return validate_betroth(world, rules_or_default(marriage), c, faith);
+    }
+    Result<void, CommandError> operator()(const cmd::BreakBetrothal& c) const {
+        return validate_break_betrothal(world, rules_or_default(marriage), actor, c, faith);
+    }
+    Result<void, CommandError> operator()(const cmd::Wed& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may perform a wedding");
+        }
+        return validate_wed(world, rules_or_default(marriage), c, faith);
+    }
+    Result<void, CommandError> operator()(const cmd::SettleWidowhood& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may settle widowhood");
+        }
+        return validate_settle_widowhood(world, c);
     }
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
@@ -786,6 +809,13 @@ struct Applier {
         respond_marriage(world, rules_or_default(marriage), c, faith);
     }
 
+    void operator()(const cmd::Betroth& c) const { apply_betroth(world, rules_or_default(marriage), c); }
+    void operator()(const cmd::BreakBetrothal& c) const {
+        apply_break_betrothal(world, rules_or_default(marriage), actor, c);
+    }
+    void operator()(const cmd::Wed& c) const { apply_wed(world, rules_or_default(marriage), c); }
+    void operator()(const cmd::SettleWidowhood& c) const { apply_settle_widowhood(world, c); }
+
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {
             (void)grant_trait(world, *traits, c.character, c.trait);
@@ -1041,6 +1071,23 @@ struct CommandTag<cmd::RespondMarriage> {
     static constexpr CommandType value = CommandType::RespondMarriage;
 };
 
+template <>
+struct CommandTag<cmd::Betroth> {
+    static constexpr CommandType value = CommandType::Betroth;
+};
+template <>
+struct CommandTag<cmd::BreakBetrothal> {
+    static constexpr CommandType value = CommandType::BreakBetrothal;
+};
+template <>
+struct CommandTag<cmd::Wed> {
+    static constexpr CommandType value = CommandType::Wed;
+};
+template <>
+struct CommandTag<cmd::SettleWidowhood> {
+    static constexpr CommandType value = CommandType::SettleWidowhood;
+};
+
 template <class Variant>
 struct TagTable;
 template <class... Alternatives>
@@ -1134,6 +1181,14 @@ std::string_view to_string(CommandType type) noexcept {
             return "WithdrawMarriageEnvoy";
         case CommandType::RespondMarriage:
             return "RespondMarriage";
+        case CommandType::Betroth:
+            return "Betroth";
+        case CommandType::BreakBetrothal:
+            return "BreakBetrothal";
+        case CommandType::Wed:
+            return "Wed";
+        case CommandType::SettleWidowhood:
+            return "SettleWidowhood";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:
@@ -1171,7 +1226,8 @@ Result<void, CommandError>
 validate(const World& world, const Command& command, const CommandContent& content) {
     if (command.actor.valid() && !world.exists(command.actor) &&
         !std::holds_alternative<cmd::SendMarriageEnvoy>(command.payload) &&
-        !std::holds_alternative<cmd::WithdrawMarriageEnvoy>(command.payload)) {
+        !std::holds_alternative<cmd::WithdrawMarriageEnvoy>(command.payload) &&
+        !std::holds_alternative<cmd::BreakBetrothal>(command.payload)) {
         return reject(Rejection::UnknownEntity, "unknown actor");
     }
     return std::visit(

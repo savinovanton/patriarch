@@ -64,7 +64,10 @@ void append_person_denials(const World& world,
             add(MarriageDenial::InNegotiation);
         }
     } else if (engagement == 2) {
-        add(MarriageDenial::Betrothed);
+        const auto* betrothal = options.ignore_betrothal == 0 ? nullptr : world.family_betrothal_of(person);
+        if (betrothal == nullptr || betrothal->id != options.ignore_betrothal) {
+            add(MarriageDenial::Betrothed);
+        }
     }
     if (people.marriages[index] >= kMaxMarriages) {
         add(MarriageDenial::MarriageLimit);
