@@ -1,0 +1,55 @@
+format_version = 1
+
+# Три проекта императора M1 (throne-crisis-model §8.5): война, налоги, расследования и чистки. Раз в месяц
+# ИИ императора считает счёт каждого проекта и выбирает уровень по порогам; эффекты уровня — списки
+# чисел по одному на уровень от level_min. Все числа [предл.], калибровка — E12-T21. «Успокоительные»
+# проекты — не отдельные объекты, а отрицательные уровни налогов и реакция на падение стабильности.
+#   thresholds    — level_max - level_min возрастающих порогов счёта между соседними уровнями;
+#   response_*    — реакция на давление: response_k_pm * max(0, response_pivot - стабильность) / 1000;
+#   effects       — имена фиксированы для проекта (sim::crisis::required_project_effects).
+
+emperor_project "war" {
+    slot = 1
+    name_key = "crisis.project.war.name"
+    desc_key = "crisis.project.war.desc"
+    level_min = 0
+    level_max = 3
+    thresholds = [ 20, 45, 70 ]
+    response_pivot = 50
+    response_k_pm = -800
+    effects = {
+        war_fatigue_x100 = [ 0, 60, 140, 260 ]
+        recruit_quota_mult = [ 0, 1, 2, 3 ]
+        army_upkeep_kop = [ 0, 15000, 35000, 60000 ]
+    }
+}
+
+emperor_project "taxes" {
+    slot = 2
+    name_key = "crisis.project.taxes.name"
+    desc_key = "crisis.project.taxes.desc"
+    level_min = -2
+    level_max = 3
+    thresholds = [ -40, -15, 15, 40, 65 ]
+    response_pivot = 55
+    response_k_pm = -2000
+    effects = {
+        per_weight_kop = [ 0, 40, 100, 160, 230, 320 ]
+    }
+}
+
+emperor_project "purges" {
+    slot = 3
+    name_key = "crisis.project.purges.name"
+    desc_key = "crisis.project.purges.desc"
+    level_min = 0
+    level_max = 3
+    thresholds = [ 25, 50, 75 ]
+    response_pivot = 50
+    response_k_pm = 500
+    effects = {
+        purge_heat_x100 = [ 0, 100, 250, 500 ]
+        court_upkeep_kop = [ 0, 8000, 20000, 40000 ]
+        punish_tier = [ 0, 0, 1, 2 ]
+    }
+}

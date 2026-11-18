@@ -1,6 +1,7 @@
 #include "pat/content/load_errors.hpp"
 
 #include <algorithm>
+#include <format>
 #include <tuple>
 #include <utility>
 
@@ -29,6 +30,27 @@ void ErrorSink::fail_general(std::string message) {
         registry_->root_count() > 0 ? registry_->root_name(0) : std::string(),
         std::string(),
         data::Diagnostic{data::SourcePos{0, 0}, data::ErrorCode::ContentRule, std::move(message)}});
+}
+
+const data::ContentObject* ErrorSink::single_object(std::string_view kind) {
+    const auto* table = registry_->table(kind);
+    if (table == nullptr || table->empty()) {
+        fail_general(std::format("no {} object found (expected: {} \"main\" {{ ... }})", kind, kind));
+        return nullptr;
+    }
+    const data::ContentObject& object = table->objects().front();
+    for (std::size_t i = 1; i < table->size(); ++i) {
+        const data::ContentObject& extra = table->objects()[i];
+        fail(extra,
+             extra.object.pos,
+             std::format("only one {} object is allowed, '{}' is already defined in {}:{}:{}",
+                         kind,
+                         object.object.id,
+                         object.file,
+                         object.object.pos.line,
+                         object.object.pos.column));
+    }
+    return &object;
 }
 
 std::vector<data::LoadError> ErrorSink::take() {

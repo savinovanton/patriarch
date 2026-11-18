@@ -4,6 +4,7 @@
 #include "pat/data/content_registry.hpp"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace pat::content {
@@ -22,6 +23,10 @@ public:
     void fail(const data::ContentObject& object, data::SourcePos pos, std::string message);
     /// A problem that belongs to no object (an object is missing).
     void fail_general(std::string message);
+
+    /// The only object of `kind` (the first, by registry order). Reports a missing table or a second
+    /// object (`kind "main" { ... }` is expected) and returns nullptr only when there is none.
+    [[nodiscard]] const data::ContentObject* single_object(std::string_view kind);
 
     [[nodiscard]] bool empty() const noexcept { return errors_.empty(); }
     /// The errors sorted by (root, file, position, code, message).
