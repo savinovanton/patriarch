@@ -35,10 +35,6 @@ void hash_table_slots(core::HashStream& h, const EntityTable<Id>& ids) {
 [[nodiscard]] core::Fixed32 clamp_signed_scale(core::Fixed32 v) noexcept {
     return std::clamp(v, kNegativeScaleMax, kSignedScaleMax);
 }
-[[nodiscard]] bool in_range(core::Fixed32 v, core::Fixed32 lo, core::Fixed32 hi) noexcept {
-    return v >= lo && v <= hi;
-}
-
 /// Due date of the first birthday entry of a character created now: a newborn gets its "year 0"
 /// roll on the birth date, everyone else on the next anniversary (ADR-0006 D4).
 [[nodiscard]] Date first_birthday_due(Date birth, Date today) noexcept {

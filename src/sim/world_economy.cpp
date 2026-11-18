@@ -23,10 +23,6 @@ using economy::OwnerKind;
 
 constexpr Fixed32 kZero = Fixed32::zero();
 
-[[nodiscard]] bool in_range(Fixed32 v, Fixed32 lo, Fixed32 hi) noexcept {
-    return v >= lo && v <= hi;
-}
-
 [[nodiscard]] std::uint8_t to_u8(OwnerKind kind) noexcept {
     return static_cast<std::uint8_t>(kind);
 }

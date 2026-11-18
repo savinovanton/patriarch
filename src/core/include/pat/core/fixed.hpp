@@ -256,6 +256,12 @@ clamp(Fixed<Raw, Frac> v, Fixed<Raw, Frac> lo, Fixed<Raw, Frac> hi) noexcept {
     return v < lo ? lo : (hi < v ? hi : v);
 }
 
+/// lo <= v <= hi.
+template <class Raw, int Frac>
+[[nodiscard]] constexpr bool in_range(Fixed<Raw, Frac> v, Fixed<Raw, Frac> lo, Fixed<Raw, Frac> hi) noexcept {
+    return !(v < lo) && !(hi < v);
+}
+
 /// a + (b - a) * t, with t usually in [0, 1].
 template <class Raw, int Frac>
 [[nodiscard]] constexpr Fixed<Raw, Frac>
