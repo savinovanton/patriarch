@@ -145,6 +145,7 @@ if(PATRIARCH_BUILD_ENGINE)
         menu_test.cpp
         renderer_test.cpp
         save_catalog_test.cpp
+        save_service_test.cpp
         season_test.cpp
         time_bar_test.cpp
         ui_components_test.cpp

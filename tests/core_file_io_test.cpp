@@ -90,3 +90,31 @@ TEST_CASE("read_file_bytes / read_file_text: whole file, empty file, missing fil
     CHECK(missing_text.error().stage == core::FileIoStage::kOpen);
     fs::remove_all(dir);
 }
+
+TEST_CASE("write_file_atomic: keeps the previous file as a backup and honours the verification") {
+    const fs::path dir = scratch_dir("backup");
+    const fs::path file = dir / "data.bin";
+    const fs::path backup = dir / "data.bin.bak";
+    const std::vector<std::uint8_t> first{1, 2, 3};
+    const std::vector<std::uint8_t> second{4, 5};
+    const std::vector<std::uint8_t> third{6};
+
+    core::AtomicWriteOptions options;
+    options.backup_path = backup;
+    REQUIRE(core::write_file_atomic(file, first, options).has_value());
+    CHECK_FALSE(fs::exists(backup));  // nothing to back up yet
+    REQUIRE(core::write_file_atomic(file, second, options).has_value());
+    CHECK(slurp(file) == second);
+    CHECK(slurp(backup) == first);
+    REQUIRE(core::write_file_atomic(file, third, options).has_value());
+    CHECK(slurp(backup) == second);  // an older backup is replaced
+
+    options.verify = [](const fs::path&) { return false; };
+    const auto rejected = core::write_file_atomic(file, first, options);
+    REQUIRE_FALSE(rejected.has_value());
+    CHECK(rejected.error().stage == core::FileIoStage::kVerify);
+    CHECK(slurp(file) == third);  // untouched
+    CHECK(slurp(backup) == second);
+    CHECK_FALSE(fs::exists(dir / "data.bin.tmp"));
+    fs::remove_all(dir);
+}
