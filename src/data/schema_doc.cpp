@@ -96,6 +96,10 @@ std::string doc_type(const Type& type) {
             return "block";
         case TypeKind::Map:
             return "map of " + doc_type(*type.element);
+        case TypeKind::Rules:
+            return "rules";
+        case TypeKind::Identifier:
+            return "identifier";
     }
     return "?";
 }
@@ -153,6 +157,8 @@ std::string leaf_constraints(const Type& type) {
         case TypeKind::Bool:
         case TypeKind::Date:
         case TypeKind::Block:
+        case TypeKind::Rules:
+        case TypeKind::Identifier:
             return {};
     }
     return {};
@@ -193,6 +199,7 @@ std::string value_text(const TypedValue& v) {
         }
         std::string operator()(const TypedBlock&) const { return "{ … }"; }
         std::string operator()(const TypedMap&) const { return "{ … }"; }
+        std::string operator()(const RulesValue&) const { return "{ … }"; }
     };
     return std::visit(Visitor{}, v.data);
 }
@@ -238,8 +245,10 @@ void render_schema(std::string& out,
     out += "| Поле | Тип | Обязательность | По умолчанию | Ограничения | Описание |\n";
     out += "|---|---|---|---|---|---|\n";
     for (const FieldSpec& f : schema.fields()) {
-        const char* presence =
-            f.required ? "обязательное" : (f.repeatable ? "необязательное, повторяемое" : "необязательное");
+        const char* presence = f.required     ? "обязательное"
+                               : f.labeled    ? "необязательное, повторяемое, с меткой"
+                               : f.repeatable ? "необязательное, повторяемое"
+                                              : "необязательное";
         const std::string def = f.default_value ? code(value_text(*f.default_value)) : std::string(kDash);
         std::string type_cell = code(doc_type(f.type));
         if (nested_block(f.type) != nullptr)
@@ -304,6 +313,7 @@ std::string render_reference_document(const SchemaSet& schemas) {
         "(`src/data/content_schemas.hpp`): поля, типы, обязательность, значения по умолчанию, ограничения. "
         "Как писать файлы `.pd` — [data-authoring.md](data-authoring.md); синтаксис — "
         "[data-format.md](data-format.md); схемы и коды `PD101…PD110` — [data-schemas.md](data-schemas.md); "
+        "ошибки компилятора событий `EV101…EV114` — [event-engine.md](event-engine.md) §16.1; "
         "загрузка корней и модов — [data-loader.md](data-loader.md).\n\n";
     out += "## Как читать таблицы\n\n";
     out += "- **Тип:** `string`, `int`, `fixed32` / `fixed64` (целое или десятичное число), `bool` (`yes` / "
@@ -311,9 +321,12 @@ std::string render_reference_document(const SchemaSet& schemas) {
            "`enum` (идентификатор из списка), `ref(вид)` (ссылка `вид:id`, голый идентификатор или строка), "
            "`date` (`Г.ММ.ДД`, юлианский календарь), `list of …` (`[ … ]`), `map of …` (блок `ключ = "
            "значение`), "
-           "`block` (вложенный блок, описан в отдельном разделе).\n";
+           "`block` (вложенный блок, описан в отдельном разделе), `identifier` (голый идентификатор или "
+           "строка), `rules` (блок правил: записи `ключ оператор значение`, которые разбирает компилятор "
+           "событий E11, а не схема).\n";
     out += "- **Обязательность:** обязательное поле должно встретиться ровно один раз; необязательное можно "
-           "опустить; повторяемое — ключ можно писать несколько раз.\n";
+           "опустить; повторяемое — ключ можно писать несколько раз; «с меткой» — каждая запись несёт метку "
+           "`ключ \"имя\" { … }` (`option \"denounce\" { … }`), уникальную среди записей поля.\n";
     out += "- **По умолчанию:** значение, которое подставляется, если поле опущено; «—» — значения нет.\n";
     out += "- **Ограничения:** границы включительные; для списков и словарей относятся к элементам.\n\n";
     out += render_reference_body(schemas);

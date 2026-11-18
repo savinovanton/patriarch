@@ -1,0 +1,50 @@
+format_version = 1
+# The example of GDD 08 section 4.2 in .pd (event-engine.md section 4.1).
+event "estate.embezzling_administrator" {
+    scope = province
+    type = provincial
+    category = economy
+    review = draft
+    on = monthly_pulse
+    mean_time_to_happen = { months = 24
+        modifier = { factor = 0.5  trigger = { corruption >= 0.5 } } }
+    cooldown = { months = 36 }
+
+    trigger {
+        exists = administrator
+        corruption > 0.3
+    }
+    immediate { administrator = { save_scope_as = governor } }
+    speaker = scope:governor
+
+    option "denounce" {
+        ai_chance = { base = 20  add = { value = owner.honor  divide = 5 } }
+        trigger { owner = { honor >= 30 } }
+        effect {
+            owner = { change_honor = -5 }
+            change_control = 5
+            scope.governor = { change_opinion = { target = root.owner.acting_head  value = -20 } }
+        }
+    }
+    option "hush" {
+        ai_chance = 40
+        effect {
+            owner = { pay = 200 }
+            set_flag = { name = hushed_theft  days = 365 }
+        }
+    }
+    option "ignore" {
+        ai_chance = 40
+        effect {
+            add_modifier = { name = "estate.ignored_theft"  months = 12 }
+            change_control = -3
+        }
+    }
+}
+
+event_modifier "estate.ignored_theft" {
+    scope = province
+    duration = { months = 12 }
+    stack = refresh
+    values = { corruption_hint = 1 }
+}

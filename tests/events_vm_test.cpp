@@ -207,21 +207,21 @@ using pat::test::read_text;
 
 TEST_CASE("events vm: instructions are 8 bytes and codes are stable") {
     static_assert(sizeof(Instr) == 8);
-    const std::array<std::pair<Op, std::uint16_t>, 55> codes = {{
-        {Op::kNop, 0},         {Op::kPushInt, 1},       {Op::kPushConst, 2},   {Op::kPushBool, 3},
-        {Op::kDup, 4},         {Op::kDrop, 5},          {Op::kSwap, 6},        {Op::kAdd, 10},
-        {Op::kSub, 11},        {Op::kMul, 12},          {Op::kDiv, 13},        {Op::kNeg, 14},
-        {Op::kMin, 15},        {Op::kMax, 16},          {Op::kClamp, 17},      {Op::kTrunc, 18},
-        {Op::kEq, 20},         {Op::kNe, 21},           {Op::kLt, 22},         {Op::kLe, 23},
-        {Op::kGt, 24},         {Op::kGe, 25},           {Op::kNot, 30},        {Op::kJmp, 31},
-        {Op::kJf, 32},         {Op::kJt, 33},           {Op::kJfKeep, 34},     {Op::kJtKeep, 35},
-        {Op::kScopeEnter, 40}, {Op::kScopeLeave, 41},   {Op::kScopeSave, 42},  {Op::kScopeLoad, 43},
-        {Op::kScopeRoot, 44},  {Op::kLoad, 50},         {Op::kPred, 51},       {Op::kLoadVar, 52},
-        {Op::kIterBegin, 60},  {Op::kIterNext, 61},     {Op::kIterEnd, 62},    {Op::kIterOrder, 63},
-        {Op::kIterTake, 64},   {Op::kIterKeep, 65},     {Op::kIterRewind, 66}, {Op::kIterWeight, 67},
-        {Op::kIterPick, 68},   {Op::kRandPermille, 70}, {Op::kRandPick, 71},   {Op::kJTable, 72},
-        {Op::kBranchEnd, 73},  {Op::kHide, 74},         {Op::kEmit, 80},       {Op::kState, 81},
-        {Op::kRet, 90},        {Op::kAbort, 91},        {Op::kStep, 92},
+    const std::array<std::pair<Op, std::uint16_t>, 56> codes = {{
+        {Op::kNop, 0},         {Op::kPushInt, 1},     {Op::kPushConst, 2},     {Op::kPushBool, 3},
+        {Op::kDup, 4},         {Op::kDrop, 5},        {Op::kSwap, 6},          {Op::kAdd, 10},
+        {Op::kSub, 11},        {Op::kMul, 12},        {Op::kDiv, 13},          {Op::kNeg, 14},
+        {Op::kMin, 15},        {Op::kMax, 16},        {Op::kClamp, 17},        {Op::kTrunc, 18},
+        {Op::kEq, 20},         {Op::kNe, 21},         {Op::kLt, 22},           {Op::kLe, 23},
+        {Op::kGt, 24},         {Op::kGe, 25},         {Op::kNot, 30},          {Op::kJmp, 31},
+        {Op::kJf, 32},         {Op::kJt, 33},         {Op::kJfKeep, 34},       {Op::kJtKeep, 35},
+        {Op::kScopeEnter, 40}, {Op::kScopeLeave, 41}, {Op::kScopeSave, 42},    {Op::kScopeLoad, 43},
+        {Op::kScopeRoot, 44},  {Op::kPushScope, 45},  {Op::kLoad, 50},         {Op::kPred, 51},
+        {Op::kLoadVar, 52},    {Op::kIterBegin, 60},  {Op::kIterNext, 61},     {Op::kIterEnd, 62},
+        {Op::kIterOrder, 63},  {Op::kIterTake, 64},   {Op::kIterKeep, 65},     {Op::kIterRewind, 66},
+        {Op::kIterWeight, 67}, {Op::kIterPick, 68},   {Op::kRandPermille, 70}, {Op::kRandPick, 71},
+        {Op::kJTable, 72},     {Op::kBranchEnd, 73},  {Op::kHide, 74},         {Op::kEmit, 80},
+        {Op::kState, 81},      {Op::kRet, 90},        {Op::kAbort, 91},        {Op::kStep, 92},
     }};
     std::set<std::string> names;
     for (const auto& [op, code] : codes) {
@@ -232,7 +232,7 @@ TEST_CASE("events vm: instructions are 8 bytes and codes are stable") {
     }
     CHECK(names.size() == codes.size());  // mnemonics are unique
     for (const std::uint16_t unused :
-         std::array<std::uint16_t, 12>{7, 8, 9, 19, 26, 45, 53, 69, 75, 82, 93, 1000}) {
+         std::array<std::uint16_t, 12>{7, 8, 9, 19, 26, 46, 53, 69, 75, 82, 93, 1000}) {
         CHECK_FALSE(is_known_op(unused));
         CHECK(op_name(unused) == "?");
     }

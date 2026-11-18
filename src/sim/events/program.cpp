@@ -52,6 +52,7 @@ constexpr std::array kOps{
     OpInfo{Op::kScopeSave, "SCOPE_SAVE", 1},
     OpInfo{Op::kScopeLoad, "SCOPE_LOAD", 2},
     OpInfo{Op::kScopeRoot, "SCOPE_ROOT", 1},
+    OpInfo{Op::kPushScope, "PUSH_SCOPE", 1},
     OpInfo{Op::kLoad, "LOAD", 2},
     OpInfo{Op::kPred, "PRED", 2},
     OpInfo{Op::kLoadVar, "LOAD_VAR", 3},
@@ -117,6 +118,7 @@ StackEffect stack_effect(const Instr& in) noexcept {
         case Op::kPushInt:
         case Op::kPushConst:
         case Op::kPushBool:
+        case Op::kPushScope:
         case Op::kLoadVar:
             return {0, 1};
         case Op::kDup:

@@ -1,0 +1,11 @@
+format_version = 1
+# expect: EV104 9:50
+# expect: EV104 10:33
+event "bad.refs" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+    option "a" { effect { trigger_event = { id = bad.nowhere } } }
+    option "b" { effect { scope.ghost = { die = yes } } }
+}

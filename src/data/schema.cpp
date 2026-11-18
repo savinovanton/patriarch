@@ -87,6 +87,18 @@ Type Type::map(Type value) {
     return t;
 }
 
+Type Type::identifier() {
+    Type t;
+    t.kind = TypeKind::Identifier;
+    return t;
+}
+
+Type Type::rules() {
+    Type t;
+    t.kind = TypeKind::Rules;
+    return t;
+}
+
 std::string describe_type(const Type& type) {
     switch (type.kind) {
         case TypeKind::String:
@@ -110,6 +122,10 @@ std::string describe_type(const Type& type) {
             return "block";
         case TypeKind::Map:
             return "map of " + describe_type(*type.element);
+        case TypeKind::Rules:
+            return "rules block";
+        case TypeKind::Identifier:
+            return "identifier";
     }
     return "?";
 }
@@ -144,23 +160,32 @@ const TypedValue* TypedMap::find(std::string_view key) const {
 // ---- schemas ---------------------------------------------------------------------------------
 
 ObjectSchema& ObjectSchema::required(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), true, false, std::nullopt, std::string{}});
+    fields_.push_back(
+        FieldSpec{std::move(name), std::move(type), true, false, std::nullopt, std::string{}, false});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::optional(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, false, std::nullopt, std::string{}});
+    fields_.push_back(
+        FieldSpec{std::move(name), std::move(type), false, false, std::nullopt, std::string{}, false});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::optional(std::string name, Type type, TypedValue default_value) {
-    fields_.push_back(
-        FieldSpec{std::move(name), std::move(type), false, false, std::move(default_value), std::string{}});
+    fields_.push_back(FieldSpec{
+        std::move(name), std::move(type), false, false, std::move(default_value), std::string{}, false});
     return *this;
 }
 
 ObjectSchema& ObjectSchema::repeatable(std::string name, Type type) {
-    fields_.push_back(FieldSpec{std::move(name), std::move(type), false, true, std::nullopt, std::string{}});
+    fields_.push_back(
+        FieldSpec{std::move(name), std::move(type), false, true, std::nullopt, std::string{}, false});
+    return *this;
+}
+
+ObjectSchema& ObjectSchema::repeatable_labeled(std::string name, Type type) {
+    fields_.push_back(
+        FieldSpec{std::move(name), std::move(type), false, true, std::nullopt, std::string{}, true});
     return *this;
 }
 
@@ -358,11 +383,26 @@ public:
             const auto idx = static_cast<std::size_t>(index);
             const FieldSpec& spec = schema.fields()[idx];
 
-            if (entry.label) {
+            if (spec.labeled && !entry.label) {
+                report(entry.pos,
+                       ErrorCode::BadLabel,
+                       std::format("'{}' needs a label: {} \"name\" {{ ... }}", spec.name, spec.name));
+            } else if (!spec.labeled && entry.label) {
                 report(
                     entry.pos,
                     ErrorCode::BadLabel,
                     std::format("field '{}' does not take a label (found \"{}\")", spec.name, *entry.label));
+            } else if (spec.labeled) {
+                const bool repeated =
+                    std::any_of(slots[idx].begin(), slots[idx].end(), [&](const TypedField& f) {
+                        return f.label == *entry.label;
+                    });
+                if (repeated) {
+                    report(entry.pos,
+                           ErrorCode::DuplicateField,
+                           std::format("duplicate {} \"{}\"", spec.name, *entry.label));
+                    continue;
+                }
             }
             if (entry.op != Op::Eq) {
                 report(
@@ -383,8 +423,13 @@ public:
                 first_seen[idx] = entry.pos;
 
             std::optional<TypedValue> value = check_value(spec.type, entry.value, spec.name);
-            if (value)
-                slots[idx].push_back(TypedField{spec.name, entry.pos, false, std::move(*value)});
+            if (value) {
+                slots[idx].push_back(TypedField{spec.name,
+                                                entry.pos,
+                                                false,
+                                                std::move(*value),
+                                                entry.label ? *entry.label : std::string{}});
+            }
         }
 
         TypedBlock block;
@@ -398,7 +443,7 @@ public:
                 } else if (spec.default_value) {
                     TypedValue v = *spec.default_value;
                     v.pos = where;
-                    block.fields.push_back(TypedField{spec.name, where, true, std::move(v)});
+                    block.fields.push_back(TypedField{spec.name, where, true, std::move(v), std::string{}});
                 }
                 continue;
             }
@@ -588,6 +633,16 @@ private:
                     check_block(*type.schema, value.entries, value.pos, "block '" + path + "'"));
                 break;
             }
+            case TypeKind::Rules:
+                out = TypedValue::of(RulesValue{value});
+                break;
+            case TypeKind::Identifier:
+                if (value.kind != ValueKind::Ident && value.kind != ValueKind::String) {
+                    mismatch(type, value);
+                    return std::nullopt;
+                }
+                out = TypedValue::of(value.text);
+                break;
             case TypeKind::Map: {
                 if (value.kind != ValueKind::Block) {
                     mismatch(type, value);
@@ -630,7 +685,8 @@ private:
                     std::optional<TypedValue> item =
                         check_value(*type.element, entry.value, path + "." + entry.key);
                     if (item)
-                        map.entries.push_back(TypedField{entry.key, entry.pos, false, std::move(*item)});
+                        map.entries.push_back(
+                            TypedField{entry.key, entry.pos, false, std::move(*item), std::string{}});
                 }
                 out = TypedValue::of(std::move(map));
                 break;

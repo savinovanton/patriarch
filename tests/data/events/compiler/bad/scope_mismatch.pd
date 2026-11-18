@@ -1,0 +1,11 @@
+format_version = 1
+# expect: EV102 9:15
+# expect: EV102 10:28
+event "bad.scope" {
+    scope = character
+    type = personal
+    category = general
+    on = monthly_pulse
+    trigger { corruption > 0.3 }
+    option "ok" { effect { change_control = 1 } }
+}

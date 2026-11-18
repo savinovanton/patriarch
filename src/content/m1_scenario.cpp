@@ -12,6 +12,7 @@
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
+#include "pat/data/event_schemas.hpp"
 #include "pat/data/m1_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_validate.hpp"
@@ -181,6 +182,10 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
         excluded_kinds.push_back(kind);
     }
     for (const std::string_view kind : data::kCrisisKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    // Events have their own hash, pat::sim::events::EventSet::hash() (ADR-0008 D8).
+    for (const std::string_view kind : data::kEventKinds) {
         excluded_kinds.push_back(kind);
     }
     const std::uint64_t content_hash = definitions.registry.content_hash_excluding(excluded_kinds);

@@ -298,6 +298,7 @@ struct Exec {
     bool run() {
         scopes[0] = opt.root;
         sd = 1;
+        saved = opt.saved;
         std::uint32_t max_instr = opt.max_instr;
         if (max_instr == 0) {
             max_instr = opt.kind == Kind::Effect ? limits::kMaxEffectInstr : limits::kMaxTriggerInstr;
@@ -534,6 +535,11 @@ struct Exec {
                 }
                 case Op::kScopeRoot:
                     if (!push_scope(opt.root)) {
+                        return false;
+                    }
+                    break;
+                case Op::kPushScope:
+                    if (!push(cur_scope().word())) {
                         return false;
                     }
                     break;
@@ -1016,6 +1022,7 @@ RunResult execute(const Program& program, VmHost& host, const RunOptions& option
     scratch.items.clear();
     Exec<M> exec(program, host, options, scratch, result);
     const bool ok = exec.run();
+    result.saved = exec.saved;
     if (!ok) {
         // Rollback: nothing of a failed run is handed to the caller (section 7.4). The random draws
         // already taken stay spent, deliberately: the stream position is a function of the state.

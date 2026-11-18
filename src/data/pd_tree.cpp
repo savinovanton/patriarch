@@ -58,7 +58,10 @@ std::string_view ref_name(const Value& ref) noexcept {
 }
 
 std::string error_code_name(ErrorCode code) {
-    return std::format("PD{:03}", static_cast<unsigned>(code));
+    const auto number = static_cast<unsigned>(code);
+    if (number >= 1100)
+        return std::format("EV{}", number - 1000);
+    return std::format("PD{:03}", number);
 }
 
 std::string format_diagnostic(std::string_view file_name, const Diagnostic& diagnostic) {

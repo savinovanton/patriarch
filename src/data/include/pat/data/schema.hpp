@@ -29,7 +29,21 @@ class ObjectSchema;
 
 // ---- types -----------------------------------------------------------------------------------
 
-enum class TypeKind : std::uint8_t { String, Int, Fixed32, Fixed64, Bool, Enum, Ref, Date, List, Block, Map };
+enum class TypeKind : std::uint8_t {
+    String,
+    Int,
+    Fixed32,
+    Fixed64,
+    Bool,
+    Enum,
+    Ref,
+    Date,
+    List,
+    Block,
+    Map,
+    Rules,
+    Identifier,
+};
 
 /// Type of one field value. Build with the static factory functions.
 struct Type {
@@ -44,6 +58,9 @@ struct Type {
     std::shared_ptr<const ObjectSchema> schema;  // Block: the nested object schema
 
     [[nodiscard]] static Type string();
+    /// A bare identifier (`category = economy`) or a quoted string; stored as a string. For names that
+    /// are not references to another object (categories, tags, group and pool names).
+    [[nodiscard]] static Type identifier();
     [[nodiscard]] static Type integer(std::optional<std::int64_t> min = {},
                                       std::optional<std::int64_t> max = {});
     [[nodiscard]] static Type fixed32(std::optional<core::Fixed64> min = {},
@@ -61,6 +78,11 @@ struct Type {
     [[nodiscard]] static Type block(ObjectSchema schema);
     /// Block of `identifier = value` entries with arbitrary identifier keys and values of one type.
     [[nodiscard]] static Type map(Type value);
+    /// An opaque block of rules (E11-T06, docs/dev/event-engine.md section 4): the value is kept as the
+    /// parsed tree (a block of `key operator value` entries, or one scalar), whatever the keys and the
+    /// comparison operators are. The schema checks nothing inside; the consumer (the event compiler of
+    /// pat::content) reads it with positions. A rules value takes part in the content hash.
+    [[nodiscard]] static Type rules();
 };
 
 /// Human-readable type name used in messages ("int", "list of string", "reference to 'trait'").
@@ -70,6 +92,11 @@ struct Type {
 
 struct TypedValue;
 struct TypedField;
+
+/// The value of a Type::rules() field: the parsed tree exactly as it was written.
+struct RulesValue {
+    Value value;
+};
 
 struct EnumValue {
     std::string name;
@@ -123,7 +150,8 @@ struct TypedValue {
                               DateValue,
                               TypedList,
                               TypedBlock,
-                              TypedMap>;
+                              TypedMap,
+                              RulesValue>;
 
     SourcePos pos;
     Data data;
@@ -147,6 +175,7 @@ struct TypedField {
     SourcePos pos;           // position of the key (the object for defaulted fields)
     bool defaulted = false;  // true when the value comes from the schema default
     TypedValue value;
+    std::string label;  // the "text" of a labeled field (`option "name" { ... }`); empty otherwise
 };
 
 template <class T>
@@ -173,6 +202,8 @@ struct FieldSpec {
     bool repeatable = false;
     std::optional<TypedValue> default_value;
     std::string description;  // optional one-line text for the generated reference (E4-T09)
+    bool labeled =
+        false;  // the entry must carry a label (`option "name" { ... }`), kept in TypedField::label
 };
 
 /// The fields of one object kind (or of a nested block). Fluent builder.
@@ -188,6 +219,9 @@ public:
     ObjectSchema& optional(std::string name, Type type, TypedValue default_value);
     /// An optional field whose key may occur many times (multimap).
     ObjectSchema& repeatable(std::string name, Type type);
+    /// A repeatable field whose entries carry a label: `option "denounce" { ... }` (E11-T06). The label
+    /// is required, unique among the entries of the field, and kept in TypedField::label.
+    ObjectSchema& repeatable_labeled(std::string name, Type type);
 
     /// Attaches a one-line description to the field added last (shown in the generated reference
     /// docs/dev/data-reference.md). Must follow a field declaration.

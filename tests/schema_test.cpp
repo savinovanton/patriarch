@@ -545,3 +545,91 @@ TEST_CASE("schema: validation is deterministic") {
         }
     }
 }
+
+// ---- E11-T06: rules blocks and labeled fields -------------------------------------------------------
+
+TEST_CASE("schema: a rules field keeps the block with its operators, keys and positions") {
+    const SchemaSet schemas = single(Type::rules());
+    const Run r = run(schemas,
+                      "thing \"t\" {\n"
+                      "    f = { age >= 16  owner.honor < 30  scope.x = { y != 2 }  30 = { a = 1 } }\n"
+                      "}\n");
+    REQUIRE(r.lines.empty());
+    const auto* rules = field(r, "f").get_if<RulesValue>();
+    REQUIRE(rules != nullptr);
+    REQUIRE(rules->value.kind == ValueKind::Block);
+    REQUIRE(rules->value.entries.size() == 4);
+    CHECK(rules->value.entries[0].key == "age");
+    CHECK(rules->value.entries[0].op == Op::Ge);
+    CHECK(rules->value.entries[0].pos.line == 3);  // line 1 is the version header
+    CHECK(rules->value.entries[1].key == "owner.honor");
+    CHECK(rules->value.entries[1].op == Op::Lt);
+    CHECK(rules->value.entries[2].value.kind == ValueKind::Block);
+    CHECK(rules->value.entries[2].value.entries[0].op == Op::Ne);
+    CHECK(rules->value.entries[3].key_kind == ValueKind::Int);
+}
+
+TEST_CASE("schema: a rules field also takes a scalar and a list") {
+    const SchemaSet schemas = single(Type::rules());
+    CHECK(run(schemas, "thing \"t\" { f = 40 }\n").lines.empty());
+    CHECK(run(schemas, "thing \"t\" { f = [a, b] }\n").lines.empty());
+    CHECK(run(schemas, "thing \"t\" { f = scope:x }\n").lines.empty());
+    const Run scalar_run = run(schemas, "thing \"t\" { f = 40 }\n");
+    const auto* scalar = field(scalar_run, "f").get_if<RulesValue>();
+    REQUIRE(scalar != nullptr);
+    CHECK(scalar->value.kind == ValueKind::Int);
+}
+
+TEST_CASE("schema: an identifier field takes a bare identifier or a string") {
+    const SchemaSet schemas = single(Type::identifier());
+    const Run bare = run(schemas, "thing \"t\" { f = economy }\n");
+    CHECK(*field(bare, "f").get_if<std::string>() == "economy");
+    const Run quoted = run(schemas, "thing \"t\" { f = \"two words\" }\n");
+    CHECK(*field(quoted, "f").get_if<std::string>() == "two words");
+    const Run bad = run(schemas, "thing \"t\" { f = 5 }\n");
+    REQUIRE(bad.lines.size() == 1);
+    CHECK(bad.lines[0].find("PD103") != std::string::npos);
+}
+
+TEST_CASE("schema: a labeled field needs a label, keeps it and refuses repeats") {
+    ObjectSchema option("option");
+    option.optional("x", Type::integer());
+    ObjectSchema thing("thing");
+    thing.repeatable_labeled("option", Type::block(option));
+    SchemaSet schemas;
+    schemas.add(std::move(thing));
+
+    const Run ok = run(schemas, "thing \"t\" { option \"a\" { x = 1 } option \"b\" { } }\n");
+    REQUIRE(ok.lines.empty());
+    REQUIRE(ok.result.objects.size() == 1);
+    const auto& fields = ok.result.objects[0].body.fields;
+    REQUIRE(fields.size() == 2);
+    CHECK(fields[0].label == "a");
+    CHECK(fields[1].label == "b");
+
+    const Run missing = run(schemas, "thing \"t\" { option { x = 1 } }\n");
+    REQUIRE(missing.lines.size() == 1);
+    CHECK(missing.lines[0].find("PD109") != std::string::npos);
+    CHECK(missing.lines[0].find("needs a label") != std::string::npos);
+
+    const Run twice = run(schemas, "thing \"t\" { option \"a\" { } option \"a\" { } }\n");
+    REQUIRE(twice.lines.size() == 1);
+    CHECK(twice.lines[0].find("PD105") != std::string::npos);
+    CHECK(twice.lines[0].find("duplicate option \"a\"") != std::string::npos);
+
+    // a plain field still refuses a label
+    ObjectSchema plain("plain");
+    plain.optional("f", Type::block(ObjectSchema("b")));
+    SchemaSet other;
+    other.add(std::move(plain));
+    const Run labeled = run(other, "plain \"t\" { f \"x\" { } }\n");
+    REQUIRE(labeled.lines.size() == 1);
+    CHECK(labeled.lines[0].find("PD109") != std::string::npos);
+}
+
+TEST_CASE("schema: the EV error codes are written as EV1nn") {
+    CHECK(error_code_name(ErrorCode::EventUnknownName) == "EV101");
+    CHECK(error_code_name(ErrorCode::EventScopeMismatch) == "EV102");
+    CHECK(error_code_name(ErrorCode::EventRetired) == "EV114");
+    CHECK(error_code_name(ErrorCode::ContentRule) == "PD115");
+}

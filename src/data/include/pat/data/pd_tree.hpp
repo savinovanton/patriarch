@@ -116,6 +116,23 @@ enum class ErrorCode : std::uint16_t {
     // rules builder in pat::content), not by the loader. Valid by the schema, rejected by a
     // cross-object rule.
     ContentRule = 115,
+
+    // Event compiler (E11-T06, docs/dev/event-engine.md section 16.1): EV101..EV114 are the numbers
+    // 1101..1114; error_code_name() writes them as "EV1nn". Raised by pat::content, not by the loader.
+    EventUnknownName = 1101,
+    EventScopeMismatch = 1102,
+    EventBadArgument = 1103,
+    EventUnresolvedReference = 1104,
+    EventKeyCollision = 1105,
+    EventLimit = 1106,
+    EventForbidden = 1107,
+    EventBadOnAction = 1108,
+    EventBadOptions = 1109,
+    EventBadField = 1110,
+    EventMissingText = 1111,
+    EventUnknownEntry = 1112,
+    EventBadConstant = 1113,
+    EventRetired = 1114,
 };
 
 /// "PD001" style name of an error code.

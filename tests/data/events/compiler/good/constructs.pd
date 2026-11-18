@@ -1,0 +1,62 @@
+format_version = 1
+# One event per construct of the language: iterators, random, accumulators, chains, windows.
+
+event "demo.family_news" {
+    scope = character
+    type = family
+    category = family
+    on = [monthly_pulse, yearly_pulse]
+    mean_time_to_happen = { years = 3 }
+    cooldown = { years = 1 }
+    window = { from = 1703.01.01  to = 1725.12.31 }
+    trigger {
+        is_adult = yes
+        age >= 18
+        not = { exists = father }
+        or = { spouse.age < 30  any_child = { count >= 2  is_adult = yes } }
+        all_sibling = { age >= 5 }
+        skill.martial >= 4
+        opinion_of = { target = spouse  value > -10 }
+        variable.reputation >= 1
+    }
+    immediate { spouse = { save_scope_as = partner } }
+    option "reward" {
+        ai_chance = {
+            base = 10
+            add = { count_child = { limit = { is_adult = yes } } }
+            if = { limit = { has_trait = greedy }  add = 20 }
+            multiply = 1.5
+            min = 1
+            max = 100
+        }
+        effect {
+            dynasty = { change_honor = 2 }
+            random_list = {
+                30 = { dynasty = { change_honor = 1 } }
+                70 = {
+                    modifier = { factor = 2  trigger = { age >= 40 } }
+                    scope.partner = { die = yes }
+                }
+            }
+            random = { chance = 12.5  dynasty = { change_honor = 5 } }
+            every_child = { limit = { age >= 16 }  add_trait = devout }
+            ordered_child = { order_by = age  max = 2  die = yes }
+            random_child = { weight = 2  die = no }
+            if = { limit = { age >= 60 }  die = yes }
+            else_if = { limit = { age >= 50 }  dynasty = { change_honor = -1 } }
+            else = { hidden_effect = { dynasty = { change_honor = 1 } } }
+            set_flag = { name = rewarded  days = 90 }
+            trigger_event = { id = demo.followup  months = 3 }
+        }
+    }
+    option "decline" { neutral = yes }
+}
+
+event "demo.followup" {
+    scope = character
+    type = personal
+    category = general
+    once = scope
+    trigger { has_flag = rewarded }
+    option "ok" { }
+}
