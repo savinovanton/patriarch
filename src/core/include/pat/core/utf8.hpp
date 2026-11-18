@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <string_view>
 
 namespace pat::core {
@@ -49,6 +50,43 @@ namespace pat::core {
         return 0;
     }
     return len;
+}
+
+/// Upper case of one code point for the scripts the game text uses: Latin a-z, Cyrillic
+/// U+0430..U+044F (-> U+0410..U+042F) and U+0450..U+045F (-> U+0400..U+040F, so yo -> Yo). Every other
+/// code point is returned unchanged (no full Unicode case mapping, no locale).
+[[nodiscard]] constexpr char32_t to_upper_cp(char32_t cp) noexcept {
+    if (cp >= U'a' && cp <= U'z') {
+        return cp - 0x20;
+    }
+    if (cp >= 0x0430 && cp <= 0x044F) {
+        return cp - 0x20;
+    }
+    if (cp >= 0x0450 && cp <= 0x045F) {
+        return cp - 0x50;
+    }
+    return cp;
+}
+
+/// to_upper_cp applied to a UTF-8 string. Only ASCII and two-byte (Cyrillic) sequences can change;
+/// every other byte, including malformed input, is copied through unchanged.
+[[nodiscard]] inline std::string to_upper_utf8(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        const auto c = static_cast<unsigned char>(text[i]);
+        if (c >= 0xC2U && c <= 0xDFU && i + 1 < text.size() &&
+            (static_cast<unsigned char>(text[i + 1]) & 0xC0U) == 0x80U) {
+            const char32_t cp = ((c & 0x1FU) << 6U) | (static_cast<unsigned char>(text[i + 1]) & 0x3FU);
+            const char32_t upper = to_upper_cp(cp);
+            out += static_cast<char>(0xC0U | (upper >> 6U));
+            out += static_cast<char>(0x80U | (upper & 0x3FU));
+            ++i;
+        } else {
+            out += static_cast<char>(c < 0x80U ? to_upper_cp(c) : c);
+        }
+    }
+    return out;
 }
 
 }  // namespace pat::core

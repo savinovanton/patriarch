@@ -75,6 +75,30 @@ TEST_CASE("utf8_sequence_length: known sequences") {
     CHECK(core::utf8_sequence_length("\xFF") == 0);
 }
 
+TEST_CASE("to_upper_cp: Latin, Cyrillic (wide rule) and the rest") {
+    CHECK(core::to_upper_cp(U'a') == U'A');
+    CHECK(core::to_upper_cp(U'z') == U'Z');
+    CHECK(core::to_upper_cp(U'Q') == U'Q');
+    CHECK(core::to_upper_cp(0x0430) == 0x0410);  // a
+    CHECK(core::to_upper_cp(0x044F) == 0x042F);  // ya
+    CHECK(core::to_upper_cp(0x0451) == 0x0401);  // yo
+    CHECK(core::to_upper_cp(0x0450) == 0x0400);  // wide rule: the whole U+0450..U+045F block
+    CHECK(core::to_upper_cp(0x045F) == 0x040F);
+    CHECK(core::to_upper_cp(0x0460) == 0x0460);
+    CHECK(core::to_upper_cp(U'1') == U'1');
+    CHECK(core::to_upper_cp(0x2116) == 0x2116);  // numero sign
+}
+
+TEST_CASE("to_upper_utf8: same rule on UTF-8, malformed bytes pass through") {
+    CHECK(core::to_upper_utf8("Голицыных") == "ГОЛИЦЫНЫХ");
+    CHECK(core::to_upper_utf8("ёж Patriarch 1703") == "ЁЖ PATRIARCH 1703");
+    CHECK(core::to_upper_utf8("№ 7 «Ы»") == "№ 7 «Ы»");
+    CHECK(core::to_upper_utf8("").empty());
+    CHECK(core::to_upper_utf8("\xD0") == "\xD0");    // truncated lead byte
+    CHECK(core::to_upper_utf8("\xD0z") == "\xD0Z");  // bad continuation: byte copied, ASCII mapped
+    CHECK(core::to_upper_utf8("\xE2\x82\xAC") == "\xE2\x82\xAC");  // three-byte sequences untouched
+}
+
 TEST_CASE("utf8_sequence_length: agrees with the reference decoder") {
     // All lead bytes x all second bytes x a sample of third/fourth bytes, plus truncations.
     const std::uint8_t tails[] = {0x00, 0x80, 0xBF, 0xC0};

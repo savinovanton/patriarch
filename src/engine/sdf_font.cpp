@@ -2,6 +2,7 @@
 
 #include "pat/core/file_io.hpp"
 #include "pat/core/log.hpp"
+#include "pat/core/utf8.hpp"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -267,13 +268,7 @@ std::u32string utf8_to_utf32(std::string_view text) {
 std::u32string to_upper(std::u32string_view text) {
     std::u32string out(text);
     for (char32_t& cp : out) {
-        if (cp >= U'a' && cp <= U'z') {
-            cp -= 0x20;
-        } else if (cp >= 0x0430 && cp <= 0x044F) {  // Cyrillic а-я
-            cp -= 0x20;
-        } else if (cp == 0x0451) {  // ё
-            cp = 0x0401;
-        }
+        cp = core::to_upper_cp(cp);
     }
     return out;
 }
