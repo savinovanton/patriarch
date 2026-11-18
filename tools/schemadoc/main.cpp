@@ -1,6 +1,8 @@
 // schemadoc - prints the Markdown reference of the game content schemas (E4-T09).
 //
 //   schemadoc                         print docs/dev/data-reference.md to stdout (LF line endings)
+//   schemadoc --catalog [...]         the same three modes for the reference of the event catalog
+//                                     (docs/dev/event-catalog-reference.md, E11-T07)
 //   schemadoc --write FILE            write the reference to FILE (LF line endings, UTF-8, no BOM)
 //   schemadoc --check FILE            exit 1 with a diff-like message when FILE differs from the
 //                                     generated reference (CR characters are ignored)
@@ -13,6 +15,8 @@
 #include "pat/core/file_io.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/schema_doc.hpp"
+#include "pat/sim/events/catalog.hpp"
+#include "pat/sim/events/catalog_doc.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -101,7 +105,14 @@ int check(const std::string& path, const std::string& expected) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    const std::string text = pat::data::render_reference_document(pat::data::content_schemas());
+    const bool catalog = argc > 1 && std::strcmp(argv[1], "--catalog") == 0;
+    if (catalog) {
+        --argc;  // the remaining arguments are read as argv[1..]; argv[0] is not used below
+        ++argv;
+    }
+    const std::string text =
+        catalog ? pat::sim::events::render_catalog_reference(pat::sim::events::Catalog::standard())
+                : pat::data::render_reference_document(pat::data::content_schemas());
 
     if (argc == 1) {
 #if defined(_WIN32)

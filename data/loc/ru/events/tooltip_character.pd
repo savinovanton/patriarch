@@ -1,0 +1,137 @@
+format_version = 1
+
+# Шаблоны автотултипов каталога триггеров: персонаж и род (E11-T07). Ключи — tooltip_key() в src/sim/events/catalog.cpp:
+# tooltip.trigger.<имя> (условие), .not (предикат с = no), .fail (причина недоступности варианта).
+# Параметры: подписи аргументов записи ({trait}, {target}, ...), у значений — {need} (условие целиком, собирается из
+# tooltip.cmp.*) и {have} (текущее значение); у значения с видом (skill.martial) — {kind}. Тесты проверяют полноту
+# (tests/event_triggers_character_test.cpp). Тексты [проверить] на тон.
+
+# ---- Сравнения: {value} — число из записи (общие для всех значений каталога) ----
+tooltip.cmp.ge = "не менее {value}"
+tooltip.cmp.gt = "более {value}"
+tooltip.cmp.le = "не более {value}"
+tooltip.cmp.lt = "менее {value}"
+tooltip.cmp.eq = "ровно {value}"
+tooltip.cmp.ne = "не {value}"
+
+# Оболочка причины недоступности для предиката, требуемого как = no: {text} — текст ключа .not
+tooltip.fail.required = "Требуется: {text}"
+
+# ---- Предикаты ----
+tooltip.trigger.is_adult = "Совершеннолетний"
+tooltip.trigger.is_adult.not = "Несовершеннолетний"
+tooltip.trigger.is_adult.fail = "Требуется: совершеннолетие"
+
+tooltip.trigger.is_female = "Женщина"
+tooltip.trigger.is_female.not = "Мужчина"
+tooltip.trigger.is_female.fail = "Требуется: женщина"
+
+tooltip.trigger.is_married = "Состоит в браке"
+tooltip.trigger.is_married.not = "Не состоит в браке"
+tooltip.trigger.is_married.fail = "Требуется: состоять в браке"
+
+tooltip.trigger.is_pregnant = "Беременна"
+tooltip.trigger.is_pregnant.not = "Не беременна"
+tooltip.trigger.is_pregnant.fail = "Требуется: беременность"
+
+tooltip.trigger.is_head_of_dynasty = "Глава рода"
+tooltip.trigger.is_head_of_dynasty.not = "Не глава рода"
+tooltip.trigger.is_head_of_dynasty.fail = "Требуется: быть главой рода"
+
+tooltip.trigger.is_heir = "Наследник рода"
+tooltip.trigger.is_heir.not = "Не наследник рода"
+tooltip.trigger.is_heir.fail = "Требуется: быть наследником рода"
+
+tooltip.trigger.is_tonsured = "Пострижен"
+tooltip.trigger.is_tonsured.not = "Не пострижен"
+tooltip.trigger.is_tonsured.fail = "Требуется: быть постриженным"
+
+tooltip.trigger.is_widowed = "Вдовец или вдова"
+tooltip.trigger.is_widowed.not = "Не вдовец и не вдова"
+tooltip.trigger.is_widowed.fail = "Требуется: быть вдовцом или вдовой"
+
+tooltip.trigger.has_trait = "Черта: {trait}"
+tooltip.trigger.has_trait.not = "Нет черты: {trait}"
+tooltip.trigger.has_trait.fail = "Требуется: черта {trait}"
+
+tooltip.trigger.has_education = "Образование: {focus}"
+tooltip.trigger.has_education.not = "Образование не «{focus}»"
+tooltip.trigger.has_education.fail = "Требуется: образование «{focus}»"
+
+tooltip.trigger.same_dynasty = "Из одного рода с {target}"
+tooltip.trigger.same_dynasty.not = "Из другого рода, чем {target}"
+tooltip.trigger.same_dynasty.fail = "Требуется: быть из одного рода с {target}"
+
+tooltip.trigger.is_alive = "Жив"
+tooltip.trigger.is_alive.not = "Мёртв"
+tooltip.trigger.is_alive.fail = "Требуется: быть живым"
+
+tooltip.trigger.has_living_child = "Есть живые дети"
+tooltip.trigger.has_living_child.not = "Нет живых детей"
+tooltip.trigger.has_living_child.fail = "Требуется: живые дети"
+
+tooltip.trigger.is_regent = "Регент"
+tooltip.trigger.is_regent.not = "Не регент"
+tooltip.trigger.is_regent.fail = "Требуется: быть регентом"
+
+tooltip.trigger.is_betrothed = "Помолвлен"
+tooltip.trigger.is_betrothed.not = "Не помолвлен"
+tooltip.trigger.is_betrothed.fail = "Требуется: помолвка"
+
+tooltip.trigger.is_disowned = "Лишён наследства"
+tooltip.trigger.is_disowned.not = "Не лишён наследства"
+tooltip.trigger.is_disowned.fail = "Требуется: быть лишённым наследства"
+
+tooltip.trigger.has_office = "Занимает должность"
+tooltip.trigger.has_office.not = "Не занимает должности"
+tooltip.trigger.has_office.fail = "Требуется: занимать должность"
+
+tooltip.trigger.has_succession_law = "Закон о наследовании: {law}"
+tooltip.trigger.has_succession_law.not = "Закон о наследовании не «{law}»"
+tooltip.trigger.has_succession_law.fail = "Требуется: закон о наследовании «{law}»"
+
+# ---- Значения ----
+tooltip.trigger.age = "Возраст {need}"
+tooltip.trigger.age.fail = "Требуется: возраст {need} (сейчас {have})"
+
+tooltip.trigger.skill = "Навык «{kind}» {need}"
+tooltip.trigger.skill.fail = "Требуется: навык «{kind}» {need} (сейчас {have})"
+
+tooltip.trigger.health = "Здоровье {need}"
+tooltip.trigger.health.fail = "Требуется: здоровье {need} (сейчас {have})"
+
+tooltip.trigger.stress = "Стресс {need}"
+tooltip.trigger.stress.fail = "Требуется: стресс {need} (сейчас {have})"
+
+tooltip.trigger.piety = "Набожность {need}"
+tooltip.trigger.piety.fail = "Требуется: набожность {need} (сейчас {have})"
+
+tooltip.trigger.opinion_of = "Мнение о {target} {need}"
+tooltip.trigger.opinion_of.fail = "Требуется: мнение о {target} {need} (сейчас {have})"
+
+tooltip.trigger.kinship_degree = "Степень родства с {target} {need}"
+tooltip.trigger.kinship_degree.fail = "Требуется: степень родства с {target} {need} (сейчас {have})"
+
+tooltip.trigger.fertility = "Плодовитость {need}"
+tooltip.trigger.fertility.fail = "Требуется: плодовитость {need} (сейчас {have})"
+
+tooltip.trigger.ambition = "Честолюбие {need}"
+tooltip.trigger.ambition.fail = "Требуется: честолюбие {need} (сейчас {have})"
+
+tooltip.trigger.loyalty_head = "Лояльность главе рода {need}"
+tooltip.trigger.loyalty_head.fail = "Требуется: лояльность главе рода {need} (сейчас {have})"
+
+tooltip.trigger.child_count = "Число детей {need}"
+tooltip.trigger.child_count.fail = "Требуется: число детей {need} (сейчас {have})"
+
+tooltip.trigger.honor = "Честь рода {need}"
+tooltip.trigger.honor.fail = "Требуется: честь рода {need} (сейчас {have})"
+
+tooltip.trigger.unity = "Единство рода {need}"
+tooltip.trigger.unity.fail = "Требуется: единство рода {need} (сейчас {have})"
+
+tooltip.trigger.prestige = "Престиж рода {need}"
+tooltip.trigger.prestige.fail = "Требуется: престиж рода {need} (сейчас {have})"
+
+tooltip.trigger.treasury = "Казна рода {need} ₽"
+tooltip.trigger.treasury.fail = "Требуется: казна рода {need} ₽ (сейчас {have} ₽)"
