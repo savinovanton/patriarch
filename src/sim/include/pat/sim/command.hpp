@@ -64,6 +64,10 @@ enum class CommandType : std::uint16_t {
     SendMarriageEnvoy = 64,            // E8-T08
     WithdrawMarriageEnvoy = 65,        // E8-T08
     RespondMarriage = 66,              // E8-T09
+    Betroth = 67,                      // E8-T10
+    BreakBetrothal = 68,               // E8-T10
+    Wed = 78,                          // E8-T10
+    SettleWidowhood = 81,              // E8-T10
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -377,6 +381,34 @@ struct RespondMarriage {
     [[nodiscard]] bool operator==(const RespondMarriage&) const = default;
 };
 
+/// Contracts a betrothal supplied by a scenario, event or treaty. System only.
+struct Betroth {
+    CharacterId groom;
+    CharacterId bride;
+    std::int64_t dowry_kop = 0;
+    DynastyId dowry_source;
+    bool dispensation = false;
+    [[nodiscard]] bool operator==(const Betroth&) const = default;
+};
+
+struct BreakBetrothal {
+    family::BetrothalId betrothal = 0;
+    family::BetrothalBreakReason reason = family::BetrothalBreakReason::Voluntary;
+    [[nodiscard]] bool operator==(const BreakBetrothal&) const = default;
+};
+
+/// Applies a due wedding and its accounting. System only.
+struct Wed {
+    family::BetrothalId betrothal = 0;
+    [[nodiscard]] bool operator==(const Wed&) const = default;
+};
+
+/// Settles recorded marriages of an archived spouse. System only.
+struct SettleWidowhood {
+    CharacterId deceased;
+    [[nodiscard]] bool operator==(const SettleWidowhood&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
@@ -410,7 +442,11 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::RepayLoan,
                                     cmd::SendMarriageEnvoy,
                                     cmd::WithdrawMarriageEnvoy,
-                                    cmd::RespondMarriage>;
+                                    cmd::RespondMarriage,
+                                    cmd::Betroth,
+                                    cmd::BreakBetrothal,
+                                    cmd::Wed,
+                                    cmd::SettleWidowhood>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

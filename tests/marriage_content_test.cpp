@@ -238,7 +238,7 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
         CHECK(strings.contains("ru", key));
         CHECK_FALSE(strings.format(key).empty());
     }
-    for (std::uint16_t param = 201; param <= 208; ++param) {
+    for (std::uint16_t param = 201; param <= sim::kChronicleBetrothalPartyDied; ++param) {
         const auto key = sim::marriage_chronicle_key(param);
         CAPTURE(key);
         CHECK_FALSE(key.empty());
@@ -257,5 +257,5 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
     CHECK(sim::marriage_state_key(static_cast<sim::family::MarriageState>(0)).empty());
     CHECK(sim::marriage_end_reason_key(static_cast<sim::family::MarriageEndReason>(255)).empty());
     CHECK(sim::marriage_chronicle_key(200).empty());
-    CHECK(sim::marriage_chronicle_key(209).empty());
+    CHECK(sim::marriage_chronicle_key(210).empty());
 }

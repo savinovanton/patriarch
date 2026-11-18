@@ -893,7 +893,11 @@ private:
     template <class FamilyCommand>
         requires(std::is_same_v<FamilyCommand, cmd::SendMarriageEnvoy> ||
                  std::is_same_v<FamilyCommand, cmd::WithdrawMarriageEnvoy> ||
-                 std::is_same_v<FamilyCommand, cmd::RespondMarriage>)
+                 std::is_same_v<FamilyCommand, cmd::RespondMarriage> ||
+                 std::is_same_v<FamilyCommand, cmd::Betroth> ||
+                 std::is_same_v<FamilyCommand, cmd::BreakBetrothal> ||
+                 std::is_same_v<FamilyCommand, cmd::Wed> ||
+                 std::is_same_v<FamilyCommand, cmd::SettleWidowhood>)
     bool apply(DynastyId /*actor*/, const FamilyCommand& /*c*/) {
         FAIL_CHECK("the legacy model generator emitted an unmodeled family command");
         return false;

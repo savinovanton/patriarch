@@ -14,6 +14,7 @@ struct MarriageRules;
 class Simulation;
 
 inline constexpr std::string_view kMarriageNegotiationsSystemName = "marriage.negotiations";
+inline constexpr std::string_view kMarriageWeddingsSystemName = "marriage.weddings";
 inline constexpr std::string_view kMarriageAnsweredActionName = "on_marriage_answered";
 
 /// E11 on_action input projected from the authoritative, applied negotiation outcome. Void and
@@ -37,6 +38,12 @@ marriage_answered_action(const family::NegotiationOutcome& outcome) noexcept;
 [[nodiscard]] std::unique_ptr<System>
 make_marriage_negotiations_system(std::shared_ptr<const MarriageRules> rules,
                                   std::shared_ptr<const FaithPolicy> faith = {});
+
+/// Daily, ascending-id scan of betrothals and marriage records. Emits due weddings, automatic
+/// betrothal breaks and one widowhood settlement per deceased spouse, without persistent caches.
+[[nodiscard]] std::unique_ptr<System>
+make_marriage_weddings_system(std::shared_ptr<const MarriageRules> rules,
+                              std::shared_ptr<const FaithPolicy> faith = {});
 
 /// Registers E8 systems separately from dynasty.v1, after dynasty.* and before economy.*. The same
 /// rules and faith owners are retained by the system and the simulation's command context.

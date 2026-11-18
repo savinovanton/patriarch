@@ -1,3 +1,4 @@
+#include "pat/sim/marriage_text.hpp"
 #include "pat/sim/world.hpp"
 
 #include <algorithm>
@@ -70,6 +71,22 @@ bool allocatable(std::uint32_t next) {
 
 bool dead_today(const World& world, CharacterId character) {
     return world.is_archived(character) && world.characters().death_date[character.index()] == world.today();
+}
+
+bool former_pair(const World& world, CharacterId a, CharacterId b) {
+    const auto& former = world.characters().ex_spouses[a.index()];
+    const auto& other = world.characters().ex_spouses[b.index()];
+    return std::ranges::find(former, b) != former.end() && std::ranges::find(other, a) != other.end();
+}
+
+template <class State>
+auto evictable_family_marriage(State& state) {
+    return std::ranges::find_if(state.marriages, [&](const auto& existing) {
+        return existing.state == family::MarriageState::Closed && existing.claim_kop == 0 &&
+               !std::ranges::any_of(state.betrothals, [&](const auto& betrothal) {
+                   return betrothal.claim_marriage == existing.id;
+               });
+    });
 }
 
 bool blocked(const World& world, CharacterId character, std::uint8_t flags) {
@@ -152,7 +169,8 @@ bool valid_marriage(const World& world, const family::Marriage& row, bool pendin
                                  world.characters().spouse[row.groom.index()] == row.bride &&
                                  world.characters().spouse[row.bride.index()] == row.groom;
         if (!living_pair &&
-            !(pending_death && (dead_today(world, row.groom) || dead_today(world, row.bride)))) {
+            !(pending_death && (world.is_archived(row.groom) || world.is_archived(row.bride)) &&
+              former_pair(world, row.groom, row.bride))) {
             return false;
         }
         for (const auto& other : world.family().marriages) {
@@ -170,7 +188,7 @@ bool valid_marriage(const World& world, const family::Marriage& row, bool pendin
     }
     if (row.state == family::MarriageState::Widowed) {
         return world.is_archived(row.groom) &&
-               (world.is_alive(row.bride) || (pending_death && dead_today(world, row.bride))) &&
+               (world.is_alive(row.bride) || (pending_death && world.is_archived(row.bride))) &&
                row.end_reason == family::MarriageEndReason::Widowhood;
     }
     return row.state == family::MarriageState::Closed && row.claim_kop == 0;
@@ -432,6 +450,14 @@ bool World::has_family_betrothal_capacity() const {
     return allocatable(family_.next_betrothal_id) && family_.betrothals.size() < family::kMaxBetrothals;
 }
 
+bool World::has_family_marriage_capacity() const {
+    if (!allocatable(family_.next_marriage_id)) {
+        return false;
+    }
+    return family_.marriages.size() < family::kMaxMarriageRecords ||
+           evictable_family_marriage(family_) != family_.marriages.end();
+}
+
 bool World::has_family_outcome_capacity() const {
     return allocatable(family_.next_outcome_seq);
 }
@@ -511,18 +537,27 @@ bool World::close_family_betrothal(family::BetrothalId id) {
     return erase_row(family_.betrothals, id, &family::Betrothal::id);
 }
 
+bool World::break_family_betrothal(family::BetrothalId id, family::BetrothalBreakReason reason) {
+    const auto* row = find_family_betrothal(id);
+    if (row == nullptr || reason < family::BetrothalBreakReason::Voluntary ||
+        reason > family::BetrothalBreakReason::GraceExpired) {
+        return false;
+    }
+    const auto param = reason == family::BetrothalBreakReason::PartyDied ? kChronicleBetrothalPartyDied : 205;
+    (void)record_chronicle_note(row->groom_house, row->groom, row->bride, param);
+    if (row->bride_house != row->groom_house) {
+        (void)record_chronicle_note(row->bride_house, row->groom, row->bride, param);
+    }
+    return close_family_betrothal(id);
+}
+
 std::optional<family::MarriageId> World::create_family_marriage(family::Marriage row) {
     if (row.id != 0 || !allocatable(family_.next_marriage_id) || !valid_marriage(*this, row, false)) {
         return std::nullopt;
     }
     auto evict = family_.marriages.end();
     if (family_.marriages.size() >= family::kMaxMarriageRecords) {
-        evict = std::ranges::find_if(family_.marriages, [&](const auto& existing) {
-            return existing.state == family::MarriageState::Closed && existing.claim_kop == 0 &&
-                   !std::ranges::any_of(family_.betrothals, [&](const auto& betrothal) {
-                       return betrothal.claim_marriage == existing.id;
-                   });
-        });
+        evict = evictable_family_marriage(family_);
         if (evict == family_.marriages.end()) {
             return std::nullopt;
         }
@@ -655,8 +690,25 @@ void World::cancel_family_negotiations(CharacterId character, std::uint16_t reas
 
 void World::family_on_death(CharacterId character) {
     cancel_family_negotiations(character, 1);  // MarriageDenial::NotAlive (E8-T04).
-    std::erase_if(family_.betrothals,
-                  [&](const auto& row) { return row.groom == character || row.bride == character; });
+    if (const auto* engagement = family_betrothal_of(character)) {
+        (void)break_family_betrothal(engagement->id, family::BetrothalBreakReason::PartyDied);
+    }
+    // Block a second wedding during the interval before the queued settlement is applied.
+    // Scenario marriages have no E8 row and retain their existing behaviour.
+    for (const auto& marriage : family_.marriages) {
+        if (marriage.state != family::MarriageState::Active ||
+            (marriage.groom != character && marriage.bride != character)) {
+            continue;
+        }
+        const auto survivor = marriage.groom == character ? marriage.bride : marriage.groom;
+        if (is_alive(survivor) && former_pair(*this, character, survivor)) {
+            auto status =
+                family_status(survivor) != nullptr ? *family_status(survivor) : family::PersonStatus{};
+            status.character = survivor;
+            status.widowed_on = today();
+            (void)set_family_status(status);
+        }
+    }
     std::erase_if(family_.regencies, [&](const auto& row) { return row.ward == character; });
     const auto position = row_position(family_.person_statuses, character, &family::PersonStatus::character);
     if (position != family_.person_statuses.end() && position->character == character) {
@@ -670,17 +722,21 @@ void World::family_on_death(CharacterId character) {
 void World::family_on_marriage(CharacterId a, CharacterId b) {
     cancel_family_negotiations(a, 20);  // MarriageDenial::AlreadyMarried (E8-T04).
     cancel_family_negotiations(b, 20);
-    std::erase_if(family_.betrothals, [&](const auto& row) {
-        if (row.groom != a && row.groom != b && row.bride != a && row.bride != b) {
-            return false;
+    while (true) {
+        const auto position = std::ranges::find_if(family_.betrothals, [&](const auto& row) {
+            return row.groom == a || row.groom == b || row.bride == a || row.bride == b;
+        });
+        if (position == family_.betrothals.end()) {
+            break;
         }
+        const auto row = *position;
         const bool fulfilled = (row.groom == a && row.bride == b) || (row.groom == b && row.bride == a);
-        if (!fulfilled) {
-            (void)record_chronicle_note(row.groom_house, row.groom, row.bride, 205);
-            (void)record_chronicle_note(row.bride_house, row.groom, row.bride, 205);
+        if (fulfilled) {
+            (void)close_family_betrothal(row.id);
+        } else {
+            (void)break_family_betrothal(row.id, family::BetrothalBreakReason::Ineligible);
         }
-        return true;
-    });
+    }
 }
 
 void World::check_family_invariants(std::vector<std::string>& bad) const {

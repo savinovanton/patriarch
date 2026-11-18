@@ -85,7 +85,7 @@ marriage.end.tonsure = "Монашеский постриг"
 marriage.end.annulment = "Брак расторгнут"
 marriage.end.both_dead = "Оба супруга умерли"
 
-# Записи летописи: docs/dev/marriage-succession-model.md §10.2, коды 201–208.
+# Записи летописи: docs/dev/marriage-succession-model.md §10.2, коды 201–209.
 chronicle.family.envoy_sent = "К семьям {groom} и {bride} отправлен брачный посредник."
 chronicle.family.marriage_accepted = "Роды согласились на брак {groom} и {bride}."
 chronicle.family.marriage_refused = "Предложение о браке {groom} и {bride} отвергнуто."
@@ -94,3 +94,4 @@ chronicle.family.betrothal_broken = "Помолвка {groom} и {bride} рас�
 chronicle.family.married = "{groom} и {bride} вступили в брак."
 chronicle.family.tonsured = "{character} принимает монашеский постриг."
 chronicle.family.widowed = "{character} теряет супруга."
+chronicle.family.betrothal_party_died = "Помолвка {groom} и {bride} отменена из-за смерти одного из обручённых."

@@ -961,11 +961,11 @@ std::vector<DueLifeEvent> World::take_due_life_events(Date today) {
 
 // ---- kinship primitives -------------------------------------------------------------------------
 
-bool World::marry(CharacterId a, CharacterId b) {
+bool World::can_marry(CharacterId a, CharacterId b) const {
     if (!dynasty_mode() || a == b || !is_alive(a) || !is_alive(b)) {
         return false;
     }
-    CharacterTable& c = characters_;
+    const CharacterTable& c = characters_;
     const std::size_t ia = a.index();
     const std::size_t ib = b.index();
     if (c.spouse[ia].valid() || c.spouse[ib].valid() || c.marriages[ia] >= kMaxMarriages ||
@@ -976,10 +976,17 @@ bool World::marry(CharacterId a, CharacterId b) {
     if (std::find(ex.begin(), ex.end(), b) != ex.end()) {
         return false;  // the same two people do not marry twice
     }
-    c.spouse[ia] = b;
-    c.spouse[ib] = a;
-    ++c.marriages[ia];
-    ++c.marriages[ib];
+    return true;
+}
+
+bool World::marry(CharacterId a, CharacterId b) {
+    if (!can_marry(a, b)) {
+        return false;
+    }
+    characters_.spouse[a.index()] = b;
+    characters_.spouse[b.index()] = a;
+    ++characters_.marriages[a.index()];
+    ++characters_.marriages[b.index()];
     family_on_marriage(a, b);
     return true;
 }

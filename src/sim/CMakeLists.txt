@@ -43,6 +43,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/marriage_text.hpp
     include/pat/sim/marriage_check.hpp
     include/pat/sim/marriage_envoy.hpp
+    include/pat/sim/marriage_weddings.hpp
     include/pat/sim/marriage_negotiations.hpp
     include/pat/sim/marriage_candidates.hpp
     include/pat/sim/dynasty_relation.hpp
@@ -99,6 +100,7 @@ add_library(patriarch_sim STATIC
     marriage_text.cpp
     marriage_check.cpp
     marriage_envoy.cpp
+    marriage_weddings.cpp
     marriage_negotiations.cpp
     marriage_candidates.cpp
     dynasty_relation.cpp

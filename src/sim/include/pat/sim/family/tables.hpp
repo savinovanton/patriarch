@@ -37,6 +37,13 @@ enum class NegotiationResult : std::uint8_t {
     Void = 4,
 };
 
+enum class BetrothalBreakReason : std::uint8_t {
+    Voluntary = 1,
+    PartyDied = 2,
+    Ineligible = 3,
+    GraceExpired = 4,
+};
+
 enum class BetrothalOrigin : std::uint8_t { Negotiation = 1, Command = 2 };
 
 enum class MarriageState : std::uint8_t { Active = 1, Widowed = 2, Closed = 3 };

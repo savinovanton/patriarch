@@ -134,6 +134,19 @@ struct Writer {
             out.i32(term);
         }
     }
+    void operator()(const cmd::Betroth& c) const {
+        out.u32(c.groom.value());
+        out.u32(c.bride.value());
+        out.i64(c.dowry_kop);
+        out.u32(c.dowry_source.value());
+        out.u8(c.dispensation ? 1 : 0);
+    }
+    void operator()(const cmd::BreakBetrothal& c) const {
+        out.u32(c.betrothal);
+        out.u8(static_cast<std::uint8_t>(c.reason));
+    }
+    void operator()(const cmd::Wed& c) const { out.u32(c.betrothal); }
+    void operator()(const cmd::SettleWidowhood& c) const { out.u32(c.deceased.value()); }
     void operator()(const cmd::PlanDeath& c) const {
         out.u32(c.character.value());
         out.i32(c.date.days());
@@ -444,6 +457,37 @@ bool read_command(core::ByteReader& in, Command& out) {
             out.payload = c;
             break;
         }
+        case CommandType::Betroth: {
+            cmd::Betroth c;
+            c.groom = CharacterId(in.u32());
+            c.bride = CharacterId(in.u32());
+            c.dowry_kop = in.i64();
+            c.dowry_source = DynastyId(in.u32());
+            const auto dispensation = in.u8();
+            if (dispensation > 1) {
+                return false;
+            }
+            c.dispensation = dispensation != 0;
+            out.payload = c;
+            break;
+        }
+        case CommandType::BreakBetrothal: {
+            cmd::BreakBetrothal c;
+            c.betrothal = in.u32();
+            c.reason = static_cast<family::BetrothalBreakReason>(in.u8());
+            if (c.reason < family::BetrothalBreakReason::Voluntary ||
+                c.reason > family::BetrothalBreakReason::GraceExpired) {
+                return false;
+            }
+            out.payload = c;
+            break;
+        }
+        case CommandType::Wed:
+            out.payload = cmd::Wed{in.u32()};
+            break;
+        case CommandType::SettleWidowhood:
+            out.payload = cmd::SettleWidowhood{CharacterId(in.u32())};
+            break;
         case CommandType::RecordChronicle: {
             cmd::RecordChronicle c;
             c.dynasty = DynastyId(in.u32());

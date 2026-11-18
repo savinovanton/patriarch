@@ -71,15 +71,30 @@ std::optional<Date> date_after(Date date, std::int32_t days) {
     return Date::from_days(static_cast<std::int32_t>(sum));
 }
 
-std::optional<family::Betrothal>
-accepted_betrothal(const World& world, const MarriageRules& rules, const family::Negotiation& negotiation) {
+}  // namespace
+
+void add_family_head_opinion(
+    World& world, CharacterId from, CharacterId to, std::int32_t points, OpinionReason reason) {
+    if (from != to && world.is_alive(from) && world.is_alive(to)) {
+        PAT_VERIFY(world.add_opinion(from, to, core::Fixed32::from_int(points), reason));
+    }
+}
+
+std::optional<family::Betrothal> make_family_betrothal(const World& world,
+                                                       const MarriageRules& rules,
+                                                       CharacterId groom,
+                                                       CharacterId bride,
+                                                       std::int64_t dowry_kop,
+                                                       DynastyId dowry_source,
+                                                       bool dispensation,
+                                                       family::BetrothalOrigin origin) {
     const auto delayed = date_after(world.today(), rules.negotiation.wedding_delay_days);
-    if (!delayed) {
+    if (!delayed || !world.is_alive(groom) || !world.is_alive(bride)) {
         return std::nullopt;
     }
     const auto& people = world.characters();
-    const auto groom_birth = people.birth_date[negotiation.groom.index()];
-    const auto bride_birth = people.birth_date[negotiation.bride.index()];
+    const auto groom_birth = people.birth_date[groom.index()];
+    const auto bride_birth = people.birth_date[bride.index()];
     const auto groom_adult =
         anniversary_in_year(groom_birth, groom_birth.year() + rules.eligibility.min_marriage_age_male);
     const auto bride_adult =
@@ -90,17 +105,17 @@ accepted_betrothal(const World& world, const MarriageRules& rules, const family:
         return std::nullopt;
     }
     family::Betrothal row;
-    row.groom = negotiation.groom;
-    row.bride = negotiation.bride;
-    row.groom_house = negotiation.groom_house;
-    row.bride_house = negotiation.bride_house;
+    row.groom = groom;
+    row.bride = bride;
+    row.groom_house = people.dynasty[groom.index()];
+    row.bride_house = people.dynasty[bride.index()];
     row.contracted = world.today();
     row.wedding_not_before = not_before;
     row.wedding_deadline = *deadline;
-    row.dowry_kop = negotiation.dowry_kop;
-    row.dowry_source = negotiation.dowry_source;
-    row.dispensation = negotiation.dispensation;
-    row.origin = family::BetrothalOrigin::Negotiation;
+    row.dowry_kop = dowry_kop;
+    row.dowry_source = dowry_source;
+    row.dispensation = dispensation;
+    row.origin = origin;
     const auto* previous = world.family_marriage_of(row.bride);
     if (previous != nullptr && previous->bride == row.bride &&
         previous->state == family::MarriageState::Widowed) {
@@ -109,15 +124,27 @@ accepted_betrothal(const World& world, const MarriageRules& rules, const family:
     return row;
 }
 
+namespace {
+
+std::optional<family::Betrothal>
+accepted_betrothal(const World& world, const MarriageRules& rules, const family::Negotiation& negotiation) {
+    return make_family_betrothal(world,
+                                 rules,
+                                 negotiation.groom,
+                                 negotiation.bride,
+                                 negotiation.dowry_kop,
+                                 negotiation.dowry_source,
+                                 negotiation.dispensation != 0,
+                                 family::BetrothalOrigin::Negotiation);
+}
+
 void response_opinion(World& world,
                       const family::NegotiationOutcome& outcome,
                       std::int32_t points,
                       OpinionReason reason) {
     const auto from = family_acting_head(world, outcome.responder);
     const auto to = family_acting_head(world, outcome.initiator);
-    if (from.valid() && to.valid() && from != to) {
-        PAT_VERIFY(world.add_opinion(from, to, core::Fixed32::from_int(points), reason));
-    }
+    add_family_head_opinion(world, from, to, points, reason);
 }
 
 }  // namespace
