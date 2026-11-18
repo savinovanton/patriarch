@@ -58,8 +58,7 @@ SaveEntry read_entry(const std::filesystem::directory_entry& de, const ScanOptio
     auto info = sim::read_save_summary(de.path());
     if (!info.has_value()) {
         e.error_code = info.error().code;
-        e.cls = (e.error_code == kCodeVersionNewer || e.error_code == kCodeSchemaNewer) ? SaveClass::Newer
-                                                                                        : SaveClass::Corrupt;
+        e.cls = is_newer_save_error(e.error_code) ? SaveClass::Newer : SaveClass::Corrupt;
         return e;
     }
     e.format_version = info.value().format_version;
@@ -137,6 +136,10 @@ pick_path(const std::filesystem::path& dir, std::string_view name, const std::fi
 }
 
 }  // namespace
+
+bool is_newer_save_error(int code) {
+    return code == kCodeVersionNewer || code == kCodeSchemaNewer;
+}
 
 std::vector<SaveEntry> scan_saves(const std::filesystem::path& dir, const ScanOptions& options) {
     std::vector<SaveEntry> out;

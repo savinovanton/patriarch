@@ -13,6 +13,7 @@ add_library(patriarch_content STATIC
     include/pat/content/marriage_content.hpp
     include/pat/content/names_content.hpp
     include/pat/content/province_bindings.hpp
+    include/pat/content/session_assembly.hpp
     include/pat/content/traits_content.hpp
     court_content.cpp
     crisis_content.cpp
@@ -29,6 +30,7 @@ add_library(patriarch_content STATIC
     marriage_content.cpp
     names_content.cpp
     province_bindings.cpp
+    session_assembly.cpp
     traits_content.cpp)
 target_sources(patriarch_content PRIVATE typed_accessors.hpp event_compiler.hpp)
 add_library(patriarch::content ALIAS patriarch_content)
