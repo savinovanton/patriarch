@@ -1,8 +1,14 @@
 #pragma once
 
+#include <concepts>
 #include <cstdint>
+#include <limits>
+#include <optional>
+#include <type_traits>
 
-// Portable 128-bit helpers used by fixed-point arithmetic. No compiler intrinsics and no
+// Portable 128-bit helpers and signed overflow-aware primitives used by fixed-point and money
+// arithmetic and by the event VM (one copy of each, see docs/dev/code-duplication-audit.md D9). No compiler
+// intrinsics and no
 // __int128 so results are identical on every toolchain (determinism, ADR-0001).
 
 namespace pat::core::detail {
@@ -116,6 +122,58 @@ struct U128 {
         bit = shr(bit, 2);
     }
     return result.lo;
+}
+
+// ---- signed integers: wrapping arithmetic, overflow tests, sign + magnitude ------------------------
+// Everything is integer-only and independent of the compiler's treatment of signed overflow: the sum
+// is computed in the unsigned type (wraps) and the overflow is read from the sign bits.
+
+/// a + b with two's complement wrap-around.
+template <std::signed_integral T>
+[[nodiscard]] constexpr T wrap_add(T a, T b) noexcept {
+    using U = std::make_unsigned_t<T>;
+    return static_cast<T>(static_cast<U>(a) + static_cast<U>(b));
+}
+
+/// a - b with two's complement wrap-around.
+template <std::signed_integral T>
+[[nodiscard]] constexpr T wrap_sub(T a, T b) noexcept {
+    using U = std::make_unsigned_t<T>;
+    return static_cast<T>(static_cast<U>(a) - static_cast<U>(b));
+}
+
+/// True when the wrapped sum `r == wrap_add(a, b)` is not the mathematical sum.
+template <std::signed_integral T>
+[[nodiscard]] constexpr bool add_overflowed(T a, T b, T r) noexcept {
+    return ((a ^ r) & (b ^ r)) < 0;
+}
+
+/// True when the wrapped difference `r == wrap_sub(a, b)` is not the mathematical difference.
+template <std::signed_integral T>
+[[nodiscard]] constexpr bool sub_overflowed(T a, T b, T r) noexcept {
+    return ((a ^ b) & (a ^ r)) < 0;
+}
+
+/// |v| as an unsigned 64-bit value (correct for the most negative value of any signed type).
+[[nodiscard]] constexpr std::uint64_t abs_u64(std::int64_t v) noexcept {
+    return v < 0 ? (0ULL - static_cast<std::uint64_t>(v)) : static_cast<std::uint64_t>(v);
+}
+
+/// Sign + magnitude -> T; nullopt when the value does not fit (-mag down to the lowest value of T is
+/// accepted for a negative sign).
+template <std::signed_integral T>
+[[nodiscard]] constexpr std::optional<T> from_magnitude(std::uint64_t mag, bool negative) noexcept {
+    constexpr auto kLimit = static_cast<std::uint64_t>(std::numeric_limits<T>::max());
+    if (negative) {
+        if (mag > kLimit + 1) {
+            return std::nullopt;
+        }
+        return static_cast<T>(0ULL - mag);
+    }
+    if (mag > kLimit) {
+        return std::nullopt;
+    }
+    return static_cast<T>(mag);
 }
 
 }  // namespace pat::core::detail

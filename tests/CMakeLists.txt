@@ -16,6 +16,7 @@ add_executable(patriarch_tests
     core_file_io_test.cpp
     cli_args_test.cpp
     core_smoke.cpp
+    core_wide_math_test.cpp
     core_utf8_test.cpp
     date_test.cpp
     demo_growth_test.cpp

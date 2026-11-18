@@ -98,18 +98,18 @@ public:
 
     // ---- arithmetic -------------------------------------------------------------------------
     [[nodiscard]] friend constexpr Fixed operator+(Fixed a, Fixed b) noexcept {
-        const Raw r = wrap_add(a.raw_, b.raw_);
-        PAT_ASSERT(((a.raw_ ^ r) & (b.raw_ ^ r)) >= 0, "Fixed add overflow");
+        const Raw r = detail::wrap_add<Raw>(a.raw_, b.raw_);
+        PAT_ASSERT(!detail::add_overflowed<Raw>(a.raw_, b.raw_, r), "Fixed add overflow");
         return from_raw(r);
     }
     [[nodiscard]] friend constexpr Fixed operator-(Fixed a, Fixed b) noexcept {
-        const Raw r = wrap_sub(a.raw_, b.raw_);
-        PAT_ASSERT(((a.raw_ ^ b.raw_) & (a.raw_ ^ r)) >= 0, "Fixed sub overflow");
+        const Raw r = detail::wrap_sub<Raw>(a.raw_, b.raw_);
+        PAT_ASSERT(!detail::sub_overflowed<Raw>(a.raw_, b.raw_, r), "Fixed sub overflow");
         return from_raw(r);
     }
     [[nodiscard]] friend constexpr Fixed operator-(Fixed a) noexcept {
         PAT_ASSERT(a.raw_ != std::numeric_limits<Raw>::lowest(), "Fixed negate overflow");
-        return from_raw(wrap_sub(0, a.raw_));
+        return from_raw(detail::wrap_sub<Raw>(0, a.raw_));
     }
     [[nodiscard]] friend constexpr Fixed operator*(Fixed a, Fixed b) noexcept {
         bool overflow = false;
@@ -154,15 +154,15 @@ public:
 
     // ---- saturating variants ----------------------------------------------------------------
     [[nodiscard]] friend constexpr Fixed saturating_add(Fixed a, Fixed b) noexcept {
-        const Raw r = wrap_add(a.raw_, b.raw_);
-        if (((a.raw_ ^ r) & (b.raw_ ^ r)) < 0) {
+        const Raw r = detail::wrap_add<Raw>(a.raw_, b.raw_);
+        if (detail::add_overflowed<Raw>(a.raw_, b.raw_, r)) {
             return a.raw_ < 0 ? min() : max();
         }
         return from_raw(r);
     }
     [[nodiscard]] friend constexpr Fixed saturating_sub(Fixed a, Fixed b) noexcept {
-        const Raw r = wrap_sub(a.raw_, b.raw_);
-        if (((a.raw_ ^ b.raw_) & (a.raw_ ^ r)) < 0) {
+        const Raw r = detail::wrap_sub<Raw>(a.raw_, b.raw_);
+        if (detail::sub_overflowed<Raw>(a.raw_, b.raw_, r)) {
             return a.raw_ < 0 ? min() : max();
         }
         return from_raw(r);
@@ -179,37 +179,19 @@ public:
 private:
     Raw raw_ = 0;
 
-    [[nodiscard]] static constexpr Raw wrap_add(Raw a, Raw b) noexcept {
-        return static_cast<Raw>(static_cast<unsigned_raw>(a) + static_cast<unsigned_raw>(b));
-    }
-    [[nodiscard]] static constexpr Raw wrap_sub(Raw a, Raw b) noexcept {
-        return static_cast<Raw>(static_cast<unsigned_raw>(a) - static_cast<unsigned_raw>(b));
-    }
-    [[nodiscard]] static constexpr std::uint64_t abs_u64(Raw v) noexcept {
-        return v < 0 ? (0ULL - static_cast<std::uint64_t>(static_cast<std::int64_t>(v)))
-                     : static_cast<std::uint64_t>(v);
-    }
-    /// Converts a magnitude plus sign into Raw; sets overflow if it does not fit.
+    /// Converts a magnitude plus sign into Raw; sets overflow (and returns 0) if it does not fit.
     [[nodiscard]] static constexpr Raw
     from_magnitude(std::uint64_t mag, bool negative, bool& overflow) noexcept {
-        constexpr std::uint64_t kMax = static_cast<std::uint64_t>(std::numeric_limits<Raw>::max());
-        if (negative) {
-            if (mag > kMax + 1) {
-                overflow = true;
-                return 0;
-            }
-            return static_cast<Raw>(0 - mag);
+        if (const auto v = detail::from_magnitude<Raw>(mag, negative)) {
+            return *v;
         }
-        if (mag > kMax) {
-            overflow = true;
-            return 0;
-        }
-        return static_cast<Raw>(mag);
+        overflow = true;
+        return 0;
     }
 
     [[nodiscard]] static constexpr Raw mul_raw(Raw a, Raw b, bool& overflow) noexcept {
         const bool negative = (a < 0) != (b < 0);
-        const detail::U128 product = detail::mul_u64(abs_u64(a), abs_u64(b));
+        const detail::U128 product = detail::mul_u64(detail::abs_u64(a), detail::abs_u64(b));
         const detail::U128 shifted = detail::shr(product, Frac);
         if (shifted.hi != 0) {
             overflow = true;
@@ -220,8 +202,8 @@ private:
 
     [[nodiscard]] static constexpr Raw div_raw(Raw a, Raw b, bool& overflow) noexcept {
         const bool negative = (a < 0) != (b < 0);
-        const detail::U128 numerator = detail::shl(detail::U128{0, abs_u64(a)}, Frac);
-        const std::uint64_t q = detail::div_u128_by_u64(numerator, abs_u64(b), overflow);
+        const detail::U128 numerator = detail::shl(detail::U128{0, detail::abs_u64(a)}, Frac);
+        const std::uint64_t q = detail::div_u128_by_u64(numerator, detail::abs_u64(b), overflow);
         if (overflow) {
             return 0;
         }
@@ -230,8 +212,8 @@ private:
 
     [[nodiscard]] static constexpr Raw muldiv_raw(Raw a, Raw b, Raw c, bool& overflow) noexcept {
         const bool negative = ((a < 0) != (b < 0)) != (c < 0);
-        const detail::U128 product = detail::mul_u64(abs_u64(a), abs_u64(b));
-        const std::uint64_t q = detail::div_u128_by_u64(product, abs_u64(c), overflow);
+        const detail::U128 product = detail::mul_u64(detail::abs_u64(a), detail::abs_u64(b));
+        const std::uint64_t q = detail::div_u128_by_u64(product, detail::abs_u64(c), overflow);
         if (overflow) {
             return 0;
         }

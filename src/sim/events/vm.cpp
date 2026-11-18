@@ -19,23 +19,18 @@ constexpr std::uint32_t kPpmOne = 1'000'000;
 
 // ---- saturating arithmetic (section 7.3: overflow saturates and is counted, never undefined) ----
 
-[[nodiscard]] constexpr std::uint64_t abs_u64(Word v) noexcept {
-    return v < 0 ? (0ULL - static_cast<std::uint64_t>(v)) : static_cast<std::uint64_t>(v);
-}
-
 /// Magnitude + sign to a word; saturates (and reports it) when it does not fit.
 [[nodiscard]] constexpr Word from_magnitude(std::uint64_t mag, bool negative, bool& saturated) noexcept {
-    const std::uint64_t limit = static_cast<std::uint64_t>(kWordMax) + (negative ? 1ULL : 0ULL);
-    if (mag > limit) {
-        saturated = true;
-        return negative ? kWordMin : kWordMax;
+    if (const auto v = core::detail::from_magnitude<Word>(mag, negative)) {
+        return *v;
     }
-    return negative ? static_cast<Word>(0ULL - mag) : static_cast<Word>(mag);
+    saturated = true;
+    return negative ? kWordMin : kWordMax;
 }
 
 [[nodiscard]] Word add_sat(Word a, Word b, RunCounters& c) noexcept {
-    const Word r = static_cast<Word>(static_cast<std::uint64_t>(a) + static_cast<std::uint64_t>(b));
-    if (((a ^ r) & (b ^ r)) < 0) {
+    const Word r = core::detail::wrap_add(a, b);
+    if (core::detail::add_overflowed(a, b, r)) {
         ++c.saturations;
         return a < 0 ? kWordMin : kWordMax;
     }
@@ -43,8 +38,8 @@ constexpr std::uint32_t kPpmOne = 1'000'000;
 }
 
 [[nodiscard]] Word sub_sat(Word a, Word b, RunCounters& c) noexcept {
-    const Word r = static_cast<Word>(static_cast<std::uint64_t>(a) - static_cast<std::uint64_t>(b));
-    if (((a ^ b) & (a ^ r)) < 0) {
+    const Word r = core::detail::wrap_sub(a, b);
+    if (core::detail::sub_overflowed(a, b, r)) {
         ++c.saturations;
         return a < 0 ? kWordMin : kWordMax;
     }
@@ -53,8 +48,8 @@ constexpr std::uint32_t kPpmOne = 1'000'000;
 
 [[nodiscard]] Word mul_sat(Word a, Word b, RunCounters& c) noexcept {
     const bool negative = (a < 0) != (b < 0);
-    const core::detail::U128 shifted =
-        core::detail::shr(core::detail::mul_u64(abs_u64(a), abs_u64(b)), core::Fixed64::frac_bits);
+    const core::detail::U128 shifted = core::detail::shr(
+        core::detail::mul_u64(core::detail::abs_u64(a), core::detail::abs_u64(b)), core::Fixed64::frac_bits);
     bool saturated = shifted.hi != 0;
     const Word r =
         saturated ? (negative ? kWordMin : kWordMax) : from_magnitude(shifted.lo, negative, saturated);
@@ -71,9 +66,9 @@ constexpr std::uint32_t kPpmOne = 1'000'000;
     }
     const bool negative = (a < 0) != (b < 0);
     const core::detail::U128 numerator =
-        core::detail::shl(core::detail::U128{0, abs_u64(a)}, core::Fixed64::frac_bits);
+        core::detail::shl(core::detail::U128{0, core::detail::abs_u64(a)}, core::Fixed64::frac_bits);
     bool overflow = false;
-    const std::uint64_t q = core::detail::div_u128_by_u64(numerator, abs_u64(b), overflow);
+    const std::uint64_t q = core::detail::div_u128_by_u64(numerator, core::detail::abs_u64(b), overflow);
     bool saturated = overflow;
     const Word r = overflow ? (negative ? kWordMin : kWordMax) : from_magnitude(q, negative, saturated);
     if (saturated) {
