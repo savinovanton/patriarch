@@ -49,11 +49,14 @@
 #include "pat/ui/map_overlays.hpp"
 #include "pat/ui/menu.hpp"
 #include "pat/ui/province_window.hpp"
+#include "pat/ui/settings_file.hpp"
 #include "pat/ui/theme.hpp"
 #include "pat/ui/time_bar.hpp"
 #include "pat/ui/tooltip_manager.hpp"
 
 #include <RmlUi/Core.h>
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_stdinc.h>
 #include <SDL3/SDL_timer.h>
 
 #ifdef _WIN32
@@ -123,6 +126,8 @@ struct Options {
     bool hidden = false;           // hidden window + offscreen software renderer (headless smoke run)
     bool no_vsync = false;
     float user_ui_scale = 1.0f;    // multiplies the OS display scale (--ui-scale 2 to test 200%)
+    bool ui_scale_given = false;   // --ui-scale beats the saved setting
+    std::filesystem::path user_dir;  // --user-dir: where settings.pd lives (default: SDL_GetPrefPath)
     bool demo_tooltip = false;     // open nested tooltips on the first skill (for --shot)
     bool no_ui = false;            // do not create the RmlUi demo overlay
     int start_mode = 1;            // --mode N: initial map mode (0 terrain, 1 owners, 2 mood, 3 random)
@@ -176,6 +181,9 @@ bool parse_options(int argc, char** argv, Options& out) {
             out.no_vsync = true;
         } else if (arg == "--ui-scale" && i + 1 < argc) {
             out.user_ui_scale = static_cast<float>(std::atof(argv[++i]));
+            out.ui_scale_given = true;
+        } else if (arg == "--user-dir" && i + 1 < argc) {
+            out.user_dir = std::filesystem::u8path(argv[++i]);
         } else if (arg == "--demo-tooltip") {
             out.demo_tooltip = true;
         } else if (arg == "--offscreen" && i + 1 < argc) {
@@ -471,6 +479,23 @@ int main(int argc, char** argv) {
     Options opt;
     if (!parse_options(argc, argv, opt)) {
         return 2;
+    }
+
+    // ---- settings (E13-T09): read before the window opens; a headless run reads nothing unless --user-dir is given
+    std::filesystem::path settings_path;
+    pat::ui::SettingsFile settings_file;
+    if (opt.user_dir.empty() && !opt.hidden) {
+        if (char* pref = SDL_GetPrefPath("Patriarch", "Patriarch")) {
+            opt.user_dir = std::filesystem::u8path(pref);
+            SDL_free(pref);
+        }
+    }
+    if (!opt.user_dir.empty()) {
+        settings_path = opt.user_dir / "settings.pd";
+        settings_file = pat::ui::load_settings(settings_path).file;
+        if (!opt.ui_scale_given) {
+            opt.user_ui_scale = pat::ui::user_ui_scale_of(settings_file.model);
+        }
     }
 
     // ---- map data
@@ -1036,7 +1061,7 @@ int main(int argc, char** argv) {
                 // PLACEHOLDER saves of the mockup until the save catalogue exists; --menu-first shows the first run.
                 menu->set_snapshot(opt.menu == 2 ? pat::ui::MenuSnapshot{} : pat::ui::make_placeholder_menu(ui_loc));
                 menu->set_new_game(pat::ui::make_placeholder_new_game(ui_loc));  // PLACEHOLDER houses and goals
-                pat::ui::SettingsModel settings;  // the defaults of the boards, with the scale of this run
+                pat::ui::SettingsModel settings = settings_file.model;  // the saved values (or the defaults)
                 settings.ui_scale = static_cast<int>(std::lround(opt.user_ui_scale * 100.0f));
                 menu->set_settings(settings);
                 pat::ui::MenuActions actions;
@@ -1062,9 +1087,15 @@ int main(int argc, char** argv) {
                     menu->close();
                 };
                 // Only the UI scale is applied (the multiplier of --ui-scale); the other values are a stub until the
-                // systems that read them exist, and nothing is written to a file yet.
+                // systems that read them exist, but all of them are written to settings.pd.
                 actions.apply_settings = [&](const pat::ui::SettingsModel& settings) {
                     PAT_LOG_INFO("spike", "menu: apply settings, UI scale {}% (the rest is a stub)", settings.ui_scale);
+                    if (!settings_path.empty()) {
+                        settings_file.model = settings;
+                        if (auto saved = pat::ui::save_settings(settings_path, settings_file); !saved) {
+                            PAT_LOG_WARN("spike", "settings.pd was not written");
+                        }
+                    }
                     opt.user_ui_scale = static_cast<float>(settings.ui_scale) / 100.0f;
                     ui_scale = design_ui_scale(renderer->size(), opt.user_ui_scale);
                     if (ui) {

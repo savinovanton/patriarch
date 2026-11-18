@@ -14,6 +14,7 @@ add_library(patriarch_ui STATIC
     include/pat/ui/menu.hpp
     include/pat/ui/province_snapshot.hpp
     include/pat/ui/province_window.hpp
+    include/pat/ui/settings_file.hpp
     include/pat/ui/text.hpp
     include/pat/ui/theme.hpp
     include/pat/ui/tooltip_manager.hpp
@@ -31,6 +32,7 @@ add_library(patriarch_ui STATIC
     map_overlays.cpp
     menu.cpp
     province_window.cpp
+    settings_file.cpp
     text.cpp
     theme.cpp
     time_bar.cpp
