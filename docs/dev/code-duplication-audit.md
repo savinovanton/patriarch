@@ -106,3 +106,32 @@ D19 и D20 — мелочи, правятся при следующем каса
 | `make_world` в тестах экономики (12 вариантов) | параметры и состав мира различаются по задаче теста; общими делаются только помощники D14 |
 | UI-фикстуры тестов (`character_window_test.cpp:54`, `credits_window_test.cpp:56`, `tooltip_manager_test.cpp:43`, `ui_test.cpp:80`) | похожая настройка (временный каталог, программный рендерер, `UiContext`), но разные файлы и окна; кандидат на общий `UiHarness` позже (есть `tests/ui_*_fixture.hpp`) |
 | `tools/gen_credits.py:163` и `tools/check_assets.py:60` читают `assets/LICENSES.csv` | один проверяет реестр, другой берёт строки для титров; можно переиспользовать `load_registry`, но выгода минимальна |
+
+## 7. После консолидации (2026-11-18)
+
+Дубли D1–D20 сведены отдельными малыми PR (по одному дублю; D21 по решению владельца не трогается, D22 — вариант A). Что где лежит (полный список «где что искать» — `code-style.md` §11):
+
+| ID | Единое место | PR |
+|---|---|---|
+| D1 | `core::hash_bytes`, константы FNV в `hash_stream.hpp` | #568 |
+| D2 | `core/utf8.hpp`: `utf8_sequence_length` (save.cpp оставляет только запрет NUL) | #585 |
+| D3 | `core/path_utf8.hpp` | #580 |
+| D4 | `core/file_io.hpp`: `write_file_atomic` (стадия ошибки → коды вызывающего) | #587 |
+| D5 | `core/file_io.hpp`: `read_file_bytes` / `read_file_text`; кроме перечисленных, найдены ещё копии (PMD1/PMD2, шейдеры D3D11, шрифт) — сведены | #603 |
+| D6 | `src/mapdata/layer_codec.hpp` (`put_str/get_str` уже были), `make_error`, `finish_blob` | #591 |
+| D7 | `ByteReader::can_hold`; `detail::plausible` удалён | #592 |
+| D8 | ВМ событий пишет байты через `ByteWriter` (`core::to_std_bytes`); побайтовый закрепляющий тест `Program`/`RunResult` | #598 |
+| D9 | `core/detail/wide_math.hpp`: `wrap_add/sub`, `add/sub_overflowed`, `abs_u64`, `from_magnitude<T>`; табличные тесты; замеры без регрессии | #624 |
+| D10 | `src/content/typed_access.hpp` | #588 |
+| D11 | `economy::TermKey` / `find_term_key` | #593 |
+| D12 | `tests/test_files.hpp` | #595 |
+| D13 | `tests/test_bytes.hpp` | #596 |
+| D14 | `tests/world_fixture.hpp`, `tests/economy_fixture.hpp` | #604, #606 |
+| D15 | `tests/map_fixture.hpp` (`make_test_terrain`; фикстуры различались озером, георефом и provenance — общий только цикл заполнения) | #605 |
+| D16 | `src/mapdata/parallel.hpp` | #607 |
+| D17 | `tools/common/cli_args.hpp` (мусор вида `12abc` в `mapgen` теперь ошибка) | #602 |
+| D18 | `modifier_rules_stamp` через `HashStream` (значение штампа изменилось, оно только в памяти) | #597 |
+| D19, D20 | `core::in_range` для `Fixed`; `utf8_to_wide` в UI-рендерере | #622 |
+| D22 | `core::to_upper_cp` / `to_upper_utf8` (широкое правило, решение владельца A) | #620 |
+
+Остаётся: D21 (три модели «объяснения числа») — по решению владельца C ничего не делается, E7-модели переводятся на `economy::Breakdown` при их следующей доработке. Нестрогие декодеры UTF-8 из раздела 6 остаются как есть (другие контракты на битом вводе). Форматы, golden-значения и хеши `simcli` ни одним PR не менялись.
