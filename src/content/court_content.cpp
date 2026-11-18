@@ -52,22 +52,6 @@ std::string unknown_text(std::string_view what, std::string_view id, const SlotM
     return text;
 }
 
-/// Position of a dotted path such as `seats.max` or `requirements.skills[2]` inside an object: the key
-/// of the deepest field that exists, so an error never points outside the object.
-SourcePos path_position(const ContentObject& object, std::string_view path) {
-    SourcePos pos = object.object.pos;
-    const TypedBlock* block = &object.object.body;
-    while (block != nullptr && !path.empty()) {
-        const auto dot = path.find('.');
-        std::string_view name = path.substr(0, dot);
-        name = name.substr(0, name.find('['));
-        pos = detail::key_pos(*block, name, pos);
-        block = dot == std::string_view::npos ? nullptr : detail::block_of(*block, name);
-        path = dot == std::string_view::npos ? std::string_view{} : path.substr(dot + 1);
-    }
-    return pos;
-}
-
 class Builder {
 public:
     explicit Builder(const data::ContentRegistry& registry)
@@ -267,25 +251,11 @@ private:
     }
 
     void load_balance() {
-        const auto* table = registry_.table(data::kCourtBalanceKind);
-        if (table == nullptr || table->empty()) {
-            errors_.fail_general(std::format("no {} object found (expected: {} \"main\" {{ ... }})",
-                                             data::kCourtBalanceKind,
-                                             data::kCourtBalanceKind));
+        const ContentObject* single = errors_.single_object(data::kCourtBalanceKind);
+        if (single == nullptr) {
             return;
         }
-        const ContentObject& object = table->objects().front();
-        for (std::size_t i = 1; i < table->size(); ++i) {
-            const ContentObject& extra = table->objects()[i];
-            errors_.fail(extra,
-                         extra.object.pos,
-                         std::format("only one {} object is allowed, '{}' is already defined in {}:{}:{}",
-                                     data::kCourtBalanceKind,
-                                     object.object.id,
-                                     object.file,
-                                     object.object.pos.line,
-                                     object.object.pos.column));
-        }
+        const ContentObject& object = *single;
         const TypedBlock& body = object.object.body;
         sim::CourtBalance& balance = rules_.balance;
         // One list builds the struct, the defaults, the checks and this reader (court_rules.hpp).
@@ -309,8 +279,9 @@ private:
                 const auto* object = registry_.find(kind, rest.substr(0, dot));
                 if (object != nullptr) {
                     errors_.fail(*object,
-                                 dot == std::string_view::npos ? object->object.pos
-                                                               : path_position(*object, rest.substr(dot + 1)),
+                                 dot == std::string_view::npos
+                                     ? object->object.pos
+                                     : detail::path_position(*object, rest.substr(dot + 1)),
                                  message);
                     return;
                 }
@@ -319,7 +290,7 @@ private:
         if (const auto* table = registry_.table(data::kCourtBalanceKind);
             table != nullptr && !table->empty()) {
             const ContentObject& object = table->objects().front();
-            errors_.fail(object, path_position(object, field), message);
+            errors_.fail(object, detail::path_position(object, field), message);
             return;
         }
         errors_.fail_general(message);

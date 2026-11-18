@@ -719,11 +719,11 @@ E11 строит on-action из **журнала применённых кома
 
 | В `.pd` | В состоянии (`World`) | В коде |
 |---|---|---|
-| `data/balance/crisis.pd` (T04): `crisis_rules "main"` с группами `stability`, `components`, `bands`, `phases`, `emperor`, `projects`, `claims`, `suspicion`, `plot`, `coup`, `sigmoid`, `consequences`, `stance`, `protect` (§8) | таблицы §4 | `CrisisRules::defaults()` — единственное место констант в коде, формулы, перечисления, коды |
+| `data/balance/crisis.pd` (T04): `crisis_balance "main"` с группами `stability`, `bands`, `components`, `phases`, `protect`, `emperor`, `projects`, `suspicion`, `guard`, `plot`, `coup`, `stance`, `consequences` и списком `sigmoid`; `claim_rules "main"` (группы `basis`, `support`, `penalty`, списки `blood`, `legal`); `data/crisis/projects.pd`: три `emperor_project` (уровни, пороги, эффекты по уровням) (§8). Как реализовано в T04: все числа плоские (`<группа>.<имя>`, суффиксы `_pm`, `_x100`, `_kop`), веса компонентов — `components.weight_*`; эффекты проектов — именованные списки по уровням | таблицы §4 | `sim::crisis::CrisisRules::defaults()` — единственное место констант в коде, формулы, перечисления, коды |
 | `data/scenarios/boyar_plot/crisis.pd` (T16, E30): стартовое состояние (`SetRealmState{Init}`: стабильность 58, вклады и цели, авторитет 60, `protect_until`, входы), 3–4 позиции родов, запалы | — | — |
-| `data/loc/ru/crisis.pd`: `crisis.component.<имя>`, `crisis.reason.<код>`, `crisis.phase.<0…3>.name/hint`, `crisis.denial.<имя>`, `crisis.term.<код>`, `chronicle.crisis.*`, `ui.crisis.*` | — | — |
+| `data/loc/ru/crisis.pd`: `crisis.component.<имя>`, `crisis.reason.<имя>` (коды `StabilityReason` 1…20), `crisis.phase.<smoulder|unrest|plots|coup_window>.name/hint` (сегмент не может быть числом), `crisis.band.<имя>`, `crisis.project.<имя>.name/desc`, `crisis.denial.<имя>`, `crisis.term.<код>`, `chronicle.crisis.*`, `ui.crisis.*` | — | — |
 
-Правила: файл = `defaults()` (тест, как `demography_content_test`); ошибки с `файл:строка` (E4); **вид `crisis_rules` исключён из `registry.content_hash()`** (как события и двор, D14), входит в `CrisisRules::hash()` → ключ сводки 23 после T22; числа с `[предл.]` калибруются в T21 на 100 прогонов × 50 лет.
+Правила: файл = `defaults()` (тест, как `demography_content_test`); ошибки с `файл:строка` (E4); **виды `crisis_balance`, `claim_rules` и `emperor_project` исключены из `registry.content_hash()`** (`data::kCrisisKinds`) (как события и двор, D14), входит в `CrisisRules::hash()` → ключ сводки 23 после T22; числа с `[предл.]` калибруются в T21 на 100 прогонов × 50 лет.
 
 ```
 crisis_rules "main" {

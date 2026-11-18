@@ -474,3 +474,24 @@ TEST_CASE("contentlint: a court balance number outside its corridor is PD115 at 
     CHECK(court_finding->column == position.column);
     CHECK(report.exit_code() == 1);
 }
+
+TEST_CASE("contentlint: crisis weights that do not add up are PD115 at the first weight") {
+    namespace fx = pat::court_fixture;
+    auto source = fx::shipped_source();
+    std::string text = fx::shipped_text("balance/crisis.pd");
+    fx::replace_once(text, "weight_church = 80", "weight_church = 90");
+    source.add("balance/crisis.pd", text);
+    source.add("crisis/projects.pd", fx::shipped_text("crisis/projects.pd"));
+    Options options;
+    options.check_unused = false;
+    const Report report = lint_memory(source, options);
+    const auto crisis_finding = std::ranges::find_if(report.findings, [](const Finding& finding) {
+        return finding.code == "PD115" && finding.file.ends_with("balance/crisis.pd");
+    });
+    REQUIRE(crisis_finding != report.findings.end());
+    CHECK(crisis_finding->message.find("component weights") != std::string::npos);
+    const auto position = fx::position_after(text, "components", "weight_fiscal");
+    CHECK(crisis_finding->line == position.line);
+    CHECK(crisis_finding->column == position.column);
+    CHECK(report.exit_code() == 1);
+}

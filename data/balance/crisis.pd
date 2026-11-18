@@ -1,0 +1,345 @@
+format_version = 1
+
+# Баланс кризиса и престола M1 (throne-crisis-model §8, §11, ADR-0010): веса компонентов стабильности,
+# пороги фаз и полос, защитное окно, подозрение и донос, заговор, окно переворота, позиции ИИ-родов,
+# последствия и основания претензий. Все числа [предл.]: они продублированы в sim::crisis::CrisisBalance
+# и ClaimRules (списки PAT_CRISIS_BALANCE_FIELDS и PAT_CLAIM_RULE_FIELDS), тест следит за совпадением;
+# калибровка — E12-T21 (100 прогонов × 50 лет). Последствия переворота (группа consequences) числа
+# порядка; их набор может дополниться ступенью казней после решения владельца (#594).
+# Суффиксы: _pm — доли в промилле (1000 = ×1,0); _x100 — сотые доли пункта; _kop — копейки; _k — множитель;
+# _days / _months / _year — календарные величины. Три проекта императора — data/crisis/projects.pd.
+
+crisis_balance "main" {
+    # Стабильность (throne-crisis §8.1): основа, инерция, гистерезис полос.
+    stability = {
+        base = 50
+        step_cap_x100 = 500
+        band_up_margin = 3
+        legacy_decay_pm = 40
+        legacy_snap_x100 = 50
+    }
+
+    # Полосы стабильности и их влияние на заговоры (§8.1).
+    bands = {
+        order_min = 70
+        tension_min = 50
+        crisis_min = 30
+        plot_ready_order_pm = 500
+        plot_ready_tension_pm = 1000
+        plot_ready_crisis_pm = 1250
+        plot_ready_collapse_pm = 1500
+        detect_order_pm = 1300
+    }
+
+    # Компоненты стабильности: веса, входы, сословия (§8.1).
+    components = {
+        weight_fiscal = 200
+        weight_war = 150
+        weight_recruit = 120
+        weight_mood = 200
+        weight_court = 130
+        weight_church = 80
+        weight_clarity = 70
+        weight_authority = 50
+        fiscal_tax_per_level = 25
+        fiscal_arrears_share_k = 40
+        fiscal_short_quota_k = 6
+        fiscal_short_quota_cap = 30
+        fiscal_deficit = 20
+        recruit_level_k = 25
+        recruit_short_share_k = 40
+        mood_gain_pm = 1500
+        estate_nobles = 1000
+        estate_clergy = 600
+        estate_townsfolk = 1000
+        estate_peasants = 1500
+        estate_cossacks = 800
+        estate_old_believers = 400
+        court_base = 30
+        court_opposition_k = 80
+        court_known_plot_k = 15
+        court_known_plot_cap = 3
+        court_purge_heat_k_pm = 400
+        clarity_vacant = -100
+        clarity_dispute = -70
+        clarity_appointed = 100
+        clarity_lawful_adult = 80
+        clarity_minor = 30
+        clarity_none = -50
+        clarity_rival_k = 20
+        clarity_rival_cap = 2
+        clarity_rival_margin = -10
+        authority_k = 2
+    }
+
+    # Фазы кризиса 0-3: пороги входа и выхода (§8.2).
+    phases = {
+        p1_enter = 55
+        p1_exit = 62
+        p1_opposition_share = 25
+        p1_opposition_opinion = -20
+        p2_members = 2
+        p2_susp_enter = 60
+        p2_susp_exit = 45
+        p3_enter = 35
+        p3_exit = 42
+        p3_split_court = -70
+        after_throne = 2
+    }
+
+    # Защитное окно императора (§8.3, D17).
+    protect = {
+        years = 5
+        health_floor = 55
+    }
+
+    # Здоровье, авторитет, передача престола и междуцарствие (§8.3).
+    emperor = {
+        ill_enter = 50
+        ill_exit = 58
+        heavy_enter = 30
+        heavy_exit = 38
+        authority_base = 60
+        authority_pull_pm = 80
+        authority_ill_x100 = -150
+        authority_heavy_x100 = -400
+        authority_riot_x100 = -40
+        authority_riot_cap_x100 = -300
+        authority_minor = 40
+        calm_min_stability = 30
+        challenge_margin = 10
+        interregnum_days = 90
+        auto_claimants = 3
+        interregnum_legacy_x100 = -1000
+        interregnum_loser_opinion = -10
+    }
+
+    # Общие числа проектов императора (§8.5).
+    projects = {
+        noise_max = 8
+        war_need = 60
+        taxes_need_max = 60
+        taxes_need_min = -20
+        taxes_low_kop = 200000
+        purges_susp_pm = 500
+        purges_plot_k = 25
+        purges_plot_cap = 2
+        recruit_quota_from_year = 1705
+    }
+
+    # Подозрение и донос (§8.6).
+    suspicion = {
+        offices_cap = 3
+        quota_short_x100 = 600
+        danger_x100 = 150
+        danger_guard_below = 40
+        favor_k_pm = 50
+        favor_pivot = 50
+        decay_pct = 3
+        decay_min_x100 = 20
+        expose_organizer = 40
+        expose_member = 25
+        confirmed_accused = 50
+        confirmed_informer = -15
+        false_informer = 20
+        open_claim = 25
+        band_low = 30
+        band_mid = 60
+        band_high = 80
+        band_hysteresis = 5
+        denounce_cooldown_days = 90
+        investigation_days = 30
+        credibility_favor_k = 4
+        credibility_honor_div = 10
+        credibility_cap = 150
+        confirm_base = 500
+        confirm_secrecy_k = 4
+        confirm_min = 100
+        confirm_max = 950
+        false_expose_base = 600
+        false_expose_min = 300
+        false_expose_max = 900
+        informer_leniency_pm = 500
+        informer_honor = 10
+        false_honor = -20
+        false_opinion = -20
+    }
+
+    # Гвардия и контроль столицы (§8.7).
+    guard = {
+        base = 60
+        empty_seat = -20
+        loyalty_pm = 150
+        unpaid = -10
+        shift_decay = 3
+        access_to_guard_pm = 1000
+    }
+
+    # Заговор: сила, скрытность, раскрытие, приглашения (§8.8).
+    plot = {
+        max_members = 12
+        prep_per_week_x100 = 250
+        strength_lo_pm = 400
+        strength_hi_pm = 1600
+        secrecy_loss_x100 = 50
+        secrecy_member_loss_x100 = 40
+        secrecy_info_gain_x100 = 10
+        secrecy_info_cap = 30
+        detect_base = 4
+        detect_member = 3
+        detect_age = 1
+        detect_age_cap = 30
+        detect_susp_div = 5
+        detect_secrecy_div = 10
+        detect_cap = 250
+        exposure_base = 1
+        exposure_member_div = 2
+        idle_days = 60
+        money_per_point_kop = 2000
+        forces_div = 10
+        honor_div = 50
+        access_per_guard_seat = 20
+        access_other = 5
+        accept_threshold = 20
+        stance_plotter = 40
+        stance_loyalist = -60
+        loyalty_k_pm = 300
+        disgraced_member = 15
+        party_candidate = 10
+        order_penalty = 10
+    }
+
+    # Окно переворота: сила, сопротивление, сигмоида (§8.9).
+    coup = {
+        w_guard = 350
+        w_strength = 300
+        w_legit = 200
+        w_authority = 250
+        w_factions = 200
+        surprise_max = 12
+        alert_known = 10
+        alert_susp = 5
+        alert_susp_from = 60
+        success_min = 20
+        success_max = 970
+        partial_base = 350
+        partial_slope = 4
+        partial_min = 100
+        partial_max = 650
+        hard_margin = 15
+        ai_coup_min_pm = 600
+        sigmoid_step = 10
+    }
+
+    # Позиции ИИ-родов (§8.11).
+    stance = {
+        decay_pm = 20
+        favor_div = 10
+        offices_cap_x100 = 450
+        offices_k_x100 = 150
+        disgrace_loss = 8
+        disgrace_cap = 2
+        quota_loss = 4
+        suspicion_div = 12
+        party_cap = 3
+        authority_div = 20
+        loyalist_enter = 20
+        loyalist_exit = 10
+        plotter_enter = -35
+        plotter_exit = -20
+        plotter_ambition = 40
+        min_months = 3
+        ai_candidate_min = 35
+        ai_contrib_share = 25
+        loyalist_denounce_delay_months = 2
+    }
+
+    # Последствия переворота, раскрытия и чисток (§8.10).
+    consequences = {
+        ok_emperor_honor = -100
+        ok_legacy_x100 = -800
+        ok_candidate_honor = 40
+        ok_authority = 45
+        ok_organizer_honor = 20
+        ok_member_honor = 20
+        ok_reward_offices = 4
+        ok_loyalist_susp = 20
+        ok_disgrace_days = 365
+        part_authority = -10
+        part_legacy_x100 = -500
+        part_organizer_honor = -10
+        part_organizer_susp = 15
+        part_member_susp = 15
+        part_concession_offices = 1
+        fail_authority = 5
+        fail_legacy_x100 = -300
+        fail_candidate_honor = -60
+        fail_organizer_disgrace_days = 730
+        fail_organizer_honor = -60
+        fail_organizer_confiscate_pm = 300
+        fail_organizer_unity = -10
+        fail_organizer_susp = 40
+        fail_member_disgrace_days = 365
+        fail_member_honor = -30
+        fail_member_confiscate_pm = 100
+        fail_member_susp = 25
+        fail_house_opinion = -20
+        hard_authority = 10
+        hard_legacy_x100 = -500
+        hard_candidate_honor = -120
+        hard_organizer_confiscate_pm = 500
+        hard_organizer_unity = -20
+        exposed_authority = 3
+        exposed_legacy_x100 = -300
+        exposed_candidate_honor = -30
+        exposed_mild_pm = 500
+        purge_honor = -20
+        purge_after_susp = -10
+    }
+
+    # Сигмоида успеха переворота (§8.9): вероятность в промилле по разнице сил от -100 до 100
+    # с шагом coup.sigmoid_step; p(d) + p(-d) = 1000.
+    sigmoid = [ 7, 11, 18, 29, 47, 76, 119, 182, 269, 378, 500, 622, 731, 818, 881, 924, 953, 971, 982, 989, 993 ]
+}
+
+# Претензии на престол (§8.4): слагаемые claim_strength 0...100.
+claim_rules "main" {
+    # Основания претензии (§8.4).
+    basis = {
+        marriage = 15
+        designation_appointment = 30
+        designation_other = 10
+        kin_max_degree = 4
+        force_min = 25
+        force_supporters = 2
+        max_per_house = 3
+    }
+
+    # Слагаемые поддержки претензии (§8.4).
+    support = {
+        guard_k_pm = 150
+        guard_cap = 15
+        houses_max = 20
+        council_max = 15
+        prestige_div = 10
+        prestige_cap = 10
+    }
+
+    # Штраф вне линии, смягчения и прочее (§8.4).
+    penalty = {
+        outside_line = -30
+        relief_marriage = 15
+        relief_appointment = 30
+        relief_council_max = 20
+        relief_church = 10
+        relief_guard = 10
+        relief_guard_from = 40
+        phase4_pm = 500
+        illegitimate = -15
+        disgraced = -10
+    }
+
+    # Кровное родство по степени 1...5 (пятая — «пять и далее») и место в порядке престолонаследия E8.
+    blood = [ 40, 32, 24, 16, 8 ]
+    legal = [ 15, 8, 4 ]
+}

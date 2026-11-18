@@ -1,0 +1,63 @@
+format_version = 1
+
+# Кризис и престол (E12-T04): названия компонентов стабильности (crisis.component.*), причин их вклада
+# (crisis.reason.*), фаз кризиса (crisis.phase.<имя>.name/hint; имена smoulder, unrest, plots, coup_window по номерам 0...3), полос стабильности (crisis.band.*) и
+# проектов императора (crisis.project.*). Ключи проектов также записаны в data/crisis/projects.pd;
+# остальные читает код (sim/crisis_text.cpp). Тексты [проверить] на тон и историчность.
+
+# ---- Компоненты стабильности ----
+crisis.component.fiscal = "Налоги и недоимки"
+crisis.component.war = "Усталость от войны"
+crisis.component.recruit = "Тяжесть рекрутского набора"
+crisis.component.mood = "Настроения сословий"
+crisis.component.court = "Согласие при дворе"
+crisis.component.church = "Раздор с Церковью"
+crisis.component.clarity = "Ясность наследования престола"
+crisis.component.authority = "Авторитет государя"
+crisis.component.legacy = "Наследие прошлой смуты"
+
+# ---- Причины вклада компонента ----
+crisis.reason.taxes_heavy = "Повышенные налоги"
+crisis.reason.arrears = "Недоимки и разорение плательщиков"
+crisis.reason.deficit = "Пустая казна"
+crisis.reason.war_fatigue = "Тяготы войны"
+crisis.reason.recruit_heavy = "Частые рекрутские наборы"
+crisis.reason.recruit_short = "Недобор рекрутов по квотам"
+crisis.reason.estates_unhappy = "Недовольство сословий"
+crisis.reason.court_opposition = "Оппозиционная партия при дворе"
+crisis.reason.known_plots = "Раскрытые заговоры"
+crisis.reason.purge_heat = "Страх перед чистками"
+crisis.reason.church_conflict = "Столкновение с Церковью"
+crisis.reason.throne_vacant = "Престол пуст"
+crisis.reason.throne_disputed = "Спор о престоле внутри дома"
+crisis.reason.heir_appointed = "Назначенный наследник — взрослый"
+crisis.reason.heir_lawful = "Законный наследник — взрослый"
+crisis.reason.heir_minor = "Наследник несовершеннолетний"
+crisis.reason.no_heirs = "Наследников нет"
+crisis.reason.rival_claims = "Сильные соперники наследника"
+crisis.reason.emperor_authority = "Вес слова государя"
+crisis.reason.legacy = "Память о прошлых потрясениях"
+
+# ---- Фазы кризиса ----
+crisis.phase.smoulder.name = "Тлеющий кризис"
+crisis.phase.smoulder.hint = "Двор спокоен, серьёзных угроз престолу нет."
+crisis.phase.unrest.name = "Брожение"
+crisis.phase.unrest.hint = "Недовольство растёт: слышны жалобы, возможна оппозиция при дворе."
+crisis.phase.plots.name = "Заговоры"
+crisis.phase.plots.hint = "Против государя составляются заговоры; подозрения и доносы множатся."
+crisis.phase.coup_window.name = "Окно переворота"
+crisis.phase.coup_window.hint = "Власть шатка: заговорщики могут решиться на переворот."
+
+# ---- Полосы стабильности ----
+crisis.band.order = "Порядок"
+crisis.band.tension = "Напряжённость"
+crisis.band.crisis = "Кризис"
+crisis.band.collapse = "Развал"
+
+# ---- Проекты императора ----
+crisis.project.war.name = "Война"
+crisis.project.war.desc = "Государь ведёт войну: растут рекрутские наборы и расходы на армию, копится усталость."
+crisis.project.taxes.name = "Налоги"
+crisis.project.taxes.desc = "Государь повышает или снижает налоги и ставит окладные квоты родам."
+crisis.project.purges.name = "Расследования и чистки"
+crisis.project.purges.desc = "Государь расследует измену и карает неугодных; чистки пугают двор, но сдерживают заговоры."

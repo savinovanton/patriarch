@@ -73,4 +73,20 @@ inline data::SourcePos field_pos(const data::ContentObject& object, std::string_
     return key_pos(object.object.body, name, object.object.pos);
 }
 
+/// Position of a dotted path such as `seats.max` or `requirements.skills[2]` inside an object: the key
+/// of the deepest field that exists, so an error never points outside the object.
+inline data::SourcePos path_position(const data::ContentObject& object, std::string_view path) {
+    data::SourcePos pos = object.object.pos;
+    const data::TypedBlock* block = &object.object.body;
+    while (block != nullptr && !path.empty()) {
+        const auto dot = path.find('.');
+        std::string_view name = path.substr(0, dot);
+        name = name.substr(0, name.find('['));
+        pos = key_pos(*block, name, pos);
+        block = dot == std::string_view::npos ? nullptr : block_of(*block, name);
+        path = dot == std::string_view::npos ? std::string_view{} : path.substr(dot + 1);
+    }
+    return pos;
+}
+
 }  // namespace pat::content::detail

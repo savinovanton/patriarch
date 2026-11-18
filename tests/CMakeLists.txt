@@ -21,6 +21,7 @@ add_executable(patriarch_tests
     date_test.cpp
     demo_growth_test.cpp
     court_content_test.cpp
+    crisis_content_test.cpp
     demography_content_test.cpp
     demography_test.cpp
     dynasty_standing_test.cpp

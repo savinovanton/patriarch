@@ -2,6 +2,7 @@
 
 #include "pat/content/court_content.hpp"
 #include "pat/content/credits_content.hpp"
+#include "pat/content/crisis_content.hpp"
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/m1_content.hpp"
@@ -278,6 +279,11 @@ Report lint(std::span<const data::ContentSource* const> roots,
             const content::CourtRulesResult court = content::build_court_rules(loaded.registry);
             if (!court) {
                 for (const data::LoadError& error : court.error())
+                    findings.push_back(from_load_error(error));
+            }
+            const content::CrisisRulesResult crisis = content::build_crisis_rules(loaded.registry);
+            if (!crisis) {
+                for (const data::LoadError& error : crisis.error())
                     findings.push_back(from_load_error(error));
             }
             const content::NamePoolsResult names = content::build_name_pools(loaded.registry);
