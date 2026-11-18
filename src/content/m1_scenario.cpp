@@ -175,9 +175,14 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     }
     // Presentation-only ranks, the court kinds and the crisis kinds stay out of the compatibility hash
     // until their systems are installed in the scenario (E10-T20, court-model.md section 13.2; E12-T22).
-    std::vector<std::string_view> excluded_kinds{data::kHonorRankKind};
-    excluded_kinds.insert(excluded_kinds.end(), data::kCourtKinds.begin(), data::kCourtKinds.end());
-    excluded_kinds.insert(excluded_kinds.end(), data::kCrisisKinds.begin(), data::kCrisisKinds.end());
+    std::vector<std::string_view> excluded_kinds;
+    excluded_kinds.push_back(data::kHonorRankKind);
+    for (const std::string_view kind : data::kCourtKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    for (const std::string_view kind : data::kCrisisKinds) {
+        excluded_kinds.push_back(kind);
+    }
     const std::uint64_t content_hash = definitions.registry.content_hash_excluding(excluded_kinds);
     world.set_economy_rules_hash(content_hash);
 
