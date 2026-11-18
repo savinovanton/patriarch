@@ -114,7 +114,10 @@ TEST_CASE("runner: snapshots seen by another thread are consistent and monotonic
     std::thread reader([&] {
         std::int64_t last_tick = -1;
         std::uint64_t last_version = 0;
-        while (!stop.load()) {
+        // do/while: at least one read even when the 3000 ticks finish before this thread is scheduled (a busy
+        // machine running tests in parallel); the runner keeps running until after join(), so it is still
+        // live.
+        do {
             const std::uint64_t version = runner.snapshot_version();
             const auto snapshot = runner.latest_snapshot();
             const std::int64_t tick = snapshot->calendar().tick_count();
@@ -131,7 +134,7 @@ TEST_CASE("runner: snapshots seen by another thread are consistent and monotonic
             last_tick = tick;
             last_version = version;
             observed.fetch_add(1);
-        }
+        } while (!stop.load());
     });
 
     REQUIRE(runner.wait_for_ticks(3000, 30000ms));
