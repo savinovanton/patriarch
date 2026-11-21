@@ -1,6 +1,7 @@
 #include "pat/sim/marriage_weddings.hpp"
 
 #include "pat/core/assert.hpp"
+#include "pat/sim/economy/money.hpp"
 #include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
 #include "pat/sim/marriage_score.hpp"
@@ -64,16 +65,9 @@ Check wedding_writable(const World& world, const family::Betrothal& row) {
             (marriage.groom == row.groom || marriage.bride == row.bride)) {
             return invalid_state("a previous marriage still awaits settlement");
         }
-        if (marriage.state == family::MarriageState::Widowed && marriage.bride == row.bride &&
-            marriage.claim_kop != 0) {
-            return invalid_state("the widow's existing claim requires settlement before this wedding");
-        }
     }
-    if (row.claim_marriage != 0) {
-        const auto* claim = world.find_family_marriage(row.claim_marriage);
-        if (claim == nullptr || claim->bride != row.bride || claim->claim_kop != 0) {
-            return invalid_state("the betrothal refers to an unsettled widow's claim");
-        }
+    if (row.claim_marriage != 0 && !widow_dowry(world, row.bride, row.groom_house)) {
+        return invalid_state("the betrothal no longer refers to the bride's widow's claim");
     }
     return Check::ok();
 }
@@ -269,7 +263,13 @@ void apply_wed(World& world, const MarriageRules& rules, const cmd::Wed& payload
     if (pending == nullptr || !wedding_writable(world, *pending)) {
         return;
     }
-    const auto row = *pending;
+    auto row = *pending;
+    // Old contracts may predate claim quoting. The surviving marriage record is authoritative.
+    if (const auto claim = widow_dowry(world, row.bride, row.groom_house)) {
+        row.dowry_kop = claim->amount;
+        row.dowry_source = claim->source;
+        row.claim_marriage = claim->claim_marriage;
+    }
     const auto groom_head = family_acting_head(world, row.groom_house);
     const auto bride_head = family_acting_head(world, row.bride_house);
     const auto groom_rank = honor_rank(rules, world.dynasties().honor[row.groom_house.index()]);
@@ -292,10 +292,10 @@ void apply_wed(World& world, const MarriageRules& rules, const cmd::Wed& payload
                                             economy::LedgerCode::DowryIn,
                                             row.dowry_kop);
     }
-    // T11 will redeem nonzero claims. Zero-value completed widowhood remains safe to close now.
     if (row.claim_marriage != 0) {
         auto previous = *world.find_family_marriage(row.claim_marriage);
         previous.state = family::MarriageState::Closed;
+        previous.claim_kop = 0;
         PAT_VERIFY(world.update_family_marriage(previous.id, previous));
     }
     const auto id = world.create_family_marriage(marriage);
@@ -328,7 +328,7 @@ void apply_wed(World& world, const MarriageRules& rules, const cmd::Wed& payload
     note_pair(world, row.groom_house, row.bride_house, row.groom, row.bride, 206);
 }
 
-void apply_settle_widowhood(World& world, const cmd::SettleWidowhood& payload) {
+void apply_settle_widowhood(World& world, const MarriageRules& rules, const cmd::SettleWidowhood& payload) {
     if (!validate_settle_widowhood(world, payload)) {
         return;
     }
@@ -351,6 +351,12 @@ void apply_settle_widowhood(World& world, const cmd::SettleWidowhood& payload) {
         if (!groom_alive && bride_alive) {
             marriage.state = family::MarriageState::Widowed;
             marriage.end_reason = family::MarriageEndReason::Widowhood;
+            if (newly_widowed) {
+                marriage.claim_kop = std::clamp(
+                    economy::mul_permille(marriage.dowry_kop, rules.consequences.widow_claim_permille),
+                    economy::Kopecks{0},
+                    economy::kMaxTreasuryKop);
+            }
         } else {
             marriage.state = family::MarriageState::Closed;
             marriage.end_reason =

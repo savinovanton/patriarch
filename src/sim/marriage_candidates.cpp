@@ -100,6 +100,21 @@ CandidateList find_candidates(const World& world, const MarriageRules& rules, co
     if (!member_party) {
         return out;
     }
+    // Match family_marriage_of's latest non-Closed record once for the whole snapshot.
+    // Candidate pools without widow records need no character-sized allocation.
+    std::vector<const family::Marriage*> latest_marriages;
+    const auto& marriages = world.family().marriages;
+    if (std::ranges::any_of(marriages,
+                            [](const auto& row) { return row.state == family::MarriageState::Widowed; })) {
+        latest_marriages.resize(people.ids.capacity(), nullptr);
+        for (const auto& marriage : marriages) {
+            if (marriage.state == family::MarriageState::Closed) {
+                continue;
+            }
+            latest_marriages[marriage.groom.index()] = &marriage;
+            latest_marriages[marriage.bride.index()] = &marriage;
+        }
+    }
     out.rows.reserve(world.living().size() / 2);
     for (const auto person : world.living()) {
         const auto index = person.index();
@@ -150,7 +165,12 @@ CandidateList find_candidates(const World& world, const MarriageRules& rules, co
             facts.relation = dynasty_relation(world, member_house, house, rules);
         }
         row.relation = *facts.relation;
-        row.dowry_kop = member_male ? facts.dowry_kop : member_facts.dowry_kop;
+        const auto bride_id = member_male ? person : query.member;
+        const auto groom_house = member_male ? member_house : house;
+        const auto widow = latest_marriages.empty()
+                               ? std::nullopt
+                               : widow_dowry(latest_marriages[bride_id.index()], bride_id, groom_house);
+        row.dowry_kop = widow ? widow->amount : member_male ? facts.dowry_kop : member_facts.dowry_kop;
         MatchContext context;
         context.initiator = member_house;
         context.relation = row.relation;
@@ -160,6 +180,15 @@ CandidateList find_candidates(const World& world, const MarriageRules& rules, co
         }
         const auto& groom = member_male ? *member_party : *candidate_party;
         const auto& bride = member_male ? *candidate_party : *member_party;
+        if (widow) {
+            // A widow's personal claim must neither reuse nor seed the ordinary per-house score.
+            const auto evaluation = evaluate_prepared_match(rules, groom, bride, row.dowry_kop, context);
+            row.score = evaluation.score(member_side);
+            row.match_value = row.score.score;
+            row.forecast = forecast_of(rules, evaluation.score(responder_side));
+            out.rows.push_back(std::move(row));
+            continue;
+        }
         const bool first_for_house = !facts.evaluation;
         if (first_for_house) {
             facts.evaluation = evaluate_prepared_match(rules, groom, bride, row.dowry_kop, context);

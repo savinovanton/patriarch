@@ -36,7 +36,7 @@ void apply_break_betrothal(World& world,
                            DynastyId actor,
                            const cmd::BreakBetrothal& payload);
 void apply_wed(World& world, const MarriageRules& rules, const cmd::Wed& payload);
-void apply_settle_widowhood(World& world, const cmd::SettleWidowhood& payload);
+void apply_settle_widowhood(World& world, const MarriageRules& rules, const cmd::SettleWidowhood& payload);
 
 /// Pure daily decision; age alone does not break a betrothal before its wedding date.
 [[nodiscard]] std::optional<family::BetrothalBreakReason>

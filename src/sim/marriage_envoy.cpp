@@ -48,11 +48,8 @@ struct EnvoyDowry {
 };
 
 EnvoyDowry envoy_dowry(const World& world, const MarriageRules& rules, const EnvoyParties& parties) {
-    const auto* previous = world.family_marriage_of(parties.bride);
-    if (previous != nullptr && previous->bride == parties.bride &&
-        previous->state == family::MarriageState::Widowed) {
-        return {previous->groom_house == parties.groom_house ? 0 : previous->claim_kop,
-                previous->groom_house};
+    if (const auto widow = widow_dowry(world, parties.bride, parties.groom_house)) {
+        return {widow->amount, widow->source};
     }
     return {standard_dowry(world, rules, parties.bride_house), parties.bride_house};
 }
