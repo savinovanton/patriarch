@@ -116,10 +116,10 @@ std::optional<family::Betrothal> make_family_betrothal(const World& world,
     row.dowry_source = dowry_source;
     row.dispensation = dispensation;
     row.origin = origin;
-    const auto* previous = world.family_marriage_of(row.bride);
-    if (previous != nullptr && previous->bride == row.bride &&
-        previous->state == family::MarriageState::Widowed) {
-        row.claim_marriage = previous->id;
+    if (const auto widow = widow_dowry(world, row.bride, row.groom_house)) {
+        row.dowry_kop = widow->amount;
+        row.dowry_source = widow->source;
+        row.claim_marriage = widow->claim_marriage;
     }
     return row;
 }

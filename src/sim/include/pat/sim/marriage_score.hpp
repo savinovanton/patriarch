@@ -87,8 +87,8 @@ inline constexpr std::uint16_t kEnvoyDispensation = 10103;
 inline constexpr std::uint16_t kDowryTotal = 10200;
 inline constexpr std::uint16_t kDowryBase = 10201;
 inline constexpr std::uint16_t kDowryHonor = 10202;
-inline constexpr std::uint16_t kDowryWidowClaim = 10203;  // reserved: the widow's claim (E8-T11)
-inline constexpr std::uint16_t kDowryLimit = 10204;       // the clamp to the corridor of the rules
+inline constexpr std::uint16_t kDowryWidowClaim = 10203;  // the widow's claim
+inline constexpr std::uint16_t kDowryLimit = 10204;       // the clamp to the transferable amount
 
 }  // namespace marriage_term
 
@@ -291,6 +291,27 @@ void explain_accept_score(const AcceptScore& score, economy::Breakdown& explain)
                                               const MarriageRules& rules,
                                               DynastyId bride_house,
                                               economy::Breakdown* explain = nullptr);
+
+struct WidowDowry {
+    economy::Kopecks amount = 0;
+    DynastyId source;
+    family::MarriageId claim_marriage = 0;
+};
+
+/// The latest outstanding widow claim replaces standard dowry. The quote is bounded to a single
+/// posting and is zero within the previous husband's house; the full claim remains on its record.
+/// nullopt means that the bride has no authoritative Widowed marriage record.
+[[nodiscard]] std::optional<WidowDowry> widow_dowry(const World& world,
+                                                    CharacterId bride,
+                                                    DynastyId groom_house,
+                                                    economy::Breakdown* explain = nullptr);
+
+/// The same quote using the latest non-Closed marriage of the bride from this immutable snapshot.
+/// Batched callers may prepare those pointers in one pass instead of searching for every person.
+[[nodiscard]] std::optional<WidowDowry> widow_dowry(const family::Marriage* latest,
+                                                    CharacterId bride,
+                                                    DynastyId groom_house,
+                                                    economy::Breakdown* explain = nullptr);
 
 /// The cost of sending the envoy: road + gifts + (dispensation ? fee : 0). Optionally explained
 /// (root kEnvoyTotal in kopecks).

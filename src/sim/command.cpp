@@ -814,7 +814,9 @@ struct Applier {
         apply_break_betrothal(world, rules_or_default(marriage), actor, c);
     }
     void operator()(const cmd::Wed& c) const { apply_wed(world, rules_or_default(marriage), c); }
-    void operator()(const cmd::SettleWidowhood& c) const { apply_settle_widowhood(world, c); }
+    void operator()(const cmd::SettleWidowhood& c) const {
+        apply_settle_widowhood(world, rules_or_default(marriage), c);
+    }
 
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {

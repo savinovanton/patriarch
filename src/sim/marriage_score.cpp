@@ -422,6 +422,28 @@ standard_dowry(const World& world, const MarriageRules& rules, DynastyId bride_h
     return dowry;
 }
 
+std::optional<WidowDowry>
+widow_dowry(const World& world, CharacterId bride, DynastyId groom_house, Breakdown* explain) {
+    return widow_dowry(world.family_marriage_of(bride), bride, groom_house, explain);
+}
+
+std::optional<WidowDowry>
+widow_dowry(const family::Marriage* latest, CharacterId bride, DynastyId groom_house, Breakdown* explain) {
+    if (latest == nullptr || latest->bride != bride || latest->state != family::MarriageState::Widowed) {
+        return std::nullopt;
+    }
+    const Kopecks amount = latest->groom_house == groom_house
+                               ? 0
+                               : std::clamp<Kopecks>(latest->claim_kop, 0, economy::kMaxPostingKop);
+    if (explain != nullptr) {
+        explain->begin(marriage_term::kDowryTotal, Unit::Kopecks, amount);
+        static_cast<void>(
+            explain->add_term(economy::kRootNode, marriage_term::kDowryWidowClaim, latest->claim_kop));
+        static_cast<void>(explain->add_remainder(economy::kRootNode, marriage_term::kDowryLimit));
+    }
+    return WidowDowry{amount, latest->groom_house, latest->id};
+}
+
 Kopecks envoy_cost(const MarriageRules& rules, bool dispensation, Breakdown* explain) {
     const MarriageMoneyRules& m = rules.money;
     const Kopecks fee = dispensation ? m.dispensation_fee_kop : 0;
