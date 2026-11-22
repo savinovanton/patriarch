@@ -92,7 +92,7 @@ off  size
 | 21 | `events_hash` | u64 | нет | хеш скомпилированного набора событий (`EventSet::hash()`, [event-engine.md](event-engine.md) §20.1); нет ключа — партия без событий; при загрузке сверяется так же, как `content_hash` (кроме `--dev`) — сверку добавит загрузчик, когда набор событий входит в сборку партии; пишет `summary_from_world` из `meta.events_hash` (E11-T03, в коде; 0 не пишется, ключ идёт после превью) |
 | 22 | `court_hash` | u64 | нет | `CourtRules::hash()` ([court-model.md](court-model.md) §13.2); пишется, только если системы двора установлены (E10-T20); нет ключа — партия без двора |
 | 23 | `crisis_hash` | u64 | нет | `CrisisRules::hash()` ([throne-crisis-model.md](throne-crisis-model.md) §13.2); пишется, только если кризис включён (E12-T22); нет ключа — партия без кризиса; при загрузке сверяется так же, как `events_hash` и `court_hash` |
-| 24 | `army_hash` | u64 | нет | **резерв E16** (разбор 2026-11-22): `ArmyRules::hash()`; пишется, только если системы армий установлены (E16-T20); нет ключа — партия без армий |
+| 24 | `army_hash` | u64 | нет | `ArmyRules::hash()` ([army-model.md](army-model.md) §14.2); пишется, только если системы армий установлены (E16-T20); нет ключа — партия без армий; при загрузке сверяется как `crisis_hash` |
 | 25 | `ai_hash` | u64 | нет | **резерв E17** (разбор 2026-11-22): `AiRules::hash()`; пишется, только если системы ИИ установлены (E17-T19); нет ключа — партия без ИИ-агентов |
 | 26 | `diplomacy_hash` | u64 | нет | **резерв E15** (разбор 2026-11-22): `DiplomacyRules::hash()`; пишется, только если системы дипломатии установлены (E15-T17); нет ключа — партия без дипломатии |
 | 27 | `religion_hash` | u64 | нет | **резерв E31** (разбор 2026-11-22): `ReligionRules::hash()`; пишется, только если системы религии установлены (E31-T17); нет ключа — партия без религии |
@@ -230,7 +230,14 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 79…83 | — | **E12** (резерв: E18 блоки и фаза 4, M2) | | | резерв (5 id) |
 | 84…91 | — | **E30** (`game_setup`, `goals`, `key_decisions`, `score_history`; E30-T03) | | | резерв (8 id) |
 | 92…95 | — | **E13** (метаданные мира, если понадобятся; иначе свободны) | | | резерв (4 id) |
-| 96…103 | — | **E16** (резерв под армии, разбор 2026-11-22: `army_meta`, `armies`, `army_orders`, `fortresses`, `sieges`, `fronts`, `battle_log`, 103 резерв; поимённо выдаёт E16-T01; для id ≥ 96 E16-T03 поднимает `kMaxSections` 96 → 128 по §5.1) | | | резерв (8 id) |
+| 96 | `army_meta` | E16-T03 ([army-model.md](army-model.md) §14.1: `ArmyMeta` — включение, столица, резерв людей короны, счётчики, курсоры `IncidentLog` и квот; часть хеша `ExtPart` 50) | схема E16-T03 | 1 | **выдан** спецификацией E16-T01 |
+| 97 | `armies` | E16-T03 (армии: состав по 4 родам, качество, опыт, мораль, снабжение, командир, положение; 76 Б на строку; `ExtPart` 51) | схема E16-T03 | 1 | выдан |
+| 98 | `army_orders` | E16-T03 (приказы, очередь ≤ 3, путь ≤ 24 шагов; `ExtPart` 52) | схема E16-T03 | 1 | выдан |
+| 99 | `fortresses` | E16-T03 (крепости, гарнизоны, запасы, стены, перезарядки повстанцев и ополчения; `ExtPart` 53) | схема E16-T03 | 1 | выдан |
+| 100 | `sieges` | E16-T03 (осады; `ExtPart` 54) | схема E16-T03 | 1 | выдан |
+| 101 | `fronts` | E16-T03 (четыре слота фронтов и вклад родов; `ExtPart` 55) | схема E16-T03 | 1 | выдан |
+| 102 | `battle_log` | E16-T03 (кольцо отчётов о боях, 64 записи; `ExtPart` 56) | схема E16-T03 | 1 | выдан |
+| 103 | — | **E16** (резерв M2: блоки E18, кэш снабжения; для id ≥ 96 E16-T03 поднимает `kMaxSections` 96 → 128 по §5.1; `ExtPart` 57 резерв) | | | резерв (1 id) |
 | 104…111 | — | **E17** (резерв под ИИ династий, разбор 2026-11-22: `ai_meta`, `ai_agents`, `ai_goals`, `ai_frames`, `ai_cooldowns`, `ai_log`, 110…111 резерв; поимённо выдаёт E17-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03) | | | резерв (8 id) |
 | 112…119 | — | **E15** (резерв под дипломатию, разбор 2026-11-22: `dipl_meta`, `dipl_relations`, `dipl_mods`, `dipl_treaties`, `dipl_offers`, `dipl_favors`, `dipl_log`, 119 резерв; поимённо выдаёт E15-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03; часть хеша `ExtPart` 62 — одна объединённая, 63 резерв: общий запас частей почти исчерпан, план — E15-T01 с E17-T01) | | | резерв (8 id) |
 | 120…127 | — | **E31** (резерв под религию, разбор 2026-11-22: `rel_meta` (`ChurchState`), `rel_dynasties`, `rel_provinces`, `rel_log`, 124…127 резерв (M2: созданные веры, течения); поимённо выдаёт E31-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03; часть хеша `ExtPart` 63 — одна объединённая, последняя свободная из 64: общий запас частей исчерпан, план — E15-T01 и E17-T01 с E31-T01) | | | резерв (8 id) |
@@ -246,12 +253,31 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 - **Порядок:** T03 выполняется **до** E11-T03 и E10-T03 (до первой задачи, чей счёт разделов может превысить 32); после E8-T03 и в любом месте между W-задачами. Задача меняет **только константу и проверку**, байты существующих сейвов и `kExpectedSaveBytesHash` не меняются, `kStateSchema` **не поднимается**: файл со >32 разделами возможен лишь у сборки, которая добавила схему новее, а слово схемы читается первым — старая сборка скажет «создано более новой версией», а не «неверное число разделов».
 - **Реализовано (T03):** `kMaxSections = 96`, `static_assert` на id таблицы `kSections`, ридер дополнительно проверяет `plausible(section_count, 8)` (заголовок раздела — 8 байт). Реальных разделов сейчас 24, поэтому тест «40 / 96 / 97 разделов» использует **тестовый хук** `pat/sim/state_test_hooks.hpp` (`ScopedTestSections`: писатель добавляет N разделов с id ≥ 41 по одному `u32`, ридер принимает ровно такие; по умолчанию выключен и байты не меняет).
 - Эпик, которому нужны `id ≥ 96`, поднимает лимит в своей W-задаче по тому же правилу (кратно 32) и вносит блок в таблицу выше.
+- **`id ≥ 96` (E16-T03):** `kMaxSections` 96 → 128 в W-задаче E16-T03 (до E17/E15/E31-T03, чьи блоки 104…127 лежат выше 96). Той же задачей поднимается `kExtPartCount` 64 → 128 (§5.3): это размер массива хеша в памяти, не формат файла.
 
 ### 5.2 Правило выдачи блоков
 
 1. Эпик получает блок в таблице §5 **до первой строки кода** (в ADR/спецификации эпика, E*-T01) и вносит его сюда PR'ом документа.
 2. Блок кратен 4 по размеру, ≥ 8 id; запас — внутри блока эпика, а не «взаймы» у соседа.
 3. Если блок исчерпан — эпик берёт следующий свободный блок с конца реестра (≥ 96) и записывает здесь; сдвиг существующих id запрещён.
+
+### 5.3 Части хеша (`ExtPart`)
+
+Номер части — число навсегда (`enum ExtPart`, `WorldHash::ext[kExtPartCount]`); часть, чьи данные по умолчанию, равна 0 и **не входит в `total`**. Номера хранятся **только в памяти**: контейнер `PSV` частей не содержит, реплей (`PRP1`) записывает `total` и пять классических частей, `total` хеширует номер как `u8` (< 256) — поэтому **подъём `kExtPartCount` не меняет форматов и golden** (E16-T01, [army-model.md](army-model.md) §14.3). Реестр по документам эпиков на 2026-11-22:
+
+| Номера | Эпик | Содержимое |
+|---|---|---|
+| 0…7 | E7 | `Mode`, `CharacterExt`, `Archive`, `DynastyExt`, `Pregnancy`, `Chronicle`, `Opinion`, `Kinship` |
+| 8…14 | E8 | `Negotiation`, `Betrothal`, `MarriageRecord`, `PersonStatus`, `Succession`, `Regency`, `Dispute` (15 свободна) |
+| 16…23 | E9 | 16 `Economy` (одна часть: FNV от девяти подхешей), 17…23 резерв |
+| 24…31 | E11 | 24…29 события, 30…31 резерв |
+| 32…37, 39 | E10 | двор; 39 — портфели (разделы 70 и 71) |
+| 38, 40, 41 | E7 | 38 `Feud`, 40 `Influence`, 41 резерв |
+| 42…49 | E12 | 42…48 кризис, 49 резерв |
+| **50…57** | **E16** | **50…56 армии (разделы 96…102), 57 резерв** |
+| 58…61 | E17 | ИИ |
+| 62, 63 | E15, E31 | одна объединённая часть каждого (до подъёма лимита) |
+| 64…127 | — | после подъёма `kExtPartCount` (E16-T03): E14, E18, E20, E30 (`game`: в реестрах не назначена), E33, E34, … |
 
 ## 6. Реестр тегов команд
 
@@ -267,7 +293,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 128…143 | E10 | выпущены спецификацией E10-T01 ([court-model.md](court-model.md) §7.1): 128 `AssignOffice`, 129 `ResignOffice`, 130 `DismissOffice`, 131 `PetitionForOffice`, 132 `WithdrawPetition`, 133 `DecideAppointment`, 134 `HireServant`, 135 `FireServant`, 136 `GiftToEmperor`, 137 `AdjustFavor`, 138 `AdjustServantLoyalty`, 139 `OpenVacancy`, 140 `AssignParty`, 141 `EndDisgrace`, 142 `SetServantMarket`, **143 `SetPortfolioCourse`** (E10-T22; в коде пока нет) | — (блок исчерпан) |
 | 144…167 | E12 | выпущены спецификацией E12-T01 ([throne-crisis-model.md](throne-crisis-model.md) §7.1): 144 `SetRealmState`, 145 `SetCrisisPhase`, 146 `SetEmperorAgenda`, 147 `AdjustSuspicion`, 148 `Denounce`, 149 `PressClaim`, 150 `WithdrawClaim`, 151 `SupportClaim` (вместо `DesignateHeir`: он дублировал E8 `SetHeir`), 152 `StartPlot`, 153 `JoinPlot`, 154 `LeavePlot`, 155 `ContributeToPlot`, 156 `ExecuteCoup`, 157 `ResolveCoup`, 158 `TransferThrone`, 159 `SetGuardControl`, 160 `SetRealmInput`, 161 `AdvancePlot`, 162 `ResolveDenunciation`, 163 `SetStance` (в коде пока нет) | 164…167 |
 | 168…175 | E30 | — | 168…175 |
-| 176…191 | E16 | резерв под армии (разбор 2026-11-22; предложение: 176 `RaiseArmy` … 190 `ApplyArmyAttrition`, 191 резерв; поимённо выдаёт E16-T01, [E16 §3](../epics/E16-army-war.md)) | — | 176…191 |
+| 176…191 | E16 | выпущены спецификацией E16-T01 ([army-model.md](army-model.md) §8.1): 176 `RaiseArmy`, 177 `DisbandArmy`, 178 `MergeArmies`, 179 `SplitArmy`, 180 `AssignCommander`, 181 `OrderMove`, 182 `OrderSiege`, 183 `AssignToFront`, 184 `RecallFromFront`, 185 `StepArmy` (внутр.), 186 `ResolveBattle` (внутр.), 187 `AdvanceSiege` (внутр.), 188 `SpawnInsurgents` (внутр.), 189 `SetFrontState` (внутр.), 190 `ApplyArmyAttrition` (внутр.), 191 `SetFortress` (внутр.) (в коде пока нет) | — (блок исчерпан) | — |
 | 192…199 | E17 | резерв под ИИ династий (разбор 2026-11-22; предложение: 192 `ConfigureAgent`, 193 `AgentDeliberated` (внутр.), 194 `AgentCommandRejected` (внутр.), 195 `SetAgentTier`, 196 `SetAiOptions`, 197…199 резерв; поимённо выдаёт E17-T01, [E17 §3](../epics/E17-dynasty-ai.md)) | — | 192…199 |
 | 200…215 | E15 | резерв под дипломатию (разбор 2026-11-22; предложение: 200 `GiveGift`, 201 `AskFavor`, 202 `ProposeTreaty`, 203 `RespondOffer`, 204 `WithdrawOffer`, 205 `BreakTreaty`, 206 `SignTreaty` (внутр.), 207 `SettleTreaty` (внутр.), 208 `ApplyTreatyBreach` (внутр.), 209 `AdjustRelation` (внутр.), 210 `RegisterMarriagePact` (внутр.), 211 `SetDiplomacyOptions`, 212…215 резерв; поимённо выдаёт E15-T01, [E15 §3](../epics/E15-diplomacy.md)) | — | 212…215 |
 | 216…223 | E31 | резерв под религию (разбор 2026-11-22; предложение: 216 `SetFaithStance`, 217 `DonateToChurch`, 218 `SetChurchPolicy` (внутр.), 219 `AdjustChurchState` (внутр.), 220 `AdjustChurchFavor` (внутр.), 221 `ApplyFaithStance` (внутр.), 222 `AdjustFaithShare` (внутр.), 223 резерв; поимённо выдаёт E31-T01, [E31 §3](../epics/E31-religion.md)) | — | 223 |
