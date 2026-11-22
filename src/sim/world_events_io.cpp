@@ -32,7 +32,6 @@ constexpr std::size_t kModifierRowBytes = 1 + 4 + 8 + 4 + 4;
 constexpr std::size_t kInstanceRowBytes = 4 + 8 + 4 + 1 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 1 + 1;
 constexpr std::size_t kHistoryRowBytes = 4 + 4 + 8 + 1 + 1 + 4 + 1 + 2;
 constexpr std::size_t kJournalRowBytes = 4 + 4 + 4 + 1 + 1 + 8 + 4 + 4 + 4 + 1;
-constexpr std::size_t kMinMetaBytes = 1 + 8 + 4 * 5 + 2 + 1 + 1 + 4 + 2;
 
 using events::EventKey;
 using events::Scope;
