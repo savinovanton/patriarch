@@ -87,6 +87,7 @@ struct SaveSummary {
     std::int64_t tick = 0;              ///< 18: calendar().tick_count()
     std::uint8_t ironman = 0;           ///< 19: reserved (M2); written only when non-zero
     std::vector<std::uint8_t> preview;  ///< 20: reserved (M2 screenshot); empty = absent
+    std::uint64_t events_hash = 0;      ///< 21: hash of the event set of the game; 0 = none, not written
 
     [[nodiscard]] bool operator==(const SaveSummary&) const = default;
 };

@@ -9,6 +9,8 @@
 #include <tuple>
 #include <utility>
 
+#include "state_sections.hpp"
+
 namespace pat::sim {
 
 namespace {
@@ -47,9 +49,7 @@ void hash_table_slots(core::HashStream& h, const EntityTable<Id>& ids) {
     return next_anniversary_after(birth, today);
 }
 
-[[nodiscard]] std::uint64_t nonzero(std::uint64_t value) noexcept {
-    return value == 0 ? 1 : value;
-}
+using detail::nonzero;
 
 [[nodiscard]] int chronicle_priority(ChronicleKind kind) noexcept {
     switch (kind) {
@@ -101,6 +101,18 @@ std::string ext_part_name(std::size_t number) {
             return "dispute";
         case ExtPart::Economy:
             return "economy";
+        case ExtPart::EventFlagsVars:
+            return "event_flags_vars";
+        case ExtPart::EventTimersCooldowns:
+            return "event_timers_cooldowns";
+        case ExtPart::EventChainsModifiers:
+            return "event_chains_modifiers";
+        case ExtPart::EventQueue:
+            return "event_queue";
+        case ExtPart::EventHistoryJournal:
+            return "event_history_journal";
+        case ExtPart::EventMeta:
+            return "event_meta";
     }
     return std::format("ext[{}]", number);
 }
@@ -1311,6 +1323,11 @@ WorldHash World::compute_hash() const {
     const auto family_parts = family_hash_parts();
     for (std::size_t part = 0; part < family_parts.size(); ++part) {
         out.ext[static_cast<std::size_t>(ExtPart::Negotiation) + part] = family_parts[part];
+    }
+
+    const auto event_parts = events_hash_parts();
+    for (std::size_t part = 0; part < event_parts.size(); ++part) {
+        out.ext[static_cast<std::size_t>(ExtPart::EventFlagsVars) + part] = event_parts[part];
     }
 
     core::HashStream total;

@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <cstdlib>
 #include <filesystem>
 #include <functional>
 #include <limits>
@@ -20,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "state_sections_fixture.hpp"
 #include "test_bytes.hpp"
 #include "world_fixture.hpp"
 
@@ -247,120 +247,17 @@ World make_family_save_world() {
     return world;
 }
 
-std::vector<std::uint8_t> state_bytes(const World& world) {
-    ByteWriter out;
-    world.save_state(out);
-    return out.take();
-}
-
-auto load_state(std::span<const std::uint8_t> bytes) {
-    ByteReader in(bytes);
-    auto loaded = World::load_state(in);
-    if (loaded.has_value()) {
-        REQUIRE(in.at_end());
-    }
-    return loaded;
-}
-
-struct Section {
-    std::uint16_t id = 0;
-    std::uint16_t version = 0;
-    std::vector<std::uint8_t> body;
-};
-
-struct Sections {
-    std::size_t count_at = 0;
-    std::size_t end = 0;
-    std::vector<Section> rows;
-};
-
-Sections sections_of(std::span<const std::uint8_t> bytes) {
-    Sections sections;
-    ByteReader in(bytes);
-    (void)in.u32();
-    (void)in.i32();
-    (void)in.i64();
-    (void)in.u64();
-    const auto streams = in.u32();
-    (void)in.bytes(std::size_t{streams} * 24);
-    const auto dynasties = in.u32();
-    (void)in.bytes(std::size_t{dynasties} * 12);
-    for (std::uint32_t i = 0; i < dynasties; ++i) {
-        for (int list = 0; list < 2; ++list) {
-            const auto n = in.u32();
-            (void)in.bytes(std::size_t{n} * 4);
-        }
-    }
-    const auto provinces = in.u32();
-    (void)in.bytes(std::size_t{provinces} * 13);
-    const auto capacity = in.u32();
-    (void)in.bytes(capacity);
-    (void)in.bytes(std::size_t{capacity} * 4);
-    const auto free = in.u32();
-    (void)in.bytes(std::size_t{free} * 4);
-    (void)in.bytes(std::size_t{capacity} * 21);
-    (void)in.u32();
-    sections.count_at = in.position();
-    const auto count = in.u16();
-    for (std::uint16_t i = 0; i < count; ++i) {
-        Section row;
-        row.id = in.u16();
-        row.version = in.u16();
-        const auto length = in.u32();
-        const auto body = in.bytes(length);
-        row.body.assign(body.begin(), body.end());
-        sections.rows.push_back(std::move(row));
-    }
-    REQUIRE(in.ok());
-    sections.end = in.position();
-    return sections;
-}
-
-Section& section(Sections& sections, std::uint16_t id) {
-    const auto found = std::find_if(
-        sections.rows.begin(), sections.rows.end(), [&](const Section& row) { return row.id == id; });
-    REQUIRE(found != sections.rows.end());
-    return *found;
-}
-
-std::vector<std::uint8_t> edit_sections(const std::vector<std::uint8_t>& bytes,
-                                        const std::function<void(Sections&)>& edit) {
-    auto sections = sections_of(bytes);
-    edit(sections);
-    ByteWriter out;
-    out.bytes(std::span<const std::uint8_t>(bytes).first(sections.count_at));
-    out.u16(static_cast<std::uint16_t>(sections.rows.size()));
-    for (const auto& row : sections.rows) {
-        out.u16(row.id);
-        out.u16(row.version);
-        out.u32(static_cast<std::uint32_t>(row.body.size()));
-        out.bytes(row.body);
-    }
-    out.bytes(std::span<const std::uint8_t>(bytes).subspan(sections.end));
-    return out.take();
-}
-
-void expect_rejected(const std::vector<std::uint8_t>& bytes) {
-    const auto result = load_state(bytes);
-    REQUIRE_FALSE(result.has_value());
-}
+using pat::test::edit_sections;
+using pat::test::expect_rejected;
+using pat::test::load_state;
+using pat::test::Section;
+using pat::test::section;
+using pat::test::Sections;
+using pat::test::sections_of;
+using pat::test::state_bytes;
 
 family::State& family_state(World& world) {
     return const_cast<family::State&>(world.family());
-}
-
-bool write_fixture_requested() {
-#ifdef _WIN32
-    char* value = nullptr;
-    std::size_t length = 0;
-    const auto error = _dupenv_s(&value, &length, "PATRIARCH_WRITE_E8_FIXTURE");
-    const bool requested = error == 0 && value != nullptr && length == 2 && value[0] == '1';
-    std::free(value);
-    return requested;
-#else
-    const char* value = std::getenv("PATRIARCH_WRITE_E8_FIXTURE");
-    return value != nullptr && value[0] == '1' && value[1] == '\0';
-#endif
 }
 
 }  // namespace
@@ -390,16 +287,9 @@ TEST_CASE("family save: every table and archived reference round-trips in the cu
     CHECK(restored.family_caretaker(dispute.dynasty) == dispute.claimants[1].character);
 }
 
-TEST_CASE("family save: committed schema-12 fixture round-trips") {
+TEST_CASE("family save: committed schema-12 fixture still loads (E8-T03, the schema moved on in E11-T03)") {
     const World expected = make_family_save_world();
-    const auto path = fixture_path("dynasty_v12_e8.psv");
-    if (write_fixture_requested()) {
-        const auto bytes = serialize_save(expected);
-        REQUIRE(write_file_atomic(path, bytes).has_value());
-        MESSAGE("wrote " << path.string() << ", bytes=" << bytes.size()
-                         << ", total=" << expected.compute_hash().total);
-    }
-    const auto file = read_file(path);
+    const auto file = read_file(fixture_path("dynasty_v12_e8.psv"));
     REQUIRE(file.has_value());
     auto loaded = deserialize_save(file.value());
     REQUIRE(loaded.has_value());
@@ -407,7 +297,11 @@ TEST_CASE("family save: committed schema-12 fixture round-trips") {
     CHECK(loaded.value().world.family() == expected.family());
     CHECK(loaded.value().world.compute_hash() == expected.compute_hash());
     CHECK(state_bytes(loaded.value().world) == state_bytes(expected));
-    CHECK(serialize_save(loaded.value().world) == file.value());
+    // Saved again it is a file of the current schema (the committed bytes are a fixture, not rewritten).
+    const auto again = deserialize_save(serialize_save(loaded.value().world));
+    REQUIRE(again.has_value());
+    CHECK(again.value().summary.state_schema == World::kStateSchema);
+    CHECK(again.value().world.compute_hash() == expected.compute_hash());
     require_valid(loaded.value().world);
 }
 

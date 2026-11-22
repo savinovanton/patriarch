@@ -4,13 +4,17 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <type_traits>
+#include <utility>
 
 // Ids of the sections of the extension block of the world state (ADR-0006 D6) and the helpers that
 // the readers share. Internal to src/sim: the layout itself is documented at the top of world_io.cpp
 // (sections 1..7), world_family_io.cpp (sections 16..23) and world_economy_io.cpp (sections 32..40).
 //
 // Ids are stable forever and are only ever added. Blocks: 1..15 E7, 16..31 E8 (E8 uses 16..23), 32..47
-// E9, 48..63 E11 (event tables, 48..57 reserved by E11-T01, written by E11-T03).
+// E9, 48..63 E11 (event tables, 48..57 used by E11-T03).
 
 namespace pat::sim::detail {
 
@@ -43,5 +47,56 @@ inline constexpr std::uint16_t kSectionEconomyCredit = 38;        ///< loans, qu
 inline constexpr std::uint16_t kSectionEconomyIncidents = 39;     ///< incident ring (when not empty)
 inline constexpr std::uint16_t kSectionEconomyPolicy =
     40;  ///< policy levels, dynasty policies (E9-T12, schema >= 9)
+
+// ---- E11-T03: the event tables (schema >= 13). Default (empty) sections are omitted. ----
+inline constexpr std::uint16_t kSectionEventsMeta = 48;
+inline constexpr std::uint16_t kSectionEventFlags = 49;
+inline constexpr std::uint16_t kSectionEventVars = 50;
+inline constexpr std::uint16_t kSectionEventTimers = 51;
+inline constexpr std::uint16_t kSectionEventCooldowns = 52;
+inline constexpr std::uint16_t kSectionEventChains = 53;
+inline constexpr std::uint16_t kSectionEventModifiers = 54;
+inline constexpr std::uint16_t kSectionEventQueue = 55;
+inline constexpr std::uint16_t kSectionEventHistory = 56;
+inline constexpr std::uint16_t kSectionEventJournal = 57;
+
+/// A part of the hash that has content is never 0 (0 means "absent" and stays out of `total`).
+[[nodiscard]] constexpr std::uint64_t nonzero(std::uint64_t hash) noexcept {
+    return hash == 0 ? 1 : hash;
+}
+
+/// Reads `u32 count | count rows` into `rows`: the count is checked against `limit` and against what
+/// the rest of the section can hold (`min_row_bytes` per row) before any memory is reserved, and the keys
+/// of `projection` must strictly ascend. `read_row(in, row)` fills one row and returns false when the row is
+/// malformed. Shared by the sections of the family (E8-T03) and of the events (E11-T03).
+template <class Rows, class Projection, class ReadRow>
+bool read_ordered_rows(core::ByteReader& in,
+                       Rows& rows,
+                       std::size_t limit,
+                       std::size_t min_row_bytes,
+                       Projection projection,
+                       ReadRow read_row) {
+    const std::uint32_t count = in.u32();
+    if (!in.ok() || count > limit || !in.can_hold(count, min_row_bytes)) {
+        return false;
+    }
+    using Row = typename Rows::value_type;
+    using Key = std::remove_cvref_t<std::invoke_result_t<Projection, Row>>;
+    std::optional<Key> previous;
+    rows.reserve(count);
+    for (std::uint32_t i = 0; i < count; ++i) {
+        Row row;
+        if (!read_row(in, row)) {
+            return false;
+        }
+        const Key key = std::invoke(projection, row);
+        if (previous && key <= *previous) {
+            return false;
+        }
+        previous = key;
+        rows.push_back(std::move(row));
+    }
+    return true;
+}
 
 }  // namespace pat::sim::detail

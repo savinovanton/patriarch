@@ -428,7 +428,13 @@ enum class ExtPart : std::uint8_t {
     Succession = 12,  // E8-T03: choices, grants and godparent cursor
     Regency = 13,
     Dispute = 14,
-    Economy = 16,  // E9-T03 (numbers 16..23 are E9's): hash of the nine economy sub-hashes
+    Economy = 16,         // E9-T03 (numbers 16..23 are E9's): hash of the nine economy sub-hashes
+    EventFlagsVars = 24,  // E11-T03 (numbers 24..31 are E11's): sections 49, 50
+    EventTimersCooldowns = 25,
+    EventChainsModifiers = 26,
+    EventQueue = 27,
+    EventHistoryJournal = 28,
+    EventMeta = 29,  // the meta record without `events_hash`
 };
 inline constexpr std::size_t kExtPartCount = 64;
 
@@ -969,7 +975,7 @@ public:
     ///  10  loan interest carries use denominator 12,000,000; older carries are multiplied by 12
     ///  11  + section 4 "pregnancy" (E7-T12); older files start without pregnancies
     ///  12  + sections 16..23 (E8 family), coded ledger additions 16 and 112
-    static constexpr std::uint32_t kStateSchema = 12;
+    static constexpr std::uint32_t kStateSchema = 13;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -1048,6 +1054,13 @@ private:
     [[nodiscard]] const char* family_read_section(std::uint16_t id, core::ByteReader& in);
     /// Parts 8..14 in order; default content yields zero and contributes nothing to the total.
     [[nodiscard]] std::array<std::uint64_t, 7> family_hash_parts() const;
+    [[nodiscard]] bool events_section_present(std::uint16_t id) const;
+    /// Appends the non-empty event sections 48..57 in ascending order (world_events_io.cpp).
+    void events_write_sections(std::vector<StateSection>& sections) const;
+    /// Reads raw rows of one event section; the caller checks the invariants after the whole load.
+    [[nodiscard]] const char* events_read_section(std::uint16_t id, core::ByteReader& in);
+    /// Parts 24..29 in order; empty content yields zero and contributes nothing to the total.
+    [[nodiscard]] std::array<std::uint64_t, 6> events_hash_parts() const;
     /// Appends the sections of the economy (nothing when it is off), ascending by id.
     void economy_write_sections(std::vector<StateSection>& sections) const;
     /// Reads one economy section into the tables. `closed_months` etc. come from the section 32 read
