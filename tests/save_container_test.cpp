@@ -385,7 +385,7 @@ TEST_CASE("container v2: a damaged summary is an error and never a crash") {
     }
     SUBCASE("too many fields (code 25)") {
         auto fields = required_fields();
-        for (std::uint16_t key = 21; fields.size() <= kMaxSummaryFields; ++key) {
+        for (std::uint16_t key = 24; fields.size() <= kMaxSummaryFields; ++key) {  // 21..23: known keys
             fields.push_back({key, {0}});
         }
         CHECK(fields.size() == kMaxSummaryFields + 1);

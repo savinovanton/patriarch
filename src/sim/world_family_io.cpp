@@ -334,32 +334,13 @@ bool read_row(core::ByteReader& in, family::Dispute& row) {
 template <class Rows, class Projection>
 bool read_rows(
     core::ByteReader& in, Rows& rows, std::size_t limit, std::size_t row_bytes, Projection projection) {
-    const std::uint32_t count = in.u32();
-    if (count > limit || !in.can_hold(count, row_bytes)) {
-        return false;
-    }
-    using Row = typename Rows::value_type;
-    using Key = std::remove_cvref_t<std::invoke_result_t<Projection, Row>>;
-    std::optional<Key> previous;
-    rows.reserve(count);
-    for (std::uint32_t i = 0; i < count; ++i) {
-        Row row;
-        if (!read_row(in, row)) {
-            return false;
-        }
-        const Key key = std::invoke(projection, row);
-        if (previous && key <= *previous) {
-            return false;
-        }
-        previous = key;
-        rows.push_back(std::move(row));
-    }
-    return true;
+    return detail::read_ordered_rows(
+        in, rows, limit, row_bytes, projection, [](core::ByteReader& reader, auto& row) {
+            return read_row(reader, row);
+        });
 }
 
-std::uint64_t nonzero(std::uint64_t hash) {
-    return hash == 0 ? 1 : hash;
-}
+using detail::nonzero;
 
 }  // namespace
 

@@ -33,6 +33,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/events/character_triggers.hpp
     include/pat/sim/events/event_set.hpp
     include/pat/sim/events/program.hpp
+    include/pat/sim/events/reconcile.hpp
     include/pat/sim/events/state.hpp
     include/pat/sim/events/vm.hpp
     include/pat/sim/entity_table.hpp
@@ -107,6 +108,7 @@ add_library(patriarch_sim STATIC
     events/disasm.cpp
     events/event_set.cpp
     events/program.cpp
+    events/reconcile.cpp
     events/vm.cpp
     health.cpp
     court_rules.cpp
@@ -135,6 +137,7 @@ add_library(patriarch_sim STATIC
     traits.cpp
     world.cpp
     world_events.cpp
+    world_events_io.cpp
     world_family.cpp
     world_family_io.cpp
     world_economy.cpp

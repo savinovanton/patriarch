@@ -44,6 +44,7 @@ add_executable(patriarch_tests
     economy_unrest_test.cpp
     economy_world_test.cpp
     fixed_test.cpp
+    event_save_test.cpp
     event_state_test.cpp
     family_state_test.cpp
     family_save_test.cpp

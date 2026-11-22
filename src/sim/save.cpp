@@ -60,6 +60,7 @@ enum SummaryKey : std::uint16_t {
     kKeyTick = 18,
     kKeyIronman = 19,
     kKeyPreview = 20,
+    kKeyEventsHash = 21,
 };
 
 constexpr std::size_t kMaxShortText = 64;
@@ -193,10 +194,15 @@ std::vector<std::uint8_t> encode_summary(const SaveSummary& in) {
     if (in.ironman != 0) {
         put_with(out, kKeyIronman, [&](core::ByteWriter& w) { w.u8(in.ironman); });
     }
-    // The preview goes last and is dropped if it does not fit: it must never make the file unreadable.
+    // The preview is dropped if it does not fit (room is kept for the hash that follows it): it must
+    // never make the file unreadable. Keys ascend, so key 21 comes after the preview.
+    constexpr std::size_t kEventsHashField = 4 + 8;
     if (!in.preview.empty() && in.preview.size() <= 0xFFFFU &&
-        out.size() + 4 + in.preview.size() <= kMaxSaveSummary) {
+        out.size() + 4 + in.preview.size() + kEventsHashField <= kMaxSaveSummary) {
         put_field(out, kKeyPreview, in.preview);
+    }
+    if (in.events_hash != 0) {
+        put_with(out, kKeyEventsHash, [&](core::ByteWriter& w) { w.u64(in.events_hash); });
     }
     return out.take();
 }
@@ -319,6 +325,10 @@ core::Result<SaveSummary, Error> decode_summary(std::span<const std::uint8_t> by
             case kKeyIronman:
                 ok = length == 1;
                 out.ironman = v.u8();
+                break;
+            case kKeyEventsHash:
+                ok = length == 8;
+                out.events_hash = v.u64();
                 break;
             case kKeyPreview:
                 out.preview.assign(value.begin(), value.end());
@@ -456,6 +466,7 @@ SaveSummary summary_from_world(const World& world) {
     s.date = world.today().days();
     s.tick = world.calendar().tick_count();
     s.world_hash = world.compute_hash().total;
+    s.events_hash = world.event_state().meta.events_hash;
     return s;
 }
 

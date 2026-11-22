@@ -59,6 +59,12 @@
 // Schema 10 (E9-T15) keeps the byte layout and changes the unit of loan interest carries from
 // millionths to twelve-millionths of a kopeck. Older carries are validated and multiplied by 12.
 //
+// Schema 12 (E8-T03) adds the family sections 16..23 (world_family_io.cpp).
+//
+// Schema 13 (E11-T03) adds the event tables as sections 48..57 (world_events_io.cpp, event-engine.md
+// section 9.1). Empty tables are not written; a file of an older schema has none and migrates to an
+// empty event state. Events are referenced by EventKey only.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -127,6 +133,16 @@ constexpr SectionInfo kSections[] = {
     {detail::kSectionEconomyCredit, 1, 5},
     {detail::kSectionEconomyIncidents, 1, 5},
     {detail::kSectionEconomyPolicy, 1, 9},
+    {detail::kSectionEventsMeta, 1, 13},
+    {detail::kSectionEventFlags, 1, 13},
+    {detail::kSectionEventVars, 1, 13},
+    {detail::kSectionEventTimers, 1, 13},
+    {detail::kSectionEventCooldowns, 1, 13},
+    {detail::kSectionEventChains, 1, 13},
+    {detail::kSectionEventModifiers, 1, 13},
+    {detail::kSectionEventQueue, 1, 13},
+    {detail::kSectionEventHistory, 1, 13},
+    {detail::kSectionEventJournal, 1, 13},
 };
 
 constexpr bool section_ids_fit_the_limit() {
@@ -443,6 +459,7 @@ void World::save_state(core::ByteWriter& out) const {
 
     family_write_sections(sections);   // ids 16..23, after E7 and before the economy
     economy_write_sections(sections);  // ids 32..40, after the sections above
+    events_write_sections(sections);   // ids 48..57, after the economy
     for (std::uint16_t i = 0; i < g_test_sections.count; ++i) {  // test-only, ids above 40
         Section section{static_cast<std::uint16_t>(g_test_sections.first_id + i), 1, {}};
         section.body.u32(section.id);
@@ -878,6 +895,10 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 if (const char* problem = world.family_read_section(id, sr)) {
                     return fail(problem);
                 }
+            } else if (id >= detail::kSectionEventsMeta && id <= detail::kSectionEventJournal) {
+                if (const char* problem = world.events_read_section(id, sr)) {
+                    return fail(problem);
+                }
             } else if (id >= detail::kSectionEconomy) {
                 if (const char* problem = world.economy_read_section(id, sr)) {
                     return fail(problem);
@@ -939,7 +960,12 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         // 11 -> 12: no family data existed; coded ledger columns absent in old saves are already zero.
         world.family_ = family::State{};
     }
+    if (schema < 13) {
+        // 12 -> 13 (E11-T03): no event state existed; every table is empty and the meta record is default.
+        world.events_ = events::State{};
+    }
     world.rebuild_derived_indexes();
+    world.rebuild_event_indexes();
     const std::vector<std::string> problems = world.check_invariants();
     if (!problems.empty()) {
         return R::err(core::Error{10, "world state violates invariants: " + problems.front()});
