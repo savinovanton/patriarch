@@ -69,6 +69,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/sim.hpp
     include/pat/sim/simulation.hpp
     include/pat/sim/succession.hpp
+    include/pat/sim/succession_rules.hpp
     include/pat/sim/system.hpp
     include/pat/sim/task_executor.hpp
     include/pat/sim/traits.hpp
