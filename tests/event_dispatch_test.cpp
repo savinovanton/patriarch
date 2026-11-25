@@ -90,7 +90,8 @@ OnSub on(std::uint16_t action, std::uint8_t role = 0) {
     return OnSub{action, role};
 }
 
-EventDef make_event(const std::string& id, ScopeKind scope, std::vector<OnSub> subs, std::int32_t priority = 50) {
+EventDef
+make_event(const std::string& id, ScopeKind scope, std::vector<OnSub> subs, std::int32_t priority = 50) {
     EventDef def;
     def.id = id;
     def.key = event_key(id);
@@ -162,7 +163,9 @@ TEST_CASE("event dispatch: the index lists events by priority and key, per scope
     const auto set = make_set(std::move(defs));
     const DispatchIndex index(*set, test_catalog());
 
-    const auto at = [&](const char* id) { return static_cast<std::uint32_t>(set->find(id) - set->events.data()); };
+    const auto at = [&](const char* id) {
+        return static_cast<std::uint32_t>(set->find(id) - set->events.data());
+    };
     const std::span<const Subscriber> death = index.subscribers(ScopeKind::Character, 8);
     REQUIRE(death.size() == 3);
     // priority 90 first (b.high and d.tie by ascending key), then the low one
@@ -517,7 +520,8 @@ namespace {
 std::shared_ptr<EventSet> mixed_set() {
     std::vector<EventDef> defs;
     for (int i = 0; i < 24; ++i) {
-        EventDef def = make_event("m.pulse" + std::to_string(i), ScopeKind::Character, {on(kMonthly)}, 10 + i % 5);
+        EventDef def =
+            make_event("m.pulse" + std::to_string(i), ScopeKind::Character, {on(kMonthly)}, 10 + i % 5);
         set_mtth_months(def, 6 + i);
         if (i % 3 == 0) {
             def.trigger = pred_program(kTrigIsAdult);
@@ -535,7 +539,8 @@ std::shared_ptr<EventSet> mixed_set() {
         defs.push_back(def);
     }
     for (int i = 0; i < 6; ++i) {
-        EventDef def = make_event("m.house" + std::to_string(i), ScopeKind::Dynasty, {on(kMonthly), on(8, 1)});
+        EventDef def =
+            make_event("m.house" + std::to_string(i), ScopeKind::Dynasty, {on(kMonthly), on(8, 1)});
         set_mtth_months(def, 4 + i);
         defs.push_back(def);
     }

@@ -215,6 +215,7 @@ void Dispatcher::begin(World& world) {
     survivors_.clear();
     launches_.clear();
     state_full_ = false;
+    vm_ns_ = 0;
     if (!baselined_) {
         rebaseline(world);
     }
@@ -327,13 +328,14 @@ void Dispatcher::collect_occurrences(World& world, std::span<const LoggedCommand
             }
             if (wedding_next < weddings.size()) {
                 const family::Marriage& m = *weddings[wedding_next++];
-                add_occurrence(
-                    occurrences_,
-                    action::kMarriage,
-                    0,
-                    {character_scope(m.groom), character_scope(m.bride), dynasty_scope(m.groom_house),
-                     dynasty_scope(m.bride_house)},
-                    {character_scope(m.groom), character_scope(m.bride)});
+                add_occurrence(occurrences_,
+                               action::kMarriage,
+                               0,
+                               {character_scope(m.groom),
+                                character_scope(m.bride),
+                                dynasty_scope(m.groom_house),
+                                dynasty_scope(m.bride_house)},
+                               {character_scope(m.groom), character_scope(m.bride)});
             }
         },
         [&](const cmd::EndMarriage& c) {
@@ -400,10 +402,8 @@ void Dispatcher::collect_occurrences(World& world, std::span<const LoggedCommand
             const auto param = incidents.param[i];
             switch (static_cast<economy::IncidentKind>(incidents.kind[i])) {
                 case economy::IncidentKind::Riot:
-                    add_occurrence(occurrences_,
-                                   action::kRiot,
-                                   param,
-                                   {province_scope(province), dynasty_scope(owner)});
+                    add_occurrence(
+                        occurrences_, action::kRiot, param, {province_scope(province), dynasty_scope(owner)});
                     break;
                 case economy::IncidentKind::UnrestStateChanged:
                     add_occurrence(occurrences_,
@@ -531,7 +531,7 @@ void slot_entities(const World& world,
 
 }  // namespace
 
-void Dispatcher::collect_candidates(const World& world) {
+void Dispatcher::collect_candidates(World& world) {
     candidates_.clear();
     const bool indexed = mode_ == DispatchMode::Indexed;
     const EventSet& set = *set_;
@@ -571,6 +571,7 @@ void Dispatcher::collect_candidates(const World& world) {
 
     // pulses: per pulse kind and scope kind, the events over the entities of today's slot
     const Date today = world.today();
+    const bool scaled = world.event_state().meta.frequency_permille != kDefaultFrequencyPermille;
     const int month = today.month();
     for (const PulseKind pulse : kPulseOrder) {
         for (const ScopeKind kind : kKindOrder) {
@@ -582,9 +583,34 @@ void Dispatcher::collect_candidates(const World& world) {
                 continue;
             }
             const auto emit = [&](std::uint32_t ev) {
-                for (const std::uint32_t id : slot_ids_) {
-                    candidates_.push_back(Candidate{ev, Scope::make(kind, id), pulse, -1});
+                const EventDef& def = set.events[ev];
+                stats_.pulse_slots += static_cast<std::uint32_t>(slot_ids_.size());
+                // A plain mean_time_to_happen (no modifier, no chance, no player multiplier) rolls here,
+                // for every entity of the slot, before anything else: ~1/24 of the pulse candidates go on
+                // to the gates (the decision of T05, docs/dev/event-engine.md section 12.7). The others
+                // roll in the gates.
+                const bool roll_now =
+                    def.mtth_days > 0 && !def.chance && def.mtth_modifiers.empty() && !scaled;
+                if (!roll_now) {
+                    for (const std::uint32_t id : slot_ids_) {
+                        candidates_.push_back(Candidate{ev, Scope::make(kind, id), pulse, -1, false});
+                    }
+                    return;
                 }
+                std::uint32_t ppm = def.mtth_ppm[static_cast<std::size_t>(pulse)];
+                if (ppm == 0) {
+                    ppm = mtth_ppm(set.settings.pulse_days(pulse), def.mtth_days);
+                }
+                core::Pcg32& rng = world.rng().stream("events.mtth", def.key);
+                std::uint32_t won = 0;
+                for (const std::uint32_t id : slot_ids_) {
+                    if (rng.bounded(kPpmOne) < ppm) {
+                        candidates_.push_back(Candidate{ev, Scope::make(kind, id), pulse, -1, true});
+                        ++won;
+                    }
+                }
+                stats_.rolls += static_cast<std::uint32_t>(slot_ids_.size());
+                stats_.roll_rejected += static_cast<std::uint32_t>(slot_ids_.size()) - won;
             };
             if (indexed) {
                 for (const std::uint32_t ev : index_.pulse(kind, pulse)) {
@@ -715,7 +741,11 @@ void Dispatcher::gate(World& world) {
         options.max_instr = settings.max_trigger_instr;
         options.max_commands = settings.max_commands;
         options.max_state_ops = settings.max_state_ops;
+        const std::uint64_t started = clock_ != nullptr ? clock_() : 0;
         RunResult result = vm_.run(program, host, options);
+        if (clock_ != nullptr) {
+            vm_ns_ += clock_() - started;
+        }
         ++stats_.vm_runs;
         stats_.wu += result.wu;
         if (!result.ok) {
@@ -726,7 +756,8 @@ void Dispatcher::gate(World& world) {
 
     for (const Candidate& c : candidates_) {
         const EventDef& def = set.events[c.event];
-        const Occurrence* occ = c.occurrence >= 0 ? &occurrences_[static_cast<std::size_t>(c.occurrence)] : nullptr;
+        const Occurrence* occ =
+            c.occurrence >= 0 ? &occurrences_[static_cast<std::size_t>(c.occurrence)] : nullptr;
 
         // a scope that exists (the pulse entities are alive by construction)
         if (occ != nullptr) {
@@ -748,10 +779,13 @@ void Dispatcher::gate(World& world) {
         const std::array<Scope, limits::kMaxSavedScopes> saved =
             saved_of(def, occ, occ != nullptr ? actions_[occ->action] : nullptr);
 
-        // the roll: chance (an action or a pulse) or mean_time_to_happen (a pulse)
+        // the roll: chance (an action or a pulse) or mean_time_to_happen (a pulse), unless it was taken
+        // at generation
         bool rolled = false;
         std::uint32_t ppm = kPpmOne;
-        if (def.chance) {
+        if (c.rolled) {
+            // won already
+        } else if (def.chance) {
             const RunResult r = run_program(*def.chance, Kind::Value, def, c.scope, saved);
             ppm = r.ok && r.has_value ? chance_ppm(r.fixed()) : 0;
             rolled = true;
@@ -766,7 +800,8 @@ void Dispatcher::gate(World& world) {
                     p = clamp_ppm(p * 1000 / std::max<std::int32_t>(1, modifier.factor_permille));
                 }
             }
-            if (scaled && (settings.frequency_applies_to_all || is_player(meta, recipient_of(world, c.scope)))) {
+            if (scaled &&
+                (settings.frequency_applies_to_all || is_player(meta, recipient_of(world, c.scope)))) {
                 p = clamp_ppm(p * meta.frequency_permille / 1000);
             }
             ppm = clamp_ppm(p);
@@ -938,7 +973,9 @@ void Dispatcher::fire(World& world) {
                 }
                 std::size_t winner = 0;  // all weights 0: the first in the order wins, without a draw
                 if (total > 0) {
-                    auto pick = world.rng().stream("events.pool", keys_[begin].a).bounded(static_cast<std::uint32_t>(total));
+                    auto pick = world.rng()
+                                    .stream("events.pool", keys_[begin].a)
+                                    .bounded(static_cast<std::uint32_t>(total));
                     for (std::size_t k = 0; k < weights_.size(); ++k) {
                         if (pick < weights_[k]) {
                             winner = k;
@@ -1001,7 +1038,8 @@ void Dispatcher::fire(World& world) {
     // the launches, in the order of the survivors
     for (const Candidate& c : survivors_) {
         const EventDef& def = set.events[c.event];
-        const Occurrence* occ = c.occurrence >= 0 ? &occurrences_[static_cast<std::size_t>(c.occurrence)] : nullptr;
+        const Occurrence* occ =
+            c.occurrence >= 0 ? &occurrences_[static_cast<std::size_t>(c.occurrence)] : nullptr;
         Launch launch;
         launch.key = def.key;
         launch.event = c.event;

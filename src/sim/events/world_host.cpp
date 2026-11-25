@@ -194,7 +194,8 @@ bool WorldVmHost::list(Scope scope, std::uint16_t code, std::uint32_t limit, std
                 const DynastyId d{scope.id};
                 const std::vector<DynastyId>& owner = world_.provinces().owner;
                 for (std::size_t i = 0; i < owner.size(); ++i) {
-                    if (owner[i] == d && !add(Scope::make(ScopeKind::Province, static_cast<std::uint32_t>(i)))) {
+                    if (owner[i] == d &&
+                        !add(Scope::make(ScopeKind::Province, static_cast<std::uint32_t>(i)))) {
                         break;
                     }
                 }

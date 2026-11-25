@@ -15,7 +15,8 @@ class Simulation;
 
 /// `events.dispatch`: a daily system that runs one pass of the Dispatcher over the commands of the tick.
 /// The dispatcher stays reachable for the tools and the tests (its launches, its counters).
-[[nodiscard]] std::unique_ptr<System> make_events_dispatch_system(std::shared_ptr<events::Dispatcher> dispatcher);
+[[nodiscard]] std::unique_ptr<System>
+make_events_dispatch_system(std::shared_ptr<events::Dispatcher> dispatcher);
 
 /// Registers `events.dispatch` after every system already registered (it must be the last one: it reads
 /// what the others did on this tick) and baselines the dispatcher on the world of `simulation`. Call before

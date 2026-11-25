@@ -84,7 +84,8 @@ public:
     DispatchIndex() = default;
     DispatchIndex(const EventSet& set, const Catalog& catalog);
 
-    [[nodiscard]] std::span<const Subscriber> subscribers(ScopeKind kind, std::uint16_t action) const noexcept;
+    [[nodiscard]] std::span<const Subscriber> subscribers(ScopeKind kind,
+                                                          std::uint16_t action) const noexcept;
     [[nodiscard]] std::span<const std::uint32_t> pulse(ScopeKind kind, PulseKind pulse) const noexcept;
     /// Every event, in the order (priority descending, EventKey ascending).
     [[nodiscard]] std::span<const std::uint32_t> ranked() const noexcept { return ranked_; }
@@ -121,6 +122,7 @@ struct Candidate {
     Scope scope;
     PulseKind pulse = PulseKind::None;  // the pulse it came from; None: an action
     std::int32_t occurrence = -1;       // index in Dispatcher::occurrences(); -1 for a pulse
+    bool rolled = false;                // the roll of mean_time_to_happen was won at generation
 
     [[nodiscard]] friend constexpr bool operator==(const Candidate&, const Candidate&) noexcept = default;
 };
@@ -142,7 +144,8 @@ struct Launch {
 struct DispatchStats {
     std::uint32_t occurrences = 0;
     std::uint32_t action_candidates = 0;
-    std::uint32_t pulse_candidates = 0;
+    std::uint32_t pulse_candidates = 0;  // after the roll at generation (pulse_slots before it)
+    std::uint32_t pulse_slots = 0;
     std::uint32_t duplicates = 0;
     std::uint32_t scope_rejected = 0;
     std::uint32_t cooldown_rejected = 0;
@@ -159,7 +162,8 @@ struct DispatchStats {
     std::uint32_t launches = 0;
     std::uint64_t wu = 0;
 
-    [[nodiscard]] friend constexpr bool operator==(const DispatchStats&, const DispatchStats&) noexcept = default;
+    [[nodiscard]] friend constexpr bool operator==(const DispatchStats&,
+                                                   const DispatchStats&) noexcept = default;
 };
 
 enum class DispatchMode : std::uint8_t {
@@ -184,6 +188,11 @@ public:
     ~Dispatcher() = default;
 
     void set_mode(DispatchMode mode) noexcept { mode_ = mode; }
+    /// An observer for the benchmark: with a clock (nanoseconds), the time spent in the machine during the
+    /// gates is summed into vm_ns(). It never influences the pass (no decision reads it).
+    using Clock = std::uint64_t (*)() noexcept;
+    void set_clock(Clock clock) noexcept { clock_ = clock; }
+    [[nodiscard]] std::uint64_t vm_ns() const noexcept { return vm_ns_; }
     [[nodiscard]] DispatchMode mode() const noexcept { return mode_; }
 
     /// Copies the owners of the provinces: the "old owner" of the next SetProvinceOwner. Call after the
@@ -195,13 +204,13 @@ public:
     void run(World& world, std::span<const LoggedCommand> applied, WorkBudget* budget = nullptr);
 
     // The stages of run(), public for the benchmark and the tests (call in this order).
-    void begin(World& world);                                                  // resets the pass
-    void fire_timers(World& world);                                            // stage 0
+    void begin(World& world);                                                        // resets the pass
+    void fire_timers(World& world);                                                  // stage 0
     void collect_occurrences(World& world, std::span<const LoggedCommand> applied);  // stage 1
-    void collect_candidates(const World& world);                               // stage 2
-    void gate(World& world);                                                   // stage 3
-    void fire(World& world);                                                   // stages 4 and 5
-    void finish(World& world);                                                 // cursors, owners
+    void collect_candidates(World& world);                                           // stage 2 (rolls)
+    void gate(World& world);                                                         // stage 3
+    void fire(World& world);                                                         // stages 4 and 5
+    void finish(World& world);                                                       // cursors, owners
 
     [[nodiscard]] const DispatchIndex& index() const noexcept { return index_; }
     [[nodiscard]] const EventSet& set() const noexcept { return *set_; }
@@ -247,6 +256,8 @@ private:
     std::vector<Launch> launches_;
     DispatchStats stats_;
     bool state_full_ = false;
+    Clock clock_ = nullptr;
+    std::uint64_t vm_ns_ = 0;
 
     // scratch, reused between passes
     std::vector<std::uint32_t> slot_ids_;
