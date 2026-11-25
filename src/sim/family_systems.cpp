@@ -1,5 +1,6 @@
 #include "pat/sim/family_systems.hpp"
 
+#include "pat/sim/marriage_godparents.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
 #include "pat/sim/marriage_rules.hpp"
 #include "pat/sim/marriage_weddings.hpp"
@@ -89,6 +90,31 @@ private:
     std::shared_ptr<const FaithPolicy> faith_;
 };
 
+class MarriageGodparentsSystem final : public System {
+public:
+    [[nodiscard]] std::string_view name() const override { return kMarriageGodparentsSystemName; }
+    [[nodiscard]] Cadence cadence() const override { return Cadence::Daily; }
+
+    void run(World& world, TickContext& context) override {
+        if (!world.dynasty_mode()) {
+            return;
+        }
+        const auto& people = world.characters();
+        const auto capacity = static_cast<std::uint32_t>(people.ids.capacity());
+        auto acknowledged = world.family().godparent_cursor;
+        for (auto row = acknowledged; row < capacity; ++row) {
+            const CharacterId child(row);
+            if (awaits_godparents(world, child)) {
+                context.emit(Command{{}, cmd::AssignGodparents{child, choose_godparents(world, child)}});
+                acknowledged = row + 1;
+            }
+        }
+        if (acknowledged < capacity) {
+            context.emit(Command{{}, cmd::AssignGodparents{CharacterId(capacity - 1), {}}});
+        }
+    }
+};
+
 std::shared_ptr<const MarriageRules> ensure_rules(std::shared_ptr<const MarriageRules> rules) {
     return rules ? std::move(rules) : std::make_shared<const MarriageRules>(MarriageRules::defaults());
 }
@@ -125,6 +151,11 @@ void install_family_systems(Simulation& simulation,
     simulation.set_family_content(rules, faith);
     simulation.add_system(make_marriage_negotiations_system(rules, faith));
     simulation.add_system(make_marriage_weddings_system(std::move(rules), std::move(faith)));
+    simulation.add_system(make_marriage_godparents_system());
+}
+
+std::unique_ptr<System> make_marriage_godparents_system() {
+    return std::make_unique<MarriageGodparentsSystem>();
 }
 
 }  // namespace pat::sim

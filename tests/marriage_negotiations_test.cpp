@@ -346,6 +346,7 @@ TEST_CASE("marriage negotiations: daily answers cross calendar boundaries exactl
         const auto row = scene.send(scene.groom_house);
         CHECK(row.answer_due == due);
         auto rules = std::make_shared<MarriageRules>(scene.rules);
+        scene.acknowledge_scenario_characters();
         Simulation sim(scene.world);
         install_family_systems(sim, rules);
         (void)sim.tick();
@@ -371,6 +372,7 @@ TEST_CASE("marriage negotiations: default simulation leaves family systems unins
     Scene scene;
     scene.rules.negotiation.answer_days = 1;
     (void)scene.send(scene.groom_house);
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     CHECK(sim.system_count() == 0);
     sim.run_days(5);
@@ -387,6 +389,7 @@ TEST_CASE("marriage negotiations: save during waiting and pending answer replays
     scene.rules.money.dowry_min_kop = 12345;
     scene.rules.money.dowry_max_kop = 12345;
     auto rules = std::make_shared<MarriageRules>(scene.rules);
+    scene.acknowledge_scenario_characters();
     const World initial = scene.world;
     Simulation sim(initial);
     install_family_systems(sim, rules);
@@ -469,6 +472,7 @@ TEST_CASE("marriage negotiations: configured system faith is shared with answer 
     const auto row = scene.send(scene.groom_house);
     std::array<std::string_view, 3> faiths{"orthodox", "other", "orthodox"};
     const auto faith = std::make_shared<FaithPolicy>(faiths);
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     install_family_systems(sim, std::make_shared<MarriageRules>(scene.rules), faith);
     (void)sim.tick();
@@ -516,6 +520,7 @@ TEST_CASE("marriage negotiations: changing a participant house cancels once befo
     CHECK_FALSE(marriage_answered_action(outcome).has_value());
     scene.world.set_character_dynasty(scene.bride, scene.bride_house);
     CHECK(scene.world.family().outcomes.size() == 1);
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     install_family_systems(sim, std::make_shared<MarriageRules>(scene.rules));
     sim.run_days(scene.rules.negotiation.answer_days + 2);

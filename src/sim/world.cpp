@@ -1543,7 +1543,7 @@ void World::check_kinship_invariants(std::vector<std::string>& bad) const {
             bad.push_back(std::format("character {} has fewer marriages than partners", i));
         }
 
-        // godparents (reserved)
+        // Godparent facts survive the death of either participant.
         for (std::size_t k = 0; k < kGodparentSlots; ++k) {
             const CharacterId g = ch.godparent[i][k];
             if (g.valid() && (g == id || !exists(g) || (k > 0 && ch.godparent[i][0] == g))) {

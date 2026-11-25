@@ -6,6 +6,7 @@
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/marriage_envoy.hpp"
+#include "pat/sim/marriage_godparents.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
 #include "pat/sim/marriage_tonsure.hpp"
 #include "pat/sim/marriage_weddings.hpp"
@@ -161,6 +162,13 @@ struct Validator {
             return reject(Rejection::NotAuthorized, "only the system may settle widowhood");
         }
         return validate_settle_widowhood(world, c);
+    }
+
+    Result<void, CommandError> operator()(const cmd::AssignGodparents& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may assign godparents");
+        }
+        return validate_assign_godparents(world, c);
     }
 
     Result<void, CommandError> operator()(const cmd::SetProvinceOwner& c) const {
@@ -830,6 +838,7 @@ struct Applier {
     void operator()(const cmd::SettleWidowhood& c) const {
         apply_settle_widowhood(world, rules_or_default(marriage), c);
     }
+    void operator()(const cmd::AssignGodparents& c) const { apply_assign_godparents(world, c); }
 
     void operator()(const cmd::GrantTrait& c) const {
         if (traits != nullptr) {
@@ -1106,6 +1115,10 @@ template <>
 struct CommandTag<cmd::SettleWidowhood> {
     static constexpr CommandType value = CommandType::SettleWidowhood;
 };
+template <>
+struct CommandTag<cmd::AssignGodparents> {
+    static constexpr CommandType value = CommandType::AssignGodparents;
+};
 
 template <class Variant>
 struct TagTable;
@@ -1210,6 +1223,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "Wed";
         case CommandType::SettleWidowhood:
             return "SettleWidowhood";
+        case CommandType::AssignGodparents:
+            return "AssignGodparents";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

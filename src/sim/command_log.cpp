@@ -148,6 +148,12 @@ struct Writer {
     void operator()(const cmd::Wed& c) const { out.u32(c.betrothal); }
     void operator()(const cmd::Tonsure& c) const { out.u32(c.character.value()); }
     void operator()(const cmd::SettleWidowhood& c) const { out.u32(c.deceased.value()); }
+    void operator()(const cmd::AssignGodparents& c) const {
+        out.u32(c.child.value());
+        for (const auto godparent : c.godparents) {
+            out.u32(godparent.value());
+        }
+    }
     void operator()(const cmd::PlanDeath& c) const {
         out.u32(c.character.value());
         out.i32(c.date.days());
@@ -492,6 +498,15 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::SettleWidowhood:
             out.payload = cmd::SettleWidowhood{CharacterId(in.u32())};
             break;
+        case CommandType::AssignGodparents: {
+            cmd::AssignGodparents c;
+            c.child = CharacterId(in.u32());
+            for (auto& godparent : c.godparents) {
+                godparent = CharacterId(in.u32());
+            }
+            out.payload = c;
+            break;
+        }
         case CommandType::RecordChronicle: {
             cmd::RecordChronicle c;
             c.dynasty = DynastyId(in.u32());

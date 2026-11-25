@@ -59,7 +59,7 @@ inline constexpr std::size_t kTraitSlots = 8;
 /// list of former spouses, so no marriage is ever forgotten.
 inline constexpr std::uint8_t kMaxMarriages = 3;
 inline constexpr std::size_t kMaxExSpouses = kMaxMarriages;
-/// Reserved for godparents (open question 3, issue 135: M2). Stored and saved, written by nobody yet.
+/// Godparent slots written by E8-T13. Player selection remains reserved for M2 (issue 135).
 inline constexpr std::size_t kGodparentSlots = 2;
 
 inline constexpr std::int32_t kMinHonor = -1000;
@@ -257,7 +257,7 @@ struct CharacterTable {
     std::vector<std::uint8_t> marriages;  // marriages entered so far, the current one included
     std::vector<std::array<CharacterId, kMaxExSpouses>>
         ex_spouses;  // in order of ending, packed at the front, invalid = empty slot
-    std::vector<std::array<CharacterId, kGodparentSlots>> godparent;  // reserved, see kGodparentSlots
+    std::vector<std::array<CharacterId, kGodparentSlots>> godparent;
     // Derived child lists (not saved, not hashed; dynasty mode only, empty in E1 mode). A person
     // heads one list: the children whose father is it (male) or whose mother is it (female), eldest
     // first by (birth_date, id). A child sits in the list of each of its parents and has one link per
@@ -626,7 +626,7 @@ public:
     /// partners lose `spouse` and gain each other in `ex_spouses`.
     [[nodiscard]] bool can_end_marriage(CharacterId a) const;
     bool end_marriage(CharacterId a);
-    /// Stores godparents (reserved for M2). Both must exist, differ from the character and from each
+    /// Stores godparents. Both must exist, differ from the character and from each
     /// other, or be invalid. False (nothing changed) otherwise.
     bool set_character_godparents(CharacterId id, const std::array<CharacterId, kGodparentSlots>& godparents);
 

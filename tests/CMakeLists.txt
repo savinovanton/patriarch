@@ -82,6 +82,7 @@ add_executable(patriarch_tests
     marriage_envoy_test.cpp
     marriage_negotiations_test.cpp
     marriage_weddings_test.cpp
+    marriage_godparents_test.cpp
     marriage_dowry_test.cpp
     marriage_tonsure_test.cpp
     marriage_rules_test.cpp
