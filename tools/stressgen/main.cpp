@@ -2,6 +2,7 @@
 #include "pat/stress/dataset.hpp"
 #include "pat/stress/economy_bench.hpp"
 #include "pat/stress/economy_generator.hpp"
+#include "pat/stress/events_bench.hpp"
 
 #include <charconv>
 #include <chrono>
@@ -33,6 +34,10 @@ constexpr const char* kUsage = R"(Usage: stressgen --output FILE [options]
   --bench-repeats N              Repeats of the cheap operations (default: 30)
   --bench-heavy-repeats N        Repeats of save and load (default: 5)
   --bench-days N                 Days the economy skeleton runs, 1..16000 (default: 400)
+  --events-bench                 Measure the event dispatcher (E11-T05) by stage on the generated
+                                 world: synthetic sets of 110, 500 and 550 events, a realistic and a
+                                 dense stream of commands, the index against the full scan; --bench-days
+                                 sets the days (default 365). JSON on stdout.
   --help                         Show this help
 
 Counts override the profile regardless of argument order. Both --name N and --name=N work.
@@ -53,6 +58,7 @@ int main(int argc, char** argv) {
     std::filesystem::path output;
     bool economy = false;
     bool bench = false;
+    bool events_bench = false;
     std::vector<std::pair<std::string_view, std::string_view>> flags;
     for (int i = 1; i < argc; ++i) {
         const std::string_view arg(argv[i]);
@@ -62,11 +68,11 @@ int main(int argc, char** argv) {
         }
         const auto equals = arg.find('=');
         const auto name = arg.substr(0, equals);
-        if (name == "--economy" || name == "--bench") {
+        if (name == "--economy" || name == "--bench" || name == "--events-bench") {
             if (equals != std::string_view::npos) {
                 return fail(std::string(name) + " takes no value");
             }
-            (name == "--economy" ? economy : bench) = true;
+            (name == "--economy" ? economy : name == "--bench" ? bench : events_bench) = true;
             continue;
         }
         if (name != "--profile" && name != "--output" && name != "--seed" && name != "--provinces" &&
@@ -139,6 +145,18 @@ int main(int argc, char** argv) {
         } else if (name == "--bench-days") {
             bench_options.days = count;
         }
+    }
+    if (events_bench) {
+        stress::EventsBenchOptions events_options;
+        if (bench_options.days != stress::EconomyBenchOptions{}.days) {
+            events_options.days = bench_options.days;
+        }
+        const auto report = stress::run_events_bench(config, events_options);
+        if (!report) {
+            return fail(report.error().message);
+        }
+        std::printf("%s\n", report.value().c_str());
+        return 0;
     }
     if (bench) {
         if (output.empty()) {  // a temporary file for the disk timings

@@ -3,11 +3,13 @@
 #include "pat/core/arena.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/command.hpp"
+#include "pat/sim/command_log.hpp"
 #include "pat/sim/task_executor.hpp"
 #include "pat/sim/work_budget.hpp"
 #include "pat/sim/world.hpp"
 
 #include <cstdint>
+#include <span>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -48,6 +50,9 @@ struct TickContext {
     TaskExecutor& executor;                // data-parallel loops
     std::vector<Command>& emitted;         // commands for the NEXT tick boundary
     core::Telemetry* telemetry = nullptr;  // Optional observer; never use timings for decisions.
+    /// The commands this tick processed (both batches and the fallback head appointments), in log order,
+    /// rejected ones included (check LoggedCommand::accepted()). Valid during run() only. E11 reads it.
+    std::span<const LoggedCommand> applied_commands{};
 
     /// Queues a command (for example from AI). It is validated and applied at the start of the next
     /// tick, before any system runs, and recorded in the command log as Internal.
@@ -64,6 +69,9 @@ public:
     [[nodiscard]] virtual std::string_view name() const = 0;
     [[nodiscard]] virtual Cadence cadence() const = 0;
     virtual void run(World& world, TickContext& context) = 0;
+    /// Called when the world is replaced by a loaded or copied one (Simulation::restore_state), at a tick
+    /// boundary: a system that keeps a derived copy of the world drops or rebuilds it here.
+    virtual void on_state_restored(const World& world) { (void)world; }
 };
 
 }  // namespace pat::sim

@@ -87,6 +87,9 @@ void Simulation::restore_state(World world, std::vector<Command> pending_interna
     world_.reserve_character_headroom(characters / 8 + 64);
     pending_internal_ = std::move(pending_internal);
     log_.clear();
+    for (const auto& system : systems_) {
+        system->on_state_restored(world_);
+    }
     report_ = TickReport{};
     if (telemetry_)
         telemetry_->clear();
@@ -122,6 +125,7 @@ const TickReport& Simulation::tick() {
                                  config_.faith_policy.get()};
 
     // 2. commands emitted by systems during the previous tick
+    const std::size_t log_begin = log_.size();
     {
         PAT_SCOPED_TIMER(telemetry_.get(), telemetry_metrics_.internal, "sim.commands.internal");
         batch_ = std::move(pending_internal_);
@@ -169,7 +173,8 @@ const TickReport& Simulation::tick() {
                         budget_,
                         *executor_,
                         pending_internal_,
-                        telemetry_.get()};
+                        telemetry_.get(),
+                        log_.entries().subspan(log_begin)};
     std::size_t system_index = 0;
     for (const auto& system : systems_) {
         SystemRun run;

@@ -4,10 +4,12 @@ add_library(patriarch_stress STATIC
     include/pat/stress/economy_generator.hpp
     include/pat/stress/economy_skeleton.hpp
     include/pat/stress/economy_bench.hpp
+    include/pat/stress/events_bench.hpp
     world_generator.cpp
     economy_generator.cpp
     economy_skeleton.cpp
     economy_bench.cpp
+    events_bench.cpp
     dataset.cpp)
 target_include_directories(patriarch_stress PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(patriarch_stress PUBLIC patriarch::sim)
