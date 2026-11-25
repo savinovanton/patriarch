@@ -725,7 +725,7 @@ E11 строит on-action из **журнала применённых кома
 | **E12** | `RegentKind::Imperial` и `imperial_intervention_permille` (в M1 — 0); `resolve_successor` не зависит от империи; опека короны — точка подмены `AssignRegent` |
 | **E13** | таблицы §13, разделы 16…24 |
 | **E14** | `on_regent_usurpation`, результат проверки (`RegencyCheck`); схемы устранения подопечного/побега — E14 |
-| **E15** | хук «нарушение договора» (пустой) в `Tonsure.apply` и `BreakBetrothal.apply`; `Betroth` системной командой договора |
+| **E15** | хуков в `Tonsure.apply`/`BreakBetrothal.apply` **нет**: брачный договор заводится и нарушается по журналу тика (`applied_commands`: `RespondMarriage{Accepted}`, `Betroth`, `Wed`, `BreakBetrothal`, `Tonsure`, `EndMarriage`), [diplomacy-model.md](diplomacy-model.md) §6.4, §9.3 (поправка E15-T01, F2); `political_gain` — через точку `MatchContextSource` в двух местах сборки `MatchContext` (E15-T09, без дипломатии — 0); `Betroth` системной командой договора — интерфейс сохраняется, в M1 E15 его не выпускает |
 | **E17** | те же команды `SendMarriageEnvoy`/`AssignGodparents`; E17 заменяет `marriage.matchmaker`; «брак по склонности» — события E11 + `Betroth` |
 | **E31** | `FaithPolicy` (интерфейс `allows(a, b) → DenialSet`, цена и штраф `faith_penalty`); заглушка M1: вера из данных дома (`faith`, по умолчанию `orthodox`), несовпадение — `FaithMismatch`; «согласие Церкви» (код 41), постные периоды и фракции иерархов — E31 |
 

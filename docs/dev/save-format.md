@@ -94,7 +94,7 @@ off  size
 | 23 | `crisis_hash` | u64 | нет | `CrisisRules::hash()` ([throne-crisis-model.md](throne-crisis-model.md) §13.2); пишется, только если кризис включён (E12-T22); нет ключа — партия без кризиса; при загрузке сверяется так же, как `events_hash` и `court_hash` |
 | 24 | `army_hash` | u64 | нет | `ArmyRules::hash()` ([army-model.md](army-model.md) §14.2); пишется, только если системы армий установлены (E16-T20); нет ключа — партия без армий; при загрузке сверяется как `crisis_hash` |
 | 25 | `ai_hash` | u64 | нет | `AiRules::hash()` ([ai-model.md](ai-model.md) §15.2, выдан E17-T01); пишется, только если системы ИИ установлены (E17-T19); нет ключа — партия без ИИ-агентов; при загрузке сверяется как `army_hash` |
-| 26 | `diplomacy_hash` | u64 | нет | **резерв E15** (разбор 2026-11-22): `DiplomacyRules::hash()`; пишется, только если системы дипломатии установлены (E15-T17); нет ключа — партия без дипломатии |
+| 26 | `diplomacy_hash` | u64 | нет | `DiplomacyRules::hash()` ([diplomacy-model.md](diplomacy-model.md) §17.2, выдан E15-T01); пишется, только если системы дипломатии установлены (E15-T17); нет ключа — партия без дипломатии; при загрузке сверяется как `ai_hash` |
 | 27 | `religion_hash` | u64 | нет | **резерв E31** (разбор 2026-11-22): `ReligionRules::hash()`; пишется, только если системы религии установлены (E31-T17); нет ключа — партия без религии |
 | 28…63 | — | | | свободны для сводки; выдаёт T02/следующие эпики строкой в этой таблице |
 
@@ -245,8 +245,15 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 108 | `ai_cooldowns` | E17-T03 (перезарядки `(цель, объект)`; `ExtPart` 59) | схема E17-T03 | 1 | выдан |
 | 109 | `ai_log` | E17-T03 (кольцо журнала решений, 64 записи по 48 Б на агента; `ExtPart` 61) | схема E17-T03 | 1 | выдан |
 | 110…111 | — | **E17** (резерв M2: память обид, `BlocAgent`; id < 128 — в пределах `kMaxSections` 128 из E16-T03) | | | резерв (2 id) |
-| 112…119 | — | **E15** (резерв под дипломатию, разбор 2026-11-22: `dipl_meta`, `dipl_relations`, `dipl_mods`, `dipl_treaties`, `dipl_offers`, `dipl_favors`, `dipl_log`, 119 резерв; поимённо выдаёт E15-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03; часть хеша `ExtPart` 62 — одна объединённая, 63 резерв: общий запас частей почти исчерпан, план — E15-T01 с E17-T01) | | | резерв (8 id) |
-| 120…127 | — | **E31** (резерв под религию, разбор 2026-11-22: `rel_meta` (`ChurchState`), `rel_dynasties`, `rel_provinces`, `rel_log`, 124…127 резерв (M2: созданные веры, течения); поимённо выдаёт E31-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03; часть хеша `ExtPart` 63 — одна объединённая, последняя свободная из 64: общий запас частей исчерпан, план — E15-T01 и E17-T01 с E31-T01) | | | резерв (8 id) |
+| 112 | `dipl_meta` | E15-T03 ([diplomacy-model.md](diplomacy-model.md) §4.1, §17.1: включение, флаги, счётчики id, курсор журнала; часть хеша `ExtPart` 62) | схема E15-T03 | 1 | **выдан** спецификацией E15-T01 |
+| 113 | `dipl_relations` | E15-T03 (отношения «род → род»: доверие, флаг вражды, кулдауны; 20 Б на строку; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 114 | `dipl_mods` | E15-T03 (модификаторы мнения ≤ 6 на пару; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 115 | `dipl_treaties` | E15-T03 (договоры: вид, стороны, срок, залог, претендент; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 116 | `dipl_offers` | E15-T03 (открытые предложения, день ответа, раунд; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 117 | `dipl_favors` | E15-T03 (долги услуг 0…3; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 118 | `dipl_log` | E15-T03 (кольцо журнала дипломатии, 64 × 32 Б; `ExtPart` 62) | схема E15-T03 | 1 | выдан |
+| 119 | — | **E15** (резерв M2: иски, мировые, тайные договоры; id < 128 — в пределах `kMaxSections` 128 из E16-T03) | | | резерв (1 id) |
+| 120…127 | — | **E31** (резерв под религию, разбор 2026-11-22: `rel_meta` (`ChurchState`), `rel_dynasties`, `rel_provinces`, `rel_log`, 124…127 резерв (M2: созданные веры, течения); поимённо выдаёт E31-T01; id < 128 — в пределах `kMaxSections` 128 из E16-T03; часть хеша `ExtPart` 63 — одна объединённая, последняя из прежних 64; запас частей расширяет E16-T03 (`kExtPartCount` 128, §5.3; решено в E15-T01, [diplomacy-model.md](diplomacy-model.md) §17.2)) | | | резерв (8 id) |
 | 128… | — | следующие эпики (E14, E33, E34, …) | | | назначает ADR эпика по правилу §5.2 (потребуется подъём `kMaxSections` выше 128 по §5.1) |
 
 Раздел, чья версия поднялась, ридер обязан читать **во всех прежних версиях**. Сейчас `SectionInfo` хранит «единственную версию, которую эта сборка читает»; **первая же задача, поднимающая версию существующего раздела**, расширяет запись до диапазона `[min_version, version]` (до этого версии разделов — только 1).
@@ -282,7 +289,8 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 42…49 | E12 | 42…48 кризис, 49 резерв |
 | **50…57** | **E16** | **50…56 армии (разделы 96…102), 57 резерв** |
 | 58…61 | E17 | 58 `AiAgents` (разделы 104, 105), 59 `AiGoals` (106, 108), 60 `AiFrames` (107), 61 `AiLog` (109) ([ai-model.md](ai-model.md) §15.2) |
-| 62, 63 | E15, E31 | одна объединённая часть каждого (до подъёма лимита) |
+| 62 | E15 | `Diplomacy` — одна объединённая часть (FNV от подхешей разделов 112…118, как `Economy`; [diplomacy-model.md](diplomacy-model.md) §17.2); новых частей E15 не берёт и в M2 |
+| 63 | E31 | одна объединённая часть (по плану E31-T01) |
 | 64…127 | — | после подъёма `kExtPartCount` (E16-T03): E14, E18, E20, E30 (`game`: в реестрах не назначена), E33, E34, … |
 
 ## 6. Реестр тегов команд
@@ -301,7 +309,7 @@ section_count × { u16 id | u16 version | u32 byte_length | bytes }   id стр�
 | 168…175 | E30 | — | 168…175 |
 | 176…191 | E16 | выпущены спецификацией E16-T01 ([army-model.md](army-model.md) §8.1): 176 `RaiseArmy`, 177 `DisbandArmy`, 178 `MergeArmies`, 179 `SplitArmy`, 180 `AssignCommander`, 181 `OrderMove`, 182 `OrderSiege`, 183 `AssignToFront`, 184 `RecallFromFront`, 185 `StepArmy` (внутр.), 186 `ResolveBattle` (внутр.), 187 `AdvanceSiege` (внутр.), 188 `SpawnInsurgents` (внутр.), 189 `SetFrontState` (внутр.), 190 `ApplyArmyAttrition` (внутр.), 191 `SetFortress` (внутр.) (в коде пока нет) | — (блок исчерпан) | — |
 | 192…199 | E17 | выпущены спецификацией E17-T01 ([ai-model.md](ai-model.md) §7.1): 192 `ConfigureAgent`, 193 `AgentDeliberated` (внутр.), 194 `AgentCommandRejected` (внутр.), 195 `SetAgentTier` (внутр./эффект), 196 `SetAiOptions`, 197 `AdjustAgentGoal` (внутр./эффект) (в коде пока нет) | 198…199 |
-| 200…215 | E15 | резерв под дипломатию (разбор 2026-11-22; предложение: 200 `GiveGift`, 201 `AskFavor`, 202 `ProposeTreaty`, 203 `RespondOffer`, 204 `WithdrawOffer`, 205 `BreakTreaty`, 206 `SignTreaty` (внутр.), 207 `SettleTreaty` (внутр.), 208 `ApplyTreatyBreach` (внутр.), 209 `AdjustRelation` (внутр.), 210 `RegisterMarriagePact` (внутр.), 211 `SetDiplomacyOptions`, 212…215 резерв; поимённо выдаёт E15-T01, [E15 §3](../epics/E15-diplomacy.md)) | — | 212…215 |
+| 200…215 | E15 | выпущены спецификацией E15-T01 ([diplomacy-model.md](diplomacy-model.md) §10.1): 200 `GiveGift`, 201 `AskFavor`, 202 `ProposeTreaty`, 203 `RespondOffer`, 204 `WithdrawOffer`, 205 `BreakTreaty`, 206 `SignTreaty` (внутр.), 207 `SettleTreaty` (внутр.), 208 `ApplyTreatyBreach` (внутр.), 209 `AdjustRelation` (внутр./эффект), 210 `RegisterMarriagePact` (внутр.), 211 `SetDiplomacyOptions` (в коде пока нет) | 212…215 |
 | 216…223 | E31 | резерв под религию (разбор 2026-11-22; предложение: 216 `SetFaithStance`, 217 `DonateToChurch`, 218 `SetChurchPolicy` (внутр.), 219 `AdjustChurchState` (внутр.), 220 `AdjustChurchFavor` (внутр.), 221 `ApplyFaithStance` (внутр.), 222 `AdjustFaithShare` (внутр.), 223 резерв; поимённо выдаёт E31-T01, [E31 §3](../epics/E31-religion.md)) | — | 223 |
 | 224…255 | E14, E20, E33, E34 — порядка 8 тегов на эпик (после E13-T03 `CommandType` — `uint16`, нехватки нет) | — | 224…255 (точные блоки назначает ADR эпика по §5.2-подобному правилу) |
 | 256…263 | E10 (портфели) | выпущены спецификацией E10-T22 ([court-model.md](court-model.md) §20.7): 256 `IssuePortfolioOrder`, 257 `AdvancePortfolio` (в коде пока нет) | 258…263 |
