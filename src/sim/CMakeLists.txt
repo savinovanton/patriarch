@@ -31,11 +31,14 @@ add_library(patriarch_sim STATIC
     include/pat/sim/events/catalog.hpp
     include/pat/sim/events/catalog_doc.hpp
     include/pat/sim/events/character_triggers.hpp
+    include/pat/sim/events/dispatch.hpp
     include/pat/sim/events/event_set.hpp
+    include/pat/sim/events/event_systems.hpp
     include/pat/sim/events/program.hpp
     include/pat/sim/events/reconcile.hpp
     include/pat/sim/events/state.hpp
     include/pat/sim/events/vm.hpp
+    include/pat/sim/events/world_host.hpp
     include/pat/sim/entity_table.hpp
     include/pat/sim/family/tables.hpp
     include/pat/sim/family_systems.hpp
@@ -106,10 +109,13 @@ add_library(patriarch_sim STATIC
     events/catalog_standard.cpp
     events/character_triggers.cpp
     events/disasm.cpp
+    events/dispatch.cpp
     events/event_set.cpp
+    events/event_systems.cpp
     events/program.cpp
     events/reconcile.cpp
     events/vm.cpp
+    events/world_host.cpp
     health.cpp
     court_rules.cpp
     court_text.cpp
