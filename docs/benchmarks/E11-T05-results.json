@@ -1,0 +1,311 @@
+{
+ "tool": "stressgen --events-bench",
+ "characters": 5000,
+ "provinces": 400,
+ "dynasties": 100,
+ "days": 365,
+ "warmup": 31,
+ "seed": 20261122,
+ "scenarios": [
+  {
+   "events": "m1_110",
+   "flow": "realistic",
+   "subscriptions": 115,
+   "per_day": {
+    "occurrences": 3.0,
+    "candidates": 6837.8,
+    "gated": 239.0,
+    "rolls": 6816.1,
+    "vm_runs": 237.2,
+    "launches": 45.52
+   },
+   "total": {
+    "mean_us": 188.19,
+    "p99_us": 376.4,
+    "max_us": 534.5
+   },
+   "sources": {
+    "mean_us": 2.06,
+    "p99_us": 4.3,
+    "max_us": 5.3
+   },
+   "candidates": {
+    "mean_us": 87.89,
+    "p99_us": 182.8,
+    "max_us": 260.1
+   },
+   "gates": {
+    "mean_us": 41.99,
+    "p99_us": 76.6,
+    "max_us": 293.5
+   },
+   "vm": {
+    "mean_us": 39.68,
+    "p99_us": 77.3,
+    "max_us": 88.0
+   },
+   "fire": {
+    "mean_us": 16.57,
+    "p99_us": 47.0,
+    "max_us": 177.8
+   },
+   "full_scan_total": {
+    "mean_us": 274.84,
+    "p99_us": 508.3,
+    "max_us": 715.5
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  },
+  {
+   "events": "m1_110",
+   "flow": "dense",
+   "subscriptions": 115,
+   "per_day": {
+    "occurrences": 540.0,
+    "candidates": 12443.7,
+    "gated": 5844.9,
+    "rolls": 8527.2,
+    "vm_runs": 6189.7,
+    "launches": 1084.31
+   },
+   "total": {
+    "mean_us": 3096.3,
+    "p99_us": 4122.9,
+    "max_us": 4945.5
+   },
+   "sources": {
+    "mean_us": 20.04,
+    "p99_us": 31.1,
+    "max_us": 42.9
+   },
+   "candidates": {
+    "mean_us": 502.52,
+    "p99_us": 674.1,
+    "max_us": 832.3
+   },
+   "gates": {
+    "mean_us": 957.81,
+    "p99_us": 1299.4,
+    "max_us": 1309.1
+   },
+   "vm": {
+    "mean_us": 849.45,
+    "p99_us": 1310.3,
+    "max_us": 1437.2
+   },
+   "fire": {
+    "mean_us": 766.48,
+    "p99_us": 1093.0,
+    "max_us": 2589.6
+   },
+   "full_scan_total": {
+    "mean_us": 3173.76,
+    "p99_us": 4226.9,
+    "max_us": 15578.9
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  },
+  {
+   "events": "e2t04_500",
+   "flow": "realistic",
+   "subscriptions": 534,
+   "per_day": {
+    "occurrences": 3.0,
+    "candidates": 13680.1,
+    "gated": 698.9,
+    "rolls": 13498.9,
+    "vm_runs": 730.7,
+    "launches": 115.21
+   },
+   "total": {
+    "mean_us": 426.71,
+    "p99_us": 718.4,
+    "max_us": 783.5
+   },
+   "sources": {
+    "mean_us": 2.86,
+    "p99_us": 5.0,
+    "max_us": 12.2
+   },
+   "candidates": {
+    "mean_us": 111.12,
+    "p99_us": 203.5,
+    "max_us": 361.9
+   },
+   "gates": {
+    "mean_us": 127.5,
+    "p99_us": 218.0,
+    "max_us": 294.8
+   },
+   "vm": {
+    "mean_us": 110.12,
+    "p99_us": 189.1,
+    "max_us": 349.4
+   },
+   "fire": {
+    "mean_us": 75.12,
+    "p99_us": 166.1,
+    "max_us": 265.2
+   },
+   "full_scan_total": {
+    "mean_us": 508.23,
+    "p99_us": 847.2,
+    "max_us": 956.2
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  },
+  {
+   "events": "e2t04_500",
+   "flow": "dense",
+   "subscriptions": 534,
+   "per_day": {
+    "occurrences": 540.0,
+    "candidates": 60807.9,
+    "gated": 47826.8,
+    "rolls": 28096.9,
+    "vm_runs": 51344.7,
+    "launches": 9250.71
+   },
+   "total": {
+    "mean_us": 26124.22,
+    "p99_us": 29062.7,
+    "max_us": 30227.2
+   },
+   "sources": {
+    "mean_us": 21.78,
+    "p99_us": 32.3,
+    "max_us": 60.9
+   },
+   "candidates": {
+    "mean_us": 4151.84,
+    "p99_us": 4734.1,
+    "max_us": 5736.1
+   },
+   "gates": {
+    "mean_us": 8146.1,
+    "p99_us": 8881.4,
+    "max_us": 9213.1
+   },
+   "vm": {
+    "mean_us": 6987.89,
+    "p99_us": 7885.8,
+    "max_us": 8487.9
+   },
+   "fire": {
+    "mean_us": 6816.62,
+    "p99_us": 8939.9,
+    "max_us": 9370.7
+   },
+   "full_scan_total": {
+    "mean_us": 25464.88,
+    "p99_us": 28139.5,
+    "max_us": 28459.6
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  },
+  {
+   "events": "release_550",
+   "flow": "realistic",
+   "subscriptions": 568,
+   "per_day": {
+    "occurrences": 3.0,
+    "candidates": 34183.9,
+    "gated": 1262.1,
+    "rolls": 34074.6,
+    "vm_runs": 1241.7,
+    "launches": 132.68
+   },
+   "total": {
+    "mean_us": 688.27,
+    "p99_us": 938.0,
+    "max_us": 1010.3
+   },
+   "sources": {
+    "mean_us": 3.15,
+    "p99_us": 4.6,
+    "max_us": 8.1
+   },
+   "candidates": {
+    "mean_us": 159.3,
+    "p99_us": 266.7,
+    "max_us": 317.3
+   },
+   "gates": {
+    "mean_us": 223.47,
+    "p99_us": 326.6,
+    "max_us": 341.3
+   },
+   "vm": {
+    "mean_us": 189.46,
+    "p99_us": 299.2,
+    "max_us": 316.6
+   },
+   "fire": {
+    "mean_us": 112.9,
+    "p99_us": 217.5,
+    "max_us": 342.1
+   },
+   "full_scan_total": {
+    "mean_us": 765.19,
+    "p99_us": 1069.4,
+    "max_us": 1109.6
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  },
+  {
+   "events": "release_550",
+   "flow": "dense",
+   "subscriptions": 568,
+   "per_day": {
+    "occurrences": 540.0,
+    "candidates": 61395.3,
+    "gated": 28473.5,
+    "rolls": 41911.6,
+    "vm_runs": 30271.2,
+    "launches": 4643.28
+   },
+   "total": {
+    "mean_us": 17793.56,
+    "p99_us": 20053.2,
+    "max_us": 21875.8
+   },
+   "sources": {
+    "mean_us": 21.31,
+    "p99_us": 37.5,
+    "max_us": 110.6
+   },
+   "candidates": {
+    "mean_us": 2422.78,
+    "p99_us": 2861.9,
+    "max_us": 3111.8
+   },
+   "gates": {
+    "mean_us": 4845.45,
+    "p99_us": 5461.2,
+    "max_us": 5909.5
+   },
+   "vm": {
+    "mean_us": 4248.42,
+    "p99_us": 4870.2,
+    "max_us": 5395.2
+   },
+   "fire": {
+    "mean_us": 6255.6,
+    "p99_us": 8077.9,
+    "max_us": 9255.7
+   },
+   "full_scan_total": {
+    "mean_us": 17792.9,
+    "p99_us": 21829.9,
+    "max_us": 22867.9
+   },
+   "index_equals_full_scan": true,
+   "mismatched_days": 0
+  }
+ ]
+}
