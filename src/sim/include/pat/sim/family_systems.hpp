@@ -15,6 +15,7 @@ class Simulation;
 
 inline constexpr std::string_view kMarriageNegotiationsSystemName = "marriage.negotiations";
 inline constexpr std::string_view kMarriageWeddingsSystemName = "marriage.weddings";
+inline constexpr std::string_view kMarriageGodparentsSystemName = "marriage.godparents";
 inline constexpr std::string_view kMarriageAnsweredActionName = "on_marriage_answered";
 
 /// E11 on_action input projected from the authoritative, applied negotiation outcome. Void and
@@ -44,6 +45,10 @@ make_marriage_negotiations_system(std::shared_ptr<const MarriageRules> rules,
 [[nodiscard]] std::unique_ptr<System>
 make_marriage_weddings_system(std::shared_ptr<const MarriageRules> rules,
                               std::shared_ptr<const FaithPolicy> faith = {});
+
+/// Processes append-only character rows from the saved cursor. Newborns are considered on their
+/// birth day or the following day (World-only save recovery). All progress is queued as commands.
+[[nodiscard]] std::unique_ptr<System> make_marriage_godparents_system();
 
 /// Registers E8 systems separately from dynasty.v1, after dynasty.* and before economy.*. The same
 /// rules and faith owners are retained by the system and the simulation's command context.

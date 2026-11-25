@@ -67,6 +67,7 @@ enum class CommandType : std::uint16_t {
     Betroth = 67,                      // E8-T10
     BreakBetrothal = 68,               // E8-T10
     Tonsure = 69,                      // E8-T12
+    AssignGodparents = 77,             // E8-T13
     Wed = 78,                          // E8-T10
     SettleWidowhood = 81,              // E8-T10
 };
@@ -416,6 +417,14 @@ struct SettleWidowhood {
     [[nodiscard]] bool operator==(const SettleWidowhood&) const = default;
 };
 
+/// System only. An empty pair acknowledges scanning through child (including old/dead rows)
+/// without changing its existing godparents. A nonempty pair assigns an unprocessed newborn.
+struct AssignGodparents {
+    CharacterId child;
+    std::array<CharacterId, kGodparentSlots> godparents{};
+    [[nodiscard]] bool operator==(const AssignGodparents&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
@@ -454,7 +463,8 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::BreakBetrothal,
                                     cmd::Tonsure,
                                     cmd::Wed,
-                                    cmd::SettleWidowhood>;
+                                    cmd::SettleWidowhood,
+                                    cmd::AssignGodparents>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

@@ -81,6 +81,7 @@ TEST_CASE("marriage weddings: child betrothal waits for both birthdays and appli
     CHECK(notes(scene.world, scene.groom_house, 204) == 1);
     scene.reject(Command{DynastyId(), cmd::Wed{row.id}});
 
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     install_family_systems(sim, std::make_shared<MarriageRules>(scene.rules));
     (void)sim.tick();
@@ -104,6 +105,7 @@ TEST_CASE("marriage weddings: child betrothal waits for both birthdays and appli
 TEST_CASE("marriage weddings: default simulation leaves an engagement untouched") {
     Scene scene;
     (void)scene.engage();
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     CHECK(sim.system_count() == 0);
     sim.run_days(3);
@@ -116,6 +118,7 @@ TEST_CASE("marriage weddings: the last grace day permits its queued wedding") {
     Scene scene;
     scene.rules.negotiation.wedding_grace_days = 2;
     const auto row = scene.engage();
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     install_family_systems(sim, std::make_shared<MarriageRules>(scene.rules));
     bool expired = false;
@@ -325,6 +328,7 @@ TEST_CASE("marriage weddings: daily widowhood settles either spouse after death"
     const auto survivor = husband_died ? scene.bride : scene.groom;
     const auto death_date = scene.world.today();
     REQUIRE(scene.world.die(deceased, CauseOfDeath::Illness));
+    scene.acknowledge_scenario_characters();
     Simulation sim(scene.world);
     install_family_systems(sim, std::make_shared<MarriageRules>(scene.rules));
     (void)sim.tick();
@@ -345,6 +349,7 @@ TEST_CASE("marriage weddings: saves during engagement and queued wedding replay 
     Scene scene;
     scene.rules.negotiation.wedding_delay_days = 3;
     auto rules = std::make_shared<MarriageRules>(scene.rules);
+    scene.acknowledge_scenario_characters();
     const World initial = scene.world;
     Simulation sim(initial);
     install_family_systems(sim, rules);

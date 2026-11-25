@@ -16,6 +16,12 @@ struct Scene {
     CharacterId groom;
     CharacterId bride;
 
+    /// Older scenario rows were already scanned; tests of answers/weddings need no cursor work.
+    void acknowledge_scenario_characters() {
+        REQUIRE(
+            world.set_family_godparent_cursor(static_cast<std::uint32_t>(world.characters().ids.capacity())));
+    }
+
     CharacterId person(DynastyId house,
                        Sex sex,
                        Date birth = Date::from_ymd(1670, 1, 1),
