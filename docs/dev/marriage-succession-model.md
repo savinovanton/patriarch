@@ -337,7 +337,7 @@ T11 сохраняет требование в записи брака при `S
 | 66 | `RespondMarriage` | `negotiation`, `result` (`u8`: 1 Accepted, 2 Refused, 4 Void), `reason` (`u16`), `score`, `threshold`, `terms[8]` (`i32`) | **система** | T09 |
 | 67 | `Betroth` | `groom`, `bride`, `dowry_kop`, `dowry_source`, `dispensation` | **система** (договоры E15, события E11, сценарии); игрок — через посредника | T10 |
 | 68 | `BreakBetrothal` | `betrothal` (`u32`), `reason` (`u8`: 1 Voluntary, 2 PartyDied, 3 Ineligible, 4 GraceExpired) | игрок/ИИ (`Voluntary`, актор — дом одной из сторон); система — остальное | T10 |
-| 69 | `Tonsure` | `character` (супруг, которого постригают) | игрок/ИИ (актор — дом супругов) | T12 |
+| 69 | `Tonsure` | `character` (живой член рода или супруг члена рода) | игрок/ИИ (актор — текущий дом цели или её супруга) | T12 |
 | 70 | `SetHeir` | `heir`, `guardian` (`CharacterId`, invalid = не менять/нет) | игрок/ИИ | T15 |
 | 71 | `ChangeSuccessionLaw` | `law`, `heir` (нужен при `Appointment`) | игрок/ИИ | T15 |
 | 72 | `Disown` | `character` | игрок/ИИ | T15 |
@@ -411,9 +411,9 @@ T11 сохраняет требование в записи брака при `S
 | 68 | `TableFull` | таблица на пределе | — |
 | 70 | `BetrothalNotFound` | нет помолвки | — |
 | 71 | `NotBetrothalParty` | актор — не дом стороны | — |
-| 80 | `NotMarried` | `Tonsure`: нет супруга | — |
+| 80 | `NotMarried` | резерв: постриг собственного члена рода допускается без брака (#307) | — |
 | 81 | `CannotTonsureHead` | `Tonsure`: глава рода | M2 |
-| 82 | `NotYourSpouse` | `Tonsure`: актор — не дом супругов | — |
+| 82 | `NotYourSpouse` | `Tonsure`: цель и её живой супруг не принадлежат текущему дому актора | — |
 | 83 | `HouseChanged` | участник сменил род до ответа; переговоры отменены с сохранением исходных родов и расхода | — |
 
 `check_marriage(world, rules, groom, bride, options, faith) → MarriageDenials` — полный набор уникальных кодов по возрастанию, без усечения фиксированным буфером. `MarriageCheckOptions` задаёт `as_betrothal`, `dispensation`, `actor` (без актора системная проверка учитывает лишение прав у обеих сторон, с актором — только у его члена). «Причина недоступности» строки списка кандидатов — первая по приоритету из `Betrothed`, `InNegotiation`, `AlreadyMarried`, `Mourning`, `Tonsured`, остальные по возрастанию кода (`candidate_denial`). `BloodKinshipDispensable` — единственный код, снимаемый флагом; при `dispensation = 1` он исключается из набора, а расход растёт на `dispensation_fee` (`envoy_cost`, без списания денег в проверке).
@@ -644,6 +644,10 @@ W = clamp((16 − age_ward) × 5 + (100 − health_ward) / 2, 0, 100)   слаб
 | Глава-женщина | −10 | — | — | — |
 
 Все изменения — командами `AdjustHonorWithReason`/`AdjustUnity`/`AdjustOpinion` (внутри `apply` команд E8 вызываются те же методы `World`) с кодами причин: **честь/единство** (`StandingReason`): 101 `EnvoyDispensation`, 102 `ThirdMarriage`, 103 `BetrothalBroken`, 104 `Tonsure`, 105 `WeddingRank`, 201 `LawReform`, 202 `Disown`, 203 `DisputeMonthly`, 204 `DisputeResolved`, 205 `RegentDismissed`, 206 `Usurpation`, 207 `AppointmentSkip`, 208 `FemaleHead`; **мнения** (`OpinionReason`): 101 `MarriageRefused`, 102 `MarriageAccepted`, 103 `BetrothalBroken`, 104 `TonsuredSpouse`, 105 `MarriedInto`, 106 `Godparent`, 201 `LawReformLoser`, 202 `Disowned`, 203 `DisputeLoser`, 204 `RegentDismissed`, 205 `Usurped`. Номера 1…99 — E7/E9 (`kStandingReasonLoanOverdue = 2` и т. д.), 100…299 — E8, остальное — резерв.
+
+T12: постриг собственного живого ребёнка/родственника допускается без брака (#307); системная команда без дома-актора не допускается. Полномочия определяются **текущим** домом цели или её живого супруга: прежний дом перешедшей жены сам по себе не даёт полномочий. Для реакции и возврата денег используются исходные дома записи брака; это сохраняет реакцию семьи жены после её перехода в род мужа. Без записи брака — текущие дома пары. Штрафы берутся непосредственно из `MarriageRules::consequences` (§8.8), без дополнительного множителя ранга.
+
+Постриг снимает назначение цели наследником, переговоры (итог `Void/Tonsured`), помолвку (`Ineligible`), траур и управление провинциями. Остальные данные наследования, включая ссылку на завещательного опекуна, сохраняются: при выборе регента учитывается необратимый статус. Уже действующий регент/подопечный, претендент открытого спора и держатель удела отклоняются без изменений: переходы их текущих ролей относятся к T16–T18. Будущая система `court.holders` освобождает должности пострижённого по контракту E10 §6.3; T12 не вводит состояние двора. Статус сохраняется после смерти, исключает повторный брак, назначение главой, наследование и новое назначение управителем.
 
 ### 8.9 ИИ-подбор партий `marriage.matchmaker` (T20)
 

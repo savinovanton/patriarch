@@ -218,9 +218,9 @@ TEST_CASE("marriage candidates: full denials badge and counts precede availabili
     const auto foreign_disowned = s.person(s.third, Sex::Female);
     s.status(foreign_disowned, family::kPersonDisowned);
     const auto blocked = s.person(s.other, Sex::Female, 12);
-    s.status(blocked, family::kPersonTonsured | family::kPersonDisowned);
     const auto husband = s.person(s.third, Sex::Male);
     REQUIRE(s.world.marry(husband, blocked));
+    s.status(blocked, family::kPersonTonsured | family::kPersonDisowned);
     auto q = s.query();
     const auto all = find_candidates(s.world, s.rules, q);
     CHECK(all.total == 3);

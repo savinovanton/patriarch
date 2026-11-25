@@ -167,7 +167,7 @@ bool World::set_dynasty_head(DynastyId dynasty, CharacterId head) {
         return false;
     }
     if (head.valid()) {
-        if (!is_alive(head) || characters_.dynasty[head.index()] != dynasty) {
+        if (!is_alive(head) || is_tonsured(head) || characters_.dynasty[head.index()] != dynasty) {
             return false;
         }
     }
@@ -975,6 +975,9 @@ std::vector<DueLifeEvent> World::take_due_life_events(Date today) {
 // ---- kinship primitives -------------------------------------------------------------------------
 
 bool World::can_marry(CharacterId a, CharacterId b) const {
+    if (is_tonsured(a) || is_tonsured(b)) {
+        return false;
+    }
     if (!dynasty_mode() || a == b || !is_alive(a) || !is_alive(b)) {
         return false;
     }
@@ -1004,23 +1007,30 @@ bool World::marry(CharacterId a, CharacterId b) {
     return true;
 }
 
-bool World::end_marriage(CharacterId a) {
+bool World::can_end_marriage(CharacterId a) const {
     if (!dynasty_mode() || !is_alive(a)) {
+        return false;
+    }
+    const auto b = characters_.spouse[a.index()];
+    const auto has_free_slot = [](const auto& ex) {
+        return std::ranges::any_of(ex, [](CharacterId id) { return !id.valid(); });
+    };
+    return is_alive(b) && characters_.spouse[b.index()] == a &&
+           has_free_slot(characters_.ex_spouses[a.index()]) &&
+           has_free_slot(characters_.ex_spouses[b.index()]);
+}
+
+bool World::end_marriage(CharacterId a) {
+    if (!can_end_marriage(a)) {
         return false;
     }
     CharacterTable& c = characters_;
     const CharacterId b = c.spouse[a.index()];
-    if (!is_alive(b) || c.spouse[b.index()] != a) {
-        return false;
-    }
     const auto free_slot = [](std::array<CharacterId, kMaxExSpouses>& ex) {
         return std::find_if(ex.begin(), ex.end(), [](CharacterId x) { return !x.valid(); });
     };
     const auto slot_a = free_slot(c.ex_spouses[a.index()]);
     const auto slot_b = free_slot(c.ex_spouses[b.index()]);
-    if (slot_a == c.ex_spouses[a.index()].end() || slot_b == c.ex_spouses[b.index()].end()) {
-        return false;  // cannot happen while marriages <= kMaxMarriages, but never lose a record
-    }
     *slot_a = b;
     *slot_b = a;
     c.spouse[a.index()] = CharacterId();

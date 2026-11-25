@@ -7,6 +7,7 @@
 #include "pat/sim/economy/rules.hpp"
 #include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
+#include "pat/sim/marriage_tonsure.hpp"
 #include "pat/sim/marriage_weddings.hpp"
 #include "pat/sim/traits.hpp"
 
@@ -145,6 +146,9 @@ struct Validator {
     }
     Result<void, CommandError> operator()(const cmd::BreakBetrothal& c) const {
         return validate_break_betrothal(world, rules_or_default(marriage), actor, c, faith);
+    }
+    Result<void, CommandError> operator()(const cmd::Tonsure& c) const {
+        return validate_tonsure(world, actor, c);
     }
     Result<void, CommandError> operator()(const cmd::Wed& c) const {
         if (actor.valid()) {
@@ -449,6 +453,9 @@ struct Validator {
         if (c.a == c.b) {
             return reject(Rejection::InvalidArgument, "a character cannot marry itself");
         }
+        if (world.is_tonsured(c.a) || world.is_tonsured(c.b)) {
+            return reject(Rejection::InvalidState, "a tonsured person cannot marry");
+        }
         const CharacterTable& t = world.characters();
         if (t.spouse[c.a.index()].valid() || t.spouse[c.b.index()].valid()) {
             return reject(Rejection::InvalidState, "already married");
@@ -567,8 +574,8 @@ struct Validator {
             if (!world.exists(c.administrator)) {
                 return reject(Rejection::UnknownEntity, "unknown character");
             }
-            if (!world.is_alive(c.administrator)) {
-                return reject(Rejection::InvalidState, "the character is dead");
+            if (!world.is_alive(c.administrator) || world.is_tonsured(c.administrator)) {
+                return reject(Rejection::InvalidState, "the character is dead or tonsured");
             }
         }
         const std::size_t p = c.province.index();
@@ -749,6 +756,9 @@ struct Validator {
             if (!world.is_alive(c.head)) {
                 return reject(Rejection::UnknownEntity, "unknown or dead character");
             }
+            if (world.is_tonsured(c.head)) {
+                return reject(Rejection::InvalidState, "a tonsured person cannot head a dynasty");
+            }
             if (world.characters().dynasty[c.head.index()] != c.dynasty) {
                 return reject(Rejection::InvalidState, "the new head is not a member of the dynasty");
             }
@@ -812,6 +822,9 @@ struct Applier {
     void operator()(const cmd::Betroth& c) const { apply_betroth(world, rules_or_default(marriage), c); }
     void operator()(const cmd::BreakBetrothal& c) const {
         apply_break_betrothal(world, rules_or_default(marriage), actor, c);
+    }
+    void operator()(const cmd::Tonsure& c) const {
+        apply_tonsure(world, rules_or_default(marriage), actor, c);
     }
     void operator()(const cmd::Wed& c) const { apply_wed(world, rules_or_default(marriage), c); }
     void operator()(const cmd::SettleWidowhood& c) const {
@@ -1082,6 +1095,10 @@ struct CommandTag<cmd::BreakBetrothal> {
     static constexpr CommandType value = CommandType::BreakBetrothal;
 };
 template <>
+struct CommandTag<cmd::Tonsure> {
+    static constexpr CommandType value = CommandType::Tonsure;
+};
+template <>
 struct CommandTag<cmd::Wed> {
     static constexpr CommandType value = CommandType::Wed;
 };
@@ -1187,6 +1204,8 @@ std::string_view to_string(CommandType type) noexcept {
             return "Betroth";
         case CommandType::BreakBetrothal:
             return "BreakBetrothal";
+        case CommandType::Tonsure:
+            return "Tonsure";
         case CommandType::Wed:
             return "Wed";
         case CommandType::SettleWidowhood:

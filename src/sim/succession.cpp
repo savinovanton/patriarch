@@ -28,7 +28,7 @@ CharacterId fallback_successor(const World& world, DynastyId dynasty, CharacterI
         return {};
     }
     const auto adult = [&](CharacterId id) {
-        return world.is_alive(id) &&
+        return world.is_alive(id) && !world.is_tonsured(id) &&
                age_years(people.birth_date[id.index()], world.today()) >= kDefaultDemography.prime_from;
     };
     const bool has_adult_man = std::ranges::any_of(members, [&](CharacterId id) {

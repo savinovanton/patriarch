@@ -306,7 +306,7 @@ bool World::set_province_administrator(ProvinceId province, CharacterId administ
     if (economy_.meta.present == 0 || !exists(province)) {
         return false;
     }
-    if (administrator.valid() && !is_alive(administrator)) {
+    if (administrator.valid() && (!is_alive(administrator) || is_tonsured(administrator))) {
         return false;
     }
     economy_.provinces.administrator[province.index()] = administrator;
