@@ -125,6 +125,25 @@ struct CatalogEntry {
     std::string example;
 };
 
+/// Builders of the trigger blocks (E11-T07, T08, later epics): a predicate (Bool) and a value (Number).
+/// `stub` non-empty: the system behind the entry is not built yet (the epic that brings it).
+class Catalog;
+void add_predicate(Catalog& c,
+                   std::uint16_t code,
+                   std::string name,
+                   ScopeMask from,
+                   std::string example,
+                   std::vector<ArgSpec> args = {},
+                   std::string stub = {});
+void add_value(Catalog& c,
+               std::uint16_t code,
+               std::string name,
+               ScopeMask from,
+               std::string example,
+               std::vector<ArgSpec> args = {},
+               std::vector<std::string> suffixes = {},
+               std::string stub = {});
+
 /// Keys of the auto-tooltip templates of a trigger or value entry (docs/dev/event-engine.md section 15.1):
 /// `tooltip.trigger.<name>` (the condition), `.not` (a predicate required to be `no`) and `.fail`
 /// (why a variant is unavailable). Effects and state operations use `tooltip.effect.<name>`.

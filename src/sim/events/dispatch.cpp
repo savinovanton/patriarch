@@ -718,10 +718,7 @@ void Dispatcher::gate(World& world) {
     const Meta meta = world.event_state().meta;
     const bool anchors = meta.anchors_enabled != 0;
     const bool scaled = meta.frequency_permille != kDefaultFrequencyPermille;
-    TriggerEnv env;
-    env.world = &world;
-    env.traits = config_.traits.get();
-    env.trait_slots = config_.trait_slots;
+    const TriggerEnv env = config_.trigger_env(world);
     WorldVmHost host(world, catalog_, env);
 
     std::uint32_t stream_event = std::numeric_limits<std::uint32_t>::max();
@@ -867,10 +864,7 @@ void Dispatcher::launch_now(World& world, const EventDef& def, const Launch& lau
 void Dispatcher::fire_timers(World& world) {
     const Date today = world.today();
     const EventSettings& settings = set_->settings;
-    TriggerEnv env;
-    env.world = &world;
-    env.traits = config_.traits.get();
-    env.trait_slots = config_.trait_slots;
+    const TriggerEnv env = config_.trigger_env(world);
     while (!world.event_state().timers.empty() && world.event_state().timers.front().due <= today) {
         const Timer timer = world.event_state().timers.front();
         if (!world.cancel_event_timer(timer.seq)) {
@@ -938,10 +932,7 @@ void Dispatcher::fire(World& world) {
         }
         std::sort(keys_.begin(), keys_.end());
         drop_.assign(survivors_.size(), 0);
-        TriggerEnv env;
-        env.world = &world;
-        env.traits = config_.traits.get();
-        env.trait_slots = config_.trait_slots;
+        const TriggerEnv env = config_.trigger_env(world);
         WorldVmHost host(world, catalog_, env);
         std::size_t dropped = 0;
         for (std::size_t begin = 0; begin < keys_.size();) {

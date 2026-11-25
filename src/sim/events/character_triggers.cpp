@@ -24,14 +24,6 @@ struct Person {
     Sex sex = Sex::Male;
 };
 
-[[nodiscard]] Word word_of(core::Fixed32 v) noexcept {
-    return static_cast<Word>(v.raw()) * (Word{1} << (core::Fixed64::frac_bits - core::Fixed32::frac_bits));
-}
-
-[[nodiscard]] Word word_of_int(std::int64_t v) noexcept {
-    return word_from_fixed(core::Fixed64::from_int(v));
-}
-
 [[nodiscard]] std::int32_t int_of(Word w) noexcept {
     return static_cast<std::int32_t>(fixed_from_word(w).to_int());
 }
@@ -117,7 +109,13 @@ struct Person {
     return std::ranges::any_of(children, [&](CharacterId c) { return world.is_alive(c); });
 }
 
-[[nodiscard]] DynastyId dynasty_of_scope(const World& world, Scope scope) {
+[[nodiscard]] TriggerResult yes(bool v) {
+    return TriggerResult{v ? Word{1} : Word{0}, true};
+}
+
+}  // namespace
+
+DynastyId dynasty_of_scope(const World& world, Scope scope) {
     if (scope.kind == ScopeKind::Dynasty) {
         const DynastyId d{scope.id};
         return world.exists(d) ? d : DynastyId{};
@@ -125,12 +123,6 @@ struct Person {
     const std::optional<Person> p = person_of(world, scope);
     return p ? p->dynasty : DynastyId{};
 }
-
-[[nodiscard]] TriggerResult yes(bool v) {
-    return TriggerResult{v ? Word{1} : Word{0}, true};
-}
-
-}  // namespace
 
 std::optional<TriggerResult>
 eval_character_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code, std::span<const Word> args) {
@@ -208,60 +200,66 @@ eval_character_value(const TriggerEnv& env, Scope scope, std::uint16_t code, std
 
     switch (code) {
         case kValAge:
-            return number(person ? word_of_int(age_of(world, *person)) : 0);
+            return number(person ? word_from_whole(age_of(world, *person)) : 0);
         case kValSkill: {
             const std::int32_t index = index_arg(args, 0);
             if (!alive || index < 0 || static_cast<std::size_t>(index) >= kSkillCount) {
                 return number(0);
             }
             const auto skill = static_cast<Skill>(index);
-            return number(word_of(env.traits != nullptr
-                                      ? skill_breakdown(world, *env.traits, person->id, skill).total
-                                      : t.skills[i][static_cast<std::size_t>(index)]));
+            return number(word_from_fixed32(env.traits != nullptr
+                                                ? skill_breakdown(world, *env.traits, person->id, skill).total
+                                                : t.skills[i][static_cast<std::size_t>(index)]));
         }
         case kValHealth:
-            return number(alive ? word_of(attribute_of(env, *person, CharacterAttribute::Health, t.health))
-                                : 0);
-        case kValStress:
-            return number(alive ? word_of(attribute_of(env, *person, CharacterAttribute::Stress, t.stress))
-                                : 0);
-        case kValPiety:
-            return number(alive ? word_of(attribute_of(env, *person, CharacterAttribute::Piety, t.piety))
-                                : 0);
-        case kValFertility:
             return number(
-                alive ? word_of(attribute_of(env, *person, CharacterAttribute::Fertility, t.fertility)) : 0);
-        case kValAmbition:
-            return number(
-                alive ? word_of(attribute_of(env, *person, CharacterAttribute::Ambition, t.ambition)) : 0);
-        case kValLoyaltyHead:
-            return number(
-                alive ? word_of(attribute_of(env, *person, CharacterAttribute::LoyaltyHead, t.loyalty_head))
+                alive ? word_from_fixed32(attribute_of(env, *person, CharacterAttribute::Health, t.health))
                       : 0);
+        case kValStress:
+            return number(
+                alive ? word_from_fixed32(attribute_of(env, *person, CharacterAttribute::Stress, t.stress))
+                      : 0);
+        case kValPiety:
+            return number(
+                alive ? word_from_fixed32(attribute_of(env, *person, CharacterAttribute::Piety, t.piety))
+                      : 0);
+        case kValFertility:
+            return number(alive ? word_from_fixed32(
+                                      attribute_of(env, *person, CharacterAttribute::Fertility, t.fertility))
+                                : 0);
+        case kValAmbition:
+            return number(alive ? word_from_fixed32(
+                                      attribute_of(env, *person, CharacterAttribute::Ambition, t.ambition))
+                                : 0);
+        case kValLoyaltyHead:
+            return number(alive ? word_from_fixed32(attribute_of(
+                                      env, *person, CharacterAttribute::LoyaltyHead, t.loyalty_head))
+                                : 0);
         case kValOpinionOf: {
             const Scope target = scope_arg(args, 0);
             if (!alive || target.kind != ScopeKind::Character || !world.exists(CharacterId{target.id})) {
                 return number(0);
             }
-            return number(word_of(world.get_opinion(person->id, CharacterId{target.id})));
+            return number(word_from_fixed32(world.get_opinion(person->id, CharacterId{target.id})));
         }
         case kValKinshipDegree: {
             const Scope target = scope_arg(args, 0);
             if (!person || target.kind != ScopeKind::Character) {
-                return number(word_of_int(kNoKinship));
+                return number(word_from_whole(kNoKinship));
             }
             const std::uint8_t degree = kin::blood_degree(world, person->id, CharacterId{target.id});
-            return number(word_of_int(degree == 0 ? kNoKinship : degree));
+            return number(word_from_whole(degree == 0 ? kNoKinship : degree));
         }
         case kValChildCount:
-            return number(person ? word_of_int(static_cast<std::int64_t>(kin::child_count(world, person->id)))
-                                 : 0);
+            return number(
+                person ? word_from_whole(static_cast<std::int64_t>(kin::child_count(world, person->id))) : 0);
         case kValHonor:
-            return number(dynasty.valid() ? word_of_int(world.dynasties().honor[dynasty.index()]) : 0);
+            return number(dynasty.valid() ? word_from_whole(world.dynasties().honor[dynasty.index()]) : 0);
         case kValUnity:
-            return number(dynasty.valid() ? word_of(world.dynasties().unity[dynasty.index()]) : 0);
+            return number(dynasty.valid() ? word_from_fixed32(world.dynasties().unity[dynasty.index()]) : 0);
         case kValPrestige:
-            return number(dynasty.valid() ? word_of(world.dynasties().prestige[dynasty.index()]) : 0);
+            return number(dynasty.valid() ? word_from_fixed32(world.dynasties().prestige[dynasty.index()])
+                                          : 0);
         case kValTreasury: {
             if (!dynasty.valid() || !world.economy_present()) {
                 return TriggerResult{0, false};  // no economy in this world: no data

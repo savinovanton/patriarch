@@ -40,6 +40,14 @@ using Word = std::int64_t;
 [[nodiscard]] constexpr Word word_from_int(std::int32_t v) noexcept {
     return static_cast<Word>(v) * (Word{1} << 32);
 }
+/// A whole number of any size as a word (saturating like Fixed64::from_int).
+[[nodiscard]] constexpr Word word_from_whole(std::int64_t v) noexcept {
+    return word_from_fixed(core::Fixed64::from_int(v));
+}
+/// A Q16.16 column of the World as a word (exact: the word has more fraction bits).
+[[nodiscard]] constexpr Word word_from_fixed32(core::Fixed32 v) noexcept {
+    return static_cast<Word>(v.raw()) * (Word{1} << (core::Fixed64::frac_bits - core::Fixed32::frac_bits));
+}
 
 /// Limits of the machine (docs/dev/event-engine.md section 7.4). `[предл.]` values.
 namespace limits {

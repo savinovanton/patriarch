@@ -1,0 +1,96 @@
+format_version = 1
+
+# Шаблоны автотултипов каталога триггеров: состояние событий, случайность, время, провинция, род в державе
+# (E11-T08). Ключи и параметры — как в tooltip_character.pd: tooltip.trigger.<имя> (условие), .not (предикат
+# с = no), .fail (причина недоступности варианта); общие tooltip.cmp.* и tooltip.fail.required лежат там.
+# Параметры: подписи аргументов записи ({flag}, {name}, {building}, ...), у значений — {need} и {have}, у значения
+# с видом (group_size.peasants) — {kind}. Тесты проверяют полноту (tests/event_triggers_realm_test.cpp).
+# Тексты [проверить] на тон.
+
+# ---- Состояние событий ----
+tooltip.trigger.has_flag = "Отмечено: {flag}"
+tooltip.trigger.has_flag.not = "Не отмечено: {flag}"
+tooltip.trigger.has_flag.fail = "Требуется: отметка «{flag}»"
+
+tooltip.trigger.has_global_flag = "В державе отмечено: {flag}"
+tooltip.trigger.has_global_flag.not = "В державе не отмечено: {flag}"
+tooltip.trigger.has_global_flag.fail = "Требуется: в державе отметка «{flag}»"
+
+tooltip.trigger.has_modifier = "Действует: {modifier}"
+tooltip.trigger.has_modifier.not = "Не действует: {modifier}"
+tooltip.trigger.has_modifier.fail = "Требуется: действие «{modifier}»"
+
+tooltip.trigger.has_fired = "Уже случилось: {name}"
+tooltip.trigger.has_fired.not = "Ещё не случилось: {name}"
+tooltip.trigger.has_fired.fail = "Требуется: чтобы уже случилось «{name}»"
+
+tooltip.trigger.has_cooldown = "Повторится не скоро: {name}"
+tooltip.trigger.has_cooldown.not = "Может повториться: {name}"
+tooltip.trigger.has_cooldown.fail = "Требуется: пауза после «{name}»"
+
+tooltip.trigger.chain_step = "Ход истории «{chain}» {need}"
+tooltip.trigger.chain_step.fail = "Требуется: ход истории «{chain}» {need} (сейчас {have})"
+
+tooltip.trigger.variable = "Счёт «{name}» {need}"
+tooltip.trigger.variable.fail = "Требуется: счёт «{name}» {need} (сейчас {have})"
+
+tooltip.trigger.global_variable = "Счёт державы «{name}» {need}"
+tooltip.trigger.global_variable.fail = "Требуется: счёт державы «{name}» {need} (сейчас {have})"
+
+# ---- Случайность и время ----
+tooltip.trigger.random_chance = "Шанс {percent} %"
+tooltip.trigger.random_chance.not = "Не выпал шанс {percent} %"
+tooltip.trigger.random_chance.fail = "Требуется: удача (шанс {percent} %)"
+
+tooltip.trigger.current_year = "Год {need}"
+tooltip.trigger.current_year.fail = "Требуется: год {need} (сейчас {have})"
+
+tooltip.trigger.current_month = "Месяц {need}"
+tooltip.trigger.current_month.fail = "Требуется: месяц {need} (сейчас {have})"
+
+tooltip.trigger.date = "Дата {need}"
+tooltip.trigger.date.fail = "Требуется: дата {need} (сейчас {have})"
+
+# ---- Провинция ----
+tooltip.trigger.unrest = "Волнения {need}"
+tooltip.trigger.unrest.fail = "Требуется: волнения {need} (сейчас {have})"
+
+tooltip.trigger.control = "Контроль {need}"
+tooltip.trigger.control.fail = "Требуется: контроль {need} (сейчас {have})"
+
+tooltip.trigger.corruption = "Мздоимство {need}"
+tooltip.trigger.corruption.fail = "Требуется: мздоимство {need} (сейчас {have})"
+
+tooltip.trigger.population = "Население {need}"
+tooltip.trigger.population.fail = "Требуется: население {need} (сейчас {have})"
+
+tooltip.trigger.recruit_pool = "Рекрутский запас {need}"
+tooltip.trigger.recruit_pool.fail = "Требуется: рекрутский запас {need} (сейчас {have})"
+
+tooltip.trigger.has_building = "Есть постройка: {building}"
+tooltip.trigger.has_building.not = "Нет постройки: {building}"
+tooltip.trigger.has_building.fail = "Требуется: постройка «{building}»"
+
+tooltip.trigger.unrest_state = "Состояние волнений {need}"
+tooltip.trigger.unrest_state.fail = "Требуется: состояние волнений {need} (сейчас {have})"
+
+tooltip.trigger.development = "Освоенность {need}"
+tooltip.trigger.development.fail = "Требуется: освоенность {need} (сейчас {have})"
+
+tooltip.trigger.group_size = "Сословие «{kind}»: числом {need}"
+tooltip.trigger.group_size.fail = "Требуется: сословие «{kind}» числом {need} (сейчас {have})"
+
+tooltip.trigger.group_mood = "Настроение сословия «{kind}» {need}"
+tooltip.trigger.group_mood.fail = "Требуется: настроение сословия «{kind}» {need} (сейчас {have})"
+
+# ---- Род в державе ----
+tooltip.trigger.is_player_controlled = "Под рукой игрока"
+tooltip.trigger.is_player_controlled.not = "Не под рукой игрока"
+tooltip.trigger.is_player_controlled.fail = "Требуется: быть под рукой игрока"
+
+tooltip.trigger.debt = "Долг казне {need} ₽"
+tooltip.trigger.debt.fail = "Требуется: долг казне {need} ₽ (сейчас {have} ₽)"
+
+tooltip.trigger.has_quota = "Есть разнарядка от казны"
+tooltip.trigger.has_quota.not = "Нет разнарядки от казны"
+tooltip.trigger.has_quota.fail = "Требуется: разнарядка от казны"

@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <span>
+#include <utility>
 
 namespace pat::sim::events {
 
@@ -39,6 +41,18 @@ constexpr std::uint16_t kListRealmDynasty = 5;
 /// A living person as a scope, or an empty scope.
 [[nodiscard]] Scope living_scope(const World& world, CharacterId id) {
     return id.valid() && world.is_alive(id) ? character_scope(id) : Scope{};
+}
+
+/// Appends the `cap` lowest ids of an index of the World (ascending) as scopes; true when the index holds
+/// more (the list is cut). O(n log cap): the index is not copied whole.
+template <class Id, class ToScope>
+bool take_lowest(std::span<const Id> ids, std::size_t cap, std::vector<Scope>& out, ToScope to_scope) {
+    std::vector<Id> lowest(std::min(ids.size(), cap));
+    std::ranges::partial_sort_copy(ids, lowest);
+    for (const Id id : lowest) {
+        out.push_back(to_scope(id));
+    }
+    return ids.size() > cap;
 }
 
 }  // namespace
@@ -129,6 +143,9 @@ Word WorldVmHost::load(Scope scope, std::uint16_t code, std::span<const Word> ar
     if (const std::optional<TriggerResult> r = eval_character_value(env_, scope, code, args)) {
         return r->value;
     }
+    if (const std::optional<TriggerResult> r = eval_realm_value(env_, scope, code, args)) {
+        return r->value;
+    }
     return 0;
 }
 
@@ -141,32 +158,22 @@ bool WorldVmHost::predicate(Scope scope, std::uint16_t code, std::span<const Wor
     if (const std::optional<TriggerResult> r = eval_character_predicate(env_, scope, code, args)) {
         return r->value != 0;
     }
+    if (const std::optional<TriggerResult> r = eval_realm_predicate(env_, scope, code, args)) {
+        return r->value != 0;
+    }
     return false;
 }
 
 bool WorldVmHost::list(Scope scope, std::uint16_t code, std::uint32_t limit, std::vector<Scope>& out) {
-    const std::size_t before = out.size();
-    const auto room = [&] { return out.size() - before < limit; };
+    // Fan-out (sections 5.2 and 7.4): at most min(limit, bound of the list) elements, in the order of
+    // section 5.2; a longer list is cut and reported. The cut keeps the first elements of that order, so
+    // the cost never exceeds what estimate_cost assumed and the same World gives the same elements.
+    const std::size_t cap = std::min<std::size_t>(limit, catalog_.list_bound(code));
     bool cut = false;
-    const auto add = [&](Scope s) {
-        if (!room()) {
-            cut = true;
-            return false;
-        }
-        out.push_back(s);
-        return true;
-    };
     switch (code) {
         case kListLivingMember:
             if (scope.kind == ScopeKind::Dynasty && world_.exists(DynastyId{scope.id})) {
-                std::vector<CharacterId> members(world_.members_of(DynastyId{scope.id}).begin(),
-                                                 world_.members_of(DynastyId{scope.id}).end());
-                std::ranges::sort(members);
-                for (const CharacterId m : members) {
-                    if (!add(character_scope(m))) {
-                        break;
-                    }
-                }
+                cut = take_lowest(world_.members_of(DynastyId{scope.id}), cap, out, character_scope);
             }
             break;
         case kListChild:
@@ -175,38 +182,41 @@ bool WorldVmHost::list(Scope scope, std::uint16_t code, std::uint32_t limit, std
                 const CharacterId id{scope.id};
                 const std::vector<CharacterId> kin =
                     code == kListChild ? kin::children_of(world_, id) : kin::siblings_of(world_, id);
-                std::vector<CharacterId> alive;
+                std::vector<std::pair<Date, CharacterId>> alive;
                 for (const CharacterId c : kin) {
                     if (world_.is_alive(c)) {
-                        alive.push_back(c);
+                        alive.emplace_back(world_.characters().birth_date[c.index()], c);
                     }
                 }
-                std::ranges::sort(alive);
-                for (const CharacterId c : alive) {
-                    if (!add(character_scope(c))) {
-                        break;
-                    }
+                std::ranges::sort(alive);  // (birth_date, id), section 5.2
+                cut = alive.size() > cap;
+                for (std::size_t i = 0; i < alive.size() && i < cap; ++i) {
+                    out.push_back(character_scope(alive[i].second));
                 }
             }
             break;
         case kListOwnedProvince:
-            if (scope.kind == ScopeKind::Dynasty) {
-                const DynastyId d{scope.id};
-                const std::vector<DynastyId>& owner = world_.provinces().owner;
-                for (std::size_t i = 0; i < owner.size(); ++i) {
-                    if (owner[i] == d &&
-                        !add(Scope::make(ScopeKind::Province, static_cast<std::uint32_t>(i)))) {
-                        break;
-                    }
-                }
+            if (scope.kind == ScopeKind::Dynasty && world_.exists(DynastyId{scope.id})) {
+                cut = take_lowest(world_.provinces_of(DynastyId{scope.id}), cap, out, [](ProvinceId p) {
+                    return Scope::make(ScopeKind::Province, p.value());
+                });
             }
             break;
         case kListRealmDynasty:
             if (scope.kind == ScopeKind::Realm) {
+                // Ascending ids; houses that died out are not part of the realm any more.
+                std::size_t taken = 0;
                 for (std::size_t i = 0; i < world_.dynasties().size(); ++i) {
-                    if (!add(Scope::make(ScopeKind::Dynasty, static_cast<std::uint32_t>(i)))) {
+                    const DynastyId d{static_cast<std::uint32_t>(i)};
+                    if (!world_.exists(d) || world_.dynasty_extinct(d)) {
+                        continue;
+                    }
+                    if (taken == cap) {
+                        cut = true;
                         break;
                     }
+                    out.push_back(dynasty_scope(d));
+                    ++taken;
                 }
             }
             break;

@@ -73,6 +73,7 @@ add_executable(patriarch_tests
     education_test.cpp
     event_compiler_test.cpp
     event_triggers_character_test.cpp
+    event_triggers_realm_test.cpp
     events_vm_test.cpp
     health_test.cpp
     marriage_score_test.cpp

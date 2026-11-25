@@ -147,6 +147,36 @@ std::string render_catalog_reference(const Catalog& catalog) {
         }
         out += "\n";
     }
+
+    // The lists of the iterators (section 5.2) with their fan-out bound (section 7.4).
+    std::vector<const CatalogEntry*> lists;
+    for (const CatalogEntry& e : catalog.entries()) {
+        if (e.space == NameSpace::List && !e.retired) {
+            lists.push_back(&e);
+        }
+    }
+    if (!lists.empty()) {
+        std::ranges::sort(lists, {}, &CatalogEntry::code);
+        out += std::format("## Списки итераторов ({})\n\n", lists.size());
+        out +=
+            "Список перебирают `any_<список>`, `all_<список>`, `count_<список>` в условиях и значениях, "
+            "`every_`, `random_`, `ordered_` в эффектах. **Граница** — лимит fan-out: итератор получает не "
+            "больше min(граница, 256) элементов в порядке §5.2 (по `id` ↑, дети и братья-сёстры — по дате "
+            "рождения); длиннее — список усекается, растёт счётчик `truncated`. Перебора всего мира нет "
+            "(`EV107`).\n\n";
+        out += "| Код | Имя | Из | Элементы | Граница | Пример |\n";
+        out += "|---:|---|---|---|---:|---|\n";
+        for (const CatalogEntry* e : lists) {
+            out += std::format("| {} | `{}` | {} | {} | {} | `any_{} = {{ count >= 2 … }}` |\n",
+                               e->code,
+                               e->name,
+                               scopes_text(e->from),
+                               scope_kind_name(e->to),
+                               e->bound,
+                               e->name);
+        }
+        out += "\n";
+    }
     return out;
 }
 

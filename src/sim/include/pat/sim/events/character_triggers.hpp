@@ -1,5 +1,6 @@
 #pragma once
 
+#include "pat/sim/economy/rules.hpp"
 #include "pat/sim/events/catalog.hpp"
 #include "pat/sim/events/program.hpp"
 #include "pat/sim/traits.hpp"
@@ -73,6 +74,12 @@ struct TriggerEnv {
     /// pushes); this table gives the slot stored in the characters (TraitDef::id). Empty: the argument is
     /// the slot itself.
     std::span<const std::uint16_t> trait_slots;
+    /// The argument of `has_building` is the index of the object in the content registry; this table gives
+    /// the building slot stored in the provinces (BuildingDef::slot). Empty: the argument is the slot itself
+    /// (E11-T08).
+    std::span<const std::uint8_t> building_slots;
+    /// The rules of the economy: `unrest_state` needs the thresholds. Null: `unrest_state` has no data.
+    const economy::EconomyRules* economy = nullptr;
 };
 
 struct TriggerResult {
@@ -95,5 +102,8 @@ eval_character_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code,
 /// for `skill`).
 [[nodiscard]] std::optional<TriggerResult>
 eval_character_value(const TriggerEnv& env, Scope scope, std::uint16_t code, std::span<const Word> args);
+
+/// The house of a person (living or archived) or the dynasty itself; invalid for other scopes.
+[[nodiscard]] DynastyId dynasty_of_scope(const World& world, Scope scope);
 
 }  // namespace pat::sim::events
