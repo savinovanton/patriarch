@@ -624,6 +624,7 @@ public:
     /// Ends the marriage of a living, married character with a living spouse, for any reason
     /// (annulment, tonsure, widowhood: Die calls this for the deceased before it is archived). Both
     /// partners lose `spouse` and gain each other in `ex_spouses`.
+    [[nodiscard]] bool can_end_marriage(CharacterId a) const;
     bool end_marriage(CharacterId a);
     /// Stores godparents (reserved for M2). Both must exist, differ from the character and from each
     /// other, or be invalid. False (nothing changed) otherwise.
@@ -827,6 +828,9 @@ public:
     append_family_outcome(family::NegotiationOutcome row);
     bool set_family_status(const family::PersonStatus& row);
     bool clear_family_status(CharacterId character);
+    [[nodiscard]] bool is_tonsured(CharacterId character) const;
+    /// Cancels pending proposals and betrothals after a permanent eligibility change.
+    void cancel_family_engagements(CharacterId character, std::uint16_t reason);
     bool set_family_succession(const family::SuccessionState& row);
     bool clear_family_succession(DynastyId dynasty);
     bool set_family_regency(const family::Regency& row);

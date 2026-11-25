@@ -570,6 +570,9 @@ bool World::set_family_status(const family::PersonStatus& row) {
     } else {
         replace_row(family_.person_statuses, row, &family::PersonStatus::character);
     }
+    if ((row.flags & family::kPersonTonsured) != 0) {
+        economy_remove_administrator(row.character);
+    }
     return true;
 }
 
@@ -655,6 +658,17 @@ void World::cancel_family_negotiations(CharacterId character, std::uint16_t reas
     }
     std::erase_if(family_.negotiations,
                   [&](const auto& row) { return row.groom == character || row.bride == character; });
+}
+
+bool World::is_tonsured(CharacterId character) const {
+    return blocked(*this, character, family::kPersonTonsured);
+}
+
+void World::cancel_family_engagements(CharacterId character, std::uint16_t reason) {
+    cancel_family_negotiations(character, reason);
+    if (const auto* engagement = family_betrothal_of(character)) {
+        PAT_VERIFY(break_family_betrothal(engagement->id, family::BetrothalBreakReason::Ineligible));
+    }
 }
 
 void World::family_on_death(CharacterId character) {

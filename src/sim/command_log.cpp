@@ -146,6 +146,7 @@ struct Writer {
         out.u8(static_cast<std::uint8_t>(c.reason));
     }
     void operator()(const cmd::Wed& c) const { out.u32(c.betrothal); }
+    void operator()(const cmd::Tonsure& c) const { out.u32(c.character.value()); }
     void operator()(const cmd::SettleWidowhood& c) const { out.u32(c.deceased.value()); }
     void operator()(const cmd::PlanDeath& c) const {
         out.u32(c.character.value());
@@ -484,6 +485,9 @@ bool read_command(core::ByteReader& in, Command& out) {
         }
         case CommandType::Wed:
             out.payload = cmd::Wed{in.u32()};
+            break;
+        case CommandType::Tonsure:
+            out.payload = cmd::Tonsure{CharacterId(in.u32())};
             break;
         case CommandType::SettleWidowhood:
             out.payload = cmd::SettleWidowhood{CharacterId(in.u32())};

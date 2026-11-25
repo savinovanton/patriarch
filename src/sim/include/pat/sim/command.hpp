@@ -66,6 +66,7 @@ enum class CommandType : std::uint16_t {
     RespondMarriage = 66,              // E8-T09
     Betroth = 67,                      // E8-T10
     BreakBetrothal = 68,               // E8-T10
+    Tonsure = 69,                      // E8-T12
     Wed = 78,                          // E8-T10
     SettleWidowhood = 81,              // E8-T10
 };
@@ -397,6 +398,12 @@ struct BreakBetrothal {
     [[nodiscard]] bool operator==(const BreakBetrothal&) const = default;
 };
 
+/// Irreversibly withdraws a living family member or spouse from secular life.
+struct Tonsure {
+    CharacterId character;
+    [[nodiscard]] bool operator==(const Tonsure&) const = default;
+};
+
 /// Applies a due wedding and its accounting. System only.
 struct Wed {
     family::BetrothalId betrothal = 0;
@@ -445,6 +452,7 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::RespondMarriage,
                                     cmd::Betroth,
                                     cmd::BreakBetrothal,
+                                    cmd::Tonsure,
                                     cmd::Wed,
                                     cmd::SettleWidowhood>;
 
