@@ -1020,6 +1020,13 @@ void Dispatcher::fire(World& world) {
 }
 
 void Dispatcher::finish(World& world) {
+    // section 9.5: after the on_death events of the tick (they may read the rows of the deceased), the
+    // rows of every person who died today go away (flags, variables, cooldowns, timers, queue rows)
+    for (const Occurrence& occ : occurrences_) {
+        if (occ.action == action::kDeath && !occ.roots[0].empty() && world.event_rows_of(occ.roots[0]) != 0) {
+            (void)world.clear_event_scope(occ.roots[0], true);
+        }
+    }
     Meta meta = world.event_state().meta;
     bool changed = false;
     if (meta.started == 0) {

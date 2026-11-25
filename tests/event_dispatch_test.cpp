@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 
-#include "test_bytes.hpp"
+#include "state_sections_fixture.hpp"
 
 using namespace pat::sim;
 using namespace pat::sim::events;
@@ -210,8 +210,9 @@ TEST_CASE("event dispatch: on_game_start runs once, also across a save") {
 
     auto loaded = pat::test::load_state(pat::test::state_bytes(sim.world()));
     REQUIRE(loaded.has_value());
-    Simulation second = make_sim(std::move(loaded).value());
+    Simulation second = make_sim(make_setup(Date::from_ymd(1703, 1, 31)).world);
     const auto again = install_event_systems(second, set, test_catalog());
+    second.restore_state(std::move(loaded).value(), {});
     second.run_days(3);
     CHECK(history_count(second.world(), *set->find(start.key)) == 1);
     CHECK(again->launches().empty());
@@ -641,12 +642,19 @@ TEST_CASE("event dispatch: a save in the middle of a month and the replay reprod
         CHECK(before_dispatcher->launches() == ref_launches[static_cast<std::size_t>(day)]);
     }
     const std::vector<std::uint8_t> bytes = pat::test::state_bytes(before.world());
+    {
+        auto probe = pat::test::load_state(bytes);
+        INFO((probe.has_value() ? std::string("ok") : probe.error().message));
+        REQUIRE(probe.has_value());
+    }
 
     SUBCASE("a new simulation loaded from the save") {
         auto loaded = pat::test::load_state(bytes);
         REQUIRE(loaded.has_value());
-        Simulation after = make_sim(std::move(loaded).value());
+        // systems are registered on a fresh simulation, the save comes in through restore_state
+        Simulation after = make_sim(make_setup(Date::from_ymd(1703, 1, 31)).world);
         const auto after_dispatcher = install_event_systems(after, set, test_catalog());
+        after.restore_state(std::move(loaded).value(), {});
         for (int day = 83; day < 200; ++day) {
             feed(after, shape);
             (void)after.tick();
