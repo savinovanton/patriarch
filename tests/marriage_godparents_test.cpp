@@ -69,8 +69,11 @@ std::int32_t score(const std::vector<GodparentCandidate>& candidates, CharacterI
 }
 
 bool spiritual_denial(const World& world, CharacterId groom, CharacterId bride) {
-    const auto denials = check_marriage(
-        world, MarriageRules::defaults(), groom, bride, {.as_betrothal = true, .dispensation = true});
+    const auto denials = check_marriage(world,
+                                        MarriageRules::defaults(),
+                                        groom,
+                                        bride,
+                                        {.as_betrothal = true, .dispensation = true, .actor = {}});
     return std::ranges::find(denials, MarriageDenial::SpiritualKinship) != denials.end();
 }
 
