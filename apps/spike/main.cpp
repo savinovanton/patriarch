@@ -26,6 +26,7 @@
 #include "pat/engine/ui.hpp"
 #include "pat/engine/window.hpp"
 #include "pat/mapdata/map_format.hpp"
+#include "pat/mapdata/map_migrate.hpp"
 #include "pat/game/credits_view.hpp"
 #include "pat/game/hud_view.hpp"
 #include "pat/game/map_overview.hpp"
@@ -162,7 +163,7 @@ struct Options {
     ScenarioKind scenario = ScenarioKind::Demo;
     std::filesystem::path data_root = PATRIARCH_M1_DATA_DIR;
     bool dev = false;              // poll M1 definitions for changes
-    std::string map_file;          // load a PMD1 map instead of generating one
+    std::string map_file;          // load a map (PMD1 or a PMD2 set) instead of generating one
     bool gen_size_set = false;
     bool provinces_set = false;
     std::uint32_t gen_width = 8192;
@@ -506,12 +507,23 @@ int main(int argc, char** argv) {
     // ---- map data
     mapdata::MapData map;
     if (!opt.map_file.empty()) {
-        auto loaded = mapdata::read_map_file(opt.map_file);
+        // PMD1, or either file of a PMD2 set (physical.pmd + provinces.pmd side by side, Geo-17).
+        mapdata::ProvinceReadOptions read_options;
+        read_options.threads = 0;  // tile decoding on all cores; the result does not depend on it
+        const auto load_start = std::chrono::steady_clock::now();
+        auto loaded = mapdata::load_map(opt.map_file, read_options);
         if (!loaded) {
             PAT_LOG_ERROR("spike", "cannot load map: {}", loaded.error().message);
             return 1;
         }
         map = std::move(loaded).value();
+        PAT_LOG_INFO("spike",
+                     "map {} loaded in {:.0f} ms: {} x {}, {} provinces",
+                     opt.map_file,
+                     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - load_start).count(),
+                     map.width,
+                     map.height,
+                     map.province_list.size());
     } else if (opt.scenario == ScenarioKind::M1) {
         mapdata::GenParams gp = pat::content::m1_map_params();
         if (opt.gen_size_set) {

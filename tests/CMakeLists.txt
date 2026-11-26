@@ -63,6 +63,9 @@ add_executable(patriarch_tests
     kinship_test.cpp
     localization_test.cpp
     log_test.cpp
+    geo_projection_test.cpp
+    json_reader_test.cpp
+    map_import_test.cpp
     map_migrate_test.cpp
     mapdata_parallel_test.cpp
     mapdata_test.cpp

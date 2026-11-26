@@ -5,7 +5,9 @@
 #include "pat/mapdata/physical_layer.hpp"
 #include "pat/mapdata/province_layer.hpp"
 
+#include <cstdint>
 #include <filesystem>
+#include <string>
 
 // PMD1 -> PMD2 migration and the format-detecting map loader (ADR-0007 section 5, Geo-13).
 //
@@ -29,6 +31,10 @@ inline constexpr int kIo = 165;               ///< The file or directory cannot 
 inline constexpr const char* kPhysicalFileName = "physical.pmd";
 inline constexpr const char* kProvincesFileName = "provinces.pmd";
 inline constexpr const char* kMigrationStepId = "migrated-from-pmd1";
+
+/// Key of a province whose borders were generated, not digitised: "p" + id padded with zeros to four
+/// digits ("p0001"). Used by migration and by `mapgen import` (placeholder provinces).
+[[nodiscard]] std::string generated_province_key(std::uint16_t id);
 
 struct MigratedMap {
     PhysicalLayer physical;

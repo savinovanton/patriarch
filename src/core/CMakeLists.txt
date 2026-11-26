@@ -20,11 +20,13 @@ add_library(patriarch_core STATIC
     include/pat/core/string_interner.hpp
     include/pat/core/compress.hpp
     include/pat/core/file_io.hpp
+    include/pat/core/json_reader.hpp
     arena.cpp
     assert.cpp
     build_info.cpp
     compress.cpp
     file_io.cpp
+    json_reader.cpp
     log.cpp
     rng.cpp
     string_interner.cpp)

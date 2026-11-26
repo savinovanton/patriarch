@@ -61,8 +61,9 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(geor["projection"], 2)
         self.assertEqual(geor["datum"], 1)
         self.assertEqual(geor["pixel_size_x_mm"], geor["pixel_size_y_mm"])
-        # The map area crosses 180 E; GEOR needs -180 <= min < max <= 180 (physical_layer.cpp).
-        self.assertEqual((geor["bbox_min_lon_udeg"], geor["bbox_max_lon_udeg"]), (-180_000_000, 180_000_000))
+        # The map area crosses 180 E: min_lon > max_lon spells a box across the antimeridian (RFC 7946),
+        # as validate_georef (physical_layer.cpp) accepts it.
+        self.assertEqual((geor["bbox_min_lon_udeg"], geor["bbox_max_lon_udeg"]), (15_000_000, -165_000_000))
         self.assertLess(geor["bbox_min_lat_udeg"], geor["bbox_max_lat_udeg"])
         for key, value in geor.items():
             if key.endswith(("_udeg", "_mm")):
@@ -70,6 +71,22 @@ class ProjectionTests(unittest.TestCase):
         plain = stage1.GeoBox(10_000_000, 40_000_000, 50_000_000, 60_000_000)
         geor = stage1.geor_fields(stage1.PROJECTIONS["albers"], plain)
         self.assertEqual((geor["bbox_min_lon_udeg"], geor["bbox_max_lon_udeg"]), (10_000_000, 50_000_000))
+
+    def test_area_geojson_matches_the_clip_boxes(self):
+        data = json.loads(stage1.area_geojson())
+        polygons = data["features"][0]["geometry"]["coordinates"]
+        self.assertEqual(len(polygons), 2)
+        east, west = polygons[0][0], polygons[1][0]
+        self.assertEqual(east[0], [15.0, 28.0])
+        self.assertEqual(east[1], [15.25, 28.0])  # a vertex every 0.25 degrees
+        self.assertIn([180.0, 28.0], east)
+        self.assertIn([180.0, 82.0], east)
+        self.assertEqual(east[-1], east[0])  # closed ring
+        self.assertEqual(len(east), (165 * 4) * 2 + (54 * 4) * 2 + 1)
+        self.assertEqual(west[0], [-180.0, 28.0])
+        self.assertIn([-165.0, 82.0], west)
+        plain = json.loads(stage1.area_geojson(stage1.GeoBox(0, 0, 10_000_000, 10_000_000)))
+        self.assertEqual(len(plain["features"][0]["geometry"]["coordinates"]), 1)
 
     def test_clip_wkt_splits_at_antimeridian(self):
         self.assertEqual(
@@ -398,8 +415,9 @@ class CommandLineTests(unittest.TestCase):
             self.assertIn("gdalwarp", out)
             self.assertIn("+lon_wrap=180", out)
             self.assertIn("-a_ullr", out)  # the W180 tile is shifted across the antimeridian
-            self.assertEqual(out.count("ogr2ogr"), len(stage1.NE_LAYERS))
-            self.assertEqual(out.count("gdal_rasterize"), 3)
+            self.assertEqual(out.count("ogr2ogr"), len(stage1.NE_LAYERS) + 1)  # + the map area box
+            self.assertEqual(out.count("gdal_rasterize"), 4)
+            self.assertIn("area_wgs84.geojson", out)  # the densified clip box
             self.assertFalse((root / "work").exists())  # a dry run writes nothing
 
             code, _, err = self.run_main(*args[:2], *args[3:])

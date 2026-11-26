@@ -599,7 +599,14 @@ TEST_CASE("provinces: split province, empty province and disconnected graph") {
         p.entries[0].color_rgb = 1;
         p.entries[1].key = "east";
         p.entries[1].color_rgb = 2;
-        CHECK(code_of(validate_province_layer(p)) == province_error::kGraphDisconnected);
+        // Without a georeference (one landmass expected) the split graph is an error of the pair ...
+        CHECK(validate_province_layer(p).has_value());
+        CHECK(code_of(validate_provinces(l, p)) == province_error::kGraphDisconnected);
+        CHECK(code_of(validate_province_graph(p.entries)) == province_error::kGraphDisconnected);
+        // ... while a georeferenced map may have islands: each landmass is connected on its own.
+        l.georef = albers();
+        p.bind_key = coast_key(l);
+        CHECK_MESSAGE(validate_provinces(l, p).has_value(), failure(validate_provinces(l, p)));
     }
 }
 

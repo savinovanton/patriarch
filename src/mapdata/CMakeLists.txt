@@ -5,7 +5,9 @@ add_library(patriarch_mapdata STATIC
     graph_export.cpp
     include/pat/mapdata/map_data.hpp
     include/pat/mapdata/map_format.hpp
+    include/pat/mapdata/geo_projection.hpp
     include/pat/mapdata/map_gen.hpp
+    include/pat/mapdata/map_import.hpp
     include/pat/mapdata/map_migrate.hpp
     include/pat/mapdata/map_stats.hpp
     include/pat/mapdata/map_validate.hpp
@@ -14,7 +16,9 @@ add_library(patriarch_mapdata STATIC
     include/pat/mapdata/pmd2_container.hpp
     include/pat/mapdata/province_layer.hpp
     map_format.cpp
+    geo_projection.cpp
     map_gen.cpp
+    map_import.cpp
     map_migrate.cpp
     map_validate.cpp
     nature_layer.cpp
@@ -26,7 +30,8 @@ add_library(patriarch::mapdata ALIAS patriarch_mapdata)
 target_include_directories(patriarch_mapdata PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 # Map data depends on core only: it is shared by the offline tools and the game, never by sim.
-# The generator (map_gen.cpp) is offline tooling and uses floating point and threads; the PMD2
+# The generator (map_gen.cpp) and the stage-2 geodata import (map_import.cpp) are offline tooling and
+# use floating point and threads; geo_projection.cpp is floating point for tools and the UI; the PMD2
 # container (pmd2_container.cpp) uses threads for optional parallel tile coding, nothing else.
 target_link_libraries(patriarch_mapdata PUBLIC patriarch::core PRIVATE Threads::Threads)
 

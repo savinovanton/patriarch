@@ -294,27 +294,33 @@ validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t wi
             }
         }
     }
-    // Connected graph.
-    {
-        std::vector<std::uint8_t> seen(n + 1, 0);
-        std::vector<std::uint16_t> stack = {1};
-        seen[1] = 1;
-        std::size_t reached = 0;
-        while (!stack.empty()) {
-            const std::uint16_t id = stack.back();
-            stack.pop_back();
-            ++reached;
-            for (const Border& b : entries[static_cast<std::size_t>(id) - 1].neighbors) {
-                if (seen[b.neighbor] == 0) {
-                    seen[b.neighbor] = 1;
-                    stack.push_back(b.neighbor);
-                }
+    return R::ok();
+}
+
+Result<void, Error> validate_province_graph(std::span<const ProvinceEntry> entries) {
+    using R = Result<void, Error>;
+    const std::size_t n = entries.size();
+    if (n == 0) {
+        return R::ok();
+    }
+    std::vector<std::uint8_t> seen(n + 1, 0);
+    std::vector<std::uint16_t> stack = {1};
+    seen[1] = 1;
+    std::size_t reached = 0;
+    while (!stack.empty()) {
+        const std::uint16_t id = stack.back();
+        stack.pop_back();
+        ++reached;
+        for (const Border& b : entries[static_cast<std::size_t>(id) - 1].neighbors) {
+            if (b.neighbor >= 1 && b.neighbor <= n && seen[b.neighbor] == 0) {
+                seen[b.neighbor] = 1;
+                stack.push_back(b.neighbor);
             }
         }
-        if (reached != n) {
-            return R::err(
-                codec::make_error(province_error::kGraphDisconnected, "the province graph is not connected"));
-        }
+    }
+    if (reached != n) {
+        return R::err(
+            codec::make_error(province_error::kGraphDisconnected, "the province graph is not connected"));
     }
     return R::ok();
 }
@@ -451,7 +457,15 @@ Result<void, Error> validate_provinces(const PhysicalLayer& physical, const Prov
         return R::err(
             codec::make_error(province_error::kBindKey, "province borders were built for another coast"));
     }
-    return check_layer(provinces, &physical);
+    if (auto ok = check_layer(provinces, &physical); !ok) {
+        return ok;
+    }
+    // A procedural map is one landmass, so its graph must be connected. A georeferenced map has
+    // islands; there every landmass is connected by the pixel checks above (ADR-0007 section 4).
+    if (physical.georef.projection == Projection::none) {
+        return validate_province_graph(provinces.entries);
+    }
+    return R::ok();
 }
 
 // ---- write ---------------------------------------------------------------------------------------
