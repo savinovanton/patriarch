@@ -61,8 +61,9 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(geor["projection"], 2)
         self.assertEqual(geor["datum"], 1)
         self.assertEqual(geor["pixel_size_x_mm"], geor["pixel_size_y_mm"])
-        # The map area crosses 180 E; GEOR needs -180 <= min < max <= 180 (physical_layer.cpp).
-        self.assertEqual((geor["bbox_min_lon_udeg"], geor["bbox_max_lon_udeg"]), (-180_000_000, 180_000_000))
+        # The map area crosses 180 E: min_lon > max_lon spells a box across the antimeridian (RFC 7946),
+        # as validate_georef (physical_layer.cpp) accepts it.
+        self.assertEqual((geor["bbox_min_lon_udeg"], geor["bbox_max_lon_udeg"]), (15_000_000, -165_000_000))
         self.assertLess(geor["bbox_min_lat_udeg"], geor["bbox_max_lat_udeg"])
         for key, value in geor.items():
             if key.endswith(("_udeg", "_mm")):

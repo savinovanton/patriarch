@@ -309,7 +309,7 @@ pick_seeds(const MapData& map, std::size_t land_pixels, std::uint32_t count, std
     return seeds;
 }
 
-constexpr std::uint16_t kUnassigned = 0xFFFF;
+constexpr std::uint16_t kUnassigned = kUnassignedProvince;
 
 void assign_provinces(MapData& map,
                       const std::vector<Seed>& seeds,
@@ -617,9 +617,30 @@ double elapsed_ms(Clock::time_point since) {
 
 }  // namespace
 
+std::uint32_t generated_province_color(std::uint32_t id) {
+    return province_color(id);
+}
+
+std::uint32_t partition_provinces(MapData& map,
+                                  std::size_t land_pixels,
+                                  std::uint32_t province_count,
+                                  std::uint64_t seed,
+                                  unsigned threads) {
+    if (land_pixels == 0) {
+        return 0;
+    }
+    threads = resolve_threads(threads);
+    const auto seed32 = static_cast<std::uint32_t>(seed ^ (seed >> 32U));
+    const std::uint32_t wanted = std::max(1U, std::min<std::uint32_t>(province_count, 4000U));
+    const std::vector<Seed> seeds = pick_seeds(map, land_pixels, wanted, seed);
+    assign_provinces(map, seeds, land_pixels, seed32, threads);
+    const auto count = static_cast<std::uint32_t>(seeds.size());
+    make_provinces_connected(map, count);
+    return count;
+}
+
 MapData generate_map(const GenParams& params) {
     const unsigned threads = resolve_threads(params.threads);
-    const auto seed32 = static_cast<std::uint32_t>(params.seed ^ (params.seed >> 32U));
     const auto t_start = Clock::now();
 
     MapData map;
@@ -644,12 +665,8 @@ MapData generate_map(const GenParams& params) {
                  land,
                  100.0 * static_cast<double>(land) / static_cast<double>(map.pixel_count()));
 
-    const std::uint32_t wanted = std::max(1U, std::min<std::uint32_t>(params.province_count, 4000U));
     t = Clock::now();
-    const std::vector<Seed> seeds = pick_seeds(map, land, wanted, params.seed);
-    assign_provinces(map, seeds, land, seed32, threads);
-    const auto count = static_cast<std::uint32_t>(seeds.size());
-    make_provinces_connected(map, count);
+    const std::uint32_t count = partition_provinces(map, land, params.province_count, params.seed, threads);
     PAT_LOG_INFO("mapgen", "provinces: {:.0f} ms, {} provinces", elapsed_ms(t), count);
 
     t = Clock::now();
@@ -660,7 +677,7 @@ MapData generate_map(const GenParams& params) {
     map.province_list.resize(count);
     for (std::uint32_t i = 0; i < count; ++i) {
         map.province_list[i].id = static_cast<std::uint16_t>(i + 1);
-        map.province_list[i].color_rgb = province_color(i + 1);
+        map.province_list[i].color_rgb = generated_province_color(i + 1);
     }
     rebuild_province_stats(map);
     PAT_LOG_INFO("mapgen",

@@ -446,6 +446,37 @@ TEST_CASE("validate_georef: consistency with the dimensions") {
     expect_bad("empty bbox", [](GeoRef& g) { g.bbox_max_lat_udeg = g.bbox_min_lat_udeg; });
     expect_bad("bbox lon out of range", [](GeoRef& g) { g.bbox_max_lon_udeg = 181'000'000; });
     expect_bad("long text", [](GeoRef& g) { g.proj_text = std::string(kMaxProjTextLength + 1, 'x'); });
+    expect_bad("empty lon range", [](GeoRef& g) { g.bbox_max_lon_udeg = g.bbox_min_lon_udeg; });
+    // A box across the antimeridian (min_lon > max_lon, RFC 7946): 15 E .. 165 W is valid ...
+    {
+        GeoRef g = good;
+        g.bbox_min_lon_udeg = 15'000'000;
+        g.bbox_max_lon_udeg = -165'000'000;
+        CHECK(validate_georef(g, 64, 48).has_value());
+        // ... and survives the blob round trip unchanged.
+        const auto back = decode_georef(encode_georef(g));
+        REQUIRE(back.has_value());
+        CHECK(back.value() == g);
+        g.bbox_min_lon_udeg = 179'999'999;
+        g.bbox_max_lon_udeg = -179'999'999;
+        CHECK(validate_georef(g, 64, 48).has_value());
+    }
+    // ... but not when an edge is on +-180 (that box has a plain spelling).
+    expect_bad("crossing from 180", [](GeoRef& g) {
+        g.bbox_min_lon_udeg = 180'000'000;
+        g.bbox_max_lon_udeg = -165'000'000;
+    });
+    expect_bad("crossing to -180", [](GeoRef& g) {
+        g.bbox_min_lon_udeg = 15'000'000;
+        g.bbox_max_lon_udeg = -180'000'000;
+    });
+    // The full range in plain spelling stays valid (older stage-1 output wrote it).
+    {
+        GeoRef g = good;
+        g.bbox_min_lon_udeg = -180'000'000;
+        g.bbox_max_lon_udeg = 180'000'000;
+        CHECK(validate_georef(g, 64, 48).has_value());
+    }
     // projection none: every field must be zero, including the pixel size.
     GeoRef none;
     none.pixel_size_x_mm = 1;

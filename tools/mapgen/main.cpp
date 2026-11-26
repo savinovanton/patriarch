@@ -4,6 +4,8 @@
 //          [--preview map.png] [--no-validate]
 //   mapgen --info map.pmd [--preview map.png]      (PMD1, or one file of a PMD2 set)
 //   mapgen --migrate in.pmd outdir                 (PMD1 -> outdir/physical.pmd + provinces.pmd)
+//   mapgen --import stage1dir outdir [--provinces 400 --seed 1 --threads 0 --zstd-level 3]
+//          [--preview map.png]                     (stage-1 geodata -> PMD2 set, Geo-3)
 //
 // With --out or --info, `--export-graph graph.pd --metres-per-px N [--graph-id m1]` also writes the
 // province graph for the simulation (E16-T04, docs/dev/army-model.md section 5). The M1 graph:
@@ -18,6 +20,7 @@
 #include "pat/mapdata/graph_export.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
+#include "pat/mapdata/map_import.hpp"
 #include "pat/mapdata/map_migrate.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
@@ -44,6 +47,9 @@ struct Options {
     std::string info;
     std::string migrate_in;
     std::string migrate_out;
+    std::string import_in;
+    std::string import_out;
+    int zstd_level = 3;
     std::string preview;
     std::string export_graph;
     std::string graph_id = "m1";
@@ -78,6 +84,19 @@ bool parse(int argc, char** argv, Options& o) {
                 return false;
             }
             o.migrate_out = dir;
+        } else if (a == "--import" && (v = next()) != nullptr) {
+            o.import_in = v;
+            const char* dir = next();
+            if (dir == nullptr) {
+                return false;
+            }
+            o.import_out = dir;
+        } else if (a == "--zstd-level" && (v = next()) != nullptr) {
+            std::uint32_t level = 0;
+            if (!parse_number(v, level) || level < 1 || level > 22) {
+                return false;
+            }
+            o.zstd_level = static_cast<int>(level);
         } else if (a == "--preview" && (v = next()) != nullptr) {
             o.preview = v;
         } else if (a == "--width" && (v = next()) != nullptr) {
@@ -117,10 +136,13 @@ bool parse(int argc, char** argv, Options& o) {
     const bool generating = !o.out.empty();
     const bool inspecting = !o.info.empty();
     const bool migrating = !o.migrate_in.empty();
-    if (static_cast<int>(generating) + static_cast<int>(inspecting) + static_cast<int>(migrating) != 1) {
+    const bool importing = !o.import_in.empty();
+    if (static_cast<int>(generating) + static_cast<int>(inspecting) + static_cast<int>(migrating) +
+            static_cast<int>(importing) !=
+        1) {
         return false;  // exactly one mode
     }
-    if (!o.export_graph.empty() && (migrating || o.metres_per_px == 0 || o.graph_id.empty())) {
+    if (!o.export_graph.empty() && (migrating || importing || o.metres_per_px == 0 || o.graph_id.empty())) {
         return false;  // the graph needs a map and a scale
     }
     return o.gen.width >= 64 && o.gen.height >= 32 && o.gen.width <= 16384 && o.gen.height <= 16384 &&
@@ -128,12 +150,15 @@ bool parse(int argc, char** argv, Options& o) {
 }
 
 void usage() {
-    std::fprintf(stderr,
-                 "usage: mapgen --out FILE [--width N --height N --seed N --provinces N --threads N]\n"
-                 "              [--preview FILE.png] [--no-validate]\n"
-                 "       mapgen --info FILE [--preview FILE.png]\n"
-                 "       (--out / --info) --export-graph GRAPH.pd --metres-per-px N [--graph-id ID]\n"
-                 "       mapgen --migrate IN.pmd OUTDIR\n");
+    std::fprintf(
+        stderr,
+        "usage: mapgen --out FILE [--width N --height N --seed N --provinces N --threads N]\n"
+        "              [--preview FILE.png] [--no-validate]\n"
+        "       mapgen --info FILE [--preview FILE.png]\n"
+        "       (--out / --info) --export-graph GRAPH.pd --metres-per-px N [--graph-id ID]\n"
+        "       mapgen --migrate IN.pmd OUTDIR\n"
+        "       mapgen --import STAGE1DIR OUTDIR [--provinces N --seed N --threads N --zstd-level N]\n"
+        "              [--preview FILE.png]\n");
 }
 
 void print_stats(const MapData& map) {
@@ -333,6 +358,105 @@ int export_graph(const Options& opt, const MapData& map) {
     return 0;
 }
 
+/// True if the file starts with the PMD1 magic (a PMD2 set is validated by load_map itself).
+bool is_pmd1_file(const std::string& path) {
+    std::FILE* f = std::fopen(path.c_str(), "rb");
+    if (f == nullptr) {
+        return false;
+    }
+    char magic[4] = {};
+    const std::size_t got = std::fread(magic, 1, sizeof magic, f);
+    std::fclose(f);
+    return got == 4 && magic[0] == 'P' && magic[1] == 'M' && magic[2] == 'D' && magic[3] == '1';
+}
+
+/// Stage-1 geodata -> PMD2 set (Geo-3): builds the layers, writes them, loads the set back with
+/// load_map and checks that it gives the same map.
+int import_geodata(const Options& opt) {
+    auto t = std::chrono::steady_clock::now();
+    auto input = read_stage1(opt.import_in);
+    if (!input) {
+        std::fprintf(stderr, "error: %s\n", input.error().message.c_str());
+        return 1;
+    }
+    const Stage1Data& in = input.value();
+    std::printf("read %s in %.2f s: %u x %u, projection %s, %zu source file(s) without SHA-256\n",
+                opt.import_in.c_str(),
+                seconds_since(t),
+                in.width,
+                in.height,
+                in.projection_id.c_str(),
+                in.unverified_files);
+
+    ImportParams params;
+    params.province_count = opt.gen.province_count;
+    params.seed = opt.gen.seed;
+    params.threads = opt.gen.threads;
+    t = std::chrono::steady_clock::now();
+    auto built = import_stage1(in, params);
+    if (!built) {
+        std::fprintf(stderr, "error: %s\n", built.error().message.c_str());
+        return built.error().code >= 120 && built.error().code < 160 ? 3 : 1;
+    }
+    const ImportReport& r = built.value().report;
+    const MigratedMap& layers = built.value().layers;
+    std::printf("imported in %.2f s: %zu land px, %zu filled (no DEM), %zu clamped\n",
+                seconds_since(t),
+                r.land_px,
+                r.nodata_filled_px,
+                r.clamped_px);
+    std::printf("water        : %zu seas, %zu lakes\n", r.seas, r.lakes);
+    std::printf(
+        "provinces    : %zu placeholder + %zu islands\n", r.placeholder_provinces, r.island_provinces);
+
+    Pmd2WriterOptions wo;
+    wo.zstd_level = opt.zstd_level;
+    wo.threads = opt.gen.threads;
+    t = std::chrono::steady_clock::now();
+    if (auto written = write_map_set(opt.import_out, layers, wo); !written) {
+        std::fprintf(stderr, "error: %s\n", written.error().message.c_str());
+        return 1;
+    }
+    const std::filesystem::path dir = opt.import_out;
+    const auto megabytes = [&](const char* name) {
+        return static_cast<double>(std::filesystem::file_size(dir / name)) / (1024.0 * 1024.0);
+    };
+    std::printf("wrote %s (%.2f MiB) and %s (%.2f MiB) in %.2f s (zstd %d)\n",
+                (dir / kPhysicalFileName).string().c_str(),
+                megabytes(kPhysicalFileName),
+                (dir / kProvincesFileName).string().c_str(),
+                megabytes(kProvincesFileName),
+                seconds_since(t),
+                opt.zstd_level);
+
+    auto expected = build_map_data(layers.physical, layers.provinces);
+    ProvinceReadOptions ro;
+    ro.threads = opt.gen.threads;
+    t = std::chrono::steady_clock::now();
+    auto back = load_map(dir / kPhysicalFileName, ro);
+    const double load_s = seconds_since(t);
+    if (!back || !expected) {
+        std::fprintf(stderr,
+                     "error: cannot read the imported set: %s\n",
+                     (!back ? back.error() : expected.error()).message.c_str());
+        return 1;
+    }
+    if (!(back.value() == expected.value())) {
+        std::fprintf(stderr, "ROUND TRIP FAILED: the written set does not load back to the imported map\n");
+        return 3;
+    }
+    std::printf("round trip   : OK, load_map %.3f s\n", load_s);
+    print_stats(back.value());
+    if (!opt.preview.empty()) {
+        if (!write_preview(back.value(), opt.preview)) {
+            std::fprintf(stderr, "error: cannot write preview %s\n", opt.preview.c_str());
+            return 1;
+        }
+        std::printf("preview      : %s\n", opt.preview.c_str());
+    }
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -345,11 +469,16 @@ int main(int argc, char** argv) {
     if (!opt.migrate_in.empty()) {
         return migrate(opt);
     }
+    if (!opt.import_in.empty()) {
+        return import_geodata(opt);
+    }
 
     MapData map;
     if (!opt.info.empty()) {
         auto t = std::chrono::steady_clock::now();
-        auto loaded = load_map(opt.info);
+        ProvinceReadOptions ro;
+        ro.threads = opt.gen.threads;
+        auto loaded = load_map(opt.info, ro);
         if (!loaded) {
             std::fprintf(stderr, "error: %s\n", loaded.error().message.c_str());
             return 1;
@@ -373,7 +502,9 @@ int main(int argc, char** argv) {
     }
 
     print_stats(map);
-    if (opt.validate || !opt.info.empty()) {
+    // A PMD2 set was validated by load_map (validate_physical + validate_provinces); validate_map is
+    // the PMD1 rule set ("water <=> height <= sea_level", one landmass) and does not hold for real maps.
+    if (opt.info.empty() ? opt.validate : is_pmd1_file(opt.info)) {
         const auto t = std::chrono::steady_clock::now();
         const auto valid = validate_map(map);
         if (!valid) {

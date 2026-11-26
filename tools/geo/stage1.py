@@ -253,15 +253,14 @@ def proj_string(spec: ProjectionSpec) -> str:
 def geor_fields(spec: ProjectionSpec, area: GeoBox = MAP_AREA) -> dict[str, object]:
     """GEOR chunk fields (ADR-0007 3.3, pat::mapdata::GeoRef) for this projection and canvas.
 
-    The C++ validator requires -180 <= bbox_min_lon < bbox_max_lon <= 180, so an area crossing
-    the antimeridian is written as the full longitude range; the exact area is kept separately
-    in stage1.json ("area").
+    Longitudes are in [-180, 180]. An area crossing the antimeridian is written as min_lon > max_lon
+    (RFC 7946 section 5.2), which the C++ validator accepts (validate_georef in physical_layer.cpp);
+    for example 15 E .. 165 W is (15_000_000, -165_000_000).
     """
     canvas = spec.canvas
+    min_lon, max_lon = area.west_udeg, area.east_udeg
     if area.crosses_antimeridian:
-        min_lon, max_lon = -180 * UDEG, 180 * UDEG
-    else:
-        min_lon, max_lon = area.west_udeg, area.east_udeg
+        max_lon -= 360 * UDEG
     return {
         "version": 1,
         "projection": spec.geor_code,

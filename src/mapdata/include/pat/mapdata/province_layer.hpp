@@ -120,18 +120,24 @@ compute_province_geometry(std::uint32_t width,
 decode_province_table(std::span<const std::uint8_t> bytes, bool allow_trailing = false);
 
 /// The table alone: dense ids, valid unique keys and colours, ranges (bounding box and centroid in
-/// the raster, area), neighbour lists sorted, in range, symmetric with equal lengths, connected graph.
+/// the raster, area), neighbour lists sorted, in range, symmetric with equal lengths.
 [[nodiscard]] core::Result<void, core::Error>
 validate_province_table(std::span<const ProvinceEntry> entries, std::uint32_t width, std::uint32_t height);
 
+/// Every province reachable from province 1 through the neighbour lists
+/// (province_error::kGraphDisconnected otherwise). Required for maps without a georeference only.
+[[nodiscard]] core::Result<void, core::Error> validate_province_graph(std::span<const ProvinceEntry> entries);
+
 /// Everything checkable without the physical layer: sizes, ids within 1..N, the table, every record
 /// against the pixels (all but the coastal flag, which needs WBOD), every province one 4-connected
-/// region, unique colours, a connected graph. Returns the first violation (province_error code).
+/// region, unique colours. Returns the first violation (province_error code).
 [[nodiscard]] core::Result<void, core::Error> validate_province_layer(const ProvinceLayer& layer);
 
 /// validate_province_layer plus the pairing with a physical layer (ADR-0007 section 4): same size,
 /// bind_key == coast_key(physical), province != 0 exactly where WBOD == 0, coastal flags against the
-/// sea bodies. A different coast is province_error::kBindKey.
+/// sea bodies. A different coast is province_error::kBindKey. A map without a georeference (GEOR
+/// projection none, one landmass) must also have a connected graph (validate_province_graph); a
+/// georeferenced map may have islands, and the graph of each landmass is connected by construction.
 [[nodiscard]] core::Result<void, core::Error> validate_provinces(const PhysicalLayer& physical,
                                                                  const ProvinceLayer& provinces);
 

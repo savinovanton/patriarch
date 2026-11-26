@@ -364,9 +364,16 @@ Result<void, Error> validate_georef(const GeoRef& g, std::uint32_t width, std::u
         return bad("raster extent leaves the plane range");
     }
     if (!lon_ok(g.bbox_min_lon_udeg) || !lon_ok(g.bbox_max_lon_udeg) || !lat_ok(g.bbox_min_lat_udeg) ||
-        !lat_ok(g.bbox_max_lat_udeg) || g.bbox_min_lon_udeg >= g.bbox_max_lon_udeg ||
+        !lat_ok(g.bbox_max_lat_udeg) || g.bbox_min_lon_udeg == g.bbox_max_lon_udeg ||
         g.bbox_min_lat_udeg >= g.bbox_max_lat_udeg) {
         return bad("bounding box is empty or out of range");
+    }
+    // min_lon > max_lon is a box across the antimeridian (RFC 7946 section 5.2): from min_lon east to
+    // 180 degrees, then from -180 to max_lon. Its edges must then be strictly inside (-180, 180),
+    // otherwise the same box has a plain spelling and the crossing one is not canonical.
+    if (g.bbox_min_lon_udeg > g.bbox_max_lon_udeg &&
+        (g.bbox_min_lon_udeg == kMaxLonUdeg || g.bbox_max_lon_udeg == -kMaxLonUdeg)) {
+        return bad("a bounding box across the antimeridian must not touch +-180 degrees");
     }
     return R::ok();
 }
