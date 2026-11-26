@@ -3,6 +3,8 @@ add_library(patriarch_content STATIC
     ai_content.cpp
     include/pat/content/army_content.hpp
     army_content.cpp
+    include/pat/content/diplomacy_content.hpp
+    diplomacy_content.cpp
     include/pat/content/court_content.hpp
     include/pat/content/credits_content.hpp
     include/pat/content/crisis_content.hpp

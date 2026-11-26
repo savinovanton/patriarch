@@ -3,6 +3,8 @@ add_library(patriarch_data STATIC
     ai_schemas.cpp
     include/pat/data/army_schemas.hpp
     army_schemas.cpp
+    include/pat/data/diplomacy_schemas.hpp
+    diplomacy_schemas.cpp
     include/pat/data/content_loader.hpp
     include/pat/data/content_registry.hpp
     include/pat/data/content_schemas.hpp
