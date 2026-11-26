@@ -765,6 +765,10 @@ public:
     /// missing account or without economy.
     economy::Kopecks
     post_money(economy::AccountRef account, economy::LedgerCode code, economy::Kopecks amount_kop);
+    /// Pure equivalent of post_money's applied amount, including account and ledger saturation.
+    [[nodiscard]] economy::Kopecks preview_money_posting(economy::AccountRef account,
+                                                         economy::LedgerCode code,
+                                                         economy::Kopecks amount_kop) const noexcept;
     /// THE way to move money between two accounts: `amount_kop` (> 0) leaves `from` under `out_code`
     /// and enters `to` under `in_code`; the pair must be one of economy::kLedgerPairs. If either side
     /// would saturate, the smaller amount moves on both sides, so the pair sums to zero (E-M3).

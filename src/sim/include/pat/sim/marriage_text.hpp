@@ -21,7 +21,7 @@ inline constexpr std::string_view kMarriageBetrothalBrokenKey = "marriage.betrot
 
 inline constexpr std::uint16_t kChronicleBetrothalPartyDied = 209;
 
-// ChronicleKind::Note parameters 201...209 (marriage-succession-model.md section 10.2).
+// ChronicleKind::Note parameters 201...216 (marriage-succession-model.md section 10.2).
 [[nodiscard]] std::string_view marriage_chronicle_key(std::uint16_t param) noexcept;
 
 }  // namespace pat::sim

@@ -74,6 +74,16 @@ std::string_view marriage_chronicle_key(std::uint16_t param) noexcept {
             return "chronicle.family.widowed";
         case kChronicleBetrothalPartyDied:
             return "chronicle.family.betrothal_party_died";
+        case 210:
+        case 211:
+        case 212:
+        case 213:
+        case 214:
+            return "chronicle.family.law_changed";
+        case 215:
+            return "chronicle.family.heir_designated";
+        case 216:
+            return "chronicle.family.disowned";
     }
     return {};
 }

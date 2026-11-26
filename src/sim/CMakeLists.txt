@@ -77,6 +77,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/scheduled_queue.hpp
     include/pat/sim/sim.hpp
     include/pat/sim/simulation.hpp
+    include/pat/sim/succession_commands.hpp
     include/pat/sim/succession.hpp
     include/pat/sim/succession_rules.hpp
     include/pat/sim/system.hpp
@@ -151,6 +152,7 @@ add_library(patriarch_sim STATIC
     save.cpp
     sim.cpp
     simulation.cpp
+    succession_commands.cpp
     succession.cpp
     traits.cpp
     world.cpp

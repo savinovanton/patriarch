@@ -67,6 +67,9 @@ enum class CommandType : std::uint16_t {
     Betroth = 67,                      // E8-T10
     BreakBetrothal = 68,               // E8-T10
     Tonsure = 69,                      // E8-T12
+    SetHeir = 70,                      // E8-T15
+    ChangeSuccessionLaw = 71,          // E8-T15
+    Disown = 72,                       // E8-T15
     AssignGodparents = 77,             // E8-T13
     Wed = 78,                          // E8-T10
     SettleWidowhood = 81,              // E8-T10
@@ -405,6 +408,23 @@ struct Tonsure {
     [[nodiscard]] bool operator==(const Tonsure&) const = default;
 };
 
+struct SetHeir {
+    CharacterId heir;
+    CharacterId guardian;  // Invalid preserves the existing testamentary guardian.
+    [[nodiscard]] bool operator==(const SetHeir&) const = default;
+};
+
+struct ChangeSuccessionLaw {
+    SuccessionLaw law = SuccessionLaw::Majorat;
+    CharacterId heir;  // Required for Appointment, ignored for other laws.
+    [[nodiscard]] bool operator==(const ChangeSuccessionLaw&) const = default;
+};
+
+struct Disown {
+    CharacterId character;
+    [[nodiscard]] bool operator==(const Disown&) const = default;
+};
+
 /// Applies a due wedding and its accounting. System only.
 struct Wed {
     family::BetrothalId betrothal = 0;
@@ -464,7 +484,10 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::Tonsure,
                                     cmd::Wed,
                                     cmd::SettleWidowhood,
-                                    cmd::AssignGodparents>;
+                                    cmd::AssignGodparents,
+                                    cmd::SetHeir,
+                                    cmd::ChangeSuccessionLaw,
+                                    cmd::Disown>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.
@@ -507,7 +530,7 @@ static_assert(sizeof(CommandError) <= 2 * sizeof(void*), "CommandError must stay
 [[nodiscard]] std::string_view to_string(Rejection reason) noexcept;
 
 /// Borrowed immutable content; all referenced objects must outlive the call. Null marriage rules
-/// use MarriageRules::defaults(). FaithPolicy may itself borrow house-faith strings and views.
+/// and succession rules use their defaults(). FaithPolicy may borrow house-faith strings and views.
 struct CommandContent {
     const TraitCatalog* traits = nullptr;
     const economy::EconomyRules* economy = nullptr;

@@ -541,6 +541,17 @@ Kopecks World::preview_posting(std::size_t account, std::size_t line, Kopecks am
     return applied;
 }
 
+Kopecks World::preview_money_posting(economy::AccountRef account,
+                                     economy::LedgerCode code,
+                                     Kopecks amount_kop) const noexcept {
+    const auto row = resolve_account(account);
+    const auto line = economy::ledger_index(code);
+    if (!row || !line || amount_kop == 0 || economy::is_transfer_code(code)) {
+        return 0;
+    }
+    return preview_posting(*row, *line, amount_kop);
+}
+
 Kopecks World::post_money(economy::AccountRef account, economy::LedgerCode code, Kopecks amount_kop) {
     PAT_ASSERT(economy_.meta.present != 0, "post_money: the world has no economy");
     const auto row = resolve_account(account);

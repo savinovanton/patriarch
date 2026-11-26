@@ -187,6 +187,9 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
     REQUIRE(body.has_value());
     data::MemorySource source("marriage localisation");
     source.add("loc/ru/marriage.pd", body.value());
+    const auto succession_body = directory.read_file("loc/ru/succession.pd");
+    REQUIRE(succession_body.has_value());
+    source.add("loc/ru/succession.pd", succession_body.value());
     const auto loaded = loc::load_localization(source);
     std::string report;
     for (const auto& error : loaded.errors) {
@@ -238,7 +241,7 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
         CHECK(strings.contains("ru", key));
         CHECK_FALSE(strings.format(key).empty());
     }
-    for (std::uint16_t param = 201; param <= sim::kChronicleBetrothalPartyDied; ++param) {
+    for (std::uint16_t param = 201; param <= 216; ++param) {
         const auto key = sim::marriage_chronicle_key(param);
         CAPTURE(key);
         CHECK_FALSE(key.empty());
@@ -257,5 +260,5 @@ TEST_CASE("marriage content: Russian table covers all issued denial and breakdow
     CHECK(sim::marriage_state_key(static_cast<sim::family::MarriageState>(0)).empty());
     CHECK(sim::marriage_end_reason_key(static_cast<sim::family::MarriageEndReason>(255)).empty());
     CHECK(sim::marriage_chronicle_key(200).empty());
-    CHECK(sim::marriage_chronicle_key(210).empty());
+    CHECK(sim::marriage_chronicle_key(217).empty());
 }

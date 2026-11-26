@@ -14,6 +14,7 @@
 namespace pat::sim {
 
 class World;
+enum class SuccessionLaw : std::uint8_t;
 
 /// E7's fallback for a vacant house after its head dies. E8 supplies the succession laws.
 /// Returns an invalid id if the house has no eligible adult member.
@@ -46,6 +47,11 @@ inline constexpr std::uint16_t kClaimantScore = 11100;
 inline constexpr std::uint16_t kClaimantCouncil = 11101;
 inline constexpr std::uint16_t kClaimantLawful = 11102;
 inline constexpr std::uint16_t kClaimantAppointment = 11103;
+inline constexpr std::uint16_t kReformCost = 12200;
+inline constexpr std::uint16_t kReformHonor = 12201;
+inline constexpr std::uint16_t kReformUnity = 12202;
+inline constexpr std::uint16_t kReformMoney = 12203;
+inline constexpr std::uint16_t kReformOpinions = 12204;
 }  // namespace succession_term
 
 inline constexpr std::size_t kCouncilScoreTerms = 7;
@@ -112,6 +118,21 @@ struct SuccessionResult {
                                                  const SuccessionRules& rules,
                                                  DynastyId dynasty,
                                                  CharacterId predecessor = {});
+
+/// The same resolver with hypothetical law/designation, for reform previews without copying World.
+[[nodiscard]] SuccessionResult resolve_successor(const World& world,
+                                                 const SuccessionRules& rules,
+                                                 DynastyId dynasty,
+                                                 CharacterId predecessor,
+                                                 SuccessionLaw law,
+                                                 CharacterId designated);
+
+/// Shared base eligibility (membership, status and legitimacy); female policy is applied by resolution.
+[[nodiscard]] bool succession_candidate_eligible(const World& world,
+                                                 const SuccessionRules& rules,
+                                                 DynastyId dynasty,
+                                                 CharacterId predecessor,
+                                                 CharacterId candidate);
 
 /// Scores any living member, including a member currently excluded from inheriting; unknown,
 /// archived or foreign candidates return zero. The resolver uses this same calculation in bulk.
