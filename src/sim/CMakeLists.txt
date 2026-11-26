@@ -54,6 +54,7 @@ add_library(patriarch_sim STATIC
     include/pat/sim/events/realm_triggers.hpp
     include/pat/sim/events/reconcile.hpp
     include/pat/sim/events/state.hpp
+    include/pat/sim/events/state_effects.hpp
     include/pat/sim/events/vm.hpp
     include/pat/sim/events/world_host.hpp
     include/pat/sim/entity_table.hpp
@@ -133,6 +134,7 @@ add_library(patriarch_sim STATIC
     events/catalog_character_effects.cpp
     events/catalog_doc.cpp
     events/catalog_realm.cpp
+    events/catalog_state_effects.cpp
     events/catalog_standard.cpp
     events/character_effects.cpp
     events/character_triggers.cpp
@@ -144,6 +146,7 @@ add_library(patriarch_sim STATIC
     events/program.cpp
     events/realm_triggers.cpp
     events/reconcile.cpp
+    events/state_effects.cpp
     events/vm.cpp
     events/world_host.cpp
     health.cpp
