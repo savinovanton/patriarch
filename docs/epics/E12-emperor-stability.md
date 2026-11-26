@@ -149,7 +149,7 @@ T01 ── T02 ── T03 ─┬─ T05 ── T06 ─────────�
 
 | В файлах (`data/`) | В коде (`src/sim/crisis`, `src/content`) | В `World` (сейв, хеш) |
 |---|---|---|
-| `data/balance/crisis.pd` (веса, пороги, гистерезис, проекты, защитное окно, сигмоида), `data/scenarios/boyar_plot/crisis.pd`, тексты `ui.crisis.*`, `crisis.*` | `CrisisRules`, функции стабильности/фаз/претензий/переворота, системы `crisis.monthly`/`crisis.emperor`/`crisis.plots`/`crisis.ai_stance`, команды 144…163 | `Realm`, подозрение, претензии, заговоры, журнал переворотов |
+| `data/balance/crisis.pd` (веса, пороги, гистерезис, проекты, защитное окно, сигмоида), `data/scenarios/m1/crisis.pd`, тексты `ui.crisis.*`, `crisis.*` | `CrisisRules`, функции стабильности/фаз/претензий/переворота, системы `crisis.monthly`/`crisis.emperor`/`crisis.plots`/`crisis.ai_stance`, команды 144…163 | `Realm`, подозрение, претензии, заговоры, журнал переворотов |
 
 ### 5.3 Контракты с соседними эпиками
 

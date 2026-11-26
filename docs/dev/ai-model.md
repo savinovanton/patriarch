@@ -573,7 +573,7 @@ score = domain_norm(0…1000) · net_goal/1000 · risk_mult/1000 · player_mult/
 | Файл | Что | Кто |
 |---|---|---|
 | `data/balance/ai.pd` | `ai_rules "main"`: `budget` (квота, перенос, стоимости WU), `schedule` (периоды тиров, пороги значимости, `frame_max_age_days`), `attention` (основа, делители, мин/макс, кап, доля прохода, стоимости команд), `goals` (параметры `need`/`opportunity` §8.1, `match_norm`, `min_utility`), `archetypes` (8 × веса и параметры §8.2), `difficulty` (3 × множители §8.3), `hysteresis` (`hold_pm`, `min_hold_days`), `commitment` (`floor_pm`, `max_days`), `cooldowns`, `event_goal_signatures`, `wealth_bands`, `archetype_follows_head` | T06 (`AiRules::defaults()` — единственное место констант в коде; файл = `defaults()`, тест) |
-| `data/scenarios/m1/ai_agents.pd` | роды под агентом: архетип, режим, `force_tier`; род игрока не перечисляется (берётся из `player_dynasties`) | T06, E30-T08 (архетипы родов — ревью владельца) |
+| `data/scenarios/m1/ai_agents.pd` | роды под агентом: архетип, режим, `force_tier`; перечисляются **все** роды сценария, включая играбельные (игрок выбирается после построения мира); род игрока исключается при настройке агентов в первом тике по `GameSetup.player` ([game-start-model.md](game-start-model.md) §18, F4) | T06, E30-T08 (архетипы родов — ревью владельца) |
 | `data/balance/marriage.pd` | `ai_may_propose_to_player = yes`, `player_inbox_cap`, `player_pair_cooldown_days` | E8-T21 |
 | `data/loc/ru/ai.pd` | `ai.goal.*`, `ai.archetype.*`, `ai.difficulty.*`, `ai.reason.*`, `ui.ai.*` | T06, T14, T15 |
 

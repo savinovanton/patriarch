@@ -721,7 +721,7 @@ E11 строит on-action из **журнала применённых кома
 | В `.pd` | В состоянии (`World`) | В коде |
 |---|---|---|
 | `data/balance/crisis.pd` (T04): `crisis_balance "main"` с группами `stability`, `bands`, `components`, `phases`, `protect`, `emperor`, `projects`, `suspicion`, `guard`, `plot`, `coup`, `stance`, `consequences` и списком `sigmoid`; `claim_rules "main"` (группы `basis`, `support`, `penalty`, списки `blood`, `legal`); `data/crisis/projects.pd`: три `emperor_project` (уровни, пороги, эффекты по уровням) (§8). Как реализовано в T04: все числа плоские (`<группа>.<имя>`, суффиксы `_pm`, `_x100`, `_kop`), веса компонентов — `components.weight_*`; эффекты проектов — именованные списки по уровням | таблицы §4 | `sim::crisis::CrisisRules::defaults()` — единственное место констант в коде, формулы, перечисления, коды |
-| `data/scenarios/boyar_plot/crisis.pd` (T16, E30): стартовое состояние (`SetRealmState{Init}`: стабильность 58, вклады и цели, авторитет 60, `protect_until`, входы), 3–4 позиции родов, запалы | — | — |
+| `data/scenarios/m1/crisis.pd` (T16, E30): стартовое состояние (`SetRealmState{Init}`: стабильность 58, вклады и цели, авторитет 60, `protect_until`, входы), 3–4 позиции родов, запалы | — | — |
 | `data/loc/ru/crisis.pd`: `crisis.component.<имя>`, `crisis.reason.<имя>` (коды `StabilityReason` 1…20), `crisis.phase.<smoulder|unrest|plots|coup_window>.name/hint` (сегмент не может быть числом), `crisis.band.<имя>`, `crisis.project.<имя>.name/desc`, `crisis.denial.<имя>`, `crisis.term.<код>`, `chronicle.crisis.*`, `ui.crisis.*` | — | — |
 
 Правила: файл = `defaults()` (тест, как `demography_content_test`); ошибки с `файл:строка` (E4); **виды `crisis_balance`, `claim_rules` и `emperor_project` исключены из `registry.content_hash()`** (`data::kCrisisKinds`) (как события и двор, D14), входит в `CrisisRules::hash()` → ключ сводки 23 после T22; числа с `[предл.]` калибруются в T21 на 100 прогонов × 50 лет.
@@ -975,7 +975,7 @@ Q12.1 (#581), Q12.2 (#582) и Q12.3 (#583) решены владельцем 202
 | **T13** | `StanceTable`, `SetStance` (163), `crisis.ai_stance`, ИИ-заговоры и доносы (§8.11) | T05, T07 | M, **3 (+0,5)** |
 | **T14** | `ExecuteCoup` (156), `ResolveCoup` (157), `crisis.coup`, сигмоида, пример THR-A3, `CoupLogRing`, on-action 116 | T08, T11, T12, T13 | L, 5 |
 | **T15** | последствия (§8.10) существующими командами, награды, чистки, `TransferThrone{Coup}`, `legacy`, казни и тон 16+ (#583, #594) | T14, E10-T06, E8-T12 (`Tonsure`) | L, **4,5 (+0,5)** |
-| **T16** | `boyar_plot/crisis.pd` (старт 58, `Init`, позиции, запалы, цели), подключение к E30 и E11 | T04, T05, T12, E30-T01 | M, **3 (+0,5)** |
+| **T16** | `m1/crisis.pd` (старт 58, `Init`, позиции, запалы, цели), подключение к E30 и E11 | T04, T05, T12, E30-T01 | M, **3 (+0,5)** |
 | **T17** | записи каталога §10.1–§10.2 (on-action 110…119, триггеры 1270…1286, эффекты 2360…2368), тесты производителей, линт `transfer_throne` | T06, T12, T14, E11-T06, E11-T09 | M, **3,5 (+0,5)** |
 | **T18** | мост §15: `RealmStateView`, `ThroneView`, `PlotListView`/`PlotView`, `DenounceView`, `CoupView`; правило #582 | T05, T08, T12, T14, E7-T21 | M, **3 (+0,5)** |
 | **T19** | окна «Престол» и «Состояние империи» по доскам 28, 29, 33–35, 79; недостающее — после #584 | T18, борд ✅ (часть — #584) | M, 3 |
