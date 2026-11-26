@@ -47,15 +47,6 @@ constexpr TriggerResult kNoData{0, false};
     return i < world.economy().provinces.size() ? std::optional<std::size_t>(i) : std::nullopt;
 }
 
-[[nodiscard]] std::uint8_t building_slot(const TriggerEnv& env, std::int32_t index) {
-    if (env.building_slots.empty()) {
-        return index > 0 && index <= 0xFF ? static_cast<std::uint8_t>(index) : std::uint8_t{0};
-    }
-    return index >= 0 && static_cast<std::size_t>(index) < env.building_slots.size()
-               ? env.building_slots[static_cast<std::size_t>(index)]
-               : std::uint8_t{0};
-}
-
 /// A finished building of this slot stands in the province (construction sites do not count).
 [[nodiscard]] bool has_building(const World& world, std::size_t province, std::uint8_t slot) {
     if (slot == 0) {
@@ -144,7 +135,7 @@ eval_realm_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code, std
             if (!p) {
                 return world.economy_present() ? yes(false) : kNoData;
             }
-            return yes(has_building(world, *p, building_slot(env, index_arg(args, 0))));
+            return yes(has_building(world, *p, building_slot_of(env, index_arg(args, 0))));
         }
         case kTrigIsPlayerControlled:
             return yes(player_controlled(world, scope));
@@ -262,6 +253,15 @@ eval_realm_value(const TriggerEnv& env, Scope scope, std::uint16_t code, std::sp
         default:
             return std::nullopt;
     }
+}
+
+std::uint8_t building_slot_of(const TriggerEnv& env, std::int32_t index) {
+    if (env.building_slots.empty()) {
+        return index > 0 && index <= 0xFF ? static_cast<std::uint8_t>(index) : std::uint8_t{0};
+    }
+    return index >= 0 && static_cast<std::size_t>(index) < env.building_slots.size()
+               ? env.building_slots[static_cast<std::size_t>(index)]
+               : std::uint8_t{0};
 }
 
 }  // namespace pat::sim::events

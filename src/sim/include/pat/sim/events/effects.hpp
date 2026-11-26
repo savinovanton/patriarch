@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -60,6 +61,20 @@ struct EffectEnv {
     /// Null in Preview.
     core::Pcg32* rng = nullptr;
 };
+
+// ---- the arguments of an effect, as the blocks read them -------------------------------------------
+
+/// The argument at `at`, or 0 when the machine passed fewer (an absent optional argument reads as its
+/// default anyway; this only guards a malformed buffer).
+[[nodiscard]] constexpr Word effect_arg(std::span<const Word> args, std::size_t at) noexcept {
+    return at < args.size() ? args[at] : Word{0};
+}
+/// A scope argument of `kind`: the scope, empty for an optional argument that is absent or a transition that
+/// led nowhere; nullopt for a scope of another kind.
+[[nodiscard]] std::optional<Scope>
+effect_scope_arg(std::span<const Word> args, std::size_t at, ScopeKind kind);
+/// A change of a Q16.16 column limited to the range the commands accept (|delta| <= cmd::kMaxVitalDelta).
+[[nodiscard]] core::Fixed32 effect_delta(Word w);
 
 /// The commands of one effect, appended to `out`. `args` are the arguments as the machine passes them (in
 /// the order of CatalogEntry::args).

@@ -12,30 +12,18 @@ namespace {
 
 // ---- reading the arguments --------------------------------------------------------------------------
 
-[[nodiscard]] Word arg(std::span<const Word> args, std::size_t at) {
-    return at < args.size() ? args[at] : Word{0};
-}
-
 /// A reference or an enum: the whole number the compiler pushes (its index).
 [[nodiscard]] std::int32_t index_arg(std::span<const Word> args, std::size_t at) {
-    return int_from_word(arg(args, at));
+    return int_from_word(effect_arg(args, at));
 }
 
-/// An optional scope argument: an empty scope is "none" (invalid id); a scope of another kind is an error.
+/// An optional person argument: an empty scope is "none" (invalid id); a scope of another kind is an error.
 [[nodiscard]] std::optional<CharacterId> person_arg(std::span<const Word> args, std::size_t at) {
-    const Scope s = Scope::from_word(arg(args, at));
-    if (s.kind == ScopeKind::None) {
-        return CharacterId();
-    }
-    if (s.kind != ScopeKind::Character) {
+    const std::optional<Scope> s = effect_scope_arg(args, at, ScopeKind::Character);
+    if (!s) {
         return std::nullopt;
     }
-    return CharacterId{s.id};
-}
-
-/// A change of a Q16.16 column limited to the range the commands accept (|delta| <= 100).
-[[nodiscard]] core::Fixed32 vital_delta(Word w) {
-    return core::clamp(fixed32_from_word(w), -cmd::kMaxVitalDelta, cmd::kMaxVitalDelta);
+    return s->empty() ? CharacterId() : CharacterId{s->id};
 }
 
 [[nodiscard]] bool is_character(Scope s) noexcept {
@@ -57,7 +45,7 @@ namespace {
 EffectStatus
 plan_death(const World& world, CharacterId who, std::span<const Word> args, std::vector<Command>& out) {
     // `years` wins when it is given (it defaults to -1); otherwise `date` (day 0 = absent).
-    const std::int32_t years = int_from_word(arg(args, 1));
+    const std::int32_t years = int_from_word(effect_arg(args, 1));
     Date when = kNoDate;
     if (years >= 0) {
         if (years > 150) {
@@ -65,7 +53,7 @@ plan_death(const World& world, CharacterId who, std::span<const Word> args, std:
         }
         when = date_plus_months(world.today(), 12 * years);
     } else {
-        const std::int32_t day = int_from_word(arg(args, 0));
+        const std::int32_t day = int_from_word(effect_arg(args, 0));
         if (day == 0) {
             return EffectStatus::BadArgument;
         }
@@ -100,7 +88,7 @@ EffectStatus
 create_person(const EffectEnv& env, DynastyId house, std::span<const Word> args, std::vector<Command>& out) {
     const World& world = *env.triggers.world;
     const std::int32_t sex = index_arg(args, 0);
-    const std::int32_t age = int_from_word(arg(args, 1));
+    const std::int32_t age = int_from_word(effect_arg(args, 1));
     const std::optional<CharacterId> father = person_arg(args, 2);
     const std::optional<CharacterId> mother = person_arg(args, 3);
     if ((sex != 0 && sex != 1) || age < 0 || age > 120 || !father || !mother) {
@@ -129,12 +117,12 @@ create_person(const EffectEnv& env, DynastyId house, std::span<const Word> args,
 EffectStatus betroth(DynastyId house, std::span<const Word> args, std::vector<Command>& out) {
     const std::optional<CharacterId> groom = person_arg(args, 0);
     const std::optional<CharacterId> bride = person_arg(args, 1);
-    const core::Fixed64 rubles = fixed_from_word(arg(args, 2));
+    const core::Fixed64 rubles = fixed_from_word(effect_arg(args, 2));
     if (!groom || !bride || !groom->valid() || !bride->valid() || rubles.is_negative()) {
         return EffectStatus::BadArgument;
     }
-    const economy::Kopecks dowry = economy::to_kopecks(saturating_mul(rubles, core::Fixed64::from_int(100)));
-    out.push_back(Command{DynastyId(), cmd::Betroth{*groom, *bride, dowry, house, arg(args, 3) != 0}});
+    const economy::Kopecks dowry = economy::roubles_to_kopecks(rubles);
+    out.push_back(Command{DynastyId(), cmd::Betroth{*groom, *bride, dowry, house, effect_arg(args, 3) != 0}});
     return EffectStatus::Issued;
 }
 
@@ -166,13 +154,13 @@ std::optional<EffectStatus> character_effect_commands(const EffectEnv& env,
             switch (code) {
                 case kEffChangeHonor:
                     return issue(cmd::AdjustHonorWithReason{
-                        *house, int_from_word(arg(args, 0)), kStandingReasonEvent});
+                        *house, int_from_word(effect_arg(args, 0)), kStandingReasonEvent});
                 case kEffChangeUnity:
-                    return issue(
-                        cmd::AdjustUnity{*house, fixed32_from_word(arg(args, 0)), kStandingReasonEvent});
+                    return issue(cmd::AdjustUnity{
+                        *house, fixed32_from_word(effect_arg(args, 0)), kStandingReasonEvent});
                 case kEffChangePrestige:
-                    return issue(
-                        cmd::AdjustPrestige{*house, fixed32_from_word(arg(args, 0)), kStandingReasonEvent});
+                    return issue(cmd::AdjustPrestige{
+                        *house, fixed32_from_word(effect_arg(args, 0)), kStandingReasonEvent});
                 case kEffCreatePerson:
                     return create_person(env, *house, args, out);
                 case kEffRecordChronicle: {
@@ -181,7 +169,7 @@ std::optional<EffectStatus> character_effect_commands(const EffectEnv& env,
                     if (!a || !b) {
                         return EffectStatus::BadArgument;
                     }
-                    const auto key = static_cast<std::uint64_t>(arg(args, 0));
+                    const auto key = static_cast<std::uint64_t>(effect_arg(args, 0));
                     return issue(cmd::RecordChronicle{
                         *house, ChronicleKind::Note, *a, *b, chronicle_event_param(key)});
                 }
@@ -217,14 +205,14 @@ std::optional<EffectStatus> character_effect_commands(const EffectEnv& env,
             switch (code) {
                 case kEffChangeOpinion: {
                     const std::optional<CharacterId> to = person_arg(args, 0);
-                    const std::int32_t reason = int_from_word(arg(args, 2));
+                    const std::int32_t reason = int_from_word(effect_arg(args, 2));
                     if (!to || !to->valid() || reason < 0 || reason > kMaxEventOpinionReason) {
                         return EffectStatus::BadArgument;
                     }
                     return issue(
                         cmd::AdjustOpinion{who,
                                            *to,
-                                           fixed32_from_word(arg(args, 1)),
+                                           fixed32_from_word(effect_arg(args, 1)),
                                            static_cast<OpinionReason>(kOpinionReasonEvent + reason)});
                 }
                 case kEffAddTrait:
@@ -269,13 +257,13 @@ std::optional<EffectStatus> character_effect_commands(const EffectEnv& env,
                     if (skill < 0 || skill >= static_cast<std::int32_t>(kSkillCount)) {
                         return EffectStatus::BadArgument;
                     }
-                    return issue(
-                        cmd::AdjustSkill{who, static_cast<std::uint8_t>(skill), vital_delta(arg(args, 1))});
+                    return issue(cmd::AdjustSkill{
+                        who, static_cast<std::uint8_t>(skill), effect_delta(effect_arg(args, 1))});
                 }
                 case kEffChangeHealth:
-                    return issue(cmd::AdjustHealth{who, vital_delta(arg(args, 0))});
+                    return issue(cmd::AdjustHealth{who, effect_delta(effect_arg(args, 0))});
                 case kEffChangeStress:
-                    return issue(cmd::AdjustStress{who, vital_delta(arg(args, 0))});
+                    return issue(cmd::AdjustStress{who, effect_delta(effect_arg(args, 0))});
                 default: {  // tonsure, disown: the house decides (the commands refuse the system as the
                             // actor)
                     const DynastyId house = dynasty_of_scope(world, target);

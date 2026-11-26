@@ -1,6 +1,7 @@
 #include "pat/sim/events/effects.hpp"
 
 #include "pat/sim/events/character_effects.hpp"
+#include "pat/sim/events/realm_effects.hpp"
 
 #include <optional>
 
@@ -22,6 +23,18 @@ const char* effect_status_name(EffectStatus status) noexcept {
     return "unknown";
 }
 
+std::optional<Scope> effect_scope_arg(std::span<const Word> args, std::size_t at, ScopeKind kind) {
+    const Scope s = Scope::from_word(effect_arg(args, at));
+    if (!s.empty() && s.kind != kind) {
+        return std::nullopt;
+    }
+    return s;
+}
+
+core::Fixed32 effect_delta(Word w) {
+    return core::clamp(fixed32_from_word(w), -cmd::kMaxVitalDelta, cmd::kMaxVitalDelta);
+}
+
 EffectStatus effect_commands(const EffectEnv& env,
                              std::uint16_t code,
                              Scope target,
@@ -30,8 +43,11 @@ EffectStatus effect_commands(const EffectEnv& env,
     if (env.triggers.world == nullptr) {
         return EffectStatus::Unknown;
     }
-    // The blocks in turn (E11-T10 adds the province and economy block here, later epics theirs).
+    // The blocks in turn (later epics add theirs here).
     if (const std::optional<EffectStatus> s = character_effect_commands(env, code, target, args, out)) {
+        return *s;
+    }
+    if (const std::optional<EffectStatus> s = realm_effect_commands(env, code, target, args, out)) {
         return *s;
     }
     return EffectStatus::Unknown;

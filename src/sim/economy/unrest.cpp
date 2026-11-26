@@ -237,6 +237,36 @@ RiotOutcome step_province_riot(World& world, const EconomyRules& rules, Province
     return out;
 }
 
+// ---- one-off shifts --------------------------------------------------------------------------------
+
+UnrestResult
+shift_province_unrest(World& world, const EconomyRules& rules, ProvinceId province, Fixed32 delta) {
+    if (!world.economy_present() || !world.exists(province)) {
+        return {};
+    }
+    const std::size_t p = province.index();
+    const Fixed32 before = world.economy().provinces.unrest[p];
+    UnrestResult result;
+    result.unrest = from_raw64(std::clamp<std::int64_t>(
+        static_cast<std::int64_t>(before.raw()) + static_cast<std::int64_t>(delta.raw()), 0, kUnrestMaxRaw));
+    result.target = result.unrest;
+    result.before = unrest_state(rules.unrest, before);
+    result.after = unrest_state(rules.unrest, result.unrest);
+    world.economy_columns_mut().unrest[p] = result.unrest;
+    (void)record_unrest_state(world, province, result);
+    return result;
+}
+
+Fixed32 shift_province_control(World& world, ProvinceId province, Fixed32 delta) {
+    if (!world.economy_present() || !world.exists(province)) {
+        return {};
+    }
+    Fixed32& control = world.economy_columns_mut().control[province.index()];
+    control = from_raw64(std::clamp<std::int64_t>(
+        static_cast<std::int64_t>(control.raw()) + static_cast<std::int64_t>(delta.raw()), 0, kUnrestMaxRaw));
+    return control;
+}
+
 // ---- explanations ----------------------------------------------------------------------------------
 
 Breakdown explain_unrest(const EconomyRules& rules, const UnrestInput& input) {

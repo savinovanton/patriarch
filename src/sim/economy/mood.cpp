@@ -161,6 +161,19 @@ ProvinceMood step_province_mood(World& world, const EconomyRules& rules, Provinc
     return result;
 }
 
+Fixed32 shift_group_mood(World& world, ProvinceId province, Group group, Fixed32 delta) {
+    const auto g = static_cast<std::size_t>(group);
+    if (!world.economy_present() || !world.exists(province) || g >= kGroupCount) {
+        return {};
+    }
+    Fixed32& mood = world.economy_columns_mut().mood[province.index() * kGroupCount + g];
+    mood = from_raw64(std::clamp<std::int64_t>(static_cast<std::int64_t>(mood.raw()) +
+                                                   static_cast<std::int64_t>(delta.raw()),
+                                               kMoodMinRaw,
+                                               kMoodMaxRaw));
+    return mood;
+}
+
 // ---- explanations ----------------------------------------------------------------------------------
 
 Breakdown explain_mood(const EconomyRules& rules, const MoodInput& input, Group group) {
