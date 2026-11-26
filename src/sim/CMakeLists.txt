@@ -55,6 +55,10 @@ add_library(patriarch_sim STATIC
     include/pat/sim/education.hpp
     include/pat/sim/health.hpp
     include/pat/sim/court_rules.hpp
+    include/pat/sim/court/invariants.hpp
+    include/pat/sim/court/portfolio.hpp
+    include/pat/sim/court/tables.hpp
+    include/pat/sim/influence.hpp
     include/pat/sim/court_text.hpp
     include/pat/sim/crisis_rules.hpp
     include/pat/sim/crisis_text.hpp
@@ -161,6 +165,8 @@ add_library(patriarch_sim STATIC
     world.cpp
     world_events.cpp
     world_events_io.cpp
+    world_court.cpp
+    court_invariants.cpp
     world_family.cpp
     world_family_io.cpp
     world_economy.cpp

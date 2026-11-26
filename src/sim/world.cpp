@@ -1978,6 +1978,8 @@ std::vector<std::string> World::check_invariants() const {
     check_economy_invariants(bad);
     check_family_invariants(bad);
     check_event_invariants(bad);
+    check_court_tables(bad);
+    check_influence_invariants(bad);
     return bad;
 }
 

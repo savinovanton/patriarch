@@ -966,6 +966,7 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
     }
     world.rebuild_derived_indexes();
     world.rebuild_event_indexes();
+    world.rebuild_court_indexes();  // E10-T02: empty until the court tables are saved (E10-T03)
     const std::vector<std::string> problems = world.check_invariants();
     if (!problems.empty()) {
         return R::err(core::Error{10, "world state violates invariants: " + problems.front()});

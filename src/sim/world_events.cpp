@@ -24,7 +24,8 @@ using detail::row_position;
 using events::Scope;
 using events::ScopeKind;
 
-constexpr std::uint32_t kMaxCounter = std::numeric_limits<std::uint32_t>::max();
+using detail::append_ring;
+using detail::kMaxCounter;
 
 // ---- keys of the tables -------------------------------------------------------------------------------
 
@@ -79,20 +80,6 @@ std::size_t erase_scope_rows(Rows& rows, Scope scope) {
     const auto removed = static_cast<std::size_t>(last - first);
     rows.erase(first, last);
     return removed;
-}
-
-/// Appends to a ring with a monotone sequence counter; the oldest entry leaves a full ring.
-template <class Ring, class Row>
-std::optional<std::uint32_t> append_ring(Ring& ring, std::size_t capacity, std::uint32_t& next, Row row) {
-    if (next == kMaxCounter) {
-        return std::nullopt;
-    }
-    row.seq = next++;
-    if (ring.size() >= capacity) {
-        ring.erase(ring.begin());
-    }
-    ring.push_back(row);
-    return row.seq;
 }
 
 // ---- value checks -------------------------------------------------------------------------------------

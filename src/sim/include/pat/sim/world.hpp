@@ -8,6 +8,8 @@
 #include "pat/core/sparse_set.hpp"
 #include "pat/core/string_interner.hpp"
 #include "pat/sim/calendar.hpp"
+#include "pat/sim/court/portfolio.hpp"
+#include "pat/sim/court/tables.hpp"
 #include "pat/sim/date.hpp"
 #include "pat/sim/economy/ledger.hpp"
 #include "pat/sim/economy/modifiers.hpp"
@@ -17,6 +19,7 @@
 #include "pat/sim/entity_table.hpp"
 #include "pat/sim/events/state.hpp"
 #include "pat/sim/family/tables.hpp"
+#include "pat/sim/influence.hpp"
 #include "pat/sim/scheduled_queue.hpp"
 
 #include <algorithm>
@@ -925,6 +928,84 @@ public:
     /// Rebuilds the derived per-scope counters from the tables (used after a load).
     void rebuild_event_indexes();
 
+    // ---- court tables (E10-T02, docs/dev/court-model.md sections 4 and 20.4; persistence: E10-T03) ----
+    // Storage only, dynasty mode only. Every writer checks structure (bounds, known enumerations, sane
+    // dates, existing references, unique keys) and returns false or nullopt with nothing changed when it
+    // refuses; ids come from the counters of court::Meta and are never reused. Rules (eligibility, seats,
+    // limits of the data) are checked by the commands of E10-T05 and later and by check_court_invariants.
+    // A death or an extinction changes nothing here: the court systems react to the state (D10).
+    [[nodiscard]] const court::State& court() const noexcept { return court_; }
+    /// Adds a held seat; `row.id` is ignored. The holder must be alive and a member of a dynasty, the
+    /// seat free (no office and no vacancy), the holder below court::kMaxOfficesPerHolder seats; with
+    /// kOfficeProvinceSeat the locus must be an existing province.
+    [[nodiscard]] std::optional<court::OfficeId> add_court_office(court::Office row);
+    bool remove_court_office(court::OfficeId id);
+    [[nodiscard]] const court::Office* find_court_office(court::OfficeId id) const;
+    [[nodiscard]] const court::Office* court_office_at(court::OfficeTypeId type, std::uint32_t locus) const;
+    /// The seats a character holds, ascending id.
+    [[nodiscard]] std::vector<court::OfficeId> court_offices_of(CharacterId holder) const;
+    /// The seats of regional types located in a province, ascending id.
+    [[nodiscard]] std::vector<court::OfficeId> court_offices_in(ProvinceId province) const;
+    /// Puts a character in disgrace (replaces his row): alive, `until` after today, a known reason.
+    bool set_court_disgrace(const court::Disgrace& row);
+    bool clear_court_disgrace(CharacterId character);
+    [[nodiscard]] const court::Disgrace* court_disgrace(CharacterId character) const;
+    /// Opens a vacancy; `row.id` is ignored. The seat must have no office and no vacancy.
+    [[nodiscard]] std::optional<court::VacancyId> add_court_vacancy(court::Vacancy row);
+    /// Replaces an existing vacancy of the same id and seat (a postponement moves `decide_by`).
+    bool update_court_vacancy(const court::Vacancy& row);
+    /// Refuses while a petition names the vacancy (petitions are resolved first).
+    bool remove_court_vacancy(court::VacancyId id);
+    [[nodiscard]] const court::Vacancy* find_court_vacancy(court::VacancyId id) const;
+    [[nodiscard]] const court::Vacancy* court_vacancy_at(court::OfficeTypeId type, std::uint32_t locus) const;
+    /// Appends an outcome to the ring of decisions; `row.seq` is assigned. `n` <= 4, unused contenders
+    /// default, the terms of every contender sum to its score.
+    [[nodiscard]] std::optional<court::DecisionSeq> append_court_decision(court::Decision row);
+    /// Adds a petition; `row.id` is ignored. The vacancy exists, the candidate is a living member of the
+    /// petitioner, no second petition of the dynasty for the vacancy and no second petition for the
+    /// candidate there, at most court::kMaxPetitionsPerDynasty per dynasty.
+    [[nodiscard]] std::optional<court::PetitionId> add_court_petition(court::Petition row);
+    bool remove_court_petition(court::PetitionId id);
+    [[nodiscard]] const court::Petition* find_court_petition(court::PetitionId id) const;
+    /// Hires a servant; `row.id` is ignored. The dynasty exists, role 1...4, skill <= 20, loyalty <= 100.
+    [[nodiscard]] std::optional<court::ServantId> add_court_servant(court::Servant row);
+    /// Replaces the columns of an existing servant (same id) under the same checks.
+    bool update_court_servant(const court::Servant& row);
+    bool remove_court_servant(court::ServantId id);
+    [[nodiscard]] std::optional<court::Servant> find_court_servant(court::ServantId id) const;
+    /// Servants of a dynasty in a role, ascending id.
+    [[nodiscard]] std::vector<court::ServantId> court_servants_of(DynastyId dynasty,
+                                                                  court::ServantRole role) const;
+    [[nodiscard]] std::size_t court_servant_count(DynastyId dynasty) const;
+    /// Writes the favor row of a dynasty; a row equal to the defaults is removed. Favor 0...10,000,
+    /// party 0...3, pressure band 0...3, `gift_month` >= -1, `gift_points_x100` >= 0.
+    bool set_court_favor(const court::Favor& row);
+    /// The stored row, nullptr when the dynasty has the defaults.
+    [[nodiscard]] const court::Favor* court_favor_row(DynastyId dynasty) const;
+    /// Favor of a dynasty: 10,000 for the crown dynasty of the economy, the row, or kDefaultFavorX100.
+    [[nodiscard]] std::int32_t court_favor_x100(DynastyId dynasty) const;
+    /// The seed of the servant market for `month` (>= -1).
+    bool set_court_market(std::int32_t month, std::uint64_t seed);
+    /// Writes the portfolio of a seat (inserts or replaces).
+    bool set_court_portfolio(const court::Portfolio& row);
+    bool remove_court_portfolio(court::OfficeTypeId type, std::uint32_t locus);
+    [[nodiscard]] const court::Portfolio* find_court_portfolio(court::OfficeTypeId type,
+                                                               std::uint32_t locus) const;
+    /// Appends an issued order to the ring; `row.seq` is assigned from court::Meta::next_order_seq.
+    [[nodiscard]] std::optional<std::uint32_t> append_court_order(court::PortfolioOrder row);
+    /// Rebuilds the derived court indexes from the tables (used after a load).
+    void rebuild_court_indexes();
+
+    // ---- influence (declared by E10-T02, docs/dev/influence-model.md section 4) ----
+    [[nodiscard]] const InfluenceState& influence_state() const noexcept { return influence_; }
+    /// Balance of a dynasty in hundredths of a point; 0 without a row.
+    [[nodiscard]] std::int32_t influence_x100(DynastyId dynasty) const;
+    /// Changes the balance by `delta_x100` clamped to 0...kMaxInfluenceX100 and returns the applied
+    /// change; every reason but Monthly leaves a log entry when the change is not zero. nullopt (nothing
+    /// changed) outside dynasty mode, for an unknown dynasty or reason.
+    std::optional<std::int32_t>
+    add_influence(DynastyId dynasty, std::int32_t delta_x100, InfluenceReason reason);
+
     // ---- pregnancies (E7-T12) ----
     /// Pregnancies by ascending mother id. Dynasty mode only (empty otherwise).
     [[nodiscard]] std::span<const Pregnancy> pregnancies() const noexcept { return pregnancies_; }
@@ -1049,6 +1130,14 @@ private:
     void erase_event_timer_at(std::size_t index);
     /// Shape of a queue row and its references (the root and the saved scopes may be dead characters).
     [[nodiscard]] bool event_instance_ok(const events::Instance& row) const noexcept;
+    void check_court_tables(std::vector<std::string>& bad) const;
+    void check_influence_invariants(std::vector<std::string>& bad) const;
+    /// Shape and references of a row a court writer is given (world_court.cpp).
+    [[nodiscard]] bool court_vacancy_ok(const court::Vacancy& row) const;
+    [[nodiscard]] bool court_servant_ok(const court::Servant& row) const;
+    [[nodiscard]] std::optional<std::size_t> court_servant_index(court::ServantId id) const;
+    void court_index_office(const court::Office& row);
+    void court_unindex_office(const court::Office& row);
     // One section of the extension block of the save file (world_io.cpp, world_economy_io.cpp).
     struct StateSection {
         std::uint16_t id = 0;
@@ -1118,6 +1207,9 @@ private:
     family::State family_;                           // E8-T03: sparse family tables and counters
     events::State events_;                           // E11-T02: sparse event tables, empty without events
     events::ScopeRows event_scope_rows_;             // E11-T02: derived, never saved, hashed or compared
+    court::State court_;                             // E10-T02: sparse court tables, empty without a court
+    court::Indexes court_index_;                     // E10-T02: derived, never saved, hashed or compared
+    InfluenceState influence_;                       // E10-T02: influence balances and log (influence-model)
     economy::EconomyState economy_;                  // E9-T02: empty unless enable_economy() was called
     economy::ModifierCache modifier_cache_;          // E9-T17: derived, never saved, hashed or compared
 };
