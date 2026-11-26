@@ -36,6 +36,8 @@ struct SimulationConfig {
     std::shared_ptr<const MarriageRules> marriage_rules = {};
     /// Owns the policy object only: any borrowed house-faith table and strings must outlive its use.
     std::shared_ptr<const FaithPolicy> faith_policy = {};
+    /// Immutable command content; the succession tick policy is installed separately in T16.
+    std::shared_ptr<const SuccessionRules> succession_rules = {};
 };
 
 struct SystemRun {

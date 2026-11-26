@@ -87,6 +87,11 @@ constexpr std::array kSuccessionTermKeys{
     economy::TermKey{succession_term::kClaimantCouncil, "succession.claimant.council"},
     economy::TermKey{succession_term::kClaimantLawful, "succession.claimant.lawful"},
     economy::TermKey{succession_term::kClaimantAppointment, "succession.claimant.appointment"},
+    economy::TermKey{succession_term::kReformCost, "succession.reform.total"},
+    economy::TermKey{succession_term::kReformHonor, "succession.reform.honor"},
+    economy::TermKey{succession_term::kReformUnity, "succession.reform.unity"},
+    economy::TermKey{succession_term::kReformMoney, "succession.reform.money"},
+    economy::TermKey{succession_term::kReformOpinions, "succession.reform.opinions"},
 };
 static_assert(economy::is_sorted_term_table(kSuccessionTermKeys));
 
@@ -424,25 +429,51 @@ SuccessionResult resolve_successor(const World& world,
                                    const SuccessionRules& rules,
                                    DynastyId dynasty,
                                    CharacterId predecessor) {
+    if (!world.exists(dynasty)) {
+        return {};
+    }
+    const auto* state = world.family_succession(dynasty);
+    return resolve_successor(world,
+                             rules,
+                             dynasty,
+                             predecessor,
+                             world.dynasties().succession_law[dynasty.index()],
+                             state == nullptr ? CharacterId{} : state->designated_heir);
+}
+
+bool succession_candidate_eligible(const World& world,
+                                   const SuccessionRules& rules,
+                                   DynastyId dynasty,
+                                   CharacterId predecessor,
+                                   CharacterId candidate) {
+    return world.dynasty_mode() && world.exists(dynasty) &&
+           base_eligible(world, rules, predecessor, candidate) &&
+           world.characters().dynasty[candidate.index()] == dynasty;
+}
+
+SuccessionResult resolve_successor(const World& world,
+                                   const SuccessionRules& rules,
+                                   DynastyId dynasty,
+                                   CharacterId predecessor,
+                                   SuccessionLaw law,
+                                   CharacterId designated) {
     SuccessionResult result;
     if (!world.dynasty_mode() || !world.exists(dynasty) ||
+        static_cast<std::uint8_t>(law) >= kSuccessionLawCount ||
         (predecessor.valid() && !world.exists(predecessor))) {
         return result;
     }
     result.predecessor = lineage_anchor(world, dynasty, predecessor);
     const auto& t = world.characters();
     const auto members = world.members_of(dynasty);
-    const auto* state = world.family_succession(dynasty);
-    const CharacterId designated = state == nullptr ? CharacterId{} : state->designated_heir;
-    const auto law = world.dynasties().succession_law[dynasty.index()];
     const bool has_adult_male = std::ranges::any_of(members, [&](CharacterId id) {
-        return base_eligible(world, rules, result.predecessor, id) && t.sex[id.index()] == Sex::Male &&
-               adult(world, rules, id);
+        return succession_candidate_eligible(world, rules, dynasty, result.predecessor, id) &&
+               t.sex[id.index()] == Sex::Male && adult(world, rules, id);
     });
     const Relations relations(world, result.predecessor);
     const CouncilOpinions opinions(world, rules, dynasty);
     for (const CharacterId id : members) {
-        if (!base_eligible(world, rules, result.predecessor, id)) {
+        if (!succession_candidate_eligible(world, rules, dynasty, result.predecessor, id)) {
             continue;
         }
         const bool female = t.sex[id.index()] == Sex::Female;

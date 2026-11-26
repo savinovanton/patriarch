@@ -146,6 +146,15 @@ struct Writer {
         out.u8(static_cast<std::uint8_t>(c.reason));
     }
     void operator()(const cmd::Wed& c) const { out.u32(c.betrothal); }
+    void operator()(const cmd::SetHeir& c) const {
+        out.u32(c.heir.value());
+        out.u32(c.guardian.value());
+    }
+    void operator()(const cmd::ChangeSuccessionLaw& c) const {
+        out.u8(static_cast<std::uint8_t>(c.law));
+        out.u32(c.heir.value());
+    }
+    void operator()(const cmd::Disown& c) const { out.u32(c.character.value()); }
     void operator()(const cmd::Tonsure& c) const { out.u32(c.character.value()); }
     void operator()(const cmd::SettleWidowhood& c) const { out.u32(c.deceased.value()); }
     void operator()(const cmd::AssignGodparents& c) const {
@@ -491,6 +500,22 @@ bool read_command(core::ByteReader& in, Command& out) {
         }
         case CommandType::Wed:
             out.payload = cmd::Wed{in.u32()};
+            break;
+        case CommandType::SetHeir: {
+            const auto heir = CharacterId(in.u32());
+            out.payload = cmd::SetHeir{heir, CharacterId(in.u32())};
+            break;
+        }
+        case CommandType::ChangeSuccessionLaw: {
+            const auto law = static_cast<SuccessionLaw>(in.u8());
+            if (static_cast<std::uint8_t>(law) >= kSuccessionLawCount) {
+                return false;
+            }
+            out.payload = cmd::ChangeSuccessionLaw{law, CharacterId(in.u32())};
+            break;
+        }
+        case CommandType::Disown:
+            out.payload = cmd::Disown{CharacterId(in.u32())};
             break;
         case CommandType::Tonsure:
             out.payload = cmd::Tonsure{CharacterId(in.u32())};

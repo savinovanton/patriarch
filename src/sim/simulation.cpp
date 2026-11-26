@@ -121,7 +121,7 @@ const TickReport& Simulation::tick() {
     const CommandContent content{config_.traits.get(),
                                  config_.economy_rules.get(),
                                  config_.marriage_rules.get(),
-                                 nullptr,
+                                 config_.succession_rules.get(),
                                  config_.faith_policy.get()};
 
     // 2. commands emitted by systems during the previous tick

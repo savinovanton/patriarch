@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 namespace pat::sim {
@@ -9,6 +10,21 @@ enum class FemaleSuccession : std::uint8_t { Never, IfNoAdultMale, Always };
 /// Content, not World state. Defaults follow marriage-succession-model sections 8.5 and 17.3;
 /// E8-T19 loads the same fields from data. Weights are per-mille, scores are whole points.
 struct SuccessionRules {
+    // Indexed by the stable SuccessionLaw wire value; the council and minorat remain scenario laws.
+    std::array<bool, 5> reform_selectable{true, false, true, false, true};
+    std::int32_t reform_cooldown_days = 1825;
+    std::int64_t reform_money_kop = 30000;
+    std::int32_t reform_honor = 25;
+    std::int32_t reform_unity = 10;
+    std::int32_t reform_first_opinion = 25;
+    std::int32_t reform_other_opinion = 5;
+    std::uint8_t reform_max_losers = 8;
+    std::int32_t appointment_skip_unity = 3;
+    std::int32_t appointment_skip_opinion = 15;
+    std::int32_t disown_unity = 5;
+    std::int32_t disown_opinion = 60;
+    std::int32_t disown_loyalty = 30;
+
     FemaleSuccession female_succession = FemaleSuccession::IfNoAdultMale;
     bool illegitimate_inherit = false;
     std::int32_t adult_age = 16;

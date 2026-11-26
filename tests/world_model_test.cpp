@@ -899,7 +899,9 @@ private:
                  std::is_same_v<FamilyCommand, cmd::Wed> ||
                  std::is_same_v<FamilyCommand, cmd::AssignGodparents> ||
                  std::is_same_v<FamilyCommand, cmd::SettleWidowhood> ||
-                 std::is_same_v<FamilyCommand, cmd::Tonsure>)
+                 std::is_same_v<FamilyCommand, cmd::Tonsure> || std::is_same_v<FamilyCommand, cmd::SetHeir> ||
+                 std::is_same_v<FamilyCommand, cmd::ChangeSuccessionLaw> ||
+                 std::is_same_v<FamilyCommand, cmd::Disown>)
     bool apply(DynastyId /*actor*/, const FamilyCommand& /*c*/) {
         FAIL_CHECK("the legacy model generator emitted an unmodeled family command");
         return false;

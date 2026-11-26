@@ -10,6 +10,7 @@
 #include "pat/sim/marriage_negotiations.hpp"
 #include "pat/sim/marriage_tonsure.hpp"
 #include "pat/sim/marriage_weddings.hpp"
+#include "pat/sim/succession_commands.hpp"
 #include "pat/sim/traits.hpp"
 
 #include <algorithm>
@@ -33,6 +34,11 @@ constexpr core::Fixed32 kZeroFixed = core::Fixed32::zero();
 
 const MarriageRules& rules_or_default(const MarriageRules* rules) {
     static const MarriageRules defaults = MarriageRules::defaults();
+    return rules != nullptr ? *rules : defaults;
+}
+
+const SuccessionRules& succession_or_default(const SuccessionRules* rules) {
+    static const auto defaults = SuccessionRules::defaults();
     return rules != nullptr ? *rules : defaults;
 }
 
@@ -121,6 +127,7 @@ struct Validator {
     const economy::EconomyRules* economy;
     const MarriageRules* marriage;
     const FaithPolicy* faith;
+    const SuccessionRules* succession;
 
     Result<void, CommandError> operator()(const cmd::SendMarriageEnvoy& c) const {
         if (c.dispensation > 1) {
@@ -147,6 +154,15 @@ struct Validator {
     }
     Result<void, CommandError> operator()(const cmd::BreakBetrothal& c) const {
         return validate_break_betrothal(world, rules_or_default(marriage), actor, c, faith);
+    }
+    Result<void, CommandError> operator()(const cmd::SetHeir& c) const {
+        return validate_succession_command(world, succession_or_default(succession), actor, c);
+    }
+    Result<void, CommandError> operator()(const cmd::ChangeSuccessionLaw& c) const {
+        return validate_succession_command(world, succession_or_default(succession), actor, c);
+    }
+    Result<void, CommandError> operator()(const cmd::Disown& c) const {
+        return validate_succession_command(world, succession_or_default(succession), actor, c);
     }
     Result<void, CommandError> operator()(const cmd::Tonsure& c) const {
         return validate_tonsure(world, actor, c);
@@ -815,6 +831,7 @@ struct Applier {
     const economy::EconomyRules* economy;
     const MarriageRules* marriage;
     const FaithPolicy* faith;
+    const SuccessionRules* succession;
 
     void operator()(const cmd::SendMarriageEnvoy& c) const {
         (void)send_marriage_envoy(
@@ -830,6 +847,15 @@ struct Applier {
     void operator()(const cmd::Betroth& c) const { apply_betroth(world, rules_or_default(marriage), c); }
     void operator()(const cmd::BreakBetrothal& c) const {
         apply_break_betrothal(world, rules_or_default(marriage), actor, c);
+    }
+    void operator()(const cmd::SetHeir& c) const {
+        apply_succession_command(world, succession_or_default(succession), actor, c);
+    }
+    void operator()(const cmd::ChangeSuccessionLaw& c) const {
+        apply_succession_command(world, succession_or_default(succession), actor, c);
+    }
+    void operator()(const cmd::Disown& c) const {
+        apply_succession_command(world, succession_or_default(succession), actor, c);
     }
     void operator()(const cmd::Tonsure& c) const {
         apply_tonsure(world, rules_or_default(marriage), actor, c);
@@ -1104,6 +1130,18 @@ struct CommandTag<cmd::BreakBetrothal> {
     static constexpr CommandType value = CommandType::BreakBetrothal;
 };
 template <>
+struct CommandTag<cmd::SetHeir> {
+    static constexpr CommandType value = CommandType::SetHeir;
+};
+template <>
+struct CommandTag<cmd::ChangeSuccessionLaw> {
+    static constexpr CommandType value = CommandType::ChangeSuccessionLaw;
+};
+template <>
+struct CommandTag<cmd::Disown> {
+    static constexpr CommandType value = CommandType::Disown;
+};
+template <>
 struct CommandTag<cmd::Tonsure> {
     static constexpr CommandType value = CommandType::Tonsure;
 };
@@ -1217,6 +1255,12 @@ std::string_view to_string(CommandType type) noexcept {
             return "Betroth";
         case CommandType::BreakBetrothal:
             return "BreakBetrothal";
+        case CommandType::SetHeir:
+            return "SetHeir";
+        case CommandType::ChangeSuccessionLaw:
+            return "ChangeSuccessionLaw";
+        case CommandType::Disown:
+            return "Disown";
         case CommandType::Tonsure:
             return "Tonsure";
         case CommandType::Wed:
@@ -1263,12 +1307,20 @@ validate(const World& world, const Command& command, const CommandContent& conte
     if (command.actor.valid() && !world.exists(command.actor) &&
         !std::holds_alternative<cmd::SendMarriageEnvoy>(command.payload) &&
         !std::holds_alternative<cmd::WithdrawMarriageEnvoy>(command.payload) &&
-        !std::holds_alternative<cmd::BreakBetrothal>(command.payload)) {
+        !std::holds_alternative<cmd::BreakBetrothal>(command.payload) &&
+        !std::holds_alternative<cmd::SetHeir>(command.payload) &&
+        !std::holds_alternative<cmd::ChangeSuccessionLaw>(command.payload) &&
+        !std::holds_alternative<cmd::Disown>(command.payload)) {
         return reject(Rejection::UnknownEntity, "unknown actor");
     }
-    return std::visit(
-        Validator{world, command.actor, content.traits, content.economy, content.marriage, content.faith},
-        command.payload);
+    return std::visit(Validator{world,
+                                command.actor,
+                                content.traits,
+                                content.economy,
+                                content.marriage,
+                                content.faith,
+                                content.succession},
+                      command.payload);
 }
 
 void apply(World& world,
@@ -1279,9 +1331,14 @@ void apply(World& world,
 }
 
 void apply(World& world, const Command& command, const CommandContent& content) {
-    std::visit(
-        Applier{world, command.actor, content.traits, content.economy, content.marriage, content.faith},
-        command.payload);
+    std::visit(Applier{world,
+                       command.actor,
+                       content.traits,
+                       content.economy,
+                       content.marriage,
+                       content.faith,
+                       content.succession},
+               command.payload);
 }
 
 ApplyStats process_commands(World& world,
