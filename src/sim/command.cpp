@@ -813,6 +813,34 @@ struct Validator {
         return standing_change(c.dynasty);
     }
 
+    Result<void, CommandError> vital_change(CharacterId character, core::Fixed32 delta) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may adjust skills, health or stress");
+        }
+        if (!world.dynasty_mode()) {
+            return reject(Rejection::InvalidState, "skill, health and stress changes need dynasty mode");
+        }
+        if (!world.is_alive(character)) {
+            return reject(Rejection::UnknownEntity, "unknown or dead character");
+        }
+        if (delta > cmd::kMaxVitalDelta || delta < -cmd::kMaxVitalDelta) {
+            return reject(Rejection::InvalidArgument, "the change is larger than 100 points");
+        }
+        return accept();
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustSkill& c) const {
+        if (c.skill >= kSkillCount) {
+            return reject(Rejection::InvalidArgument, "unknown skill");
+        }
+        return vital_change(c.character, c.delta);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustHealth& c) const {
+        return vital_change(c.character, c.delta);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustStress& c) const {
+        return vital_change(c.character, c.delta);
+    }
+
     Result<void, CommandError> operator()(const cmd::AdjustHonor& c) const {
         if (actor.valid()) {
             return reject(Rejection::NotAuthorized, "only the system may adjust honor directly");
@@ -946,6 +974,17 @@ struct Applier {
     }
     void operator()(const cmd::AdjustOpinion& c) const {
         (void)world.add_opinion(c.from, c.to, c.delta, c.reason);
+    }
+    void operator()(const cmd::AdjustSkill& c) const {
+        const auto skill = static_cast<Skill>(c.skill);
+        world.set_character_skill(
+            c.character, skill, world.characters().skills[c.character.index()][c.skill] + c.delta);
+    }
+    void operator()(const cmd::AdjustHealth& c) const {
+        world.set_character_health(c.character, world.characters().health[c.character.index()] + c.delta);
+    }
+    void operator()(const cmd::AdjustStress& c) const {
+        world.set_character_stress(c.character, world.characters().stress[c.character.index()] + c.delta);
     }
     void operator()(const cmd::AssignProvinceAdministrator& c) const {
         (void)world.set_province_administrator(c.province, c.administrator);
@@ -1157,6 +1196,18 @@ template <>
 struct CommandTag<cmd::AssignGodparents> {
     static constexpr CommandType value = CommandType::AssignGodparents;
 };
+template <>
+struct CommandTag<cmd::AdjustSkill> {
+    static constexpr CommandType value = CommandType::AdjustSkill;
+};
+template <>
+struct CommandTag<cmd::AdjustHealth> {
+    static constexpr CommandType value = CommandType::AdjustHealth;
+};
+template <>
+struct CommandTag<cmd::AdjustStress> {
+    static constexpr CommandType value = CommandType::AdjustStress;
+};
 
 template <class Variant>
 struct TagTable;
@@ -1269,6 +1320,12 @@ std::string_view to_string(CommandType type) noexcept {
             return "SettleWidowhood";
         case CommandType::AssignGodparents:
             return "AssignGodparents";
+        case CommandType::AdjustSkill:
+            return "AdjustSkill";
+        case CommandType::AdjustHealth:
+            return "AdjustHealth";
+        case CommandType::AdjustStress:
+            return "AdjustStress";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

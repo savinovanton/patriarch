@@ -37,8 +37,10 @@ add_library(patriarch_sim STATIC
     include/pat/sim/entity_ids.hpp
     include/pat/sim/events/catalog.hpp
     include/pat/sim/events/catalog_doc.hpp
+    include/pat/sim/events/character_effects.hpp
     include/pat/sim/events/character_triggers.hpp
     include/pat/sim/events/dispatch.hpp
+    include/pat/sim/events/effects.hpp
     include/pat/sim/events/event_set.hpp
     include/pat/sim/events/event_systems.hpp
     include/pat/sim/events/program.hpp
@@ -121,12 +123,15 @@ add_library(patriarch_sim STATIC
     education.cpp
     events/catalog.cpp
     events/catalog_character.cpp
+    events/catalog_character_effects.cpp
     events/catalog_doc.cpp
     events/catalog_realm.cpp
     events/catalog_standard.cpp
+    events/character_effects.cpp
     events/character_triggers.cpp
     events/disasm.cpp
     events/dispatch.cpp
+    events/effects.cpp
     events/event_set.cpp
     events/event_systems.cpp
     events/program.cpp

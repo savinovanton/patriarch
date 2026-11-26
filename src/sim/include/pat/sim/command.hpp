@@ -73,6 +73,9 @@ enum class CommandType : std::uint16_t {
     AssignGodparents = 77,             // E8-T13
     Wed = 78,                          // E8-T10
     SettleWidowhood = 81,              // E8-T10
+    AdjustSkill = 104,                 // E11-T09
+    AdjustHealth = 105,                // E11-T09
+    AdjustStress = 106,                // E11-T09
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -445,6 +448,37 @@ struct AssignGodparents {
     [[nodiscard]] bool operator==(const AssignGodparents&) const = default;
 };
 
+/// The largest change of a skill, the health or the stress one command may make (E11-T09,
+/// docs/dev/event-engine.md section 8.4): a larger |delta| is refused (InvalidArgument).
+inline constexpr core::Fixed32 kMaxVitalDelta = core::Fixed32::from_int(100);
+
+/// Changes one skill of a living character by `delta` (the effect `change_skill`, E11-T09); the result
+/// is clamped to 0...20 like World::set_character_skill. System only, dynasty mode only; refused for an
+/// unknown or dead character (UnknownEntity), a skill outside 0...4 or |delta| > kMaxVitalDelta
+/// (InvalidArgument).
+struct AdjustSkill {
+    CharacterId character;
+    std::uint8_t skill = 0;  // Skill
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustSkill&) const = default;
+};
+
+/// Changes the stored health of a living character by `delta` (`change_health`), clamped to 0...100.
+/// Same rules as AdjustSkill.
+struct AdjustHealth {
+    CharacterId character;
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustHealth&) const = default;
+};
+
+/// Changes the stored stress of a living character by `delta` (`change_stress`), clamped to 0...100.
+/// Same rules as AdjustSkill.
+struct AdjustStress {
+    CharacterId character;
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustStress&) const = default;
+};
+
 }  // namespace cmd
 
 using CommandPayload = std::variant<cmd::SetProvinceOwner,
@@ -487,7 +521,10 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::AssignGodparents,
                                     cmd::SetHeir,
                                     cmd::ChangeSuccessionLaw,
-                                    cmd::Disown>;
+                                    cmd::Disown,
+                                    cmd::AdjustSkill,
+                                    cmd::AdjustHealth,
+                                    cmd::AdjustStress>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

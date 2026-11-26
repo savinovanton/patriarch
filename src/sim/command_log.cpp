@@ -221,6 +221,19 @@ struct Writer {
     void operator()(const cmd::AdjustHonorWithReason& c) const {
         standing_change(c.dynasty, c.delta, c.reason);
     }
+    void operator()(const cmd::AdjustSkill& c) const {
+        out.u32(c.character.value());
+        out.u8(c.skill);
+        out.i32(c.delta.raw());
+    }
+    void operator()(const cmd::AdjustHealth& c) const {
+        out.u32(c.character.value());
+        out.i32(c.delta.raw());
+    }
+    void operator()(const cmd::AdjustStress& c) const {
+        out.u32(c.character.value());
+        out.i32(c.delta.raw());
+    }
 };
 
 // Reads the layout written by write_init; false for a value the type cannot hold.
@@ -598,6 +611,15 @@ bool read_command(core::ByteReader& in, Command& out) {
             break;
         case CommandType::AdjustHonorWithReason:
             out.payload = cmd::AdjustHonorWithReason{DynastyId(in.u32()), in.i32(), in.u16()};
+            break;
+        case CommandType::AdjustSkill:
+            out.payload = cmd::AdjustSkill{CharacterId(in.u32()), in.u8(), core::Fixed32::from_raw(in.i32())};
+            break;
+        case CommandType::AdjustHealth:
+            out.payload = cmd::AdjustHealth{CharacterId(in.u32()), core::Fixed32::from_raw(in.i32())};
+            break;
+        case CommandType::AdjustStress:
+            out.payload = cmd::AdjustStress{CharacterId(in.u32()), core::Fixed32::from_raw(in.i32())};
             break;
         default:
             return false;  // unknown tag

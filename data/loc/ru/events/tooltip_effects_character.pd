@@ -1,0 +1,38 @@
+format_version = 1
+
+# Шаблоны автотултипов каталога эффектов: персонаж и род (E11-T09). Ключ — tooltip_key() в src/sim/events/catalog.cpp:
+# tooltip.effect.<имя>. Параметры — подписи аргументов записи ({value}, {target}, {trait}, ...); числа и даты в них
+# подставляет мост тултипов (E11-T13) уже со знаком и единицей («−5», «+2,5»), имена — с падежом (E11-T14).
+# Эффекты E8, у которых ещё нет команды (set_heir, disown, grant_land, assign_regent, dismiss_regent,
+# resolve_succession_dispute), описаны заранее. Тесты проверяют полноту и строки
+# (tests/event_effects_character_test.cpp). Тексты [проверить] на тон.
+
+# ---- Положение рода ----
+tooltip.effect.change_honor = "Честь рода {value}"
+tooltip.effect.change_unity = "Единство рода {value}"
+tooltip.effect.change_prestige = "Престиж рода {value}"
+
+# ---- Человек ----
+tooltip.effect.change_opinion = "Мнение: {target} {value}"
+tooltip.effect.add_trait = "Получает черту «{trait}»"
+tooltip.effect.remove_trait = "Теряет черту «{trait}»"
+tooltip.effect.die = "Умирает: {cause}"
+tooltip.effect.plan_death = "Смерть суждена: {date}"
+tooltip.effect.set_education = "Воспитание: {focus}"
+tooltip.effect.conceive = "Беременность, отец ребёнка — {father}"
+tooltip.effect.create_person = "В роду появляется человек: {sex}, {age}"
+tooltip.effect.end_marriage = "Брак прекращён: {reason}"
+tooltip.effect.change_skill = "{skill} {delta}"
+tooltip.effect.change_health = "Здоровье {delta}"
+tooltip.effect.change_stress = "Стресс {delta}"
+tooltip.effect.record_chronicle = "Запись в летописи рода"
+
+# ---- Семейные решения (команды E8) ----
+tooltip.effect.betroth = "Помолвка: {groom} и {bride}"
+tooltip.effect.tonsure = "Постриг в монашество"
+tooltip.effect.set_heir = "Наследник рода: {heir}"
+tooltip.effect.disown = "Лишается наследства"
+tooltip.effect.grant_land = "{character} получает во владение {province}"
+tooltip.effect.assign_regent = "Регент рода: {regent}"
+tooltip.effect.dismiss_regent = "Регентство прекращено"
+tooltip.effect.resolve_succession_dispute = "Спор о наследстве решён: {winner}"

@@ -103,6 +103,10 @@ eval_character_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code,
 [[nodiscard]] std::optional<TriggerResult>
 eval_character_value(const TriggerEnv& env, Scope scope, std::uint16_t code, std::span<const Word> args);
 
+/// The trait slot (TraitDef::id) of a `trait` argument: the index of the content registry translated by
+/// TriggerEnv::trait_slots, or the slot itself when the table is empty; 0 for an unknown index.
+[[nodiscard]] std::uint16_t trait_slot_of(const TriggerEnv& env, std::int32_t index);
+
 /// The house of a person (living or archived) or the dynasty itself; invalid for other scopes.
 [[nodiscard]] DynastyId dynasty_of_scope(const World& world, Scope scope);
 

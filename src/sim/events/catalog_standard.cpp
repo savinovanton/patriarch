@@ -1,4 +1,5 @@
 #include "pat/sim/events/catalog.hpp"
+#include "pat/sim/events/character_effects.hpp"
 #include "pat/sim/events/character_triggers.hpp"
 #include "pat/sim/events/realm_triggers.hpp"
 
@@ -11,6 +12,7 @@ Catalog Catalog::standard() {
     Catalog c = engine();
     register_character_triggers(c);
     register_realm_triggers(c);
+    register_character_effects(c);
     return c;
 }
 

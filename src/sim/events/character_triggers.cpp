@@ -25,7 +25,7 @@ struct Person {
 };
 
 [[nodiscard]] std::int32_t int_of(Word w) noexcept {
-    return static_cast<std::int32_t>(fixed_from_word(w).to_int());
+    return int_from_word(w);
 }
 
 [[nodiscard]] std::optional<Person> person_of(const World& world, Scope scope) {
@@ -55,15 +55,6 @@ struct Person {
 
 [[nodiscard]] Scope scope_arg(std::span<const Word> args, std::size_t at) {
     return at < args.size() ? Scope::from_word(args[at]) : Scope{};
-}
-
-[[nodiscard]] std::uint16_t trait_slot(const TriggerEnv& env, std::int32_t index) {
-    if (env.trait_slots.empty()) {
-        return index > 0 && index <= 0xFFFF ? static_cast<std::uint16_t>(index) : std::uint16_t{0};
-    }
-    return index >= 0 && static_cast<std::size_t>(index) < env.trait_slots.size()
-               ? env.trait_slots[static_cast<std::size_t>(index)]
-               : std::uint16_t{0};
 }
 
 /// The effective value of an attribute (traits included), the stored column without a catalogue.
@@ -115,6 +106,15 @@ struct Person {
 
 }  // namespace
 
+std::uint16_t trait_slot_of(const TriggerEnv& env, std::int32_t index) {
+    if (env.trait_slots.empty()) {
+        return index > 0 && index <= 0xFFFF ? static_cast<std::uint16_t>(index) : std::uint16_t{0};
+    }
+    return index >= 0 && static_cast<std::size_t>(index) < env.trait_slots.size()
+               ? env.trait_slots[static_cast<std::size_t>(index)]
+               : std::uint16_t{0};
+}
+
 DynastyId dynasty_of_scope(const World& world, Scope scope) {
     if (scope.kind == ScopeKind::Dynasty) {
         const DynastyId d{scope.id};
@@ -153,7 +153,7 @@ eval_character_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code,
         case kTrigIsWidowed:
             return yes(person && is_widowed(world, *person));
         case kTrigHasTrait: {
-            const std::uint16_t slot = trait_slot(env, index_arg(args, 0));
+            const std::uint16_t slot = trait_slot_of(env, index_arg(args, 0));
             return yes(alive && slot != 0 && std::ranges::find(t.traits[i], slot) != t.traits[i].end());
         }
         case kTrigHasEducation:

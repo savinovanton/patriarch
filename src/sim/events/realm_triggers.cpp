@@ -30,7 +30,7 @@ constexpr TriggerResult kNoData{0, false};
 
 /// A reference / enum / suffix argument: the whole number the compiler pushes.
 [[nodiscard]] std::int32_t index_arg(std::span<const Word> args, std::size_t at) {
-    return at < args.size() ? static_cast<std::int32_t>(fixed_from_word(args[at]).to_int()) : -1;
+    return at < args.size() ? int_from_word(args[at]) : -1;
 }
 
 [[nodiscard]] Scope realm_scope() noexcept {

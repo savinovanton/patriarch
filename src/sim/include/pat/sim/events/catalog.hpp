@@ -143,6 +143,15 @@ void add_value(Catalog& c,
                std::vector<ArgSpec> args = {},
                std::vector<std::string> suffixes = {},
                std::string stub = {});
+/// Builder of the effect blocks (E11-T09, T10, later epics). `stub` non-empty: the command behind the
+/// effect does not exist yet (the epic that brings it); the effect compiles and issues nothing.
+void add_effect(Catalog& c,
+                std::uint16_t code,
+                std::string name,
+                ScopeMask from,
+                std::string example,
+                std::vector<ArgSpec> args = {},
+                std::string stub = {});
 
 /// Keys of the auto-tooltip templates of a trigger or value entry (docs/dev/event-engine.md section 15.1):
 /// `tooltip.trigger.<name>` (the condition), `.not` (a predicate required to be `no`) and `.fail`
