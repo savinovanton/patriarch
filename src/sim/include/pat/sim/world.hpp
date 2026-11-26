@@ -437,7 +437,15 @@ enum class ExtPart : std::uint8_t {
     EventChainsModifiers = 26,
     EventQueue = 27,
     EventHistoryJournal = 28,
-    EventMeta = 29,  // the meta record without `events_hash`
+    EventMeta = 29,       // the meta record without `events_hash`
+    CourtMeta = 32,       // E10-T03 (numbers 32..39 are E10's, 38 is E7-T25's Feud): section 64
+    CourtOffice = 33,     // section 65: offices and disgraces
+    CourtVacancy = 34,    // section 66: vacancies and the decision ring
+    CourtPetition = 35,   // section 67
+    CourtServant = 36,    // section 68
+    CourtFavor = 37,      // section 69
+    CourtPortfolio = 39,  // sections 70 and 71: portfolios and the ring of orders
+    Influence = 40,       // E10-T03 for influence-model.md (block 40..41): section 10
 };
 inline constexpr std::size_t kExtPartCount = 64;
 
@@ -1064,7 +1072,9 @@ public:
     ///  10  loan interest carries use denominator 12,000,000; older carries are multiplied by 12
     ///  11  + section 4 "pregnancy" (E7-T12); older files start without pregnancies
     ///  12  + sections 16..23 (E8 family), coded ledger additions 16 and 112
-    static constexpr std::uint32_t kStateSchema = 13;
+    ///  13  + sections 48..57 (E11 event tables); older files start without event state
+    ///  14  + sections 64..71 (E10 court) and 10 (influence); older files start without court and influence
+    static constexpr std::uint32_t kStateSchema = 14;
     /// Writes the complete state, including the order of the index lists, so that a loaded world
     /// has the same hash and behaves identically in the future.
     void save_state(core::ByteWriter& out) const;
@@ -1158,6 +1168,18 @@ private:
     [[nodiscard]] const char* events_read_section(std::uint16_t id, core::ByteReader& in);
     /// Parts 24..29 in order; empty content yields zero and contributes nothing to the total.
     [[nodiscard]] std::array<std::uint64_t, 6> events_hash_parts() const;
+    [[nodiscard]] bool court_section_present(std::uint16_t id) const;
+    /// Appends the non-empty court sections 64..71 in ascending order (world_court_io.cpp).
+    void court_write_sections(std::vector<StateSection>& sections) const;
+    /// Reads raw rows of one court section; the caller checks the invariants after the whole load.
+    [[nodiscard]] const char* court_read_section(std::uint16_t id, core::ByteReader& in);
+    /// Parts 32..39 in order (38 is always 0 here); empty content yields zero, outside the total.
+    [[nodiscard]] std::array<std::uint64_t, 8> court_hash_parts() const;
+    /// Appends section 10 when the influence has a balance or a log entry (world_court_io.cpp).
+    void influence_write_section(std::vector<StateSection>& sections) const;
+    [[nodiscard]] const char* influence_read_section(core::ByteReader& in);
+    /// Part 40; 0 without balances and log.
+    [[nodiscard]] std::uint64_t influence_hash_part() const;
     /// Appends the sections of the economy (nothing when it is off), ascending by id.
     void economy_write_sections(std::vector<StateSection>& sections) const;
     /// Reads one economy section into the tables. `closed_months` etc. come from the section 32 read

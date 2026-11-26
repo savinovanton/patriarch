@@ -630,7 +630,7 @@ TEST_CASE("hash: total is built from the five parts first and the used extended 
     CHECK(h.ext[ext_index(ExtPart::DynastyExt)] != 0);
     CHECK(h.ext[ext_index(ExtPart::Archive)] == 0);
     CHECK(ext_part_name(ext_index(ExtPart::CharacterExt)) == "character_ext");
-    CHECK(ext_part_name(40) == "ext[40]");
+    CHECK(ext_part_name(41) == "ext[41]");
 }
 
 // =================================================================================================

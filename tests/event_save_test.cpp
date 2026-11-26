@@ -225,8 +225,8 @@ TEST_CASE("event save: a world without events writes nothing and hashes as befor
     REQUIRE(loaded.has_value());
     CHECK(loaded.value().compute_hash() == hash);
     CHECK(loaded.value().event_state() == State{});
-    CHECK(state_bytes(loaded.value()) == bytes);  // saved again: schema 13, nothing else changes
-    CHECK(World::kStateSchema == 13);
+    CHECK(state_bytes(loaded.value()) == bytes);  // saved again: the current schema, nothing else changes
+    CHECK(World::kStateSchema >= 13);
 }
 
 TEST_CASE("event save: every table round-trips with its hash and derived counters") {
@@ -370,10 +370,10 @@ TEST_CASE("event save: the schema-12 fixture still loads with the same hash and 
         CHECK(loaded.value().world.compute_hash().ext[i] == 0);
     }
     pat::test::require_valid(loaded.value().world);
-    // Saved again it is a schema-13 file with the same state.
+    // Saved again it is a file of the current schema with the same state.
     const auto again = deserialize_save(serialize_save(loaded.value().world));
     REQUIRE(again.has_value());
-    CHECK(again.value().summary.state_schema == 13);
+    CHECK(again.value().summary.state_schema == World::kStateSchema);
     CHECK(again.value().world.compute_hash() == loaded.value().world.compute_hash());
 }
 

@@ -1,8 +1,8 @@
 // E10-T02: the court tables of the World (docs/dev/court-model.md sections 4, 12 and 20.4) and the
 // influence balances (docs/dev/influence-model.md section 4): storage API, bounds, derived indexes, the
 // structural invariants, the rule-dependent check_court_invariants() and a model test of random
-// sequences of writes against a simplified model. The tables are not saved or hashed yet (E10-T03), so
-// these tests also pin that a touched-and-cleared world keeps its hash.
+// sequences of writes against a simplified model. Saving and hashing are pinned by court_save_test.cpp
+// (E10-T03).
 
 #include "pat/core/fixed.hpp"
 #include "pat/core/rng.hpp"
@@ -126,8 +126,11 @@ TEST_CASE("court: a world without a court has empty tables and keeps its hash") 
     favor.favor_x100 = 7000;
     REQUIRE(world.set_court_favor(favor));
     REQUIRE(world.add_influence(DynastyId(0), 500, InfluenceReason::Start));
-    // E10-T02 does not hash the tables (E10-T03 does): the hash is that of the world without them.
-    CHECK(world.compute_hash() == with_person);
+    // E10-T03 hashes the tables (parts 32..39 and 40): the total moves away from the world without them.
+    const WorldHash with_court = world.compute_hash();
+    CHECK_FALSE(with_court.total == with_person.total);
+    CHECK(with_court.ext[static_cast<std::size_t>(ExtPart::CourtOffice)] != 0);
+    CHECK(with_court.ext[static_cast<std::size_t>(ExtPart::Influence)] != 0);
     CHECK_FALSE(with_person == before);
     pat::test::require_valid(world);
 }

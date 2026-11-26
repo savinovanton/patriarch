@@ -177,6 +177,7 @@ add_library(patriarch_sim STATIC
     world.cpp
     world_events.cpp
     world_events_io.cpp
+    world_court_io.cpp
     world_court.cpp
     court_invariants.cpp
     world_family.cpp

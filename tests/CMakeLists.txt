@@ -52,6 +52,7 @@ add_executable(patriarch_tests
     event_save_test.cpp
     event_state_test.cpp
     court_state_test.cpp
+    court_save_test.cpp
     family_state_test.cpp
     family_save_test.cpp
     golden_test.cpp

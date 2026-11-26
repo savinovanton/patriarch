@@ -321,14 +321,14 @@ section_count × { u16 id (строго по возрастанию) | u16 versi
 | 5 `chronicle` | T16 | записи по родам, с ограничением объёма | 1 |
 | 6 `opinion` | T17 | мнения: держатель, цель, значение, причина, срок | 1 |
 | 8 `feud_pairs` | E7-T26 (выдан спецификацией E7-T25, [house-relations-model.md](../dev/house-relations-model.md) §16) | пары членов рода: уровни вражды, перемирие, кулдаун посредничества; часть хеша `ExtPart` 38 (блок 38…39 выдан E7-T25) | 1 |
-| 10 `influence` | E7-T38 (выдан спецификацией, [influence-model.md](../dev/influence-model.md) §17; объявляет E10-T02, сохраняет E10-T03 тем же подъёмом схемы) | запас влияния по родам (8 Б на строку) и кольцо трат (64 записи); часть хеша `ExtPart` 40 (блок 40…41 выдан E7-T38) | 1 |
+| 10 `influence` | E7-T38 (выдан спецификацией, [influence-model.md](../dev/influence-model.md) §17; объявляет E10-T02, сохраняет E10-T03 тем же подъёмом схемы; в коде с E10-T03, схема 14) | запас влияния по родам (8 Б на строку) и кольцо трат (64 записи); часть хеша `ExtPart` 40 (блок 40…41 выдан E7-T38) | 1 |
 | 9, 11…15 | резерв E7 | | |
 | 16…31 | E8 (подтверждено E8-T01: выпущены 16…23 `family_counters`, `negotiations`, `betrothals`, `marriages`, `person_status`, `succession`, `regency`, `dispute`; 24…31 резерв — [marriage-succession-model.md](../dev/marriage-succession-model.md) §13.1; части хеша `ExtPart` 8…14) | | |
 | 32 `economy` | E9-T03 | заголовок экономики: `present`, `rules_hash`, `crown_dynasty`, ведомость (даты), счётчики | 1 |
 | 33 `economy_dynasty` … 39 `economy_incidents` | E9-T03 | роды, провинции, население, счета с кольцами ведомости, очередь стройки, займы/квоты/итоги, журнал происшествий; раскладка — `economy-model.md` §13.5 и комментарий в `src/sim/world_economy_io.cpp` | 1 |
 | 40…47 | резерв E9 | | |
 | 48…63 | E11 (подтверждено E11-T01: выпущены 48…57 `events_meta`, `event_flags`, `event_vars`, `event_timers`, `event_cooldowns`, `event_chains`, `event_modifiers`, `event_queue`, `event_history`, `event_journal`; 58…63 резерв; теги 96…109; части хеша `ExtPart` 24…29 — [event-engine.md](../dev/event-engine.md) §8.4, §9) | | |
-| 64…71 | E10 (подтверждено E10-T01: выпущены 64…69 `court_meta`, `court_offices`, `court_vacancies`, `court_petitions`, `court_servants`, `court_favor`; 70, 71 резерв; теги 128…142; части хеша `ExtPart` 32…37 — [court-model.md](../dev/court-model.md) §7.1, §13, [ADR-0009](0009-court.md)) | | |
+| 64…71 | E10 (подтверждено E10-T01: выпущены 64…69 `court_meta`, `court_offices`, `court_vacancies`, `court_petitions`, `court_servants`, `court_favor`; 70, 71 `court_portfolio`, `court_orders` (E10-T22); теги 128…143; части хеша `ExtPart` 32…37, 39; в коде с E10-T03, схема 14 — [court-model.md](../dev/court-model.md) §7.1, §13, [ADR-0009](0009-court.md)) | | |
 | 72…83 | E12 (подтверждено E12-T01: выпущены 72…78 `realm`, `suspicion`, `throne`, `plots`, `denunciations`, `stances`, `coup_log`; 79…83 резерв; теги 144…163; части хеша `ExtPart` 42…48 — [throne-crisis-model.md](../dev/throne-crisis-model.md) §7.1, §13, [ADR-0010](0010-throne-crisis.md)) | | |
 | 84…91 | E30 (`GameSetup`, цели; E30-T01) | | |
 | 92…95 | резерв E13 | | |
