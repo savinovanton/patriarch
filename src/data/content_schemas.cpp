@@ -1,6 +1,7 @@
 #include "pat/data/content_schemas.hpp"
 
 #include "pat/data/ai_schemas.hpp"
+#include "pat/data/army_schemas.hpp"
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/credits_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
@@ -27,6 +28,8 @@ SchemaSet content_schemas() {
     add_court_schemas(set);
     // E12-T04: the crisis kinds (data/balance/crisis.pd and data/crisis/).
     add_crisis_schemas(set);
+    // E16-T05: opt-in army rules and synthetic military setup.
+    add_army_schemas(set);
     // E11-T06: the event kinds (data/events/, data/balance/events.pd); outside the simulation hash.
     add_event_schemas(set);
     // E7-T09: name and portrait pools (data/names/).

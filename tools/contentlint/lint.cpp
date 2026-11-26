@@ -1,6 +1,7 @@
 #include "lint.hpp"
 
 #include "pat/content/ai_content.hpp"
+#include "pat/content/army_content.hpp"
 #include "pat/content/court_content.hpp"
 #include "pat/content/credits_content.hpp"
 #include "pat/content/crisis_content.hpp"
@@ -11,6 +12,7 @@
 #include "pat/content/marriage_content.hpp"
 #include "pat/content/names_content.hpp"
 #include "pat/content/traits_content.hpp"
+#include "pat/data/army_schemas.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/loc/localizer.hpp"
@@ -297,6 +299,23 @@ Report lint(std::span<const data::ContentSource* const> roots,
             if (!crisis) {
                 for (const data::LoadError& error : crisis.error())
                     findings.push_back(from_load_error(error));
+            }
+            // Army data remains optional for older/mod-only roots, just like runtime installation.
+            const auto* army_table = loaded.registry.table(data::kArmyRulesKind);
+            const auto* military_table = loaded.registry.table(data::kMilitarySetupKind);
+            const bool has_army = army_table != nullptr && !army_table->empty();
+            const bool has_military = military_table != nullptr && !military_table->empty();
+            if (has_army || has_military) {
+                const auto army = content::build_army_rules(loaded.registry);
+                if (!army) {
+                    for (const auto& error : army.error())
+                        findings.push_back(from_load_error(error));
+                } else if (has_military) {
+                    const auto military = content::build_military_setup(loaded.registry, army.value());
+                    if (!military)
+                        for (const auto& error : military.error())
+                            findings.push_back(from_load_error(error));
+                }
             }
             const content::NamePoolsResult names = content::build_name_pools(loaded.registry);
             if (!names) {

@@ -1,0 +1,45 @@
+format_version = 1
+
+# E16-T05 synthetic opt-in fixture for the existing 20-province M1 pool.
+# No historical assignment or final E30 army/fortress roster is implied.
+# Capital, two crown armies and terrain are examples only; E30 replaces them on its accepted map.
+# Commanders resolve from existing office holders in T13/T20; no character is invented here.
+military_setup "m1" {
+    capital = province:p0001
+    crown_manpower = 2000
+    province { id = province:p0001 terrain = plain fortress = { level = 2 garrison = 400 stores_days = 90 wall_pm = 1000 holder = owner } }
+    province { id = province:p0002 terrain = forest }
+    province { id = province:p0003 terrain = plain fortress = { level = 1 garrison = 400 stores_days = 90 wall_pm = 1000 holder = owner } }
+    province { id = province:p0004 terrain = hills }
+    province { id = province:p0005 terrain = forest }
+    province { id = province:p0006 terrain = swamp }
+    province { id = province:p0007 terrain = plain }
+    province { id = province:p0008 terrain = steppe }
+    province { id = province:p0009 terrain = forest }
+    province { id = province:p0010 terrain = hills }
+    province { id = province:p0011 terrain = steppe fortress = { level = 1 garrison = 400 stores_days = 90 wall_pm = 1000 holder = owner } }
+    province { id = province:p0012 terrain = plain }
+    province { id = province:p0013 terrain = forest }
+    province { id = province:p0014 terrain = mountain }
+    province { id = province:p0015 terrain = plain }
+    province { id = province:p0016 terrain = swamp }
+    province { id = province:p0017 terrain = hills }
+    province { id = province:p0018 terrain = plain }
+    province { id = province:p0019 terrain = forest }
+    province { id = province:p0020 terrain = steppe }
+    army "crown_guard" {
+        name_key = "army.initial.crown_guard"
+        owner = crown tag = guard province = province:p0001
+        comp = { infantry = 1500 cavalry = 100 artillery = 0 irregular = 0 }
+        quality = 55 experience = 20 morale_x100 = 8000 supply_x100 = 10000
+        commander_office = guards_colonel
+    }
+    army "crown_field" {
+        name_key = "army.initial.crown_field"
+        owner = crown tag = regular province = province:p0003
+        comp = { infantry = 1800 cavalry = 200 artillery = 100 irregular = 100 }
+        quality = 55 experience = 10 morale_x100 = 8000 supply_x100 = 10000
+        commander_office = general
+    }
+    front = { id = north name_key = "army.front.north" state = tension pressure_x100 = 5000 enemy_x100 = 3000 fatigue_x100 = 0 }
+}

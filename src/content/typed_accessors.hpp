@@ -1,10 +1,13 @@
 #pragma once
 
+#include "pat/content/load_errors.hpp"
 #include "pat/data/content_registry.hpp"
 #include "pat/data/schema.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <string>
 #include <string_view>
 
@@ -87,6 +90,30 @@ inline data::SourcePos path_position(const data::ContentObject& object, std::str
         path = dot == std::string_view::npos ? std::string_view{} : path.substr(dot + 1);
     }
     return pos;
+}
+
+/// Copies a fixed-size integer list; schemas ensure int32 representation, the caller validates values.
+template <std::size_t N>
+void read_i32_array(ErrorSink& errors,
+                    const data::ContentObject& object,
+                    const data::TypedBlock& block,
+                    std::string_view name,
+                    std::array<std::int32_t, N>& out,
+                    std::string_view path = {}) {
+    if (path.empty())
+        path = name;
+    const auto* list = list_of(block, name);
+    const auto size = list == nullptr ? 0 : list->size();
+    if (size != N) {
+        errors.fail(object,
+                    path_position(object, path),
+                    std::format("`{}` needs exactly {} numbers, found {}", path, N, size));
+        return;
+    }
+    for (std::size_t i = 0; i < N; ++i) {
+        if (const auto* v = (*list)[i].template get_if<std::int64_t>())
+            out[i] = static_cast<std::int32_t>(*v);
+    }
 }
 
 }  // namespace pat::content::detail

@@ -1,0 +1,221 @@
+format_version = 1
+
+# Localization contracts: army.branch.*, army.terrain.*, army.front.*, army.initial.*,
+# army.tag.*, army.siege.*, army.term.*, army.denial.*, ui.army.* (army/text.hpp; consumers T06…T18).
+# E16-T05: proposed balance [предл.], army-model.md §9/§12. Opt-in until E16-T20.
+army_rules "m1" {
+    limits = {
+        world = 300
+        dynasty = 5
+        crown = 10
+        rebels = 40
+        min_size = 500
+        min_rebels = 200
+        max_size = 40000
+    }
+    movement = {
+        slow_share_pm = 50
+        road_pm = 1250
+        march_drain_x100 = 100
+    }
+    battle = {
+        loss_loser = 200
+        loss_winner = 120
+        max_loss = 950
+        morale_loser = 25
+        morale_winner = 5
+        p_min = 30
+        p_max = 970
+        quality_base = 800
+        quality_factor = 4
+        experience_base = 1000
+        morale_base = 500
+        supply_base = 700
+        commander_gain = 300
+        commander_pivot = 10
+        fort_bonus = 150
+        weather_pm = 1000
+        surprise_pm = 1000
+        no_retreat_extra_loss_pm = 300
+        experience_winner = 2
+        experience_loser = 1
+        kill_loser_pm = 50
+        wound_loser_pm = 150
+        kill_winner_pm = 5
+        wound_winner_pm = 30
+        wound_health = -25
+        honor_winner = 3
+        honor_loser = -2
+        favor_rebels = 1
+        sigmoid = [500 683 823 910 956 979 990 995 998 999 1000]
+    }
+    supply = {
+        peasants_share_pm = 300
+        townsfolk_share_pm = 400
+        cossacks_share_pm = 400
+        own_pm = 1000
+        friendly_pm = 600
+        foreign_pm = 400
+        hostile_pm = 300
+        rebels_home_pm = 700
+        regen_x100 = 200
+        drain_x100 = 600
+        hunger_x100 = 300
+        attrition_below_x100 = 5000
+        attr_max_ppm = 8000
+        winter_pm = 1500
+    }
+    siege = {
+        garrison_def = 500
+        wall_dmg = 250
+        breach_wall = 600
+        assault_min_progress = 300
+        stores_days = 90
+        assault_loss_base = 2000
+        besieger_loss_pm = 6
+        garrison_loss_pm = 8
+        hunger_loss_pm = 12
+        starving_days = 30
+        winter_pm = 1500
+        sally_share_pm = 300
+        failed_progress = 200
+        failed_morale = 15
+        garrison_after_retake = 100
+        retake_control = 10
+        retake_unrest = -10
+        assault_unrest = 5
+        defence = [200 500 900 1500 2400 3600]
+    }
+    upkeep = {
+        quality_factor = 3
+        paid_regen_x100 = 500
+        paid_supply_x100 = 7000
+        reliable_morale_x100 = 4000
+        desert_morale_x100 = 3000
+        desert_morale_factor = 2
+        unreliable_months = 3
+        fortress = [0 6000 15000 30000 60000 100000]
+        arrears = [ { morale = 0 desert = 0 } { morale = -1000 desert = 0 } { morale = -1500 desert = 30 } { morale = -2000 desert = 80 } ]
+    }
+    front = {
+        aggr = 150
+        noise_x100 = 60
+        effect = 500
+        supply_x100 = 8000
+        call_min_size = 1000
+        call_grace_days = 90
+        high = 8000
+        low = 2000
+        hysteresis = 500
+        enemy_pull_pm = 100
+        peace_decay_pm = 100
+        loss_base_ppm = 6000
+        loss_pressure_ppm = 10000
+        fatigue_pull_pm = 150
+        fatigue_war_x100 = 1500
+        fatigue_pressure_pm = 200
+        fatigue_losses_pm = 100
+        service_pm = 200
+        honor_cap = 10
+        call_suspicion_x100 = 300
+        return_days = 20
+        war_zero_months = 3
+        truce_months = 6
+        enemy_base = [1000 3000 6000 500]
+    }
+    rebels = {
+        share_min = 20
+        share_max = 80
+        infantry_pm = 100
+        cavalry_max_pm = 300
+        cavalry_noise_divisor = 10
+        quality_base = 10
+        quality_range = 20
+        dissolve_size = 200
+        max_months = 24
+        decay_pm = 15
+        cooldown_days = 180
+        spread_unrest = 60
+        range_edges = 2
+        suppress_unrest = -20
+        suppress_control = 10
+        unrest_start = 75
+        move_min_size = 400
+        control_monthly = -3
+        unrest_monthly = 2
+        cruel_loss_pm = 500
+        cruel_mood = -5
+        capture_garrison_pm = 250
+        capture_stores_days = 60
+    }
+    levy = {
+        share = 100
+        retainers = 30
+        cavalry_pm = 300
+        days = 90
+        cooldown_days = 180
+        mood_nobles = -8
+        quality = 20
+        min_size = 300
+        morale_x100 = 7000
+    }
+    muster = {
+        quality_new = 30
+        quality_trained = 55
+        train_share_pm = 100
+        commander_age = 16
+        commander_martial = 4
+    }
+    guard = {
+        target_size = 2000
+        morale_slope = 300
+        pay_step_x100 = 400
+        shift_unreliable = -15
+        shift_destroyed = -20
+        morale_after_coup = 60
+        morale_pivot_x100 = 7000
+        absent_x100 = -1000
+    }
+    ai = {
+        attack_min_pm = 650
+        assault_min_pm = 900
+        front_suspicion = 30
+        front_favor = 60
+    }
+    branch "infantry" { cv = 1000 speed_kmd = 20 upkeep_kop = 40 equip_kop = 300 vuln = 1000 need = 1000 siege_value = 300 train_days = 90 }
+    branch "cavalry" { cv = 1500 speed_kmd = 30 upkeep_kop = 90 equip_kop = 900 vuln = 1100 need = 1500 siege_value = 50 train_days = 120 }
+    branch "artillery" { cv = 2500 speed_kmd = 12 upkeep_kop = 70 equip_kop = 1500 vuln = 1000 need = 1000 siege_value = 4000 train_days = 150 }
+    branch "irregular" { cv = 600 speed_kmd = 28 upkeep_kop = 15 equip_kop = 60 vuln = 1200 need = 800 siege_value = 150 train_days = 30 }
+    terrain "plain" { move_pm = 1000 defence_pm = 1000 supply_pm = 1000 class = open }
+    terrain "steppe" { move_pm = 1100 defence_pm = 1000 supply_pm = 700 class = open }
+    terrain "forest" { move_pm = 700 defence_pm = 1150 supply_pm = 700 class = rough }
+    terrain "swamp" { move_pm = 500 defence_pm = 1250 supply_pm = 500 class = rough }
+    terrain "hills" { move_pm = 800 defence_pm = 1200 supply_pm = 800 class = rough }
+    terrain "mountain" { move_pm = 500 defence_pm = 1350 supply_pm = 500 class = rough }
+    season { month = 1 move_pm = 1100 supply_pm = 800 }
+    season { month = 2 move_pm = 1100 supply_pm = 750 }
+    season { month = 3 move_pm = 800 supply_pm = 700 }
+    season { month = 4 move_pm = 550 supply_pm = 700 }
+    season { month = 5 move_pm = 700 supply_pm = 750 }
+    season { month = 6 move_pm = 1000 supply_pm = 900 }
+    season { month = 7 move_pm = 1000 supply_pm = 1100 }
+    season { month = 8 move_pm = 1000 supply_pm = 1200 }
+    season { month = 9 move_pm = 900 supply_pm = 1200 }
+    season { month = 10 move_pm = 650 supply_pm = 1000 }
+    season { month = 11 move_pm = 750 supply_pm = 900 }
+    season { month = 12 move_pm = 1050 supply_pm = 850 }
+    counter = {
+        open = {
+            infantry = { infantry = 1000 cavalry = 900 artillery = 900 irregular = 1100 }
+            cavalry = { infantry = 1250 cavalry = 1000 artillery = 1300 irregular = 1300 }
+            artillery = { infantry = 1150 cavalry = 1200 artillery = 1000 irregular = 1250 }
+            irregular = { infantry = 850 cavalry = 850 artillery = 900 irregular = 1000 }
+        }
+        rough = {
+            infantry = { infantry = 1000 cavalry = 1200 artillery = 1000 irregular = 1100 }
+            cavalry = { infantry = 850 cavalry = 1000 artillery = 1100 irregular = 900 }
+            artillery = { infantry = 1000 cavalry = 1000 artillery = 1000 irregular = 1000 }
+            irregular = { infantry = 1100 cavalry = 1000 artillery = 1100 irregular = 1000 }
+        }
+    }
+}

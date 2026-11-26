@@ -1,6 +1,8 @@
 add_library(patriarch_content STATIC
     include/pat/content/ai_content.hpp
     ai_content.cpp
+    include/pat/content/army_content.hpp
+    army_content.cpp
     include/pat/content/court_content.hpp
     include/pat/content/credits_content.hpp
     include/pat/content/crisis_content.hpp

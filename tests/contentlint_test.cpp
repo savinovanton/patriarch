@@ -11,6 +11,7 @@
 #include <string_view>
 #include <vector>
 
+#include "army_fixture.hpp"
 #include "court_fixture.hpp"
 #include "lint.hpp"
 
@@ -511,4 +512,22 @@ TEST_CASE("contentlint: AI value errors retain the source position") {
     const auto expected = pat::court_fixture::position_after(text, "budget =", "quota_wu");
     CHECK(found->line == expected.line);
     CHECK(found->column == expected.column);
+}
+
+TEST_CASE("contentlint: army data errors retain the precise balance field position") {
+    auto source = pat::army_fixture::shipped_source();
+    auto text = pat::court_fixture::shipped_text(pat::army_fixture::kBalance);
+    pat::court_fixture::replace_once(text, "speed_kmd = 12", "speed_kmd = 0");
+    source.add(std::string(pat::army_fixture::kBalance), text);
+    Options options;
+    options.check_unused = false;
+    const Report report = lint_memory(source, options);
+    const auto found = std::ranges::find_if(report.findings, [](const Finding& finding) {
+        return finding.code == "PD115" && finding.file.ends_with("balance/army.pd");
+    });
+    REQUIRE(found != report.findings.end());
+    CHECK(found->message.find("branch.artillery.speed_kmd") != std::string::npos);
+    const auto pos = pat::court_fixture::position_after(text, "branch \"artillery\"", "speed_kmd");
+    CHECK(found->line == pos.line);
+    CHECK(found->column == pos.column);
 }

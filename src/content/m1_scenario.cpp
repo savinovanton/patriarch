@@ -9,6 +9,7 @@
 #include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/ai_schemas.hpp"
+#include "pat/data/army_schemas.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
@@ -19,6 +20,7 @@
 #include "pat/mapdata/map_validate.hpp"
 #include "pat/sim/economy/invariants.hpp"
 
+#include <algorithm>
 #include <array>
 #include <format>
 #include <map>
@@ -32,6 +34,30 @@ namespace {
 
 using ScenarioResult = core::Result<M1Scenario>;
 using DefinitionsResult = core::Result<M1Definitions>;
+
+// The staged military setup is validated by the explicit Army loader and contentlint.
+// Ordinary M1 definitions must not depend on its references before E16-T20 installs Army.
+class M1Source final : public data::ContentSource {
+public:
+    explicit M1Source(const data::ContentSource& source) : source_(source) {}
+
+    std::string name() const override { return source_.name(); }
+
+    core::Result<std::vector<std::string>, std::string> list_files() const override {
+        auto files = source_.list_files();
+        if (files) {
+            std::erase(files.value(), "scenarios/m1/military.pd");
+        }
+        return files;
+    }
+
+    core::Result<std::string, std::string> read_file(std::string_view path) const override {
+        return source_.read_file(path);
+    }
+
+private:
+    const data::ContentSource& source_;
+};
 
 ScenarioResult fail(std::string message) {
     return ScenarioResult::err({1, std::move(message)});
@@ -54,7 +80,8 @@ DefinitionsResult load_m1_definitions(const data::ContentSource& source, const m
     const auto fail_definition = [](std::string message) {
         return DefinitionsResult::err({1, std::move(message)});
     };
-    auto loaded = data::load_content(source, data::content_schemas());
+    const M1Source active_source(source);
+    auto loaded = data::load_content(active_source, data::content_schemas());
     if (!loaded.ok()) {
         return fail_definition(format_errors(loaded.errors));
     }
@@ -183,6 +210,10 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
         excluded_kinds.push_back(kind);
     }
     for (const std::string_view kind : data::kCrisisKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    // Army rules and setup are opt-in until E16-T20.
+    for (const std::string_view kind : data::kArmyKinds) {
         excluded_kinds.push_back(kind);
     }
     // Events have their own hash, pat::sim::events::EventSet::hash() (ADR-0008 D8).
