@@ -69,7 +69,38 @@
       "version": "5.1.1",
       "version_date": null,
       "source_page": null,
-      "files": [],
+      "files": [
+        {
+          "path": "ne_10m_ocean.zip",
+          "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_ocean.zip",
+          "sha256": "db626fcd5d50b096b156c78a2cc95011b39f32a61b4e47d147e3f7a77b8b2719",
+          "size": 3189765
+        },
+        {
+          "path": "ne_10m_minor_islands.zip",
+          "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_minor_islands.zip",
+          "sha256": "47c0b3ce26df7b4dbabdbb251023918cb2f5c83462a426288f1f253da7284db2",
+          "size": 314932
+        },
+        {
+          "path": "ne_10m_lakes.zip",
+          "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_lakes.zip",
+          "sha256": "0803a06f9c3cb4671d89b68c48b142aad9366ba40f665245e12a913fbc61722a",
+          "size": 2349685
+        },
+        {
+          "path": "ne_10m_coastline.zip",
+          "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_coastline.zip",
+          "sha256": "bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017",
+          "size": 3069451
+        },
+        {
+          "path": "ne_10m_rivers_lake_centerlines.zip",
+          "url": "https://naciscdn.org/naturalearth/10m/physical/ne_10m_rivers_lake_centerlines.zip",
+          "sha256": "ded71b01870855ccfe19b51f2ec14c9bb48fae23c0e9f3c11974d426433b5c38",
+          "size": 2079507
+        }
+      ],
       "license": "Public-Domain",
       "license_url": "https://naturalearthdata.com/about/terms-of-use/",
       "attribution": {
@@ -85,7 +116,7 @@
         "reproject to the common map projection",
         "reconcile coastline, lakes and rivers with the DEM (rivers cut into terrain, lakes flat, sea at level 0)"
       ],
-      "notes": "Verdict: allowed, public domain; credit is unnecessary (the text above is an optional suggestion). Do NOT use the European river/lake additions (the *_europe datasets): they come from a third party licensed for a world base map only. Coastline accuracy of northern Russia is suspect: check against the DEM. Political borders are modern and unusable for 1703. Per-dataset versions are listed in components; release dates are not stated on the pages (see the natural-earth-vector CHANGELOG). Transformations are planned, none applied yet.",
+      "notes": "Verdict: allowed, public domain; credit is unnecessary (the text above is an optional suggestion). Do NOT use the European river/lake additions (the *_europe datasets): they come from a third party licensed for a world base map only. Coastline accuracy of northern Russia is suspect: check against the DEM. Political borders are modern and unusable for 1703. Per-dataset versions are listed in components; release dates are not stated on the pages (see the natural-earth-vector CHANGELOG). Transformations are planned, none applied yet. Files: the five layers used by stage 1 (tools/geo/stage1.py) were downloaded from the Natural Earth CDN (naciscdn.org) on 2026-11-26 and their hashes recorded (Geo-4, #80); status stays unverified until the per-file versions are confirmed.",
       "components": [
         "ne_10m_coastline 4.1.0",
         "ne_10m_land 5.1.1",

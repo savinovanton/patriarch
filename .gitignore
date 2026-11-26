@@ -29,6 +29,11 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
+# Geodata cache and stage-1 outputs belong outside the repository (tools/geo refuses paths
+# inside it); safety net in case one is created here by mistake
+geodata-cache/
+geodata-work/
+
 # Python script caches
 __pycache__/
 *.py[cod]
