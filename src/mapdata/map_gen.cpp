@@ -617,6 +617,10 @@ double elapsed_ms(Clock::time_point since) {
 
 }  // namespace
 
+float generated_noise(float x, float y, std::uint32_t seed, int octaves) {
+    return fbm(x, y, seed, octaves);
+}
+
 std::uint32_t generated_province_color(std::uint32_t id) {
     return province_color(id);
 }

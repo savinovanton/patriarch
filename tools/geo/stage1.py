@@ -889,8 +889,16 @@ def build_dem(runner: Runner, dem: SourceFiles, spec: ProjectionSpec, tmp: Path,
     )  # fmt: skip
 
 
-def project_vector(runner: Runner, dataset: str, layer: str, spec: ProjectionSpec, out: Path, fields: str) -> None:
-    """Clip to the map area and reproject one layer.
+# Vertex spacing of the map area box (degrees): its edges along meridians and parallels are curves
+# in the conic projections, so a box with corner vertices only would turn into chords there.
+AREA_SEGMENT_DEG = "0.25"
+AREA_SEGMENT_UDEG = 250_000
+
+
+def project_vector(
+    runner: Runner, dataset: str, layer: str, spec: ProjectionSpec, out: Path, fields: str, clip: Path
+) -> None:
+    """Clip to the map area (`clip`: the densified area_geojson file) and reproject one layer.
 
     Polygons for rasterization go to GeoPackage, which keeps the custom CRS (a GeoJSON file
     without an EPSG code is read back as WGS84, and gdal_rasterize would then reproject the
@@ -902,20 +910,56 @@ def project_vector(runner: Runner, dataset: str, layer: str, spec: ProjectionSpe
     else:
         driver = ["-f", "GeoJSON", "-lco", "COORDINATE_PRECISION=1", "-lco", "RFC7946=NO"]
     runner.run(
-        "ogr2ogr", *driver, "-t_srs", proj_string(spec), "-clipsrc", clip_wkt(),
+        "ogr2ogr", *driver, "-t_srs", proj_string(spec), "-clipsrc", str(clip),
         "-select", fields, "-dim", "XY", str(out), dataset, layer,
     )  # fmt: skip
 
 
+def _steps(a: int, b: int, step: int = AREA_SEGMENT_UDEG) -> list[int]:
+    """a, a +- step, ..., b (micro-degrees; both ends included)."""
+    sign = 1 if b >= a else -1
+    out = list(range(a, b, sign * step))
+    return out + [b]
+
+
+def area_geojson(area: GeoBox = MAP_AREA) -> str:
+    """The map area as a WGS84 GeoJSON polygon (two boxes across the antimeridian, like clip_wkt),
+    with a vertex every AREA_SEGMENT_DEG along each edge. Used as the -clipsrc of every vector layer
+    (a clip edge then follows the curved parallel after projection) and rasterized as the land frame.
+    """
+
+    def ring(west: int, east: int) -> list:
+        s, n = area.south_udeg, area.north_udeg
+        pts = [(x, s) for x in _steps(west, east)]
+        pts += [(east, y) for y in _steps(s, n)[1:]]
+        pts += [(x, n) for x in _steps(east, west)[1:]]
+        pts += [(west, y) for y in _steps(n, s)[1:]]
+        return [[[x / UDEG, y / UDEG] for x, y in pts]]
+
+    if area.crosses_antimeridian:
+        polygons = [ring(area.west_udeg, 180 * UDEG), ring(-180 * UDEG, area.east_udeg - 360 * UDEG)]
+    else:
+        polygons = [ring(area.west_udeg, area.east_udeg)]
+    feature = {"type": "Feature", "properties": {}, "geometry": {"type": "MultiPolygon", "coordinates": polygons}}
+    return json.dumps({"type": "FeatureCollection", "features": [feature]})
+
+
 def build_water(runner: Runner, spec: ProjectionSpec, vectors: Mapping[str, Path], out: Path) -> None:
-    """Rasterize the water mask: ocean = 1, then minor islands back to land, then lakes = 2."""
+    """Rasterize the water mask: everything starts as sea, the map area becomes land, then the
+    ocean = 1 (clipped to the area), minor islands back to land, lakes = 2.
+
+    Outside the map area there are no sources (the vectors are clipped, the DEM tiles stop), so the
+    canvas corners beyond it (the Arctic north of 82 N, the Pacific east of 165 W) are open sea
+    rather than land without data.
+    """
     xmin, ymin, xmax, ymax = (mm_text(v) for v in spec.canvas.extent_mm())
     _remove(runner, out)
     runner.run(
-        "gdal_rasterize", "-of", "ENVI", "-ot", "Byte", "-init", str(WATER_LAND), "-burn", str(WATER_SEA),
+        "gdal_rasterize", "-of", "ENVI", "-ot", "Byte", "-init", str(WATER_SEA), "-burn", str(WATER_LAND),
         "-a_srs", proj_string(spec), "-te", xmin, ymin, xmax, ymax,
-        "-ts", str(spec.canvas.width), str(spec.canvas.height), str(vectors["ocean"]), str(out),
+        "-ts", str(spec.canvas.width), str(spec.canvas.height), str(vectors["area"]), str(out),
     )  # fmt: skip
+    runner.run("gdal_rasterize", "-burn", str(WATER_SEA), str(vectors["ocean"]), str(out))
     runner.run("gdal_rasterize", "-burn", str(WATER_LAND), str(vectors["minor_islands"]), str(out))
     runner.run("gdal_rasterize", "-burn", str(WATER_LAKE), str(vectors["lakes"]), str(out))
 
@@ -943,11 +987,19 @@ def run_projection(
     build_dem(runner, dem, spec, tmp, out_dir / "height.i16")
 
     vectors: dict[str, Path] = {}
+    area_src = tmp / "area_wgs84.geojson"
+    if not runner.dry_run:
+        area_src.write_text(area_geojson(), encoding="utf-8")
     for role, stem in NE_LAYERS.items():
         dataset, layer = ne_dataset(ne, stem)
         fields = "scalerank,name" if role in {"rivers"} else "scalerank"
         vectors[role] = tmp / (f"{role}.geojson" if role in {"coastline", "rivers"} else f"{role}.gpkg")
-        project_vector(runner, dataset, layer, spec, vectors[role], fields)
+        project_vector(runner, dataset, layer, spec, vectors[role], fields, area_src)
+    vectors["area"] = tmp / "area.gpkg"
+    _remove(runner, vectors["area"])
+    runner.run(
+        "ogr2ogr", "-f", "GPKG", "-nln", "area", "-t_srs", proj_string(spec), str(vectors["area"]), str(area_src),
+    )  # fmt: skip
     build_water(runner, spec, vectors, out_dir / "water.u8")
     if runner.dry_run:
         return out_dir
@@ -977,7 +1029,15 @@ def build_metadata(
         ("reproject:" + spec.id + "-v1", {"proj": proj_string(spec), "resampling": "average", "et": 0}),
         ("resample:" + f"{canvas.width}x{canvas.height}", {"pixel_size_mm": canvas.pixel_size_mm,
                                                            "center_mm": [canvas.center_x_mm, canvas.center_y_mm]}),
-        ("water:ne10m-v1", {"order": ["ocean=1", "minor_islands=0", "lakes=2"], "clip": clip_wkt()}),
+        (
+            "water:ne10m-v2",
+            {
+                "order": ["init=1", "area=0", "ocean=1", "minor_islands=0", "lakes=2"],
+                "clip_segment_deg": AREA_SEGMENT_DEG,
+                "clip": clip_wkt(),
+                "area_segment_deg": AREA_SEGMENT_DEG,
+            },
+        ),
         ("lines:pgl1-v1", {"subpixel": SUBPIXEL, "coordinate_precision_m": 1}),
     ]  # fmt: skip
     return {

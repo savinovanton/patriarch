@@ -27,7 +27,10 @@ using core::JsonValue;
 using core::Result;
 
 // ---- tunables of the stage-2 rules [предл.] (docs/dev/geodata-pipeline.md section 11) -------------
-constexpr std::uint32_t kRulesVersion = 1;
+constexpr std::uint32_t kRulesVersion = 2;
+constexpr std::uint32_t kNoiseSeed = 1703;  ///< Seed of the belt-blurring noise (fixed: part of the rules).
+constexpr float kBeltNoisePixels = 350.0f;  ///< Wavelength of the belt shift, pixels.
+constexpr double kBeltShiftDeg = 3.0;       ///< Largest shift of a belt edge, degrees of latitude.
 constexpr std::int32_t kSeaDepthPerPixel = 48;  ///< Synthetic sea bed: units per pixel from the coast.
 constexpr std::int32_t kDeepWaterUnits = 2400;  ///< Deeper than this is DeepWater (as in generate_map).
 constexpr std::int32_t kNoDataLandMetres = 1;   ///< Land with no DEM anywhere on its landmass.
@@ -240,11 +243,92 @@ void for_neighbours(std::size_t i, std::size_t w, std::size_t n, Fn&& fn) {
     }
 }
 
-Material land_material(double elev_m, double slope, double lat, bool next_to_sea) {
+/// One line of the exact squared Euclidean distance transform (Felzenszwalb and Huttenlocher, 2012).
+void distance_1d(
+    const double* f, std::size_t n, double* d, std::vector<std::size_t>& v, std::vector<double>& z) {
+    v.assign(n, 0);
+    z.assign(n + 1, 0.0);
+    constexpr double kInf = std::numeric_limits<double>::infinity();
+    std::size_t k = 0;
+    z[0] = -kInf;
+    z[1] = kInf;
+    const auto cut = [&](std::size_t q, std::size_t p) {
+        const auto qd = static_cast<double>(q);
+        const auto pd = static_cast<double>(p);
+        return ((f[q] + qd * qd) - (f[p] + pd * pd)) / (2.0 * qd - 2.0 * pd);
+    };
+    for (std::size_t q = 1; q < n; ++q) {
+        double s = cut(q, v[k]);
+        while (s <= z[k]) {
+            --k;
+            s = cut(q, v[k]);
+        }
+        ++k;
+        v[k] = q;
+        z[k] = s;
+        z[k + 1] = kInf;
+    }
+    k = 0;
+    for (std::size_t q = 0; q < n; ++q) {
+        while (z[k + 1] < static_cast<double>(q)) {
+            ++k;
+        }
+        const double dq = static_cast<double>(q) - static_cast<double>(v[k]);
+        d[q] = dq * dq + f[v[k]];
+    }
+}
+
+/// Squared distance (in pixels) from every pixel to the nearest pixel where `source(i)` holds; a
+/// huge value when there is none. Columns, then rows, each line independent: the result does not
+/// depend on the number of threads.
+template <class Source>
+std::vector<double> squared_distance_to(std::uint32_t w, std::uint32_t h, Source&& source, unsigned threads) {
+    constexpr double kFar = 1e20;
+    const std::size_t n = static_cast<std::size_t>(w) * h;
+    std::vector<double> grid(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        grid[i] = source(i) ? 0.0 : kFar;
+    }
+    parallel::parallel_rows(w, threads, [&](std::uint32_t x0, std::uint32_t x1) {
+        std::vector<double> f(h);
+        std::vector<double> d(h);
+        std::vector<std::size_t> v;
+        std::vector<double> z;
+        for (std::uint32_t x = x0; x < x1; ++x) {
+            for (std::uint32_t y = 0; y < h; ++y) {
+                f[y] = grid[static_cast<std::size_t>(y) * w + x];
+            }
+            distance_1d(f.data(), h, d.data(), v, z);
+            for (std::uint32_t y = 0; y < h; ++y) {
+                grid[static_cast<std::size_t>(y) * w + x] = d[y];
+            }
+        }
+    });
+    parallel::parallel_rows(h, threads, [&](std::uint32_t y0, std::uint32_t y1) {
+        std::vector<double> d(w);
+        std::vector<std::size_t> v;
+        std::vector<double> z;
+        for (std::uint32_t y = y0; y < y1; ++y) {
+            double* row = grid.data() + static_cast<std::size_t>(y) * w;
+            distance_1d(row, w, d.data(), v, z);
+            std::copy(d.begin(), d.end(), row);
+        }
+    });
+    return grid;
+}
+
+Material
+land_material(double elev_m, double slope, double lat, bool next_to_sea, std::uint32_t x, std::uint32_t y) {
     // Rules [предл.] (docs/dev/geodata-pipeline.md section 11): permanent snow above a snow line that
     // falls towards the pole, bare rock on steep slopes and just below it, tundra in the Arctic and
     // above the tree line, hills on moderate slopes and high plateaus, beaches on low sea shores,
-    // then latitude belts: steppe south of 52 N, mixed plains to 56.5 N, forest north of that.
+    // then latitude belts: steppe south of 52 N, mixed plains to 56.5 N, forest north of that. The
+    // belt edges are shifted by up to 3 degrees of low-frequency noise (a parallel is a long straight
+    // or circular line in the projection), and forest and open land mix near them.
+    const float fx = static_cast<float>(x) / kBeltNoisePixels;
+    const float fy = static_cast<float>(y) / kBeltNoisePixels;
+    lat += kBeltShiftDeg * static_cast<double>(generated_noise(fx, fy, kNoiseSeed, 4));
+    const double patch = static_cast<double>(generated_noise(fx * 6.0f, fy * 6.0f, kNoiseSeed + 7U, 3));
     const double snow_line = 4800.0 - 55.0 * (lat - 28.0);
     if (elev_m > snow_line) {
         return Material::Snow;
@@ -262,12 +346,12 @@ Material land_material(double elev_m, double slope, double lat, bool next_to_sea
         return Material::Beach;
     }
     if (lat < 52.0) {
-        return Material::Steppe;
+        return lat > 50.5 && patch > 0.25 ? Material::Forest : Material::Steppe;  // forest-steppe
     }
     if (lat < 56.5) {
-        return Material::Plains;
+        return patch > 0.1 ? Material::Forest : Material::Plains;  // mixed forest and fields
     }
-    return Material::Forest;
+    return lat < 60.0 && patch < -0.35 ? Material::Plains : Material::Forest;
 }
 
 }  // namespace
@@ -499,39 +583,24 @@ Result<ImportedMap, Error> import_stage1(const Stage1Data& in, const ImportParam
         }
     }
 
-    // Sea bed: synthetic depth growing with the distance (4-neighbour steps) from the nearest non-sea pixel.
-    std::vector<std::uint32_t> dist(n, std::numeric_limits<std::uint32_t>::max());
-    queue.clear();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (!is_sea(i)) {
-            dist[i] = 0;
-            queue.push_back(static_cast<std::uint32_t>(i));
-        }
-    }
-    for (std::size_t head = 0; head < queue.size(); ++head) {
-        const std::size_t i = queue[head];
-        for_neighbours(i, w, n, [&](std::size_t j) {
-            if (dist[j] == std::numeric_limits<std::uint32_t>::max()) {
-                dist[j] = dist[i] + 1;
-                queue.push_back(static_cast<std::uint32_t>(j));
-            }
-        });
-    }
+    // Sea bed: synthetic depth growing with the Euclidean distance from the nearest non-sea pixel
+    // (a 4-neighbour step distance would draw diamonds and streaks on the sea floor).
     std::vector<std::uint32_t>().swap(queue);
+    const std::vector<double> dist2 =
+        squared_distance_to(w, h, [&](std::size_t i) { return !is_sea(i); }, threads);
 
     l.heights.assign(n, 0);
     for (std::size_t i = 0; i < n; ++i) {
         if (is_land(i)) {
             l.heights[i] = clamp_u16(sea + land[i], rep.clamped_px);
         } else if (is_sea(i)) {
-            const std::int64_t depth =
-                std::min<std::int64_t>(static_cast<std::int64_t>(dist[i]) * kSeaDepthPerPixel, sea - 1);
+            const double units = std::sqrt(dist2[i]) * static_cast<double>(kSeaDepthPerPixel);
+            const std::int64_t depth = units >= static_cast<double>(sea - 1) ? sea - 1 : std::llround(units);
             l.heights[i] = static_cast<std::uint16_t>(sea - depth);
         } else {
             l.heights[i] = clamp_u16(sea + surface[l.water_body[i]], rep.clamped_px);
         }
     }
-    std::vector<std::uint32_t>().swap(dist);
     std::vector<std::int32_t>().swap(land);
     std::vector<std::uint8_t>().swap(known);
 
@@ -588,7 +657,7 @@ Result<ImportedMap, Error> import_stage1(const Stage1Data& in, const ImportParam
                         (static_cast<double>(l.heights[i]) - static_cast<double>(sea)) * metres_per_unit;
                     bool next_to_sea = false;
                     for_neighbours(i, w, n, [&](std::size_t j) { next_to_sea = next_to_sea || is_sea(j); });
-                    m = land_material(elev, slope, proj.pixel_lonlat(x, y).lat_deg, next_to_sea);
+                    m = land_material(elev, slope, proj.pixel_lonlat(x, y).lat_deg, next_to_sea, x, y);
                 }
                 l.materials[i] = static_cast<std::uint8_t>(m);
             }

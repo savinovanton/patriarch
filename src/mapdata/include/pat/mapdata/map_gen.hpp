@@ -40,6 +40,10 @@ inline constexpr std::uint16_t kUnassignedProvince = 0xFFFF;
                                                 std::uint64_t seed,
                                                 unsigned threads = 0);
 
+/// The fractal Perlin noise of generate_map (about -1..1), for other offline map tools
+/// (`mapgen import` blurs its climate belts with it).
+[[nodiscard]] float generated_noise(float x, float y, std::uint32_t seed, int octaves);
+
 /// Colour of province `id` in generated maps (golden-ratio hue steps).
 [[nodiscard]] std::uint32_t generated_province_color(std::uint32_t id);
 
