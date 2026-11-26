@@ -9,6 +9,7 @@ add_library(patriarch_content STATIC
     include/pat/content/demography_content.hpp
     include/pat/content/economy_content.hpp
     include/pat/content/event_content.hpp
+    include/pat/content/graph_content.hpp
     include/pat/content/load_errors.hpp
     include/pat/content/m1_content.hpp
     include/pat/content/m1_economy_content.hpp
@@ -26,6 +27,7 @@ add_library(patriarch_content STATIC
     economy_content.cpp
     event_compiler.cpp
     event_content.cpp
+    graph_content.cpp
     load_errors.cpp
     m1_content.cpp
     m1_economy_content.cpp

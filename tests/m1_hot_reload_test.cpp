@@ -112,6 +112,14 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     const std::string holdings_path = "scenarios/m1/holdings.pd";
     const std::string holdings = read_file(source, holdings_path);
     source.add(holdings_path, replace_first(holdings, "province:p0020", "province:p0021"));
+    // The province graph (E16-T04) names p0020 as a node and in its edges: rename it there too.
+    const std::string graph_path = "scenarios/m1/graph.pd";
+    const std::string shipped_graph = read_file(source, graph_path);
+    std::string graph = shipped_graph;
+    while (graph.find("p0020") != std::string::npos) {
+        graph = replace_first(graph, "p0020", "p0021");
+    }
+    source.add(graph_path, graph);
     const auto mismatch = reload.poll();
     REQUIRE_FALSE(mismatch.has_value());
     CHECK(mismatch.error().message.find("map province 'p0020' has no content definition") !=
@@ -128,6 +136,7 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     CHECK(notifications.size() == 2);
 
     source.add(holdings_path, holdings);
+    source.add(graph_path, shipped_graph);
     source.add(provinces_path,
                replace_first(provinces, "kind = province_kind:rural", "kind = province_kind:city"));
     require_publish(reload);

@@ -1,6 +1,8 @@
 find_package(Threads REQUIRED)
 
 add_library(patriarch_mapdata STATIC
+    include/pat/mapdata/graph_export.hpp
+    graph_export.cpp
     include/pat/mapdata/map_data.hpp
     include/pat/mapdata/map_format.hpp
     include/pat/mapdata/map_gen.hpp
