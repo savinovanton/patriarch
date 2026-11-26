@@ -421,15 +421,18 @@ void add_value(Catalog& c,
     c.add(std::move(e));
 }
 
-void add_effect(Catalog& c,
-                std::uint16_t code,
-                std::string name,
-                ScopeMask from,
-                std::string example,
-                std::vector<ArgSpec> args,
-                std::string stub) {
+namespace {
+
+void add_write(Catalog& c,
+               NameSpace space,
+               std::uint16_t code,
+               std::string name,
+               ScopeMask from,
+               std::string example,
+               std::vector<ArgSpec> args,
+               std::string stub) {
     CatalogEntry e;
-    e.space = NameSpace::Effect;
+    e.space = space;
     e.code = code;
     e.name = std::move(name);
     e.from = from;
@@ -437,6 +440,34 @@ void add_effect(Catalog& c,
     e.example = std::move(example);
     e.stub = std::move(stub);
     c.add(std::move(e));
+}
+
+}  // namespace
+
+void add_effect(Catalog& c,
+                std::uint16_t code,
+                std::string name,
+                ScopeMask from,
+                std::string example,
+                std::vector<ArgSpec> args,
+                std::string stub) {
+    add_write(c,
+              NameSpace::Effect,
+              code,
+              std::move(name),
+              from,
+              std::move(example),
+              std::move(args),
+              std::move(stub));
+}
+
+void add_state_op(Catalog& c,
+                  std::uint16_t code,
+                  std::string name,
+                  ScopeMask from,
+                  std::string example,
+                  std::vector<ArgSpec> args) {
+    add_write(c, NameSpace::StateOp, code, std::move(name), from, std::move(example), std::move(args), {});
 }
 
 Catalog Catalog::engine() {

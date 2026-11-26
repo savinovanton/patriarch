@@ -17,6 +17,9 @@ public:
     [[nodiscard]] Cadence cadence() const override { return Cadence::Daily; }
     void run(World& world, TickContext& context) override {
         dispatcher_->run(world, context.applied_commands, &context.budget);
+        for (const Command& command : dispatcher_->commands()) {
+            context.emit(command);  // the effects of `immediate`, applied at the next tick boundary
+        }
     }
     void on_state_restored(const World& world) override { dispatcher_->rebaseline(world); }
 

@@ -152,6 +152,13 @@ void add_effect(Catalog& c,
                 std::string example,
                 std::vector<ArgSpec> args = {},
                 std::string stub = {});
+/// Builder of the operations over the state of the events (E11-T11): flags, timers, chains, ...
+void add_state_op(Catalog& c,
+                  std::uint16_t code,
+                  std::string name,
+                  ScopeMask from,
+                  std::string example,
+                  std::vector<ArgSpec> args = {});
 
 /// Keys of the auto-tooltip templates of a trigger or value entry (docs/dev/event-engine.md section 15.1):
 /// `tooltip.trigger.<name>` (the condition), `.not` (a predicate required to be `no`) and `.fail`

@@ -103,6 +103,24 @@
 | 2023 | `dismiss_regent` | dynasty | `reason`: majority \| dismissed \| regent_died | `tooltip.effect.dismiss_regent` | `dismiss_regent = dismissed` | заглушка до E8: «нет данных» |
 | 2024 | `resolve_succession_dispute` | dynasty | `winner`: область character | `tooltip.effect.resolve_succession_dispute` | `resolve_succession_dispute = { winner = scope:claimant }` | заглушка до E8: «нет данных» |
 
+## Операции состояния (13)
+
+| Код | Имя | Области | Аргументы | Ключи тултипа | Пример | Примечание |
+|---:|---|---|---|---|---|---|
+| 2202 | `trigger_event` | любая | `id`: имя (event); `days`: число (необяз.); `months`: число (необяз.); `years`: число (необяз.); `scope`: область (необяз.); `force`: yes/no (необяз.); `respect_cooldown`: yes/no (необяз.) | `tooltip.effect.trigger_event` | `trigger_event = { id = estate.audit_result  months = 3 }` | — |
+| 2203 | `set_flag` | любая | `name`: имя; `days`: число (необяз.); `months`: число (необяз.); `years`: число (необяз.) | `tooltip.effect.set_flag` | `set_flag = { name = audit_pending  months = 6 }` | — |
+| 2204 | `remove_flag` | любая | `name`: имя | `tooltip.effect.remove_flag` | `remove_flag = audit_pending` | — |
+| 2205 | `set_variable` | любая | `name`: имя; `value`: число | `tooltip.effect.set_variable` | `set_variable = { name = debt_count  value = 0 }` | — |
+| 2206 | `change_variable` | любая | `name`: имя; `add`: число (необяз.); `multiply`: число (необяз.); `min`: число (необяз.); `max`: число (необяз.) | `tooltip.effect.change_variable` | `change_variable = { name = debt_count  add = 1 }` | — |
+| 2207 | `add_modifier` | любая | `name`: имя (event_modifier); `days`: число (необяз.); `months`: число (необяз.); `years`: число (необяз.) | `tooltip.effect.add_modifier` | `add_modifier = { name = estate.ignored_theft  months = 12 }` | — |
+| 2208 | `remove_modifier` | любая | `name`: имя (event_modifier) | `tooltip.effect.remove_modifier` | `remove_modifier = estate.ignored_theft` | — |
+| 2209 | `start_chain` | любая | `name`: имя | `tooltip.effect.start_chain` | `start_chain = theft_story` | — |
+| 2210 | `set_chain_step` | любая | `name`: имя; `step`: число | `tooltip.effect.set_chain_step` | `set_chain_step = { name = theft_story  step = 2 }` | — |
+| 2211 | `end_chain` | любая | `name`: имя | `tooltip.effect.end_chain` | `end_chain = theft_story` | — |
+| 2212 | `set_global_flag` | любая | `name`: имя | `tooltip.effect.set_global_flag` | `set_global_flag = poltava_won` | — |
+| 2213 | `remove_global_flag` | любая | `name`: имя | `tooltip.effect.remove_global_flag` | `remove_global_flag = poltava_won` | — |
+| 2214 | `notify` | character, dynasty, province | `key`: имя; `a`: область (необяз.); `b`: область (необяз.); `urgency`: critical \| important \| info (необяз.) | `tooltip.effect.notify` | `notify = { key = harvest_failed  a = root  urgency = important }` | — |
+
 ## Списки итераторов (6)
 
 Список перебирают `any_<список>`, `all_<список>`, `count_<список>` в условиях и значениях, `every_`, `random_`, `ordered_` в эффектах. **Граница** — лимит fan-out: итератор получает не больше min(граница, 256) элементов в порядке §5.2 (по `id` ↑, дети и братья-сёстры — по дате рождения); длиннее — список усекается, растёт счётчик `truncated`. Перебора всего мира нет (`EV107`).

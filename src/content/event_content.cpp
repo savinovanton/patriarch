@@ -500,6 +500,47 @@ struct EventBuild {
         def.provided_saved = static_cast<std::uint8_t>(saved.slots.size());
     }
 
+    /// `chain_scopes = { governor = character }`: the saved scopes a chain brings (a timer or an immediate
+    /// `trigger_event` of another event keeps them by name, E11-T11); they follow the slots of the on-action
+    /// and count as provided by the start.
+    void read_chain_scopes() {
+        const data::Value* block = rules_field(body, "chain_scopes");
+        if (block == nullptr) {
+            return;
+        }
+        if (block->kind != data::ValueKind::Block) {
+            error(block->pos,
+                  ErrorCode::EventBadArgument,
+                  "chain_scopes is a block of names and kinds: chain_scopes = { governor = character }");
+            return;
+        }
+        for (const data::Entry& e : block->entries) {
+            const ev::ScopeKind kind = e.value.kind == data::ValueKind::Ident
+                                           ? ev::scope_kind_from_name(e.value.text)
+                                           : ev::ScopeKind::None;
+            if (e.key_kind != data::ValueKind::Ident || kind == ev::ScopeKind::None) {
+                error(e.pos,
+                      ErrorCode::EventBadArgument,
+                      "a chain scope is written name = character, dynasty, province or realm");
+                continue;
+            }
+            if (std::ranges::any_of(saved.slots,
+                                    [&](const events::SavedScope& s) { return s.name == e.key; })) {
+                error(
+                    e.pos, ErrorCode::EventBadArgument, std::format("the scope '{}' is named twice", e.key));
+                continue;
+            }
+            if (saved.slots.size() >= ev::limits::kMaxSavedScopes) {
+                error(e.pos,
+                      ErrorCode::EventLimit,
+                      std::format("an event saves at most {} scopes", ev::limits::kMaxSavedScopes));
+                break;
+            }
+            saved.slots.push_back(events::SavedScope{e.key, kind});
+        }
+        def.provided_saved = static_cast<std::uint8_t>(saved.slots.size());
+    }
+
     std::set<ev::PulseKind> pulses;
 
     // ---- timing: mean_time_to_happen, chance, cooldown, window ----
@@ -809,6 +850,7 @@ struct EventBuild {
     ev::EventDef build() {
         read_scalars();
         read_on();
+        read_chain_scopes();
         read_timing();
         compile_programs();
         read_texts();

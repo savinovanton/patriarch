@@ -7,6 +7,7 @@
 #include "pat/sim/events/event_set.hpp"
 #include "pat/sim/events/program.hpp"
 #include "pat/sim/events/state.hpp"
+#include "pat/sim/events/state_effects.hpp"
 #include "pat/sim/events/vm.hpp"
 #include "pat/sim/traits.hpp"
 #include "pat/sim/work_budget.hpp"
@@ -31,8 +32,14 @@
 //      (the monthly slot is `id % 28`, section 12.3); a candidate appears once per tick;
 //   3. the gates, cheapest first: scope, cooldown / once, window, mean_time_to_happen / chance roll, trigger;
 //   4. pools and the cap of pulse events per scope;
-//   5. the launches: history, cooldown, the list Dispatcher::launches().
-// What a launch does next (immediate, the queue of the player, the choice, the effects) is E11-T09..T12.
+//   5. the launches: `immediate` (its state operations are committed at once, its commands wait in
+//      Dispatcher::commands() for the system to emit), history, cooldown, the list Dispatcher::launches();
+//      an immediate `trigger_event` starts its event in the same pass, at most `max_chain_depth` deep
+//      (E11-T11);
+//   6. the clean-up: the rows of the dead, and on the monthly slot of each scope the expired flags,
+//   modifiers,
+//      cooldowns and the rows of extinct houses (sections 9.5, 11.3).
+// What a launch does next (the queue of the player, the choice, the effects of the option) is E11-T12.
 //
 // The index is a pure optimisation: Mode::FullScan walks every event and every action and produces exactly
 // the same candidates in the same order (the proof of "index = full scan", tests/event_dispatch_test.cpp).
@@ -70,6 +77,12 @@ inline constexpr std::uint16_t kLoanOverdue = 23;
 inline constexpr std::uint16_t kQuotaShort = 24;
 inline constexpr std::uint16_t kBuildingCompleted = 25;
 }  // namespace action
+
+/// The house an event on this scope is addressed to: the house of a living person, the house itself, the
+/// owner of a province; none for the realm, a dead person or an unknown row.
+[[nodiscard]] DynastyId recipient_of(const World& world, Scope scope);
+/// Is the house one of the players of the meta record?
+[[nodiscard]] bool is_player(const Meta& meta, DynastyId who) noexcept;
 
 /// A subscription in the index: the event (index in EventSet::events) and the role of the action it runs on.
 struct Subscriber {
@@ -135,8 +148,10 @@ struct Launch {
     std::uint32_t event = 0;
     Scope scope;
     std::array<Scope, limits::kMaxSavedScopes> saved{};
-    std::uint8_t depth = 0;
+    std::uint8_t depth = 0;       // the chain depth (timers and immediate starts add one; saved in timers)
+    std::uint8_t tick_depth = 0;  // immediate starts in this pass (cut above max_chain_depth)
     bool from_timer = false;
+    bool chained = false;  // started by an immediate `trigger_event`
     std::int32_t param = 0;
 
     [[nodiscard]] friend constexpr bool operator==(const Launch&, const Launch&) noexcept = default;
@@ -161,6 +176,8 @@ struct DispatchStats {
     std::uint32_t pool_losers = 0;
     std::uint32_t capped = 0;
     std::uint32_t timers_due = 0;
+    std::uint32_t chained = 0;    // launches of an immediate `trigger_event`
+    std::uint32_t chain_cut = 0;  // immediate starts cut at max_chain_depth
     std::uint32_t launches = 0;
     std::uint64_t wu = 0;
 
@@ -235,6 +252,9 @@ public:
     [[nodiscard]] const std::vector<Candidate>& candidates() const noexcept { return candidates_; }
     [[nodiscard]] const std::vector<Candidate>& survivors() const noexcept { return survivors_; }
     [[nodiscard]] const std::vector<Launch>& launches() const noexcept { return launches_; }
+    /// The commands of the `immediate` blocks of this pass, in launch order: the system emits them (they are
+    /// validated and applied at the next tick boundary, section 7.6).
+    [[nodiscard]] const std::vector<Command>& commands() const noexcept { return commands_; }
     [[nodiscard]] const DispatchStats& stats() const noexcept { return stats_; }
 
 private:
@@ -254,7 +274,22 @@ private:
         }
     };
 
-    void launch_now(World& world, const EventDef& def, const Launch& launch);
+    /// An immediate `trigger_event` waiting for its turn in this pass.
+    struct PendingChain {
+        ChainStart start;
+        std::uint8_t depth = 0;
+        std::uint8_t tick_depth = 0;
+        std::uint8_t saved_count = 0;
+        SavedScopes saved{};
+    };
+
+    /// launch_now() and then the immediate starts it caused, breadth first.
+    void launch_with_chains(World& world, const EventDef& def, const Launch& launch);
+    void launch_now(World& world, const EventDef& def, Launch launch);
+    void start_chain(World& world, const PendingChain& pending);
+    [[nodiscard]] bool
+    trigger_passes(World& world, const EventDef& def, Scope scope, const SavedSlots& saved);
+    void prune(World& world);
 
     std::shared_ptr<const EventSet> set_;
     Catalog catalog_;
@@ -271,6 +306,8 @@ private:
     std::vector<Candidate> candidates_;
     std::vector<Candidate> survivors_;
     std::vector<Launch> launches_;
+    std::vector<Command> commands_;
+    std::vector<PendingChain> chain_queue_;
     DispatchStats stats_;
     bool state_full_ = false;
     Clock clock_ = nullptr;

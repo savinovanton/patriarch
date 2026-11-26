@@ -3,6 +3,7 @@
 #include "pat/core/assert.hpp"
 #include "pat/sim/calendar.hpp"
 #include "pat/sim/economy/tables.hpp"
+#include "pat/sim/events/effects.hpp"
 #include "pat/sim/events/world_host.hpp"
 #include "pat/sim/family/tables.hpp"
 #include "pat/sim/health.hpp"
@@ -214,6 +215,8 @@ void Dispatcher::begin(World& world) {
     candidates_.clear();
     survivors_.clear();
     launches_.clear();
+    commands_.clear();
+    chain_queue_.clear();
     state_full_ = false;
     vm_ns_ = 0;
     if (!baselined_) {
@@ -686,7 +689,9 @@ saved_of(const EventDef& def, const Occurrence* occ, const OnActionEntry* action
     return saved;
 }
 
-[[nodiscard]] DynastyId recipient_of(const World& world, Scope scope) {
+}  // namespace
+
+DynastyId recipient_of(const World& world, Scope scope) {
     switch (scope.kind) {
         case ScopeKind::Character:
             return world.is_alive(CharacterId{scope.id}) ? world.characters().dynasty[scope.id] : DynastyId{};
@@ -699,7 +704,7 @@ saved_of(const EventDef& def, const Occurrence* occ, const OnActionEntry* action
     }
 }
 
-[[nodiscard]] bool is_player(const Meta& meta, DynastyId who) noexcept {
+bool is_player(const Meta& meta, DynastyId who) noexcept {
     for (std::size_t i = 0; i < meta.player_count && i < meta.players.size(); ++i) {
         if (meta.players[i] == who) {
             return true;
@@ -707,8 +712,6 @@ saved_of(const EventDef& def, const Occurrence* occ, const OnActionEntry* action
     }
     return false;
 }
-
-}  // namespace
 
 void Dispatcher::gate(World& world) {
     survivors_.clear();
@@ -827,23 +830,83 @@ void Dispatcher::gate(World& world) {
 
 // ---- stage 0, 4, 5: timers, pools, cap, launches -------------------------------------------------------
 
-void Dispatcher::launch_now(World& world, const EventDef& def, const Launch& launch) {
+void Dispatcher::launch_now(World& world, const EventDef& def, Launch launch) {
     const Date today = world.today();
+    const EventSettings& settings = set_->settings;
     HistoryEntry history;
     history.date = today;
     history.event_key = def.key;
     history.outcome = HistoryOutcome::Fired;
     history.scope = launch.scope;
+    const auto put = [&](Scope scope, EventKey key, Date until) {
+        if (!world.set_event_cooldown(Cooldown{scope, key, until})) {
+            state_full_ = true;
+        }
+    };
+
+    // `immediate` runs at the launch (section 10.1); its state operations are committed now, so the
+    // timers, flags and immediate starts it makes are seen by the rest of the pass (section 7.6)
+    if (def.immediate) {
+        const TriggerEnv env = config_.trigger_env(world);
+        WorldVmHost host(world, catalog_, env);
+        core::Pcg32& rng = world.rng().stream("events.run", def.key);
+        host.set_rng(&rng);
+        RunOptions options;
+        options.kind = Kind::Effect;
+        options.root = launch.scope;
+        options.saved = launch.saved;
+        options.max_instr = settings.max_effect_instr;
+        options.max_commands = settings.max_commands;
+        options.max_state_ops = settings.max_state_ops;
+        const RunResult r = vm_.run(*def.immediate, host, options);
+        ++stats_.vm_runs;
+        stats_.wu += r.wu;
+        if (!r.ok) {
+            // a rolled-back start: recorded, and the event rests on this scope (section 11.2)
+            ++stats_.vm_aborts;
+            history.outcome = HistoryOutcome::Aborted;
+            history.detail = static_cast<std::uint16_t>(r.reason);
+            if (!world.append_event_history(history)) {
+                state_full_ = true;
+            }
+            const std::int64_t rest = std::int64_t{settings.abort_disable_months} * settings.pulse_month_days;
+            if (rest > 0) {
+                put(launch.scope, def.key, today + static_cast<std::int32_t>(std::min(rest, kMaxStateDays)));
+            }
+            return;
+        }
+        launch.saved = r.saved;
+        StateOpContext context;
+        context.world = &world;
+        context.set = set_.get();
+        context.event = &def;
+        context.depth = launch.depth;
+        context.saved = launch.saved;
+        StateOpReport report;
+        apply_state_ops(context, r.state_ops, report);
+        if (report.state_full) {
+            state_full_ = true;
+        }
+        EffectEnv effects;
+        effects.triggers = config_.trigger_env(world);
+        effects.rng = &rng;
+        (void)effects_to_commands(effects, r.commands, commands_);
+        for (const ChainStart& start : report.chained) {
+            PendingChain pending;
+            pending.start = start;
+            pending.depth = static_cast<std::uint8_t>(std::min(launch.depth + 1, 255));
+            pending.tick_depth = static_cast<std::uint8_t>(std::min(launch.tick_depth + 1, 255));
+            pending.saved_count = pack_saved(def, launch.saved, pending.saved);
+            chain_queue_.push_back(pending);
+        }
+    }
+
     if (!world.append_event_history(history)) {
         state_full_ = true;
     }
-    if (!launch.from_timer) {
-        // the pause starts with the launch (section 11.2); `once` is written last so that it wins
-        const auto put = [&](Scope scope, EventKey key, Date until) {
-            if (!world.set_event_cooldown(Cooldown{scope, key, until})) {
-                state_full_ = true;
-            }
-        };
+    if (!launch.from_timer && !launch.chained) {
+        // the pause starts with the launch (section 11.2); `once` is written last so that it wins; a chain
+        // (a timer, an immediate start) is a continuation and leaves the pauses alone (section 11.1)
         if (def.cooldown_days > 0) {
             const Date until = today + def.cooldown_days;
             put(launch.scope, def.key, until);
@@ -861,10 +924,84 @@ void Dispatcher::launch_now(World& world, const EventDef& def, const Launch& lau
     ++stats_.launches;
 }
 
+void Dispatcher::launch_with_chains(World& world, const EventDef& def, const Launch& launch) {
+    launch_now(world, def, launch);
+    // breadth first: the queue grows while it is walked, every start is one level deeper than its parent
+    for (std::size_t i = 0; i < chain_queue_.size(); ++i) {
+        const PendingChain pending = chain_queue_[i];
+        start_chain(world, pending);
+    }
+    chain_queue_.clear();
+}
+
+void Dispatcher::start_chain(World& world, const PendingChain& pending) {
+    const EventSettings& settings = set_->settings;
+    const EventDef* def = set_->find(pending.start.event);
+    if (def == nullptr) {
+        return;  // the compiler resolves the ids; a hot reload may race
+    }
+    HistoryEntry history;
+    history.date = world.today();
+    history.event_key = def->key;
+    history.scope = pending.start.scope;
+    // section 11.1: deeper than max_chain_depth in one pass is a loop; it is cut and recorded
+    if (pending.tick_depth > settings.max_chain_depth) {
+        ++stats_.chain_cut;
+        history.outcome = HistoryOutcome::ChainDepthExceeded;
+        (void)world.append_event_history(history);
+        return;
+    }
+    if (pending.start.scope.kind != def->scope) {
+        history.outcome = HistoryOutcome::Aborted;
+        history.detail = kAbortScopeMismatch;
+        (void)world.append_event_history(history);
+        return;
+    }
+    if (!scope_usable(world, pending.start.scope, def->survives_death)) {
+        ++stats_.scope_rejected;
+        return;
+    }
+    if (pending.start.respect_cooldown && paused(world, *def, pending.start.scope)) {
+        ++stats_.cooldown_rejected;
+        return;
+    }
+    Launch launch;
+    launch.key = def->key;
+    launch.event = static_cast<std::uint32_t>(def - set_->events.data());
+    launch.scope = pending.start.scope;
+    launch.saved = unpack_saved(*def, pending.saved, pending.saved_count);
+    launch.depth = pending.depth;
+    launch.tick_depth = pending.tick_depth;
+    launch.chained = true;
+    if (!pending.start.force && !trigger_passes(world, *def, launch.scope, launch.saved)) {
+        ++stats_.trigger_rejected;
+        return;
+    }
+    ++stats_.chained;
+    launch_now(world, *def, launch);
+}
+
+bool Dispatcher::trigger_passes(World& world, const EventDef& def, Scope scope, const SavedSlots& saved) {
+    if (!def.trigger) {
+        return true;
+    }
+    const TriggerEnv env = config_.trigger_env(world);
+    WorldVmHost host(world, catalog_, env);
+    host.set_rng(&world.rng().stream("events.run", def.key));
+    RunOptions options;
+    options.kind = Kind::Trigger;
+    options.root = scope;
+    options.saved = saved;
+    options.max_instr = set_->settings.max_trigger_instr;
+    const RunResult r = vm_.run(*def.trigger, host, options);
+    ++stats_.vm_runs;
+    stats_.wu += r.wu;
+    return r.truthy();
+}
+
 void Dispatcher::fire_timers(World& world) {
     const Date today = world.today();
     const EventSettings& settings = set_->settings;
-    const TriggerEnv env = config_.trigger_env(world);
     while (!world.event_state().timers.empty() && world.event_state().timers.front().due <= today) {
         const Timer timer = world.event_state().timers.front();
         if (!world.cancel_event_timer(timer.seq)) {
@@ -893,26 +1030,13 @@ void Dispatcher::fire_timers(World& world) {
         launch.scope = timer.scope;
         launch.depth = timer.depth;
         launch.from_timer = true;
-        for (std::size_t i = 0; i < timer.saved_count && i < launch.saved.size(); ++i) {
-            launch.saved[i] = timer.saved[i].scope;
+        // the saved scopes of the chain, by name (section 11.1)
+        launch.saved = unpack_saved(*def, timer.saved, timer.saved_count);
+        if (!trigger_passes(world, *def, timer.scope, launch.saved)) {
+            ++stats_.trigger_rejected;
+            continue;
         }
-        if (def->trigger) {
-            WorldVmHost host(world, catalog_, env);
-            host.set_rng(&world.rng().stream("events.run", def->key));
-            RunOptions options;
-            options.kind = Kind::Trigger;
-            options.root = timer.scope;
-            options.saved = launch.saved;
-            options.max_instr = settings.max_trigger_instr;
-            const RunResult r = vm_.run(*def->trigger, host, options);
-            ++stats_.vm_runs;
-            stats_.wu += r.wu;
-            if (!r.truthy()) {
-                ++stats_.trigger_rejected;
-                continue;
-            }
-        }
-        launch_now(world, *def, launch);
+        launch_with_chains(world, *def, launch);
     }
 }
 
@@ -1037,7 +1161,7 @@ void Dispatcher::fire(World& world) {
         launch.scope = c.scope;
         launch.saved = saved_of(def, occ, occ != nullptr ? actions_[occ->action] : nullptr);
         launch.param = occ != nullptr ? occ->param : 0;
-        launch_now(world, def, launch);
+        launch_with_chains(world, def, launch);
     }
     if (state_full_) {
         HistoryEntry history;
@@ -1056,6 +1180,7 @@ void Dispatcher::finish(World& world) {
             (void)world.clear_event_scope(occ.roots[0], true);
         }
     }
+    prune(world);
     Meta meta = world.event_state().meta;
     bool changed = false;
     if (meta.started == 0) {
@@ -1071,6 +1196,50 @@ void Dispatcher::finish(World& world) {
         (void)world.set_event_meta(meta);
     }
     prev_owner_ = world.provinces().owner;
+}
+
+void Dispatcher::prune(World& world) {
+    // Section 11.3: an expired flag or modifier already reads as absent; the row itself goes away on the
+    // monthly slot of its scope (`id % 28`), as do the ended cooldowns. Section 9.5: the rows of a house that
+    // died out go on the slot of the house.
+    const Date today = world.today();
+    const State& state = world.event_state();
+    const auto due = [&](Scope scope) { return is_monthly_slot(scope.id, today); };
+    std::vector<std::pair<Scope, EventKey>> gone;
+    for (const Flag& row : state.flags) {
+        if (row.expires != kNoDate && row.expires < today && due(row.scope)) {
+            gone.emplace_back(row.scope, row.key);
+        }
+    }
+    for (const auto& [scope, key] : gone) {
+        (void)world.clear_event_flag(scope, key);
+    }
+    gone.clear();
+    for (const Modifier& row : state.modifiers) {
+        if (row.expires != kNoDate && row.expires < today && due(row.scope)) {
+            gone.emplace_back(row.scope, row.key);
+        }
+    }
+    for (const auto& [scope, key] : gone) {
+        (void)world.clear_event_modifier(scope, key);
+    }
+    gone.clear();
+    for (const Cooldown& row : state.cooldowns) {
+        if (row.until != kForever && row.until <= today && due(row.scope)) {
+            gone.emplace_back(row.scope, row.key);
+        }
+    }
+    for (const auto& [scope, key] : gone) {
+        (void)world.clear_event_cooldown(scope, key);
+    }
+    const auto houses = static_cast<std::uint32_t>(world.dynasties().size());
+    for (std::uint32_t d = 0; d < houses; ++d) {
+        const Scope house = dynasty_scope(DynastyId{d});
+        if (is_monthly_slot(d, today) && world.event_rows_of(house) != 0 &&
+            world.dynasty_extinct(DynastyId{d})) {
+            (void)world.clear_event_scope(house, true);
+        }
+    }
 }
 
 }  // namespace pat::sim::events

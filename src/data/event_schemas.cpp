@@ -106,6 +106,9 @@ ObjectSchema event_schema() {
         .describe("Экземпляр не отменяется со смертью области-корня; по умолчанию `no`.")
         .optional("group_key", Type::identifier())
         .describe("Группировка однотипных уведомлений.")
+        .optional("chain_scopes", Type::rules())
+        .describe("Сохранённые области, которые приносит цепочка (`trigger_event` другого события): "
+                  "`{ governor = character }`; доступны как `scope:имя`.")
         .optional("immediate", Type::rules())
         .describe("Эффекты при срабатывании до показа (сохранение областей, флаги).")
         .optional("after", Type::rules())

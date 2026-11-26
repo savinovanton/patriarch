@@ -1,0 +1,25 @@
+format_version = 1
+
+# Шаблоны автотултипов операций состояния событий (E11-T11). Ключ — tooltip_key() в src/sim/events/catalog.cpp:
+# tooltip.effect.<имя>. Параметры — подписи аргументов записи ({days}, {months}, {name}, ...); числа и сроки
+# подставляет мост тултипов (E11-T13), имена флагов и переменных игроку не показываются (это служебные метки).
+# Полноту проверяет tests/event_state_logic_test.cpp. Тексты [проверить] на тон.
+
+# ---- Цепочки ----
+tooltip.effect.trigger_event = "Последствия скажутся позже"
+tooltip.effect.start_chain = "Начинается новая история"
+tooltip.effect.set_chain_step = "История продолжается"
+tooltip.effect.end_chain = "История завершена"
+
+# ---- Флаги, переменные, модификаторы ----
+tooltip.effect.set_flag = "Это запомнят"
+tooltip.effect.remove_flag = "Об этом забудут"
+tooltip.effect.set_variable = "Счёт ведётся заново"
+tooltip.effect.change_variable = "Счёт меняется"
+tooltip.effect.add_modifier = "Новое обстоятельство: {name}"
+tooltip.effect.remove_modifier = "Обстоятельство снято: {name}"
+tooltip.effect.set_global_flag = "Об этом узнает вся страна"
+tooltip.effect.remove_global_flag = "Об этом забудут по всей стране"
+
+# ---- Журнал ----
+tooltip.effect.notify = "Придёт известие"
