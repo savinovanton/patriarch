@@ -1,7 +1,9 @@
 #pragma once
 
 #include "pat/sim/command_log.hpp"
+#include "pat/sim/economy/rules.hpp"
 #include "pat/sim/events/catalog.hpp"
+#include "pat/sim/events/character_triggers.hpp"
 #include "pat/sim/events/event_set.hpp"
 #include "pat/sim/events/program.hpp"
 #include "pat/sim/events/state.hpp"
@@ -176,6 +178,21 @@ struct DispatchConfig {
     /// empty: the stored columns are used.
     std::shared_ptr<const TraitCatalog> traits;
     std::vector<std::uint16_t> trait_slots;
+    /// Building registry index -> BuildingDef::slot (`has_building`, E11-T08); empty: the index is the slot.
+    std::vector<std::uint8_t> building_slots;
+    /// The economy rules (`unrest_state` needs the thresholds); empty: `unrest_state` has no data.
+    std::shared_ptr<const economy::EconomyRules> economy;
+
+    /// What the evaluators of the catalog read (character_triggers.hpp).
+    [[nodiscard]] TriggerEnv trigger_env(const World& world) const {
+        TriggerEnv env;
+        env.world = &world;
+        env.traits = traits.get();
+        env.trait_slots = trait_slots;
+        env.building_slots = building_slots;
+        env.economy = economy.get();
+        return env;
+    }
 };
 
 class Dispatcher {

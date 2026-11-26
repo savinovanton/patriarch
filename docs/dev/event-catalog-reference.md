@@ -6,7 +6,7 @@
 
 Столбцы: **Код** — стабильный числовой код записи (не меняется и не переиспользуется); **Области** — где запись допустима без перехода; **Аргументы** — подписи аргументов в блоке `имя = { аргумент = … }` (главный аргумент можно писать как `имя = значение`); **Ключи тултипа** — шаблоны на русском в `data/loc/ru/events/` (`.not` — предикат с `= no`, `.fail` — причина недоступности варианта); **Пример** — запись в файле события. Запись с пометкой «заглушка» уже допустима в файлах событий, но система за ней ещё не создана: вычислитель отвечает «нет данных» (значение 0).
 
-## Предикаты (триггеры) (18)
+## Предикаты (триггеры) (27)
 
 | Код | Имя | Области | Аргументы | Ключи тултипа | Пример | Примечание |
 |---:|---|---|---|---|---|---|
@@ -27,9 +27,18 @@
 | 1015 | `is_betrothed` | character | — | `tooltip.trigger.is_betrothed`, `tooltip.trigger.is_betrothed.not`, `tooltip.trigger.is_betrothed.fail` | `is_betrothed = yes` | — |
 | 1016 | `is_disowned` | character | — | `tooltip.trigger.is_disowned`, `tooltip.trigger.is_disowned.not`, `tooltip.trigger.is_disowned.fail` | `is_disowned = no` | — |
 | 1035 | `has_succession_law` | dynasty | `law`: majorat \| minorat \| partition \| family_council \| appointment | `tooltip.trigger.has_succession_law`, `tooltip.trigger.has_succession_law.not`, `tooltip.trigger.has_succession_law.fail` | `has_succession_law = majorat` | — |
+| 1101 | `has_flag` | любая | `flag`: имя | `tooltip.trigger.has_flag`, `tooltip.trigger.has_flag.not`, `tooltip.trigger.has_flag.fail` | `has_flag = hushed_theft` | — |
+| 1102 | `has_global_flag` | любая | `flag`: имя | `tooltip.trigger.has_global_flag`, `tooltip.trigger.has_global_flag.not`, `tooltip.trigger.has_global_flag.fail` | `has_global_flag = poltava_won` | — |
+| 1103 | `has_modifier` | любая | `modifier`: имя (event_modifier) | `tooltip.trigger.has_modifier`, `tooltip.trigger.has_modifier.not`, `tooltip.trigger.has_modifier.fail` | `has_modifier = estate_audit` | — |
+| 1104 | `has_fired` | любая | `name`: имя | `tooltip.trigger.has_fired`, `tooltip.trigger.has_fired.not`, `tooltip.trigger.has_fired.fail` | `has_fired = theft_found` | — |
+| 1108 | `random_chance` | любая | `percent`: число | `tooltip.trigger.random_chance`, `tooltip.trigger.random_chance.not`, `tooltip.trigger.random_chance.fail` | `random_chance = 12.5` | — |
+| 1117 | `has_building` | province | `building`: ссылка `building:` | `tooltip.trigger.has_building`, `tooltip.trigger.has_building.not`, `tooltip.trigger.has_building.fail` | `has_building = mill` | — |
+| 1120 | `is_player_controlled` | character, dynasty, province | — | `tooltip.trigger.is_player_controlled`, `tooltip.trigger.is_player_controlled.not`, `tooltip.trigger.is_player_controlled.fail` | `is_player_controlled = no` | — |
+| 1121 | `has_cooldown` | любая | `name`: имя | `tooltip.trigger.has_cooldown`, `tooltip.trigger.has_cooldown.not`, `tooltip.trigger.has_cooldown.fail` | `has_cooldown = theft_found` | — |
+| 1125 | `has_quota` | dynasty | `kind`: any \| money \| recruits (необяз.) | `tooltip.trigger.has_quota`, `tooltip.trigger.has_quota.not`, `tooltip.trigger.has_quota.fail` | `has_quota = recruits` | — |
 | 1200 | `has_office` | character | `type`: ссылка `office:` (необяз.) | `tooltip.trigger.has_office`, `tooltip.trigger.has_office.not`, `tooltip.trigger.has_office.fail` | `has_office = yes` | заглушка до E10: «нет данных» |
 
-## Значения (15)
+## Значения (31)
 
 | Код | Имя | Области | Аргументы | Ключи тултипа | Пример | Примечание |
 |---:|---|---|---|---|---|---|
@@ -48,4 +57,33 @@
 | 1033 | `prestige` | dynasty | — | `tooltip.trigger.prestige`, `tooltip.trigger.prestige.fail` | `prestige >= 50` | — |
 | 1034 | `treasury` | dynasty | — | `tooltip.trigger.treasury`, `tooltip.trigger.treasury.fail` | `treasury >= 500` | — |
 | 1036 | `child_count` | character | — | `tooltip.trigger.child_count`, `tooltip.trigger.child_count.fail` | `child_count >= 3` | — |
+| 1105 | `chain_step` | любая | `chain`: имя | `tooltip.trigger.chain_step`, `tooltip.trigger.chain_step.fail` | `chain_step = { chain = theft_story  value >= 2 }` | — |
+| 1106 | `variable` | любая | `name`: имя | `tooltip.trigger.variable`, `tooltip.trigger.variable.fail` | `variable.debt_count >= 3` | — |
+| 1107 | `global_variable` | любая | `name`: имя | `tooltip.trigger.global_variable`, `tooltip.trigger.global_variable.fail` | `global_variable.levy_year >= 1` | — |
+| 1109 | `current_year` | любая | — | `tooltip.trigger.current_year`, `tooltip.trigger.current_year.fail` | `current_year >= 1709` | — |
+| 1110 | `current_month` | любая | — | `tooltip.trigger.current_month`, `tooltip.trigger.current_month.fail` | `current_month <= 3` | — |
+| 1111 | `date` | любая | — | `tooltip.trigger.date`, `tooltip.trigger.date.fail` | `date >= 1703.05.16` | — |
+| 1112 | `unrest` | province | — | `tooltip.trigger.unrest`, `tooltip.trigger.unrest.fail` | `unrest >= 40` | — |
+| 1113 | `control` | province | — | `tooltip.trigger.control`, `tooltip.trigger.control.fail` | `control < 30` | — |
+| 1114 | `corruption` | province | — | `tooltip.trigger.corruption`, `tooltip.trigger.corruption.fail` | `corruption > 0.25` | — |
+| 1115 | `population` | province | — | `tooltip.trigger.population`, `tooltip.trigger.population.fail` | `population >= 50000` | — |
+| 1116 | `recruit_pool` | province | — | `tooltip.trigger.recruit_pool`, `tooltip.trigger.recruit_pool.fail` | `recruit_pool >= 500` | — |
+| 1118 | `unrest_state` | province | — | `tooltip.trigger.unrest_state`, `tooltip.trigger.unrest_state.fail` | `unrest_state >= 2` | — |
+| 1119 | `development` | province | — | `tooltip.trigger.development`, `tooltip.trigger.development.fail` | `development >= 3` | — |
+| 1122 | `group_size` | province | вид: nobility \| clergy \| townsfolk \| peasants \| cossacks \| natives | `tooltip.trigger.group_size`, `tooltip.trigger.group_size.fail` | `group_size.peasants >= 20000` | — |
+| 1123 | `group_mood` | province | вид: nobility \| clergy \| townsfolk \| peasants \| cossacks \| natives | `tooltip.trigger.group_mood`, `tooltip.trigger.group_mood.fail` | `group_mood.nobility < -20` | — |
+| 1124 | `debt` | dynasty | — | `tooltip.trigger.debt`, `tooltip.trigger.debt.fail` | `debt > 1000` | — |
+
+## Списки итераторов (6)
+
+Список перебирают `any_<список>`, `all_<список>`, `count_<список>` в условиях и значениях, `every_`, `random_`, `ordered_` в эффектах. **Граница** — лимит fan-out: итератор получает не больше min(граница, 256) элементов в порядке §5.2 (по `id` ↑, дети и братья-сёстры — по дате рождения); длиннее — список усекается, растёт счётчик `truncated`. Перебора всего мира нет (`EV107`).
+
+| Код | Имя | Из | Элементы | Граница | Пример |
+|---:|---|---|---|---:|---|
+| 1 | `living_member` | dynasty | character | 256 | `any_living_member = { count >= 2 … }` |
+| 2 | `child` | character | character | 32 | `any_child = { count >= 2 … }` |
+| 3 | `sibling` | character | character | 32 | `any_sibling = { count >= 2 … }` |
+| 4 | `owned_province` | dynasty | province | 128 | `any_owned_province = { count >= 2 … }` |
+| 5 | `realm_dynasty` | realm | dynasty | 128 | `any_realm_dynasty = { count >= 2 … }` |
+| 6 | `claimant` | dynasty | character | 4 | `any_claimant = { count >= 2 … }` |
 

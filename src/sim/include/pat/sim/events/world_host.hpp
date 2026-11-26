@@ -3,6 +3,7 @@
 #include "pat/core/rng.hpp"
 #include "pat/sim/events/catalog.hpp"
 #include "pat/sim/events/character_triggers.hpp"
+#include "pat/sim/events/realm_triggers.hpp"
 #include "pat/sim/events/vm.hpp"
 
 #include <cstdint>
@@ -11,7 +12,8 @@
 
 // The host of the event machine over a World (E11-T05, docs/dev/event-engine.md sections 5 and 7.1): the
 // transitions of section 5.1, the lists of section 5.2, the predicates and values of the character block
-// (E11-T07) and the variables of the event tables. Entries of later blocks (E11-T08, E10, E12) are asked
+// (E11-T07), of the province, realm, time and event-state block (E11-T08) and the variables of the event
+// tables. Entries of later blocks (E10, E12) are asked
 // through the same two functions when they exist; until then a code the host does not know reads as
 // "no data" (false / 0 / an empty scope), exactly like a stub of the catalog.
 //

@@ -335,10 +335,13 @@ TEST_CASE("character triggers: scopes and argument signatures") {
     CHECK(tooltip_fail_key(*c.find(NameSpace::Value, "age")) == "tooltip.trigger.age.fail");
 }
 
-TEST_CASE("character triggers: every entry has Russian tooltip templates with the right parameters") {
+// Every trigger and value of the standard catalog (E11-T07, T08 and the blocks after them): the files of
+// the blocks are listed here.
+TEST_CASE("trigger catalog: every entry has Russian tooltip templates with the right parameters") {
     pat::data::MemorySource source("tooltips");
-    source.add("loc/ru/events/tooltip_character.pd",
-               pat::court_fixture::shipped_text("loc/ru/events/tooltip_character.pd"));
+    for (const char* file : {"loc/ru/events/tooltip_character.pd", "loc/ru/events/tooltip_realm.pd"}) {
+        source.add(file, pat::court_fixture::shipped_text(file));
+    }
     const auto loaded = pat::loc::load_localization(source);
     std::string report;
     for (const auto& error : loaded.errors) {
@@ -376,7 +379,7 @@ TEST_CASE("character triggers: every entry has Russian tooltip templates with th
         }
     };
 
-    const Catalog c = t07_catalog();
+    const Catalog c = Catalog::standard();
     for (const CatalogEntry& e : c.entries()) {
         if (e.space != NameSpace::Predicate && e.space != NameSpace::Value) {
             continue;

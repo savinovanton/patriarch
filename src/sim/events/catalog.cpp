@@ -381,6 +381,46 @@ void add_list(Catalog& c,
 
 }  // namespace
 
+void add_predicate(Catalog& c,
+                   std::uint16_t code,
+                   std::string name,
+                   ScopeMask from,
+                   std::string example,
+                   std::vector<ArgSpec> args,
+                   std::string stub) {
+    CatalogEntry e;
+    e.space = NameSpace::Predicate;
+    e.code = code;
+    e.name = std::move(name);
+    e.from = from;
+    e.result = ValueType::Bool;
+    e.args = std::move(args);
+    e.example = std::move(example);
+    e.stub = std::move(stub);
+    c.add(std::move(e));
+}
+
+void add_value(Catalog& c,
+               std::uint16_t code,
+               std::string name,
+               ScopeMask from,
+               std::string example,
+               std::vector<ArgSpec> args,
+               std::vector<std::string> suffixes,
+               std::string stub) {
+    CatalogEntry e;
+    e.space = NameSpace::Value;
+    e.code = code;
+    e.name = std::move(name);
+    e.from = from;
+    e.result = ValueType::Number;
+    e.args = std::move(args);
+    e.suffixes = std::move(suffixes);
+    e.example = std::move(example);
+    e.stub = std::move(stub);
+    c.add(std::move(e));
+}
+
 Catalog Catalog::engine() {
     Catalog c;
     // Section 5.1: the transitions.
