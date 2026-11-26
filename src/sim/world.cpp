@@ -113,6 +113,22 @@ std::string ext_part_name(std::size_t number) {
             return "event_history_journal";
         case ExtPart::EventMeta:
             return "event_meta";
+        case ExtPart::CourtMeta:
+            return "court_meta";
+        case ExtPart::CourtOffice:
+            return "court_office";
+        case ExtPart::CourtVacancy:
+            return "court_vacancy";
+        case ExtPart::CourtPetition:
+            return "court_petition";
+        case ExtPart::CourtServant:
+            return "court_servant";
+        case ExtPart::CourtFavor:
+            return "court_favor";
+        case ExtPart::CourtPortfolio:
+            return "court_portfolio";
+        case ExtPart::Influence:
+            return "influence";
     }
     return std::format("ext[{}]", number);
 }
@@ -1339,6 +1355,15 @@ WorldHash World::compute_hash() const {
     for (std::size_t part = 0; part < event_parts.size(); ++part) {
         out.ext[static_cast<std::size_t>(ExtPart::EventFlagsVars) + part] = event_parts[part];
     }
+
+    // E10-T03: parts 32..39 of the court (38 is E7-T25's and stays as it is) and part 40 of the influence.
+    const auto court_parts = court_hash_parts();
+    for (std::size_t part = 0; part < court_parts.size(); ++part) {
+        if (court_parts[part] != 0) {
+            out.ext[static_cast<std::size_t>(ExtPart::CourtMeta) + part] = court_parts[part];
+        }
+    }
+    out.ext[static_cast<std::size_t>(ExtPart::Influence)] = influence_hash_part();
 
     core::HashStream total;
     total.u64(out.calendar);

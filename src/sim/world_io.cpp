@@ -65,6 +65,10 @@
 // section 9.1). Empty tables are not written; a file of an older schema has none and migrates to an
 // empty event state. Events are referenced by EventKey only.
 //
+// Schema 14 (E10-T03) adds the court tables as sections 64..71 and the influence as section 10
+// (world_court_io.cpp, court-model.md section 13.1, influence-model.md section 17). Empty tables are not
+// written; a file of an older schema has none and migrates to an empty court and no influence.
+//
 // Derived data (the list of the living, the child lists, the life-event queue, the running hash of the
 // archive) is never stored; it is rebuilt after loading and checked together with all other invariants.
 
@@ -116,6 +120,7 @@ constexpr SectionInfo kSections[] = {
     {kSectionChronicle, 1, 6},
     {kSectionOpinion, 1, 7},
     {kSectionStanding, 1, 8},
+    {detail::kSectionInfluence, 1, 14},
     {detail::kSectionFamilyCounters, 1, 12},
     {detail::kSectionNegotiations, 1, 12},
     {detail::kSectionBetrothals, 1, 12},
@@ -143,6 +148,14 @@ constexpr SectionInfo kSections[] = {
     {detail::kSectionEventQueue, 1, 13},
     {detail::kSectionEventHistory, 1, 13},
     {detail::kSectionEventJournal, 1, 13},
+    {detail::kSectionCourtMeta, 1, 14},
+    {detail::kSectionCourtOffices, 1, 14},
+    {detail::kSectionCourtVacancies, 1, 14},
+    {detail::kSectionCourtPetitions, 1, 14},
+    {detail::kSectionCourtServants, 1, 14},
+    {detail::kSectionCourtFavor, 1, 14},
+    {detail::kSectionCourtPortfolio, 1, 14},
+    {detail::kSectionCourtOrders, 1, 14},
 };
 
 constexpr bool section_ids_fit_the_limit() {
@@ -457,9 +470,11 @@ void World::save_state(core::ByteWriter& out) const {
         }
     }
 
-    family_write_sections(sections);   // ids 16..23, after E7 and before the economy
-    economy_write_sections(sections);  // ids 32..40, after the sections above
-    events_write_sections(sections);   // ids 48..57, after the economy
+    influence_write_section(sections);  // id 10, after the sections of E7
+    family_write_sections(sections);    // ids 16..23, after E7 and before the economy
+    economy_write_sections(sections);   // ids 32..40, after the sections above
+    events_write_sections(sections);    // ids 48..57, after the economy
+    court_write_sections(sections);     // ids 64..71, after the events
     for (std::uint16_t i = 0; i < g_test_sections.count; ++i) {  // test-only, ids above 40
         Section section{static_cast<std::uint16_t>(g_test_sections.first_id + i), 1, {}};
         section.body.u32(section.id);
@@ -895,6 +910,14 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
                 if (const char* problem = world.family_read_section(id, sr)) {
                     return fail(problem);
                 }
+            } else if (id == detail::kSectionInfluence) {
+                if (const char* problem = world.influence_read_section(sr)) {
+                    return fail(problem);
+                }
+            } else if (id >= detail::kSectionCourtMeta && id <= detail::kSectionCourtOrders) {
+                if (const char* problem = world.court_read_section(id, sr)) {
+                    return fail(problem);
+                }
             } else if (id >= detail::kSectionEventsMeta && id <= detail::kSectionEventJournal) {
                 if (const char* problem = world.events_read_section(id, sr)) {
                     return fail(problem);
@@ -964,9 +987,15 @@ core::Result<World, core::Error> World::load_state(core::ByteReader& in) {
         // 12 -> 13 (E11-T03): no event state existed; every table is empty and the meta record is default.
         world.events_ = events::State{};
     }
+    if (schema < 14) {
+        // 13 -> 14 (E10-T03): no court and no influence existed; every table is empty, the counters
+        // start at 1 and there is no servant market yet.
+        world.court_ = court::State{};
+        world.influence_ = InfluenceState{};
+    }
     world.rebuild_derived_indexes();
     world.rebuild_event_indexes();
-    world.rebuild_court_indexes();  // E10-T02: empty until the court tables are saved (E10-T03)
+    world.rebuild_court_indexes();
     const std::vector<std::string> problems = world.check_invariants();
     if (!problems.empty()) {
         return R::err(core::Error{10, "world state violates invariants: " + problems.front()});
