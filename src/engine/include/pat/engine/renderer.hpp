@@ -123,6 +123,10 @@ struct MapStyle {
     /// Direction the wind blows towards, degrees clockwise from north; the snow strokes run along it (on
     /// slopes they turn along the contour lines).
     float wind_azimuth_deg = 60.0f;
+    /// Farmland in strips near the camera (E5-A9), 0 = none .. 1 = full: patches of the three-field rotation
+    /// on the plains, ploughed in strips along a hash of the patch or the contour lines; green and yellow in
+    /// summer, stubble and ploughland in autumn, a faint ochre trace of the furrows under the snow.
+    float farmland = 0.0f;
 };
 
 /// The reference look of the new design (winter terrain concept of board 01): everything on.
@@ -133,6 +137,7 @@ struct MapStyle {
     style.vignette = 0.35f;
     style.borders = true;
     style.painterly = 1.0f;
+    style.farmland = 1.0f;
     return style;
 }
 

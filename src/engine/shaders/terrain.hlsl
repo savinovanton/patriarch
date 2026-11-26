@@ -25,6 +25,7 @@ cbuffer FrameConstants : register(b0) {
     float4 view_info;     // x, y = target size in pixels, z, w = their reciprocals
     float4 season_info;   // x = autumn tint (0..1)
     float4 paint_info;    // x = painterly strength (0..1), y, z = wind direction (unit, x east, y south), w = focus distance
+    float4 farm_info;     // x = farmland strips strength (0..1)
 };
 
 cbuffer MaterialConstants : register(b1) {
@@ -168,6 +169,113 @@ float snow_strokes(float2 p, float height, float footprint, out float2 warp) {
 // (two noise lookups instead of more). Returns a colour multiplier.
 float3 macro_variation(float2 warp) {
     return (1.0 + warp.x * 0.18) * (1.0 + warp.y * float3(0.12, 0.02, -0.12));
+}
+
+// Farmland in strips (E5-A9, docs/dev/map-art-direction.md section 12). Until the farmland mask of the map
+// (A7) exists, fields lie on the plains material. The land is cut into village cells of kVillageCell texels
+// (gently warped); in some of them a clump of fields lies around a point of the cell - blocks of about
+// kFieldCell texels in a grid turned by the village and offset row by row like brickwork, with a ragged
+// outline. Every block is one field of the three-field rotation - winter rye, spring crop, fallow - ploughed
+// in strips of kStripPeriod texels, each household's strip a little different, a dark furrow between them
+// and a grass balk around the block. The strips run by a hash of the block on flat ground and along the
+// contour lines on slopes. Summer: ripening rye yellow, spring crop green, fallow grey-brown; autumn: stubble
+// and the dark ploughland of the winter sowing; winter: snow with only a faint ochre trace of the furrows.
+// Sizes are in texels (the real map has about 1 km per texel, so the fields are stylised, sized for the
+// screen); the strips fade out before they would alias (full from 4 pixels per strip), the fields by
+// kFieldFar texels per pixel.
+static const float kVillageCell = 56.0;
+static const float2 kFieldCell = float2(9.0, 5.0);  // long and short side of a field block
+static const float kStripPeriod = 1.5;
+static const float kFieldFar = 1.0;
+
+// 1 where fields are drawn at full strength (up to 0.5 texels per pixel), fading to 0 by kFieldFar.
+float farmland_near(float footprint) {
+    return saturate((kFieldFar - footprint) * 2.0);
+}
+
+uint material_id(int2 texel, int2 size) {
+    texel = clamp(texel, int2(0, 0), size - 1);
+    return materials.Load(int3(texel, 0)) & 15;
+}
+
+// Summer crops and autumn fields of the three-field rotation (rye, spring crop, fallow).
+static const float3 kFieldSummer[3] = {float3(0.74, 0.67, 0.40), float3(0.38, 0.50, 0.25), float3(0.58, 0.52, 0.38)};
+static const float3 kFieldAutumn[3] = {float3(0.78, 0.69, 0.47), float3(0.70, 0.61, 0.42), float3(0.47, 0.39, 0.29)};
+
+// `color` with the fields painted over it; `amount` = strength x nearness.
+float3 farmland(float3 color, float2 texf, int2 size, float footprint, float amount) {
+    // Plains only, blended over the texel edges like the material colour. Tested first: the same four texels
+    // the material blend has just loaded (cached), so forest, hills and steppe leave at once.
+    const float2 f = texf - 0.5;
+    const int2 b = int2(floor(f));
+    const float2 t = frac(f);
+    const float4 p = float4(material_id(b, size) == 3, material_id(b + int2(1, 0), size) == 3,
+                            material_id(b + int2(0, 1), size) == 3, material_id(b + int2(1, 1), size) == 3);
+    const float mask = smoothstep(0.35, 0.65, lerp(lerp(p.x, p.y, t.x), lerp(p.z, p.w, t.x), t.y));
+    if (mask <= 0.0) {
+        return color;
+    }
+
+    // A slow warp of about 60 texels (two sines each - cheaper than value noise, smooth enough for outlines).
+    const float2 warp = 0.5 * sin(texf.yx * float2(0.071, 0.083) + 2.0 * sin(texf * float2(0.043, 0.037)));
+    const float2 qv = texf / kVillageCell + warp * 0.35;
+    const float2 village = floor(qv);
+    const float hv = hash21(village + 0.37);
+    if (hv >= 0.6) {
+        return color;  // no village lands here: meadow, waste
+    }
+
+    // Field blocks in the frame of the village, around its centre.
+    const float2 centre = village + 0.3 + 0.4 * float2(hash21(village + 5.1), hash21(village + 9.7));
+    const float turn = hash21(village + 2.9) * 3.14159265;
+    const float2 axis = float2(cos(turn), sin(turn));
+    const float2 side = float2(-axis.y, axis.x);
+    // The grid takes only a trace of the warp: straight-edged blocks, a little hand-drawn.
+    const float2 rel = texf + warp * 6.0 - centre * kVillageCell;  // in texels from the centre
+    float2 g = float2(dot(rel, axis), dot(rel, side)) / kFieldCell;  // in blocks
+    const float row_shift = hash21(float2(floor(g.y), hv * 17.0));
+    g.x += row_shift;
+    const float2 block = floor(g);
+    const float hb = hash21(block + hv * 53.0);
+    const float radius = 2.6 + 1.4 * hash21(village + 4.4);  // in short sides: from a hamlet to a large village
+    const float2 offset = float2(block.x + 0.5 - row_shift, block.y + 0.5) * kFieldCell / kFieldCell.y;
+    if (length(offset) > radius + (hb - 0.5) * 0.5) {
+        return color;
+    }
+
+
+    // Direction across the strips (in the block frame): along one side of the block by a hash, turned downhill
+    // on slopes, so the strips follow the contours. The slope is taken once at the block centre, so the strips
+    // of a block stay straight.
+    float2 across = hash21(block + 11.9 + hv) < 0.5 ? float2(1.0, 0.0) : float2(0.0, 1.0);
+    const float2 block_rel = offset * kFieldCell.y;  // texels from the village centre, block frame
+    const float2 block_tex = centre * kVillageCell + axis * block_rel.x + side * block_rel.y;
+    const float2 n_xy = normals.SampleLevel(linear_clamp, block_tex / map_info.xy, 0);
+    const float slope = length(n_xy);
+    if (slope > 1.0e-4) {
+        float2 down = n_xy / slope;
+        down = float2(dot(down, axis), dot(down, side));
+        across = normalize(lerp(dot(across, down) < 0.0 ? -across : across, down, smoothstep(0.03, 0.12, slope)));
+    }
+
+    const float2 local = frac(g);
+    const float phase = dot(local * kFieldCell, across) / kStripPeriod;
+    const float strip = hash21(float2(floor(phase), hb * 91.7));
+    const float detail = saturate(2.0 - 4.0 * footprint / kStripPeriod);  // full from 4 px per strip, none at 2
+    const float furrow = smoothstep(0.34, 0.5, abs(frac(phase) - 0.5)) * detail;
+    const float2 edges = min(local, 1.0 - local) * kFieldCell;
+    const float edge = min(edges.x, edges.y);
+    const float balk = 1.0 - smoothstep(0.10, 0.35, edge);  // texels of grass around the block
+
+    const uint kind = min((uint)(hb * 3.0), 2u);
+    float3 field = lerp(kFieldSummer[kind], kFieldAutumn[kind], season_info.x);
+    field *= (1.0 + (strip - 0.5) * 0.16 * detail) * (1.0 - 0.12 * furrow);
+    field = lerp(field, color, 0.2);  // a touch of the ground colour keeps the fields in the painting
+    const float3 bare = lerp(field, color, balk);
+    // Under snow only the ridges of the furrows show through, in the ochre of the concept (#ae9b83).
+    const float3 snowy =
+        lerp(color, float3(0.68, 0.61, 0.51), (0.06 + 0.32 * furrow * (0.5 + strip)) * (1.0 - balk));
+    return lerp(color, lerp(bare, snowy, style_info.x), mask * amount);
 }
 
 // Soft shadow of the relief: 1 = lit, 0 = in shadow. The ray starts slightly above the surface and its step
@@ -463,6 +571,14 @@ float4 ps_main(VsOut input) : SV_Target {
     // Normal of the relief (also used for the slope).
     const float2 n2 = normals.SampleLevel(linear_clamp, input.uv, 0);
     const float3 n = float3(n2, sqrt(saturate(1.0 - dot(n2, n2))));
+
+    // Farmland strips near the camera (E5-A9); behind the focus they soften away with the rest.
+    if (farm_info.x > 0.0 && footprint < kFieldFar) {
+        const float amount = farm_info.x * farmland_near(footprint) * (1.0 - coc);
+        if (amount > 0.0) {
+            color = farmland(color, texf, size, footprint, amount);
+        }
+    }
 
     // Albedo variation fades out with distance (it would alias), rock on steep slopes, snow on high ground.
     // With the painterly details the strokes below take over most of the value-noise grain.

@@ -524,6 +524,44 @@ TEST_CASE("Map view: painterly details - strokes follow the strength, the season
     CHECK(differing_pixels(winter_paint, render(1.0f, 1.0f, 150.0f)) > 2000);
 }
 
+TEST_CASE("Map view: farmland strips - only up close, by strength and season, faint under snow") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    CHECK(pat::engine::winter_style_1703().farmland > 0.0f);  // the reference look has them
+    const auto render = [&fx](float winter, float autumn, float farmland) {
+        pat::engine::MapFrame f = fx.frame();
+        f.style = pat::engine::seasonal_style(winter, autumn);
+        f.style.farmland = farmland;
+        f.style.grade = 0.0f;  // compare albedo changes without the soft shoulder of the grading
+        return fx.render(f);
+    };
+
+    // From afar (about 1.2 texels per pixel) the fields have faded almost away.
+    fx.camera.set_distance(500.0f);
+    const std::uint64_t far_change = total_difference(render(0.0f, 0.0f, 0.0f), render(0.0f, 0.0f, 1.0f));
+
+    fx.camera.set_distance(40.0f);  // up close: about 0.1 texels per pixel
+    const auto summer_plain = render(0.0f, 0.0f, 0.0f);
+    const auto summer_fields = render(0.0f, 0.0f, 1.0f);
+    CHECK(differing_pixels(summer_fields, render(0.0f, 0.0f, 1.0f)) == 0);  // stable
+    const std::size_t summer_px = differing_pixels(summer_plain, summer_fields);
+    CHECK(summer_px > 2000);
+    CHECK(summer_px < 640U * 360U * 3U / 4U);  // fields on a share of the plains, not everywhere
+
+    // The strength scales the effect.
+    const std::uint64_t full = total_difference(summer_plain, summer_fields);
+    CHECK(total_difference(summer_plain, render(0.0f, 0.0f, 0.5f)) < full);
+    CHECK(far_change * 4 < full);
+
+    // Autumn fields (stubble, ploughland) are another picture than the summer crops.
+    CHECK(differing_pixels(render(0.0f, 1.0f, 1.0f), summer_fields) > 2000);
+
+    // Under the snow only a faint trace of the furrows shows: much less change than in summer.
+    const std::uint64_t winter_change = total_difference(render(1.0f, 0.0f, 0.0f), render(1.0f, 0.0f, 1.0f));
+    CHECK(winter_change > 0);
+    CHECK(winter_change * 3 < full);
+}
+
 TEST_CASE("Map view: painted borders - thin ink lines, soft gold contour and fill of the selected province") {
     MapFixture fx;
     fx.view->set_mode(pat::engine::MapMode::Terrain);

@@ -135,7 +135,7 @@ struct Options {
     pat::engine::MapLighting golden_light;  // the golden hour preset with the explicit --sun/--shadows/--haze applied
     int lighting_mode = 0;                  // 0 = by style (golden with the winter look), 1 = default, 2 = golden hour
     bool sun_set = false, shadows_set = false, haze_set = false;  // explicit flags win over the golden-hour preset
-    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter|auto  --grade X  --vignette X  --borders on|off  --painterly on|off|X  --wind DEG
+    pat::engine::MapStyle style = pat::engine::winter_style_1703();  // --style off|winter|auto  --grade X  --vignette X  --borders on|off  --painterly on|off|X  --wind DEG  --farmland on|off|X
     bool season_follows_date = true;  // palette and grading follow the date (E5-A4); off with --style off
     bool date_set = false;            // --date YYYY-MM-DD / --season NAME: a fixed date instead of the simulation's
     pat::sim::Date date_override;     // (screenshots; also drives the season badge and the sun's day of the year)
@@ -275,6 +275,9 @@ bool parse_options(int argc, char** argv, Options& out) {
         } else if (arg == "--painterly" && i + 1 < argc) {
             const std::string_view value = argv[++i];
             out.style.painterly = value == "off" ? 0.0f : value == "on" ? 1.0f : static_cast<float>(std::atof(argv[i]));
+        } else if (arg == "--farmland" && i + 1 < argc) {
+            const std::string_view value = argv[++i];
+            out.style.farmland = value == "off" ? 0.0f : value == "on" ? 1.0f : static_cast<float>(std::atof(argv[i]));
         } else if (arg == "--wind" && i + 1 < argc) {
             out.style.wind_azimuth_deg = static_cast<float>(std::atof(argv[++i]));
         } else if (arg == "--select" && i + 1 < argc) {
@@ -351,7 +354,7 @@ bool parse_options(int argc, char** argv, Options& out) {
             std::fprintf(stderr,
                          "usage: patriarch_spike [--scenario demo|m1] [--data DIR] [--map FILE | --gen WxH]\n"
                          "                       [--provinces N (demo)] [--dev (m1)] [--frames N] [--hidden]\n"
-                         "                       [--select ID] [--borders on|off] [--painterly on|off|X] [--wind DEG] [--style off|winter|auto] [--lighting default|golden] [--season auto|winter|spring|summer|autumn] [--date YYYY-MM-DD] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
+                         "                       [--select ID] [--borders on|off] [--painterly on|off|X] [--wind DEG] [--farmland on|off|X] [--style off|winter|auto] [--lighting default|golden] [--season auto|winter|spring|summer|autumn] [--date YYYY-MM-DD] [--no-vsync] [--no-ui] [--no-labels] [--offscreen WxH] [--no-sim] [--sim-speed N] [--ui-scale X] [--bench [FRAMES]] [--gallery]\n"
                          "                       [--menu | --menu-first | --menu-overview | --menu-screen NAME] [--event]\n");
             return false;
         }

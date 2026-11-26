@@ -45,6 +45,7 @@ struct FrameCB {
     float season_info[4];  // x = autumn tint
     float paint_info[4];   // x = painterly strength, y, z = wind direction (unit, x east, y south), w = focus
                            // distance
+    float farm_info[4];    // x = farmland strips strength
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -275,6 +276,7 @@ public:
             cb.paint_info[2] = -std::cos(wind);
             cb.paint_info[3] = focus_distance(frame);
         }
+        cb.farm_info[0] = std::clamp(frame.style.farmland, 0.0f, 1.0f);
         {
             const bool known = shared_.target_size != nullptr;
             const float w = known ? static_cast<float>(std::max(shared_.target_size->w, 1)) : 1.0f;
