@@ -286,6 +286,27 @@ std::size_t differing_pixels(const std::vector<std::uint8_t>& a, const std::vect
     return n;
 }
 
+// Mean channel level (0..255) of an RGBA8 frame.
+double mean_level(const std::vector<std::uint8_t>& px) {
+    std::uint64_t sum = 0;
+    for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
+        sum += static_cast<std::uint64_t>(px[i]) + px[i + 1] + px[i + 2];
+    }
+    return static_cast<double>(sum) / static_cast<double>(px.size() / 4 * 3);
+}
+
+// Sum of the absolute channel differences of two RGBA8 frames.
+std::uint64_t total_difference(const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b) {
+    std::uint64_t sum = 0;
+    for (std::size_t i = 0; i + 3 < a.size() && i + 3 < b.size(); i += 4) {
+        for (std::size_t c = 0; c < 3; ++c) {
+            sum +=
+                static_cast<std::uint64_t>(std::abs(static_cast<int>(a[i + c]) - static_cast<int>(b[i + c])));
+        }
+    }
+    return sum;
+}
+
 }  // namespace
 
 TEST_CASE("Map view: draws terrain with water and land, uses a bounded number of nodes") {
@@ -456,13 +477,7 @@ TEST_CASE(
     CHECK(differing_pixels(july, october) > 5000);
 
     // The mean brightness changes smoothly with the date: neighbouring days never jump.
-    const auto mean = [](const std::vector<std::uint8_t>& px) {
-        std::uint64_t sum = 0;
-        for (std::size_t i = 0; i + 3 < px.size(); i += 4) {
-            sum += static_cast<std::uint64_t>(px[i]) + px[i + 1] + px[i + 2];
-        }
-        return static_cast<double>(sum) / static_cast<double>(px.size() / 4 * 3);
-    };
+    const auto mean = mean_level;
     double previous = mean(january);
     for (int day = 20; day <= 28; ++day) {  // the thaw of March-April
         const double now = mean(frame_of(3, day));
@@ -470,6 +485,43 @@ TEST_CASE(
         previous = now;
     }
     CHECK(std::abs(mean(frame_of(3, 14)) - mean(frame_of(3, 15))) < 0.01);  // the thaw starts without a jump
+}
+
+TEST_CASE("Map view: painterly details - strokes follow the strength, the season and the wind") {
+    MapFixture fx;
+    fx.view->set_mode(pat::engine::MapMode::Terrain);
+    CHECK(pat::engine::winter_style_1703().painterly > 0.0f);  // the reference look has them
+    const auto render = [&fx](float winter, float painterly, float wind_deg = 60.0f, float grade = 1.0f) {
+        pat::engine::MapFrame f = fx.frame();
+        f.style = pat::engine::seasonal_style(winter, 0.0f);
+        f.style.painterly = painterly;
+        f.style.wind_azimuth_deg = wind_deg;
+        f.style.grade = grade;
+        return fx.render(f);
+    };
+    const auto winter_plain = render(1.0f, 0.0f);
+    const auto winter_paint = render(1.0f, 1.0f);
+    CHECK(differing_pixels(winter_paint, render(1.0f, 1.0f)) == 0);  // stable
+    CHECK(differing_pixels(winter_plain, winter_paint) > 5000);
+
+    // A modulation of the picture, not a repaint: the mean brightness stays where it was.
+    CHECK(std::abs(mean_level(winter_plain) - mean_level(winter_paint)) < 4.0);
+
+    // The strength scales the effect: half strength changes the picture less than the full one.
+    const std::uint64_t full = total_difference(winter_plain, winter_paint);
+    CHECK(total_difference(winter_plain, render(1.0f, 0.5f)) < full);
+
+    // The snow carries the strokes: in summer (bare ground, a light brush) the details change the albedo
+    // less. Compared without the grading, whose soft shoulder squeezes the bright snow more than the summer
+    // greens.
+    const std::uint64_t winter_change =
+        total_difference(render(1.0f, 0.0f, 60.0f, 0.0f), render(1.0f, 1.0f, 60.0f, 0.0f));
+    const std::uint64_t summer_change =
+        total_difference(render(0.0f, 0.0f, 60.0f, 0.0f), render(0.0f, 1.0f, 60.0f, 0.0f));
+    CHECK(summer_change < winter_change);
+
+    // The strokes run along the wind: another wind gives another pattern.
+    CHECK(differing_pixels(winter_paint, render(1.0f, 1.0f, 150.0f)) > 2000);
 }
 
 TEST_CASE("Map view: painted borders - thin ink lines, soft gold contour and fill of the selected province") {

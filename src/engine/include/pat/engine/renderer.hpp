@@ -116,6 +116,13 @@ struct MapStyle {
     float vignette = 0.0f;  ///< Darkening of the screen edges (0 = none).
     bool borders =
         false;  ///< Painted borders: smooth thin ink lines, gold contour and fill of the selected province.
+    /// Painterly details (E5-A6), 0 = none .. 1 = full: long wind-swept strokes and swirls on snow (a lighter
+    /// brush texture on bare ground), broad colour variations, small details smoothed away in the distance
+    /// and a depth-of-field-like softening behind the point the camera looks at.
+    float painterly = 0.0f;
+    /// Direction the wind blows towards, degrees clockwise from north; the snow strokes run along it (on
+    /// slopes they turn along the contour lines).
+    float wind_azimuth_deg = 60.0f;
 };
 
 /// The reference look of the new design (winter terrain concept of board 01): everything on.
@@ -125,6 +132,7 @@ struct MapStyle {
     style.grade = 1.0f;
     style.vignette = 0.35f;
     style.borders = true;
+    style.painterly = 1.0f;
     return style;
 }
 
