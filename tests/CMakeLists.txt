@@ -5,6 +5,7 @@ add_executable(patriarch_tests
     ai_content_test.cpp
     army_content_test.cpp
     archive_test.cpp
+    army_graph_test.cpp
     arena_test.cpp
     assert_test.cpp
     calendar_test.cpp

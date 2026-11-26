@@ -15,6 +15,7 @@
 #include "pat/data/crisis_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
 #include "pat/data/event_schemas.hpp"
+#include "pat/data/graph_schemas.hpp"
 #include "pat/data/m1_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 #include "pat/mapdata/map_validate.hpp"
@@ -214,6 +215,10 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     }
     // Army rules and setup are opt-in until E16-T20.
     for (const std::string_view kind : data::kArmyKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    // The province graph has its own hash, ProvinceGraph::hash(), until E16-T20 (army-model.md section 5).
+    for (const std::string_view kind : data::kGraphKinds) {
         excluded_kinds.push_back(kind);
     }
     // Events have their own hash, pat::sim::events::EventSet::hash() (ADR-0008 D8).

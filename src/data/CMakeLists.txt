@@ -13,6 +13,7 @@ add_library(patriarch_data STATIC
     include/pat/data/demography_schemas.hpp
     include/pat/data/economy_schemas.hpp
     include/pat/data/event_schemas.hpp
+    include/pat/data/graph_schemas.hpp
     include/pat/data/example_schemas.hpp
     include/pat/data/m1_schemas.hpp
     include/pat/data/marriage_schemas.hpp
@@ -31,6 +32,7 @@ add_library(patriarch_data STATIC
     demography_schemas.cpp
     economy_schemas.cpp
     event_schemas.cpp
+    graph_schemas.cpp
     example_schemas.cpp
     m1_schemas.cpp
     marriage_schemas.cpp

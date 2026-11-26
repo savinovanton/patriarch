@@ -1,0 +1,71 @@
+format_version = 1
+
+# Province graph for the simulation (E16-T04, docs/dev/army-model.md section 5).
+# Generated from the map; edit by hand only `road` of an edge (road = tract). Regenerate:
+#   mapgen (--out MAP.pmd ... | --info MAP.pmd) --export-graph graph.pd --metres-per-px 5000 --graph-id m1
+# A test compares nodes, edges and lengths with the map; roads are not compared.
+
+province_graph "m1" {
+    node "p0001" { x_km = 445 y_km = 135 }
+    node "p0002" { x_km = 600 y_km = 140 }
+    node "p0003" { x_km = 230 y_km = 230 }
+    node "p0004" { x_km = 345 y_km = 225 }
+    node "p0005" { x_km = 505 y_km = 220 }
+    node "p0006" { x_km = 715 y_km = 210 }
+    node "p0007" { x_km = 870 y_km = 180 }
+    node "p0008" { x_km = 995 y_km = 240 }
+    node "p0009" { x_km = 185 y_km = 345 }
+    node "p0010" { x_km = 390 y_km = 365 }
+    node "p0011" { x_km = 605 y_km = 340 }
+    node "p0012" { x_km = 825 y_km = 340 }
+    node "p0013" { x_km = 1025 y_km = 360 }
+    node "p0014" { x_km = 1130 y_km = 315 }
+    node "p0015" { x_km = 295 y_km = 455 }
+    node "p0016" { x_km = 480 y_km = 465 }
+    node "p0017" { x_km = 600 y_km = 495 }
+    node "p0018" { x_km = 750 y_km = 465 }
+    node "p0019" { x_km = 915 y_km = 460 }
+    node "p0020" { x_km = 1060 y_km = 465 }
+    edge { from = province:p0001 to = province:p0002 length_km = 156 }
+    edge { from = province:p0001 to = province:p0004 length_km = 135 }
+    edge { from = province:p0001 to = province:p0005 length_km = 105 }
+    edge { from = province:p0002 to = province:p0005 length_km = 125 }
+    edge { from = province:p0002 to = province:p0006 length_km = 135 }
+    edge { from = province:p0003 to = province:p0004 length_km = 116 }
+    edge { from = province:p0003 to = province:p0009 length_km = 124 }
+    edge { from = province:p0003 to = province:p0010 length_km = 210 }
+    edge { from = province:p0004 to = province:p0005 length_km = 161 }
+    edge { from = province:p0004 to = province:p0010 length_km = 148 }
+    edge { from = province:p0005 to = province:p0006 length_km = 211 }
+    edge { from = province:p0005 to = province:p0010 length_km = 186 }
+    edge { from = province:p0005 to = province:p0011 length_km = 157 }
+    edge { from = province:p0006 to = province:p0007 length_km = 158 }
+    edge { from = province:p0006 to = province:p0011 length_km = 171 }
+    edge { from = province:p0006 to = province:p0012 length_km = 171 }
+    edge { from = province:p0007 to = province:p0008 length_km = 139 }
+    edge { from = province:p0007 to = province:p0012 length_km = 167 }
+    edge { from = province:p0008 to = province:p0012 length_km = 198 }
+    edge { from = province:p0008 to = province:p0013 length_km = 124 }
+    edge { from = province:p0008 to = province:p0014 length_km = 155 }
+    edge { from = province:p0009 to = province:p0010 length_km = 206 }
+    edge { from = province:p0009 to = province:p0015 length_km = 156 }
+    edge { from = province:p0010 to = province:p0011 length_km = 217 }
+    edge { from = province:p0010 to = province:p0015 length_km = 131 }
+    edge { from = province:p0010 to = province:p0016 length_km = 135 }
+    edge { from = province:p0011 to = province:p0012 length_km = 220 }
+    edge { from = province:p0011 to = province:p0016 length_km = 177 }
+    edge { from = province:p0011 to = province:p0017 length_km = 156 }
+    edge { from = province:p0011 to = province:p0018 length_km = 192 }
+    edge { from = province:p0012 to = province:p0013 length_km = 201 }
+    edge { from = province:p0012 to = province:p0018 length_km = 146 }
+    edge { from = province:p0012 to = province:p0019 length_km = 150 }
+    edge { from = province:p0013 to = province:p0014 length_km = 115 }
+    edge { from = province:p0013 to = province:p0019 length_km = 149 }
+    edge { from = province:p0013 to = province:p0020 length_km = 111 }
+    edge { from = province:p0014 to = province:p0020 length_km = 166 }
+    edge { from = province:p0015 to = province:p0016 length_km = 186 }
+    edge { from = province:p0016 to = province:p0017 length_km = 124 }
+    edge { from = province:p0017 to = province:p0018 length_km = 153 }
+    edge { from = province:p0018 to = province:p0019 length_km = 166 }
+    edge { from = province:p0019 to = province:p0020 length_km = 146 }
+}

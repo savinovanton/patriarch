@@ -7,6 +7,7 @@
 #include "pat/content/crisis_content.hpp"
 #include "pat/content/demography_content.hpp"
 #include "pat/content/economy_content.hpp"
+#include "pat/content/graph_content.hpp"
 #include "pat/content/m1_content.hpp"
 #include "pat/content/m1_economy_content.hpp"
 #include "pat/content/marriage_content.hpp"
@@ -327,6 +328,8 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 for (const data::LoadError& error : credits.error())
                     findings.push_back(from_load_error(error));
             }
+            for (const data::LoadError& error : content::validate_province_graphs(loaded.registry))
+                findings.push_back(from_load_error(error));
             const auto m1_errors = content::validate_m1_definitions(loaded.registry);
             for (const data::LoadError& error : m1_errors)
                 findings.push_back(from_load_error(error));

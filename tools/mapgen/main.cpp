@@ -5,10 +5,17 @@
 //   mapgen --info map.pmd [--preview map.png]      (PMD1, or one file of a PMD2 set)
 //   mapgen --migrate in.pmd outdir                 (PMD1 -> outdir/physical.pmd + provinces.pmd)
 //
+// With --out or --info, `--export-graph graph.pd --metres-per-px N [--graph-id m1]` also writes the
+// province graph for the simulation (E16-T04, docs/dev/army-model.md section 5). The M1 graph:
+//   mapgen --out m1.pmd --width 256 --height 128 --seed 7 --provinces 20 --threads 1
+//          --export-graph data/scenarios/m1/graph.pd --metres-per-px 5000
+//
 // Exit codes: 0 ok, 1 generation/IO failure, 2 usage error, 3 validation failure.
 
+#include "pat/core/file_io.hpp"
 #include "pat/core/log.hpp"
 #include "pat/core/png_writer.hpp"
+#include "pat/mapdata/graph_export.hpp"
 #include "pat/mapdata/map_format.hpp"
 #include "pat/mapdata/map_gen.hpp"
 #include "pat/mapdata/map_migrate.hpp"
@@ -21,6 +28,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <limits>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -37,6 +45,9 @@ struct Options {
     std::string migrate_in;
     std::string migrate_out;
     std::string preview;
+    std::string export_graph;
+    std::string graph_id = "m1";
+    std::uint32_t metres_per_px = 0;
     bool validate = true;
 };
 
@@ -89,6 +100,14 @@ bool parse(int argc, char** argv, Options& o) {
             if (!parse_number(v, o.gen.threads)) {
                 return false;
             }
+        } else if (a == "--export-graph" && (v = next()) != nullptr) {
+            o.export_graph = v;
+        } else if (a == "--graph-id" && (v = next()) != nullptr) {
+            o.graph_id = v;
+        } else if (a == "--metres-per-px" && (v = next()) != nullptr) {
+            if (!parse_number(v, o.metres_per_px) || o.metres_per_px == 0) {
+                return false;
+            }
         } else if (a == "--no-validate") {
             o.validate = false;
         } else {
@@ -101,6 +120,9 @@ bool parse(int argc, char** argv, Options& o) {
     if (static_cast<int>(generating) + static_cast<int>(inspecting) + static_cast<int>(migrating) != 1) {
         return false;  // exactly one mode
     }
+    if (!o.export_graph.empty() && (migrating || o.metres_per_px == 0 || o.graph_id.empty())) {
+        return false;  // the graph needs a map and a scale
+    }
     return o.gen.width >= 64 && o.gen.height >= 32 && o.gen.width <= 16384 && o.gen.height <= 16384 &&
            o.gen.province_count >= 1;
 }
@@ -110,6 +132,7 @@ void usage() {
                  "usage: mapgen --out FILE [--width N --height N --seed N --provinces N --threads N]\n"
                  "              [--preview FILE.png] [--no-validate]\n"
                  "       mapgen --info FILE [--preview FILE.png]\n"
+                 "       (--out / --info) --export-graph GRAPH.pd --metres-per-px N [--graph-id ID]\n"
                  "       mapgen --migrate IN.pmd OUTDIR\n");
 }
 
@@ -293,6 +316,23 @@ int migrate(const Options& opt) {
     return 0;
 }
 
+/// Writes the province graph (E16-T04, docs/dev/army-model.md section 5).
+int export_graph(const Options& opt, const MapData& map) {
+    const GraphExport graph = export_province_graph(map, opt.metres_per_px);
+    const std::string text = format_graph_pd(graph, opt.graph_id, opt.metres_per_px);
+    const auto* bytes = reinterpret_cast<const std::uint8_t*>(text.data());
+    const auto written = pat::core::write_file_atomic(opt.export_graph, std::span(bytes, text.size()));
+    if (!written) {
+        std::fprintf(stderr, "error: cannot write graph %s\n", opt.export_graph.c_str());
+        return 1;
+    }
+    std::printf("graph        : %s (%zu nodes, %zu edges)\n",
+                opt.export_graph.c_str(),
+                graph.nodes.size(),
+                graph.edges.size());
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -348,6 +388,9 @@ int main(int argc, char** argv) {
             return 1;
         }
         std::printf("preview      : %s\n", opt.preview.c_str());
+    }
+    if (!opt.export_graph.empty()) {
+        return export_graph(opt, map);
     }
     return 0;
 }

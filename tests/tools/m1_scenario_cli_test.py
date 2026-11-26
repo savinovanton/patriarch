@@ -66,12 +66,17 @@ with tempfile.TemporaryDirectory(prefix="patriarch-m1-") as directory:
     holdings = changed_data / "scenarios" / "m1" / "holdings.pd"
     original_holdings = holdings.read_text(encoding="utf-8")
     holdings.write_text(original_holdings.replace("province:p0020", "province:p0021"), encoding="utf-8")
+    # The province graph (E16-T04) names p0020 as a node and in its edges.
+    graph = changed_data / "scenarios" / "m1" / "graph.pd"
+    original_graph = graph.read_text(encoding="utf-8")
+    graph.write_text(original_graph.replace("p0020", "p0021"), encoding="utf-8")
     invalid_map = run("--seed", seed, "--days", 0, data_dir=changed_data, exit_code=1)
     assert "map province 'p0020' has no content definition" in invalid_map.stderr, invalid_map.stderr
     assert "province definition 'p0021' has no map province" in invalid_map.stderr, invalid_map.stderr
 
     # Start with a valid change, then require loading the old save to fail on the content hash.
     provinces.write_text(original, encoding="utf-8")
+    graph.write_text(original_graph, encoding="utf-8")
     old_control = "control = 80"
     assert old_control in original_holdings
     holdings.write_text(original_holdings.replace(old_control, "control = 79", 1), encoding="utf-8")
