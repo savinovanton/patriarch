@@ -59,21 +59,6 @@ private:
         return out;
     }
 
-    /// Copies a list of exactly `N` numbers into `out`; reports a wrong length at the key.
-    template <std::size_t N>
-    void read_array(const ContentObject& object, std::string_view name, std::array<std::int32_t, N>& out) {
-        const auto numbers = numbers_of(object.object.body, name);
-        if (numbers.size() != N) {
-            errors_.fail(object,
-                         detail::field_pos(object, name),
-                         std::format("`{}` needs exactly {} numbers, found {}", name, N, numbers.size()));
-            return;
-        }
-        for (std::size_t i = 0; i < N; ++i) {
-            out[i] = static_cast<std::int32_t>(numbers[i]);
-        }
-    }
-
     void load_balance() {
         const ContentObject* object = errors_.single_object(data::kCrisisBalanceKind);
         if (object == nullptr) {
@@ -88,7 +73,7 @@ private:
     }
         PAT_CRISIS_BALANCE_FIELDS(PAT_CRISIS_FIELD_READ)
 #undef PAT_CRISIS_FIELD_READ
-        read_array(*object, "sigmoid", balance.sigmoid);
+        detail::read_i32_array(errors_, *object, body, "sigmoid", balance.sigmoid);
     }
 
     void load_claims() {
@@ -104,8 +89,8 @@ private:
     }
         PAT_CLAIM_RULE_FIELDS(PAT_CLAIM_FIELD_READ)
 #undef PAT_CLAIM_FIELD_READ
-        read_array(*object, "blood", claims.blood);
-        read_array(*object, "legal", claims.legal);
+        detail::read_i32_array(errors_, *object, body, "blood", claims.blood);
+        detail::read_i32_array(errors_, *object, body, "legal", claims.legal);
     }
 
     void load_projects() {

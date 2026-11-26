@@ -9,6 +9,7 @@
 #include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
 #include "pat/data/ai_schemas.hpp"
+#include "pat/data/army_schemas.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
@@ -183,6 +184,10 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
         excluded_kinds.push_back(kind);
     }
     for (const std::string_view kind : data::kCrisisKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    // Army rules and setup are opt-in until E16-T20.
+    for (const std::string_view kind : data::kArmyKinds) {
         excluded_kinds.push_back(kind);
     }
     // Events have their own hash, pat::sim::events::EventSet::hash() (ADR-0008 D8).

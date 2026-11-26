@@ -1,6 +1,8 @@
 add_library(patriarch_data STATIC
     include/pat/data/ai_schemas.hpp
     ai_schemas.cpp
+    include/pat/data/army_schemas.hpp
+    army_schemas.cpp
     include/pat/data/content_loader.hpp
     include/pat/data/content_registry.hpp
     include/pat/data/content_schemas.hpp
