@@ -208,10 +208,10 @@ event "court.embezzling_governor" {
 ### 8.1 Структура файла сценария
 
 ```
-scenario "boyar_plot" {
+scenario "m1" {                    # «Боярский заговор»; ключ = каталог data/scenarios/m1/
     format_version = 1
     start_date = 1703.01.01
-    name = "scen.boyar_plot.name", desc = "scen.boyar_plot.desc"
+    name = "scen.m1.name", desc = "scen.m1.desc"
     difficulty_tags = [ intrigue ]
     stability_init = 58, components_init = { ... }
     emperor = "peter_i", agenda_init = [ northern_war, taxes ]
@@ -223,6 +223,8 @@ scenario "boyar_plot" {
     goal_presets = [ survive, office, score, throne, sandbox ]
 }
 ```
+
+Набросок. Рабочий формат (главный файл и включаемые файлы родов и доменов, компактное описание поколений, проверки) — [game-start-model.md](../dev/game-start-model.md) §4 и [ADR-0016](../adr/0016-game-start.md); ключ сценария M1 — `m1` (не `boyar_plot`: так уже называются каталог данных, сводка сейва и `simcli`).
 
 ### 8.2 Четыре сценария
 

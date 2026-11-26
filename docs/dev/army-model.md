@@ -766,7 +766,7 @@ pay_term    = −400·min(arrears, 3)
 
 ### 11.7 E30 (сценарий и цели)
 
-Сценарий M1 кладёт **до старта** прямым API мира (как экономику E9): `ArmyMeta.enabled`, `capital`, `crown_manpower`, крепости, начальные армии (гвардия, 1–2 полка короны), состояние фронта; `ArmyMeta.enabled = 1` — только в сценариях с армиями (`dynasty.v1` и демо — нет). Цели E30 («пережить») читают `Realm`, не армии; состав родов и стартовых армий — E30-Q1 ([#362](https://github.com/savinovanton/patriarch/issues/362)). Часть хеша E30 (`game`) в реестрах не назначена: [court-model.md](court-model.md) F4 называл для E30 блок 48…55, но 48 занят E12 (`CoupLog`), а 50…57 выданы E16; E30-T03 берёт резерв 57 или первый свободный номер ≥ 64 после подъёма `kExtPartCount` (§14.3).
+Сценарий M1 кладёт **до старта** прямым API мира (как экономику E9): `ArmyMeta.enabled`, `capital`, `crown_manpower`, крепости, начальные армии (гвардия, 1–2 полка короны), состояние фронта; `ArmyMeta.enabled = 1` — только в сценариях с армиями (`dynasty.v1` и демо — нет). Цели E30 («пережить») читают `Realm`, не армии; состав родов и стартовых армий — E30-Q1 ([#362](https://github.com/savinovanton/patriarch/issues/362)). Часть хеша E30 (`game`) в реестрах не назначена: [court-model.md](court-model.md) F4 называл для E30 блок 48…55, но 48 занят E12 (`CoupLog`), а 50…57 выданы E16; E30-T01 выдал E30 часть **64 `Game`** (резерв E16 57 не тронут); `kExtPartCount` 64 → 128 поднимает первая из E30-T03 и E16-T03 ([game-start-model.md](game-start-model.md) §16.2, [save-format.md](save-format.md) §5.1).
 
 ### 11.8 E15, E17, E18, E31, E32
 
