@@ -541,7 +541,7 @@ score = domain_norm(0…1000) · net_goal/1000 · risk_mult/1000 · player_mult/
 
 ### 11.2 `AiReason` — коды причин (u16, стабильны)
 
-Общие 1…99: 1 `Issued`, 2 `NoAp`, 3 `NoCandidate`, 4 `Reserved`, 5 `BudgetDeferred`, 6 `Cooldown`, 7 `Committed`, 8 `RaceRejected`, 9 `EmitRejected` (баг), 10 `GoalChanged`, 11 `HysteresisHold`, 12 `LowUtility`, 13 `CommitDropped`, 14 `FrameExpired`, 15 `TierRaised`, 16 `TierRestored`. Доменные — по блокам: 100…149 брак (`NoMatch`, `PlayerInboxFull`, `PairCooldown`, `TreasuryLow` …), 150…199 двор, 200…249 кризис, 250…299 хозяйство, 300…349 армии, 350…399 события, 400…449 вера (E31), 450…499 дипломатия (E15). Тексты — `ai.reason.<код>`, слова, не подробности (16+).
+Общие 1…99: 1 `Issued`, 2 `NoAp`, 3 `NoCandidate`, 4 `Reserved`, 5 `BudgetDeferred`, 6 `Cooldown`, 7 `Committed`, 8 `RaceRejected`, 9 `EmitRejected` (баг), 10 `GoalChanged`, 11 `HysteresisHold`, 12 `LowUtility`, 13 `CommitDropped`, 14 `FrameExpired`, 15 `TierRaised`, 16 `TierRestored`. Доменные — по блокам: 100…149 брак (`NoMatch`, `PlayerInboxFull`, `PairCooldown`, `TreasuryLow` …), 150…199 двор, 200…249 кризис, 250…299 хозяйство, 300…349 армии, 350…399 события, 400…449 вера (E31), 450…499 дипломатия (E15). Тексты — `ai.reason.code_<код>`, слова, не подробности (16+).
 
 ## 12. Каталог E11 (T16)
 

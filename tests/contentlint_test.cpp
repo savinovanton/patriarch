@@ -495,3 +495,20 @@ TEST_CASE("contentlint: crisis weights that do not add up are PD115 at the first
     CHECK(crisis_finding->column == position.column);
     CHECK(report.exit_code() == 1);
 }
+
+TEST_CASE("contentlint: AI value errors retain the source position") {
+    MemorySource source("AI lint");
+    auto text = pat::court_fixture::shipped_text("balance/ai.pd");
+    pat::court_fixture::replace_once(text, "quota_wu = 12000", "quota_wu = 0");
+    source.add("balance/ai.pd", text);
+    Options options;
+    options.check_unused = false;
+    const auto report = lint_memory(source, options);
+    const auto found = std::ranges::find_if(report.findings, [](const Finding& finding) {
+        return finding.file == "AI lint/balance/ai.pd" && finding.code == "PD115";
+    });
+    REQUIRE(found != report.findings.end());
+    const auto expected = pat::court_fixture::position_after(text, "budget =", "quota_wu");
+    CHECK(found->line == expected.line);
+    CHECK(found->column == expected.column);
+}
