@@ -1,6 +1,7 @@
 #include "d3d11_map_view.hpp"
 
 #include "pat/core/log.hpp"
+#include "pat/engine/camera.hpp"
 #include "pat/engine/sky.hpp"
 #include "pat/mapdata/map_validate.hpp"
 
@@ -42,6 +43,8 @@ struct FrameCB {
     float style_info[4];   // x = winter palette, y = grading strength, z = vignette, w = painted borders
     float view_info[4];    // x, y = target size in pixels, z, w = their reciprocals
     float season_info[4];  // x = autumn tint
+    float paint_info[4];   // x = painterly strength, y, z = wind direction (unit, x east, y south), w = focus
+                           // distance
 };
 static_assert(sizeof(FrameCB) % 16 == 0, "constant buffers are 16-byte aligned");
 
@@ -79,6 +82,21 @@ std::uint32_t hash_id(std::uint32_t id, std::uint32_t salt) {
     h *= 0x297A2D39U;
     h ^= h >> 15U;
     return h;
+}
+
+/// Distance from the eye to the ground (sea level) under the centre of the screen: the point the camera looks
+/// at stays sharp, the painterly depth of field (E5-A6) softens what lies far behind it. Very large when the
+/// centre of the screen is above the horizon (nothing is softened then).
+float focus_distance(const MapFrame& frame) {
+    constexpr float kNoFocus = 1.0e9f;
+    Vec3 origin;
+    Vec3 direction;
+    if (!make_pick_ray(frame.view_proj, 0.5f, 0.5f, 1.0f, 1.0f, origin, direction) ||
+        direction.z > -1.0e-4f) {
+        return kNoFocus;
+    }
+    const Vec3 ground = origin + direction * (-origin.z / direction.z);
+    return std::max(length(ground - frame.eye), 1.0f);
 }
 
 std::uint32_t pack_rgba(float r, float g, float b) {
@@ -249,6 +267,14 @@ public:
         cb.style_info[2] = std::clamp(frame.style.vignette, 0.0f, 1.0f);
         cb.style_info[3] = frame.style.borders ? 1.0f : 0.0f;
         cb.season_info[0] = std::clamp(frame.style.autumn, 0.0f, 1.0f);
+        {
+            constexpr float kDegToRad = 3.14159265f / 180.0f;
+            const float wind = frame.style.wind_azimuth_deg * kDegToRad;
+            cb.paint_info[0] = std::clamp(frame.style.painterly, 0.0f, 1.0f);
+            cb.paint_info[1] = std::sin(wind);
+            cb.paint_info[2] = -std::cos(wind);
+            cb.paint_info[3] = focus_distance(frame);
+        }
         {
             const bool known = shared_.target_size != nullptr;
             const float w = known ? static_cast<float>(std::max(shared_.target_size->w, 1)) : 1.0f;

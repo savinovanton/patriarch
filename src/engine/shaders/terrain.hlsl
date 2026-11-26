@@ -24,6 +24,7 @@ cbuffer FrameConstants : register(b0) {
     float4 style_info;    // x = winter palette (0..1), y = colour grading strength, z = vignette, w = painted borders (0/1)
     float4 view_info;     // x, y = target size in pixels, z, w = their reciprocals
     float4 season_info;   // x = autumn tint (0..1)
+    float4 paint_info;    // x = painterly strength (0..1), y, z = wind direction (unit, x east, y south), w = focus distance
 };
 
 cbuffer MaterialConstants : register(b1) {
@@ -140,6 +141,33 @@ float value_noise(float2 p) {
     float2 f = frac(p);
     f = f * f * (3.0 - 2.0 * f);
     return lerp(lerp(hash21(i), hash21(i + float2(1, 0)), f.x), lerp(hash21(i + float2(0, 1)), hash21(i + float2(1, 1)), f.x), f.y);
+}
+
+// Painterly details (E5-A6, docs/dev/map-art-direction.md section 11). The snow of the concept is drawn in long
+// wind-swept strokes with swirls, not in a value-noise grain. Two octaves of noise stretched along the wind
+// (about 12:1) give the strokes; a slow warp of the coordinates bends them into sweeping curves, and the height
+// of the ground is added to the across-wind coordinate, so on slopes the strokes turn along the contour lines
+// (iso-lines of v run where the height changes against the wind). Every octave fades out before it would
+// alias. Signed, about -0.5..0.5. All sizes are in texels, so the look does not depend on the map. `warp` is
+// the slow field (-0.5..0.5) that bends the strokes, also used for the broad colour variations.
+float snow_strokes(float2 p, float height, float footprint, out float2 warp) {
+    const float2 wind = paint_info.yz;
+    warp = float2(value_noise(p * 0.0045), value_noise(p * 0.0045 + 19.7)) - 0.5;
+    p += warp * 80.0;  // gentle: a stronger warp folds the field into concentric "knots" like wood grain
+    const float u = dot(p, wind);
+    const float v = dot(p, float2(-wind.y, wind.x)) + height * 1.2;
+    const float o1 = value_noise(float2(u * 0.014, v * 0.15));
+    const float o2 = value_noise(float2(u * 0.034, v * 0.38) + 31.4);
+    const float f1 = saturate(2.0 - footprint * 0.28);  // 7-texel strokes are gone by about 7 texels per pixel
+    const float f2 = saturate(1.6 - footprint * 0.50);  // the finer octave by about 3.2
+    return (o1 - 0.5) * 0.72 * f1 + (o2 - 0.5) * 0.28 * f2;
+}
+
+// Broad colour variations of a painted landscape: patches of about a province's size a little lighter or
+// darker, warmer or cooler. Low frequency, so it holds at any zoom; it reuses the slow warp field of the strokes
+// (two noise lookups instead of more). Returns a colour multiplier.
+float3 macro_variation(float2 warp) {
+    return (1.0 + warp.x * 0.18) * (1.0 + warp.y * float3(0.12, 0.02, -0.12));
 }
 
 // Soft shadow of the relief: 1 = lit, 0 = in shadow. The ray starts slightly above the surface and its step
@@ -395,31 +423,72 @@ float4 ps_main(VsOut input) : SV_Target {
         return finish(color, input.world, input.pos.xy);
     }
 
-    // Surface material with bilinear blending so class changes do not show as hard texel edges.
-    const float2 f = texf - 0.5;
-    const int2 base = int2(floor(f));
-    const float2 t = frac(f);
-    const float3 m0 = lerp(material_at(base, size), material_at(base + int2(1, 0), size), t.x);
-    const float3 m1 = lerp(material_at(base + int2(0, 1), size), material_at(base + int2(1, 1), size), t.x);
-    color = lerp(m0, m1, t.y);
-
-    // Normal of the relief (also used for the slope).
-    const float2 n2 = normals.SampleLevel(linear_clamp, input.uv, 0);
-    const float3 n = float3(n2, sqrt(saturate(1.0 - dot(n2, n2))));
     const float2 dtex_dx = ddx(texf);
     const float2 dtex_dy = ddy(texf);
     const float footprint = max(length(dtex_dx), length(dtex_dy));  // texels per pixel
 
+    // Painterly softening (E5-A6): far behind the point the camera looks at (paint_info.w) the picture softens
+    // like a shallow depth of field - nothing in front of 1.15x the focus distance, full at 2.75x - and where a
+    // texel is smaller than a pixel the material is averaged over the pixel's footprint instead of being point
+    // sampled, so small details do not shimmer. Both only widen one rotated-grid set of four taps (the same
+    // number of material loads as the bilinear blend), so no extra pass is needed; behind the focus the relief
+    // shading and the colours are also softened below. (Averaging the normals as well cost +0.3 ms for little.)
+    const float paint = paint_info.x;
+    const float coc =
+        paint > 0.0 ? paint * saturate((distance(eye_zoom.xyz, input.world) / paint_info.w - 1.15) / 1.6) : 0.0;
+    const float spread = paint * 0.5 * saturate(footprint - 1.0) + 1.25 * coc;  // radius of the taps in pixels
+    const float blur = saturate((footprint - 0.75) * 4.0) * saturate(spread * 8.0);
+
+    // Surface material with bilinear blending so class changes do not show as hard texel edges.
+    color = float3(0.0, 0.0, 0.0);
+    if (blur < 1.0) {
+        const float2 f = texf - 0.5;
+        const int2 base = int2(floor(f));
+        const float2 t = frac(f);
+        const float3 m0 = lerp(material_at(base, size), material_at(base + int2(1, 0), size), t.x);
+        const float3 m1 = lerp(material_at(base + int2(0, 1), size), material_at(base + int2(1, 1), size), t.x);
+        color = lerp(m0, m1, t.y);
+    }
+    if (blur > 0.0) {
+        static const float2 kTaps[4] = {float2(0.125, 0.375), float2(0.375, -0.125), float2(-0.125, -0.375),
+                                        float2(-0.375, 0.125)};
+        float3 sum = float3(0.0, 0.0, 0.0);
+        [unroll] for (int i = 0; i < 4; ++i) {
+            const float2 q = texf + (kTaps[i].x * dtex_dx + kTaps[i].y * dtex_dy) * (2.0 * spread);
+            sum += material_at(int2(floor(q)), size);
+        }
+        color = lerp(color, sum * 0.25, blur);
+    }
+
+    // Normal of the relief (also used for the slope).
+    const float2 n2 = normals.SampleLevel(linear_clamp, input.uv, 0);
+    const float3 n = float3(n2, sqrt(saturate(1.0 - dot(n2, n2))));
+
     // Albedo variation fades out with distance (it would alias), rock on steep slopes, snow on high ground.
+    // With the painterly details the strokes below take over most of the value-noise grain.
     const float detail = saturate(1.6 - footprint * 0.45);
     const float noise = value_noise(texf * 0.35) * 0.6 + value_noise(texf * 1.7) * 0.4;
-    color *= 1.0 + (noise - 0.5) * 0.30 * detail;
+    color *= 1.0 + (noise - 0.5) * (paint > 0.0 ? lerp(0.30, 0.12, paint) : 0.30) * detail;
     const float slope = 1.0 - n.z;
     const float rock = smoothstep(0.16, 0.40, slope + (noise - 0.5) * 0.08);
     color = lerp(color, float3(0.44, 0.40, 0.35) * (0.85 + 0.3 * noise), rock * 0.85);
     const float high = (raw - map_info.w) / max(1.0 - map_info.w, 0.001);
     const float snow = smoothstep(0.58, 0.78, high + (noise - 0.5) * 0.10) * (1.0 - rock * 0.75);
     color = lerp(color, lerp(float3(0.92, 0.94, 0.97), float3(0.93, 0.91, 0.86), style_info.x), snow);
+
+    if (paint > 0.0) {
+        // Snow cover - the open snow of the winter palette (a bright material) and snow on high ground - carries
+        // the full strokes: crests a little lighter and warmer, troughs darker and cooler. Bare ground of the other
+        // seasons keeps a lighter brush texture, rock its own. Then the broad colour variations.
+        const float bright = smoothstep(0.45, 0.70, dot(color, float3(0.2126, 0.7152, 0.0722)));
+        const float cover = max(style_info.x * bright, snow);
+        const float height = max(raw - map_info.w, 0.0) * map_info.z;
+        float2 warp;
+        const float s = snow_strokes(texf, height, footprint, warp);
+        const float amp = paint * lerp(0.25, 1.0, cover) * (1.0 - 0.7 * rock);
+        color *= (1.0 + s * 0.32 * amp) * (1.0 + s * cover * amp * float3(0.05, 0.0, -0.07));
+        color *= lerp(float3(1.0, 1.0, 1.0), macro_variation(warp), paint);
+    }
 
     // Political layer: palette colour per province; weaker when close so the landscape shows through.
     const uint prov = provinces.Load(int3(texel, 0));
@@ -432,11 +501,17 @@ float4 ps_main(VsOut input) : SV_Target {
 
     // Lighting: warm sun with relief shadows plus a sky/ground ambient.
     const float diffuse = saturate(dot(n, sun_dir.xyz));
-    const float shadow = diffuse > 0.0 ? sun_shadow(float3(input.world.xy, input.world.z + 0.2)) : 0.0;
+    float shadow = diffuse > 0.0 ? sun_shadow(float3(input.world.xy, input.world.z + 0.2)) : 0.0;
+    if (coc > 0.0) {
+        shadow = lerp(shadow, 1.0, 0.35 * coc);  // behind the focus the relief shading flattens
+    }
     const float3 ground_light = lerp(float3(0.30, 0.28, 0.25), float3(0.38, 0.36, 0.33), style_info.x);  // snow bounce
     const float3 sky_light = lerp(float3(0.40, 0.47, 0.58), float3(0.46, 0.47, 0.50), style_info.x);      // overcast, not blue
     const float3 ambient = lerp(ground_light, sky_light, n.z * 0.5 + 0.5) * 0.9;
     color *= ambient * ambient_mul.rgb + sun_color.rgb * (diffuse * shadow * 0.95);
+    if (coc > 0.0) {
+        color = lerp(dot(color, float3(0.2126, 0.7152, 0.0722)).xxx, color, 1.0 - 0.2 * coc);  // and colours fade
+    }
 
     // Highlights.
     // (With painted borders the selection is drawn by the border layer below, the hover is a plain lift.)
