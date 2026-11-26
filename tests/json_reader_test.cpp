@@ -15,8 +15,8 @@ TEST_CASE("json: values, nesting and member order") {
     const JsonValue& v = r.value();
     REQUIRE(v.is_object());
     REQUIRE(v.members.size() == 4);
-    CHECK(v.members[0].first == "a");
-    CHECK(v.members[3].first == "e");
+    CHECK(v.members[0].key == "a");
+    CHECK(v.members[3].key == "e");
     CHECK(v.find("a")->as_i64() == 1);
     const JsonValue* b = v.find("b");
     REQUIRE(b != nullptr);

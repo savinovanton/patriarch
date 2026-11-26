@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <utility>
 
 namespace pat::core {
 
@@ -98,7 +99,7 @@ private:
                 return false;
             }
             const bool duplicate = std::any_of(
-                out.members.begin(), out.members.end(), [&](const auto& m) { return m.first == key; });
+                out.members.begin(), out.members.end(), [&](const JsonMember& m) { return m.key == key; });
             if (duplicate) {
                 return fail("duplicate member \"" + key + "\"");
             }
@@ -112,7 +113,7 @@ private:
             if (!value(member, depth + 1)) {
                 return false;
             }
-            out.members.emplace_back(std::move(key), std::move(member));
+            out.members.push_back(JsonMember{std::move(key), std::move(member)});
             skip_ws();
             if (pos_ < text_.size() && text_[pos_] == ',') {
                 ++pos_;
@@ -324,9 +325,9 @@ private:
 }  // namespace
 
 const JsonValue* JsonValue::find(std::string_view key) const noexcept {
-    for (const auto& m : members) {
-        if (m.first == key) {
-            return &m.second;
+    for (const JsonMember& m : members) {
+        if (m.key == key) {
+            return &m.value;
         }
     }
     return nullptr;

@@ -6,7 +6,6 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 // Minimal strict JSON reader (RFC 8259) for offline tool inputs such as the stage-1 geodata
@@ -20,6 +19,8 @@ namespace pat::core {
 
 inline constexpr std::size_t kMaxJsonDepth = 64;
 
+struct JsonMember;
+
 struct JsonValue {
     enum class Type : std::uint8_t { null, boolean, number, string, array, object };
 
@@ -27,7 +28,7 @@ struct JsonValue {
     bool boolean = false;
     std::string text;  ///< String value (decoded UTF-8) or the literal text of a number.
     std::vector<JsonValue> items;
-    std::vector<std::pair<std::string, JsonValue>> members;
+    std::vector<JsonMember> members;  ///< Object members in file order.
 
     [[nodiscard]] bool is_null() const noexcept { return type == Type::null; }
     [[nodiscard]] bool is_string() const noexcept { return type == Type::string; }
@@ -38,6 +39,12 @@ struct JsonValue {
     [[nodiscard]] const JsonValue* find(std::string_view key) const noexcept;
     /// An integer number that fits an i64; nullopt for anything else.
     [[nodiscard]] std::optional<std::int64_t> as_i64() const noexcept;
+};
+
+/// One member of a JSON object (a separate struct: std::pair would need JsonValue to be complete).
+struct JsonMember {
+    std::string key;
+    JsonValue value;
 };
 
 /// Parses one JSON document (surrounding whitespace allowed). The error message names the byte
