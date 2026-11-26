@@ -1,0 +1,6 @@
+format_version = 1
+
+# E17-T06 provides the schema and loader. E30-T08 selects the final houses/archetypes with owner review.
+# This optional file is empty intentionally; player_dynasties are excluded by the loader's caller.
+# Example only (not activated):
+# ai_agent "golitsyn" { dynasty = dynasty:golitsyn archetype = ambitious mode = agent force_tier = 1 }

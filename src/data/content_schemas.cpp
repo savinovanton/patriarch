@@ -1,5 +1,6 @@
 #include "pat/data/content_schemas.hpp"
 
+#include "pat/data/ai_schemas.hpp"
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/credits_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
@@ -32,6 +33,8 @@ SchemaSet content_schemas() {
     add_names_schemas(set);
     // UI-213: the credits screen entries (data/credits/).
     add_credits_schemas(set);
+    // E17-T06: opt-in AI data; AiRules owns its compatibility hash (T19).
+    add_ai_schemas(set);
     return set;
 }
 

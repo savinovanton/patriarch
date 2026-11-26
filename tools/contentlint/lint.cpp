@@ -1,5 +1,6 @@
 #include "lint.hpp"
 
+#include "pat/content/ai_content.hpp"
 #include "pat/content/court_content.hpp"
 #include "pat/content/credits_content.hpp"
 #include "pat/content/crisis_content.hpp"
@@ -281,6 +282,17 @@ Report lint(std::span<const data::ContentSource* const> roots,
                 for (const data::LoadError& error : court.error())
                     findings.push_back(from_load_error(error));
             }
+            // AI definitions are optional in older/mod fixture roots; validate them when present.
+            if (const auto* table = loaded.registry.table("ai_rules"); table != nullptr && !table->empty()) {
+                const auto ai = content::build_ai_rules(loaded.registry);
+                if (!ai)
+                    for (const auto& error : ai.error())
+                        findings.push_back(from_load_error(error));
+            }
+            const auto agents = content::build_ai_agents(loaded.registry);
+            if (!agents)
+                for (const auto& error : agents.error())
+                    findings.push_back(from_load_error(error));
             const content::CrisisRulesResult crisis = content::build_crisis_rules(loaded.registry);
             if (!crisis) {
                 for (const data::LoadError& error : crisis.error())

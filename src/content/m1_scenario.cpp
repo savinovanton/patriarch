@@ -8,6 +8,7 @@
 #include "pat/content/province_bindings.hpp"
 #include "pat/content/traits_content.hpp"
 #include "pat/core/hash_stream.hpp"
+#include "pat/data/ai_schemas.hpp"
 #include "pat/data/content_schemas.hpp"
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
@@ -186,6 +187,10 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     }
     // Events have their own hash, pat::sim::events::EventSet::hash() (ADR-0008 D8).
     for (const std::string_view kind : data::kEventKinds) {
+        excluded_kinds.push_back(kind);
+    }
+    // AI is installed only in E17-T19, with a separate AiRules::hash().
+    for (const std::string_view kind : data::kAiKinds) {
         excluded_kinds.push_back(kind);
     }
     const std::uint64_t content_hash = definitions.registry.content_hash_excluding(excluded_kinds);

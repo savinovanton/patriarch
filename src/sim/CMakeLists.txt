@@ -1,4 +1,8 @@
 add_library(patriarch_sim STATIC
+    include/pat/sim/ai/rules.hpp
+    ai/rules.cpp
+    include/pat/sim/ai/text.hpp
+    ai/text.cpp
     include/pat/sim/calendar.hpp
     include/pat/sim/command.hpp
     include/pat/sim/command_log.hpp

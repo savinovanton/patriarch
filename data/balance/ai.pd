@@ -1,0 +1,240 @@
+format_version = 1
+
+# Баланс [предл.], docs/dev/ai-model.md §§6,8,13. Файл равен AiRules::defaults().
+# Не включает системы ИИ и не меняет совместимость сценария до E17-T19.
+ai_rules "main" {
+    budget = {
+        quota_wu = 12000
+        carry_pm = 500
+        pass_wu = 50
+        goal_wu = 20
+        filter_rows = 8
+        filter_wu = 1
+        object_wu = 2
+        marriage_wu = 30
+        office_wu = 20
+        plot_wu = 20
+        construction_wu = 15
+        tax_wu = 10
+        loan_wu = 10
+        battle_wu = 25
+        emit_wu = 10
+        log_wu = 2
+    }
+    schedule = {
+        tier1_days = 7
+        tier2_days = 30
+        tier3_days = 90
+        tier1_threshold = 40
+        tier2_threshold = 15
+        tier1_top = 10
+        tier2_top = 30
+        promotion_days = 90
+        frame_max_age_days = 7
+        claim_weight = 40
+        plotter_weight = 30
+        player_link_weight = 20
+        honor_rank_weight = 5
+        head_died_weight = 25
+        player_link_days = 365
+        head_died_days = 30
+    }
+    attention = {
+        base = 6
+        court_divisor = 4
+        skill_divisor = 8
+        min_refill = 6
+        max_refill = 20
+        cap_mult = 2
+        pass_min = 3
+        pass_divisor = 2
+    }
+    goals = {
+        office_base = 800
+        office_per_holding = 250
+        office_opportunity_mult = 10
+        heir_absent = 1000
+        heir_child = 600
+        heir_adult = 200
+        heir_adult_age = 16
+        marriage_per_adult = 250
+        match_norm = 100
+        reserve_months = 6
+        payback_norm_months = 12000
+        favor_target = 70
+        favor_mult = 10
+        favor_gift = 1000
+        favor_service = 500
+        suspicion_mult = 15
+        disgraced_need = 300
+        denounced_need = 500
+        denounced_days = 90
+        protection_available = 1000
+        protection_fallback = 300
+        plotter_need = 900
+        opportunist_need = 300
+        loyalist_need = 0
+        own_claim_need = 200
+        plot_phase0 = 200
+        plot_phase1 = 600
+        plot_phase2 = 1000
+        claim_strength_min = 35
+        unrest_mult = 10
+        rebels_need = 500
+        army_opportunity = 1000
+        tax_opportunity = 300
+        attack_probability_min_pm = 650
+        min_utility = 50
+        ap_price = 10
+        money_price_kop = 1000
+    }
+    hysteresis = {
+        hold_pm = 1150
+        min_hold_days = 14
+    }
+    commitment = {
+        floor_pm = 500
+        max_days = 365
+    }
+    cooldowns = {
+        marriage_refused_days = 180
+        plot_refused_days = 120
+        race_days = 7
+    }
+    archetype_change = {
+        lead_pm = 200
+        same_faith_bonus = 100
+        steward_unrest_min = 40
+    }
+    command_costs = {
+        send_marriage_envoy = 3
+        betroth = 2
+        set_heir = 2
+        set_education = 1
+        petition_for_office = 3
+        gift_to_emperor = 2
+        hire_servant = 1
+        fire_servant = 1
+        assign_office = 1
+        start_plot = 5
+        join_plot = 3
+        contribute_to_plot = 2
+        leave_plot = 1
+        denounce = 3
+        press_claim = 3
+        support_claim = 3
+        set_tax_policy = 2
+        set_recruit_policy = 2
+        start_construction = 3
+        take_loan = 2
+        repay_loan = 1
+        assign_province_administrator = 1
+        order_move = 1
+        order_siege = 1
+        assign_to_front = 2
+        raise_army = 3
+        set_faith_stance = 6
+        donate_to_church = 2
+        respond_marriage = 0
+        choose_event_option = 0
+    }
+    archetypes = {
+        ambitious = {
+            weights = { gain_office = 1400 secure_line = 1000 grow_wealth = 900 gain_favor = 1100 protect_self = 800 prepare_plot = 1200 keep_order = 800 }
+            risk_pm = 1200
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = 0
+        }
+        loyalist = {
+            weights = { gain_office = 1000 secure_line = 1000 grow_wealth = 800 gain_favor = 1300 protect_self = 900 prepare_plot = 200 keep_order = 1100 }
+            risk_pm = 1000
+            forgiveness_pm = 1000
+            gift_share_pm = 70
+            denounce_bias_pm = 1500
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = 0
+        }
+        steward = {
+            weights = { gain_office = 700 secure_line = 1000 grow_wealth = 1400 gain_favor = 800 protect_self = 1200 prepare_plot = 400 keep_order = 1100 }
+            risk_pm = 700
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = -1
+        }
+        schemer = {
+            weights = { gain_office = 1000 secure_line = 900 grow_wealth = 800 gain_favor = 900 protect_self = 1100 prepare_plot = 1500 keep_order = 600 }
+            risk_pm = 1300
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = 0
+        }
+        acquisitive = {
+            weights = { gain_office = 1100 secure_line = 900 grow_wealth = 1500 gain_favor = 900 protect_self = 1000 prepare_plot = 800 keep_order = 900 }
+            risk_pm = 1000
+            forgiveness_pm = 1000
+            gift_share_pm = 30
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = 1
+        }
+        pious = {
+            weights = { gain_office = 700 secure_line = 1300 grow_wealth = 700 gain_favor = 1000 protect_self = 1100 prepare_plot = 400 keep_order = 900 }
+            risk_pm = 1000
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1500
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1000
+            tax_bias = 0
+        }
+        warrior = {
+            weights = { gain_office = 1100 secure_line = 1000 grow_wealth = 700 gain_favor = 1000 protect_self = 700 prepare_plot = 900 keep_order = 1500 }
+            risk_pm = 1100
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1000
+            front_eagerness_pm = 1500
+            tax_bias = 0
+        }
+        reformer = {
+            weights = { gain_office = 1300 secure_line = 900 grow_wealth = 1000 gain_favor = 1300 protect_self = 900 prepare_plot = 500 keep_order = 1000 }
+            risk_pm = 1000
+            forgiveness_pm = 1000
+            gift_share_pm = 50
+            denounce_bias_pm = 1000
+            faith_bias_pm = 1000
+            reform_bias_pm = 1300
+            front_eagerness_pm = 1000
+            tax_bias = 0
+        }
+    }
+    difficulty = {
+        friendly = { ap_mult_pm = 800 noise_pm = 150 aggression_pm = 700 player_bias_pm = 800 forgiveness_pm = 700 coalition_pm = 700 }
+        realistic = { ap_mult_pm = 1000 noise_pm = 100 aggression_pm = 1000 player_bias_pm = 1000 forgiveness_pm = 1000 coalition_pm = 1000 }
+        ruthless = { ap_mult_pm = 1200 noise_pm = 50 aggression_pm = 1300 player_bias_pm = 1200 forgiveness_pm = 1400 coalition_pm = 1300 }
+    }
+    wealth_bands = [ 0 10000 100000 1000000 ]
+    # Domain effect catalogs and signatures are installed in E17-T16 (currently none).
+    event_goal_signatures = []
+    archetype_follows_head = yes
+}
