@@ -113,6 +113,11 @@ void apply_province_mood(World& world, ProvinceId province, const ProvinceMood& 
 /// province. Returns what it computed (all zero for a world without economy or an unknown province).
 ProvinceMood step_province_mood(World& world, const EconomyRules& rules, ProvinceId province);
 
+/// A one-off shift of the mood of one group (the event command AdjustGroupMood, E11-T10), clamped to
+/// -100..100; the next month moves the mood toward its target of F8 as usual. Returns the new mood (0,
+/// nothing changed, without economy, for an unknown province or group).
+core::Fixed32 shift_group_mood(World& world, ProvinceId province, Group group, core::Fixed32 delta);
+
 // ---- explanations (the same code path as the simulation) ------------------------------------------
 
 /// The breakdown of the target mood of a group of a province, by the same code as the month.

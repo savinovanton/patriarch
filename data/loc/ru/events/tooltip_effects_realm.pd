@@ -1,0 +1,22 @@
+format_version = 1
+
+# Шаблоны автотултипов каталога эффектов: провинция, деньги, хозяйство провинции (E11-T10). Ключ — tooltip_key() в
+# src/sim/events/catalog.cpp: tooltip.effect.<имя>. Параметры — подписи аргументов записи ({value}, {owner}, ...);
+# числа подставляет мост тултипов (E11-T13) уже со знаком и единицей («+10», «120 ₽»), имена — с падежом (E11-T14).
+# Конструкции потока (if, random_list, every_ …) своих шаблонов не имеют: их строит мост из структуры Preview.
+# Тесты проверяют полноту и строки (tests/event_effects_realm_test.cpp). Тексты [проверить] на тон.
+
+# ---- Провинция ----
+tooltip.effect.set_province_owner = "Провинция переходит к роду {owner}"
+tooltip.effect.assign_administrator = "Управитель провинции: {administrator}"
+tooltip.effect.change_unrest = "Беспорядки {value}"
+tooltip.effect.change_control = "Контроль {value}"
+tooltip.effect.change_group_mood = "Настроение ({group}) {delta}"
+
+# ---- Деньги ----
+tooltip.effect.pay = "Казна рода: −{value}"
+tooltip.effect.receive = "Казна рода: +{value}"
+
+# ---- Хозяйство провинции (команды E9) ----
+tooltip.effect.start_construction = "Начинается постройка: {building}"
+tooltip.effect.conscript = "Набор рекрутов: {count}"

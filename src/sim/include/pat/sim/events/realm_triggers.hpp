@@ -70,4 +70,9 @@ eval_realm_predicate(const TriggerEnv& env, Scope scope, std::uint16_t code, std
 [[nodiscard]] std::optional<TriggerResult>
 eval_realm_value(const TriggerEnv& env, Scope scope, std::uint16_t code, std::span<const Word> args);
 
+/// The building type (BuildingDef::slot, what ProvinceEconomy::slot_building holds) of a `building`
+/// argument: the index of the content registry translated by TriggerEnv::building_slots, or the type itself
+/// when the table is empty; 0 for an unknown index (`has_building`, `start_construction` of E11-T10).
+[[nodiscard]] std::uint8_t building_slot_of(const TriggerEnv& env, std::int32_t index);
+
 }  // namespace pat::sim::events

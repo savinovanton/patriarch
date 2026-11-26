@@ -376,7 +376,7 @@ TEST_CASE("character effects: the table of section 8.3 is registered with stable
     std::vector<Command> out;
     CHECK_FALSE(character_effect_commands(s.env(), 2101, ch(s.head), {}, out).has_value());
     CHECK_FALSE(character_effect_commands(s.env(), 2305, ch(s.head), {}, out).has_value());
-    CHECK(effect_commands(s.env(), 2101, ch(s.head), {}, out) == EffectStatus::Unknown);
+    CHECK(effect_commands(s.env(), 2150, ch(s.head), {}, out) == EffectStatus::Unknown);
     CHECK(out.empty());
 }
 

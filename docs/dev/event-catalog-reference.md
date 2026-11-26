@@ -74,7 +74,7 @@
 | 1123 | `group_mood` | province | вид: nobility \| clergy \| townsfolk \| peasants \| cossacks \| natives | `tooltip.trigger.group_mood`, `tooltip.trigger.group_mood.fail` | `group_mood.nobility < -20` | — |
 | 1124 | `debt` | dynasty | — | `tooltip.trigger.debt`, `tooltip.trigger.debt.fail` | `debt > 1000` | — |
 
-## Эффекты (24)
+## Эффекты (33)
 
 | Код | Имя | Области | Аргументы | Ключи тултипа | Пример | Примечание |
 |---:|---|---|---|---|---|---|
@@ -102,6 +102,15 @@
 | 2022 | `assign_regent` | dynasty | `regent`: область character; `kind`: mother \| guardian \| uncle \| council \| imperial | `tooltip.effect.assign_regent` | `assign_regent = { regent = scope:uncle  kind = uncle }` | заглушка до E8: «нет данных» |
 | 2023 | `dismiss_regent` | dynasty | `reason`: majority \| dismissed \| regent_died | `tooltip.effect.dismiss_regent` | `dismiss_regent = dismissed` | заглушка до E8: «нет данных» |
 | 2024 | `resolve_succession_dispute` | dynasty | `winner`: область character | `tooltip.effect.resolve_succession_dispute` | `resolve_succession_dispute = { winner = scope:claimant }` | заглушка до E8: «нет данных» |
+| 2101 | `set_province_owner` | province | `owner`: область dynasty | `tooltip.effect.set_province_owner` | `set_province_owner = scope:rival_house` | — |
+| 2102 | `assign_administrator` | province | `administrator`: область character (необяз.); `dismiss`: yes/no (необяз.) | `tooltip.effect.assign_administrator` | `assign_administrator = scope:steward` | — |
+| 2103 | `change_unrest` | province | `value`: число | `tooltip.effect.change_unrest` | `change_unrest = 10` | — |
+| 2104 | `change_control` | province | `value`: число | `tooltip.effect.change_control` | `change_control = -5` | — |
+| 2105 | `change_group_mood` | province | `group`: nobility \| clergy \| townsfolk \| peasants \| cossacks \| natives; `delta`: число | `tooltip.effect.change_group_mood` | `change_group_mood = { group = peasants  delta = -8 }` | — |
+| 2106 | `pay` | dynasty | `value`: число | `tooltip.effect.pay` | `pay = 120` | — |
+| 2107 | `receive` | dynasty | `value`: число | `tooltip.effect.receive` | `receive = 50.5` | — |
+| 2108 | `start_construction` | province | `building`: ссылка `building:` | `tooltip.effect.start_construction` | `start_construction = mill` | — |
+| 2109 | `conscript` | province | `count`: число | `tooltip.effect.conscript` | `conscript = 200` | — |
 
 ## Списки итераторов (6)
 

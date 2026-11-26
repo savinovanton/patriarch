@@ -35,6 +35,7 @@ enum class LedgerCode : std::uint16_t {
     Tribute = 14,
     FarmingIncome = 15,
     DowryIn = 16,
+    EventIncome = 17,  // E11-T10: money an event gives a house (the crown pays, see kLedgerPairs)
     // expenses
     Embezzlement = 100,
     BuildingUpkeep = 101,
@@ -49,6 +50,7 @@ enum class LedgerCode : std::uint16_t {
     RaidLoss = 110,
     DowryOut = 111,
     MarriageEnvoy = 112,
+    EventExpense = 113,  // E11-T10: money an event takes from a house (the crown gets it)
     // transfers between accounts (always in pairs, see kLedgerPairs)
     LoanTaken = 200,
     LoanRepaid = 201,
@@ -63,23 +65,18 @@ enum class LedgerCode : std::uint16_t {
 /// Every issued code in strictly ascending order; the position in this array is the dense index of
 /// the line in the statement.
 inline constexpr std::array kLedgerCodes = {
-    LedgerCode::TaxNobility,     LedgerCode::TaxClergy,
-    LedgerCode::TaxTownsfolk,    LedgerCode::TaxPeasants,
-    LedgerCode::TaxCossacks,     LedgerCode::TaxNatives,
-    LedgerCode::HoldingIncome,   LedgerCode::Duties,
-    LedgerCode::SalariesIn,      LedgerCode::GrantsIn,
-    LedgerCode::Tribute,         LedgerCode::FarmingIncome,
-    LedgerCode::DowryIn,         LedgerCode::Embezzlement,
-    LedgerCode::BuildingUpkeep,  LedgerCode::Construction,
-    LedgerCode::CourtUpkeep,     LedgerCode::SalariesOut,
-    LedgerCode::ArmyUpkeep,      LedgerCode::GiftsBribes,
-    LedgerCode::ChurchDonations, LedgerCode::QuotaMoney,
-    LedgerCode::Interest,        LedgerCode::RaidLoss,
-    LedgerCode::DowryOut,        LedgerCode::MarriageEnvoy,
-    LedgerCode::LoanTaken,       LedgerCode::LoanRepaid,
-    LedgerCode::LoanIssued,      LedgerCode::LoanCollected,
-    LedgerCode::QuotaCollected,  LedgerCode::InterestCollected,
-    LedgerCode::Adjustment,
+    LedgerCode::TaxNobility,       LedgerCode::TaxClergy,     LedgerCode::TaxTownsfolk,
+    LedgerCode::TaxPeasants,       LedgerCode::TaxCossacks,   LedgerCode::TaxNatives,
+    LedgerCode::HoldingIncome,     LedgerCode::Duties,        LedgerCode::SalariesIn,
+    LedgerCode::GrantsIn,          LedgerCode::Tribute,       LedgerCode::FarmingIncome,
+    LedgerCode::DowryIn,           LedgerCode::EventIncome,   LedgerCode::Embezzlement,
+    LedgerCode::BuildingUpkeep,    LedgerCode::Construction,  LedgerCode::CourtUpkeep,
+    LedgerCode::SalariesOut,       LedgerCode::ArmyUpkeep,    LedgerCode::GiftsBribes,
+    LedgerCode::ChurchDonations,   LedgerCode::QuotaMoney,    LedgerCode::Interest,
+    LedgerCode::RaidLoss,          LedgerCode::DowryOut,      LedgerCode::MarriageEnvoy,
+    LedgerCode::EventExpense,      LedgerCode::LoanTaken,     LedgerCode::LoanRepaid,
+    LedgerCode::LoanIssued,        LedgerCode::LoanCollected, LedgerCode::QuotaCollected,
+    LedgerCode::InterestCollected, LedgerCode::Adjustment,
 };
 
 /// Number of lines of one statement.
@@ -158,6 +155,9 @@ inline constexpr std::array kLedgerPairs = {
     LedgerPair{LedgerCode::QuotaMoney, LedgerCode::QuotaCollected},   // money quota: dynasty -> crown
     LedgerPair{LedgerCode::Interest, LedgerCode::InterestCollected},  // interest: dynasty -> crown
     LedgerPair{LedgerCode::DowryOut, LedgerCode::DowryIn},            // dowry: bride's house -> groom's
+    // a payment of an event (E11-T10, PostEventMoney): the payer -> the payee, one of them a house and the
+    // other the crown (`pay`: house -> crown, `receive`: crown -> house), so no event makes money
+    LedgerPair{LedgerCode::EventExpense, LedgerCode::EventIncome},
 };
 
 [[nodiscard]] constexpr bool is_ledger_pair(LedgerCode out, LedgerCode in) noexcept {

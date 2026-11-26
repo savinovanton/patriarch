@@ -234,6 +234,24 @@ struct Writer {
         out.u32(c.character.value());
         out.i32(c.delta.raw());
     }
+    void operator()(const cmd::PostEventMoney& c) const {
+        out.u32(c.dynasty.value());
+        out.i64(c.amount_kop);
+        out.u16(static_cast<std::uint16_t>(c.ledger));
+    }
+    void operator()(const cmd::AdjustProvinceUnrest& c) const {
+        out.u32(c.province.value());
+        out.i32(c.delta.raw());
+    }
+    void operator()(const cmd::AdjustProvinceControl& c) const {
+        out.u32(c.province.value());
+        out.i32(c.delta.raw());
+    }
+    void operator()(const cmd::AdjustGroupMood& c) const {
+        out.u32(c.province.value());
+        out.u8(c.group);
+        out.i32(c.delta.raw());
+    }
 };
 
 // Reads the layout written by write_init; false for a value the type cannot hold.
@@ -621,6 +639,28 @@ bool read_command(core::ByteReader& in, Command& out) {
         case CommandType::AdjustStress:
             out.payload = cmd::AdjustStress{CharacterId(in.u32()), core::Fixed32::from_raw(in.i32())};
             break;
+        case CommandType::PostEventMoney: {
+            cmd::PostEventMoney c;
+            c.dynasty = DynastyId(in.u32());
+            c.amount_kop = in.i64();
+            c.ledger = static_cast<economy::LedgerCode>(in.u16());
+            out.payload = c;
+            break;
+        }
+        case CommandType::AdjustProvinceUnrest:
+            out.payload = cmd::AdjustProvinceUnrest{ProvinceId(in.u32()), core::Fixed32::from_raw(in.i32())};
+            break;
+        case CommandType::AdjustProvinceControl:
+            out.payload = cmd::AdjustProvinceControl{ProvinceId(in.u32()), core::Fixed32::from_raw(in.i32())};
+            break;
+        case CommandType::AdjustGroupMood: {
+            cmd::AdjustGroupMood c;
+            c.province = ProvinceId(in.u32());
+            c.group = in.u8();
+            c.delta = core::Fixed32::from_raw(in.i32());
+            out.payload = c;
+            break;
+        }
         default:
             return false;  // unknown tag
     }

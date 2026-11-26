@@ -161,6 +161,21 @@ UnrestResult step_province_unrest(World& world, const EconomyRules& rules, Provi
 /// Step 7 of the slot of a province: the draw, the loot, the fall of control, the entry "Riot".
 RiotOutcome step_province_riot(World& world, const EconomyRules& rules, ProvinceId province);
 
+// ---- one-off shifts (the event commands of E11-T10) ------------------------------------------------
+
+/// A one-off shift of the unrest of a province (the command AdjustProvinceUnrest): the column moves by
+/// `delta`, clamped to 0..100, and a change of the state is written to the incident log exactly like
+/// step 5 writes it (UnrestStateChanged; Uprising on entering it), so the readers of the log by `seq`
+/// see an uprising an event caused. `target` of the result is the new value; the month that follows
+/// moves the unrest toward the target of F9 as usual. All zero (nothing changed) without economy or
+/// for an unknown province.
+UnrestResult
+shift_province_unrest(World& world, const EconomyRules& rules, ProvinceId province, core::Fixed32 delta);
+
+/// A one-off shift of the control of a province (the command AdjustProvinceControl), clamped to 0..100;
+/// returns the new control (0 without economy or for an unknown province, nothing changed then).
+core::Fixed32 shift_province_control(World& world, ProvinceId province, core::Fixed32 delta);
+
 // ---- explanations (the same code path as the simulation) ------------------------------------------
 
 /// The breakdown of the target unrest of a province, by the same code as the month.

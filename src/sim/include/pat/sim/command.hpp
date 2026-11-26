@@ -73,9 +73,13 @@ enum class CommandType : std::uint16_t {
     AssignGodparents = 77,             // E8-T13
     Wed = 78,                          // E8-T10
     SettleWidowhood = 81,              // E8-T10
+    PostEventMoney = 103,              // E11-T10
     AdjustSkill = 104,                 // E11-T09
     AdjustHealth = 105,                // E11-T09
     AdjustStress = 106,                // E11-T09
+    AdjustProvinceUnrest = 107,        // E11-T10
+    AdjustProvinceControl = 108,       // E11-T10
+    AdjustGroupMood = 109,             // E11-T10
 };
 
 /// Why a marriage is ended by cmd::EndMarriage. Death is not a reason: Die ends the marriage itself.
@@ -448,8 +452,9 @@ struct AssignGodparents {
     [[nodiscard]] bool operator==(const AssignGodparents&) const = default;
 };
 
-/// The largest change of a skill, the health or the stress one command may make (E11-T09,
-/// docs/dev/event-engine.md section 8.4): a larger |delta| is refused (InvalidArgument).
+/// The largest change of a skill, the health or the stress (E11-T09), of the unrest, the control or the
+/// mood of a group (E11-T10) one command may make (docs/dev/event-engine.md section 8.4): a larger |delta|
+/// is refused (InvalidArgument).
 inline constexpr core::Fixed32 kMaxVitalDelta = core::Fixed32::from_int(100);
 
 /// Changes one skill of a living character by `delta` (the effect `change_skill`, E11-T09); the result
@@ -477,6 +482,52 @@ struct AdjustStress {
     CharacterId character;
     core::Fixed32 delta;
     [[nodiscard]] bool operator==(const AdjustStress&) const = default;
+};
+
+/// A payment of an event (the effects `pay` and `receive`, E11-T10, docs/dev/event-engine.md section 8.4):
+/// `amount_kop` (1...economy::kMaxPostingKop) moves between the house and the crown as ONE transfer of the
+/// pair EventExpense -> EventIncome (economy::kLedgerPairs), so no money is made or lost. `ledger` says the
+/// direction: EventExpense - the house pays the crown, EventIncome - the crown pays the house. System only
+/// (NotAuthorized), economy only (InvalidState); refused for an unknown house (UnknownEntity), another
+/// ledger code or an amount out of range (InvalidArgument), and for a payment of a house that holds less
+/// than the amount (InvalidState: a balance in debt affords nothing that costs, like StartConstruction).
+/// The crown pays what an event gives even into debt. In the "one treasury" mode the crown's house pays
+/// itself: both lines of the pair are written, the balance does not change.
+struct PostEventMoney {
+    DynastyId dynasty;
+    economy::Kopecks amount_kop = 0;
+    economy::LedgerCode ledger = economy::LedgerCode::EventExpense;
+    [[nodiscard]] bool operator==(const PostEventMoney&) const = default;
+};
+
+/// A one-off change of the unrest of a province by an event (`change_unrest`, E11-T10): the column moves
+/// by `delta`, clamped to 0...100, and then tends to the target of F9 as usual (economy-model section 9).
+/// A change of the state of unrest is written to the incident log like the month does (UnrestStateChanged,
+/// Uprising on entering it), so E11 and E16 see it. System only, economy and its rules only (the thresholds
+/// of the states: InvalidState without them); UnknownEntity for an unknown province, InvalidArgument for
+/// |delta| > kMaxVitalDelta.
+struct AdjustProvinceUnrest {
+    ProvinceId province;
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustProvinceUnrest&) const = default;
+};
+
+/// A one-off change of the control of a province (`change_control`), clamped to 0...100; then control
+/// tends to the target of its administrator (F7). Same rules as AdjustProvinceUnrest (no rules needed).
+struct AdjustProvinceControl {
+    ProvinceId province;
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustProvinceControl&) const = default;
+};
+
+/// A one-off change of the mood of a population group of a province (`change_group_mood`), clamped to
+/// -100...100; then the mood tends to its target (F8). Same rules as AdjustProvinceControl; a group
+/// outside 0...5 is InvalidArgument.
+struct AdjustGroupMood {
+    ProvinceId province;
+    std::uint8_t group = 0;  // economy::Group
+    core::Fixed32 delta;
+    [[nodiscard]] bool operator==(const AdjustGroupMood&) const = default;
 };
 
 }  // namespace cmd
@@ -524,7 +575,11 @@ using CommandPayload = std::variant<cmd::SetProvinceOwner,
                                     cmd::Disown,
                                     cmd::AdjustSkill,
                                     cmd::AdjustHealth,
-                                    cmd::AdjustStress>;
+                                    cmd::AdjustStress,
+                                    cmd::PostEventMoney,
+                                    cmd::AdjustProvinceUnrest,
+                                    cmd::AdjustProvinceControl,
+                                    cmd::AdjustGroupMood>;
 
 /// A command with its issuer. `actor` is the dynasty on whose behalf the command is issued; an
 /// invalid actor means "the system" (scenario setup, game rules), which may do anything valid.

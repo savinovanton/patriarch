@@ -256,7 +256,7 @@ event_modifier "estate.ignored_theft" {
 3. **Коды ошибок** `EV101…EV114` — значения `ErrorCode` 1101…1114 (`error_code_name` пишет `EV1nn`); `ErrorSink::fail(object, pos, code, text)`. Компилятор ничего не прерывает: все ошибки блока, события и файла приходят одним списком, отсортированным по позиции.
 4. **Новая инструкция `PUSH_SCOPE` (код 45, §7.2)** кладёт текущую область словом `kind<<32 | id`: без неё область нельзя передать аргументом (`target = scope:governor`, `speaker`). **Сохранённые области** (`save_scope_as`, `scope:имя`) передаются между программами одного экземпляра: `RunOptions::saved` (входные слоты) и `RunResult::saved` (итоговые); слоты `0 … provided-1` заполняет on-action (`scope:mother`), следующие — `save_scope_as` в `immediate` (`EventDef::saved_names`), собственные имена варианта (`OptionDef::local_saved`) видны только в его программах. Порядок компиляции: `trigger`, `mean_time_to_happen`, `chance`, `weight`, `immediate`, `speaker`, варианты, `after`: имя видно только после того, как оно сохранено.
 5. **Пустой переход.** В триггере и сравнении путь с пустым переходом даёт «ложь» (`owner.honor < 30` без владельца — ложь, а не «0 < 30»), в числовом операнде аккумулятора — 0, в эффекте блок пропускается, в аргументе-области — пустая область (`0`).
-6. **Не сделано / отложено.** `floor` и `ceiling` в аккумуляторе — `EV107` (ВМ усекает к нулю: `round = yes`); неявное условие «хватает денег» для эффекта `pay` (§4.3) — T10 (нужен предикат `can_afford` каталога); проверка `chance` как константы не делается, вероятность считается аккумулятором (процент × 10 000 → ppm).
+6. **Не сделано / отложено.** `floor` и `ceiling` в аккумуляторе — `EV107` (ВМ усекает к нулю: `round = yes`); неявное условие «хватает денег» для эффекта `pay` (§4.3): T10 дал `payment_shortfall(world, house, commands)` (`realm_effects.hpp`) — сколько копеек не хватает роду на платежи команд `Preview` варианта (поступления до платежа его покрывают); подключение к доступности варианта и причина «Не хватает N ₽» — T12/T13; проверка `chance` как константы не делается, вероятность считается аккумулятором (процент × 10 000 → ppm).
 7. **Каталоги.** Переходы (§5.1, коды 1…12), списки (§5.2, коды 1…6) и on-action (§8.1) принадлежат языку и заведены в `Catalog::engine()`; записи триггеров, значений, эффектов и операций состояния регистрируют T07…T11 (`Catalog::add`), тесты — `event_fixture.hpp`. Аргументы записи — `ArgSpec` (`Number`, `Bool`, `Scope`, `Name` с `ref_kind` `event`/`event_modifier`/`pool`, `Ref` на вид реестра, `Enum`, `Duration`, `Date`); записи с `retired = true` дают `EV114` с подсказкой.
 8. **Проверка текстов и изображений** (`EV111`, `EV104`) — через необязательные предикаты `EventBuildOptions::has_loc_key` и `has_image` (слой `content` не зависит от `loc`; мост передаёт таблицы); без них проверка пропускается.
 9. **Замер загрузки** (RelWithDebInfo, 550 синтетических событий по ≈ 20 строк с MTTH, `random_list`, аккумуляторами): чтение и проверка схем 32 мс + компиляция 20 мс (цель ≤ 500 мс); тест `event compiler: load time of 550 events` выключен по умолчанию (`--no-skip`).
@@ -739,20 +739,22 @@ struct VmHost {
 |---:|---|---|---|---|---|
 | 2101 | `set_province_owner` | province | `owner` | `SetProvinceOwner` (1) | ✅ |
 | 2102 | `assign_administrator` | province | `administrator` или `none` | `AssignProvinceAdministrator` (35) | ✅ |
-| 2103 | `change_unrest` | province | `Fixed` | **`AdjustProvinceUnrest` (107)** | T10 |
-| 2104 | `change_control` | province | `Fixed` | **`AdjustProvinceControl` (108)** | T10 |
-| 2105 | `change_group_mood` | province | `group`, `delta` | **`AdjustGroupMood` (109)** | T10 |
-| 2106 | `pay` | dynasty | рубли | **`PostEventMoney` (103)**, статья **`EventExpense`** | T10, после E8-T03 |
-| 2107 | `receive` | dynasty | рубли | `PostEventMoney` (103), статья **`EventIncome`** | T10, после E8-T03 |
+| 2103 | `change_unrest` | province | `Fixed` | **`AdjustProvinceUnrest` (107)** | ✅ |
+| 2104 | `change_control` | province | `Fixed` | **`AdjustProvinceControl` (108)** | ✅ |
+| 2105 | `change_group_mood` | province | `group`, `delta` | **`AdjustGroupMood` (109)** | ✅ |
+| 2106 | `pay` | dynasty | рубли | **`PostEventMoney` (103)**, статья **`EventExpense`** | ✅ |
+| 2107 | `receive` | dynasty | рубли | `PostEventMoney` (103), статья **`EventIncome`** | ✅ |
 | 2108 | `start_construction` | province | `building` | `StartConstruction` (36) | ✅ |
 | 2109 | `conscript` | province | `count` | `ConscriptRecruits` (34) | ✅ |
-| 2150 | `if` / `else_if` / `else` | любая | `limit`, эффекты | — (структура) | T10 |
-| 2151 | `random_list` | любая | веса и ветви | — (`RAND_PICK`) | T10 |
-| 2152 | `random` | любая | `chance`, эффекты | — | T10 |
-| 2153 | `every_<список>` | см. §5.2 | `limit`, эффекты | — | T10 |
-| 2154 | `random_<список>` | см. §5.2 | `limit`, `weight?` | — | T10 |
-| 2155 | `ordered_<список>` | см. §5.2 | `limit`, `order_by`, `max` | — | T10 |
-| 2156 | `hidden_effect` | любая | эффекты | — (без строки тултипа) | T10 |
+| 2150 | `if` / `else_if` / `else` | любая | `limit`, эффекты | — (структура) | ✅ |
+| 2151 | `random_list` | любая | веса и ветви | — (`RAND_PICK`) | ✅ |
+| 2152 | `random` | любая | `chance`, эффекты | — | ✅ |
+| 2153 | `every_<список>` | см. §5.2 | `limit`, эффекты | — | ✅ |
+| 2154 | `random_<список>` | см. §5.2 | `limit`, `weight?` | — | ✅ |
+| 2155 | `ordered_<список>` | см. §5.2 | `limit`, `order_by`, `max` | — | ✅ |
+| 2156 | `hidden_effect` | любая | эффекты | — (без строки тултипа) | ✅ |
+
+**Реализация T10:** таблица — `catalog_realm_effects.cpp`, перевод — `realm_effects.cpp` (`realm_effect_commands`, тот же путь `effect_commands` для `Run` и `Preview`), шаблоны — `data/loc/ru/events/tooltip_effects_realm.pd`. Актор всех команд — система. `assign_administrator` — `administrator = <персонаж>` или `dismiss = yes` (снять; пустой путь без `dismiss` — `BadArgument`, чтобы не снимать управителя случайно); `set_province_owner` — только род (пустой путь — `BadArgument`); `start_construction` — тип здания через `TriggerEnv::building_slots` (`building_slot_of`, общий с `has_building`), платит владелец (правило E9 для системы). Дельты `change_unrest/control/group_mood` зажимаются в ±100; команды 107…109 — **разовый сдвиг колонки** (через `economy::shift_province_unrest/control`, `shift_group_mood`) с зажимом шкал 0…100 / −100…100, дальше месяц ведёт колонку к цели F7…F9 как обычно; смена состояния беспорядков пишется в журнал инцидентов так же, как шаг 5 (`UnrestStateChanged`, `Uprising` при входе), иначе вызванное событием восстание не увидели бы E11/E16. Постоянный слот `events` формул F8/F9 (`MoodInput::events`, `UnrestInput::events`) T10 **не заполняет**: для него нужна колонка в `World` (схема), а модификатор M1 — метка без статов (§4.4, D15). `AdjustProvinceUnrest` требует правил экономики (пороги состояний; без них `InvalidState`). `pay`/`receive` — рубли → копейки (`economy::roubles_to_kopecks`, общий с `betroth`), 1 коп. … `kMaxPostingKop`. Конструкции потока 2150…2156 — слова языка (компилятор T06, ВМ T04): записей каталога и перевода у них нет, их эффекты переводятся как эффекты блоков; в `Preview` показываются все ветви `random_list`/`random` и все элементы `random_`, строки `hidden_effect` не показываются (тест: `Run` применяет только показанное, кроме скрытого). Читатели аргументов `effect_arg`/`effect_scope_arg`/`effect_delta` (`effects.hpp`) общие для блоков.
 
 **T11 — состояние событий (S, без команд)**
 
@@ -797,7 +799,7 @@ struct VmHost {
 
 Правила: тела — по образцу `write_command` (тег — varint, `u32 actor`, тело в порядке полей); значения ограничены `validate` по полям (зажим дельт `±100`); `Adjust*`, `PostEventMoney` — **только система**; `ChooseEventOption`/`DeferEvent` — актор должен быть получателем экземпляра (`NotAuthorized` иначе). Новые теги — по чек-листу PR «добавляющий команду» ([save-format.md](save-format.md) §7.4): `TagTable`, `to_string`, `read_command`, тест «команда → байты → команда», строка §6.
 
-**Статьи ведомости E11:** `EventIncome = 17` и `EventExpense = 113` (E9 занял доходы 10…15 и расходы 100…111; E8 берёт 16 `dowry_in` и 112 `marriage_envoy` ([marriage-succession-model.md](marriage-succession-model.md) §5.1); коды E11 **выдаются после E8-T03**, который делает хеш счетов устойчивым к новым кодам, `kLegacyLedgerLines = 31`). Один платёж события — **парная проводка** (`transfer`) либо проводка со статьёй «событие» и корреспондентом «корона»/«внешний мир» `[предл.]`; T10 уточняет по правилам E9 (F3 §13.3 E8).
+**Статьи ведомости E11:** `EventIncome = 17` и `EventExpense = 113` (E9 занял доходы 10…15 и расходы 100…111; E8 берёт 16 `dowry_in` и 112 `marriage_envoy` ([marriage-succession-model.md](marriage-succession-model.md) §5.1); коды E11 выданы после E8-T03, который делает хеш счетов устойчивым к новым кодам, `kLegacyLedgerLines = 31`). **Решение T10:** один платёж события — **парная проводка** `transfer` пары `EventExpense → EventIncome` (`kLedgerPairs`) между родом и **короной**: `pay` — род → корона, `receive` — корона → род, поэтому событие не создаёт и не уничтожает денег (E-M3; одиночная проводка на этих кодах отклоняется `post_money`). `PostEventMoney` отклоняет платёж рода, у которого меньше суммы (`InvalidState`, как `StartConstruction`); корона платит и в долг. В режиме «одна казна» род короны платит сам себе: обе строки пишутся, остаток не меняется. Сейв пишет коды строк, поэтому новые статьи не меняют схему, а нулевые строки — хеш (E8-T03).
 
 ### 8.5 Коды разложений `Breakdown` (семейство 13000)
 

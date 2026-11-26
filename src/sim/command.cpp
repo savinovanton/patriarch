@@ -3,8 +3,10 @@
 #include "pat/sim/command_log.hpp"
 #include "pat/sim/economy/construction.hpp"
 #include "pat/sim/economy/loans.hpp"
+#include "pat/sim/economy/mood.hpp"
 #include "pat/sim/economy/recruits.hpp"
 #include "pat/sim/economy/rules.hpp"
+#include "pat/sim/economy/unrest.hpp"
 #include "pat/sim/marriage_envoy.hpp"
 #include "pat/sim/marriage_godparents.hpp"
 #include "pat/sim/marriage_negotiations.hpp"
@@ -841,6 +843,61 @@ struct Validator {
         return vital_change(c.character, c.delta);
     }
 
+    // ---- the effects of events over provinces and money (E11-T10) ----
+    Result<void, CommandError>
+    province_shift(ProvinceId province, core::Fixed32 delta, bool needs_rules = false) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may shift the unrest, control or mood");
+        }
+        if (!world.economy_present()) {
+            return reject(Rejection::InvalidState, "the world has no economy");
+        }
+        if (needs_rules && economy == nullptr) {
+            return reject(Rejection::InvalidState, "the simulation has no economy rules");
+        }
+        if (!world.exists(province)) {
+            return reject(Rejection::UnknownEntity, "unknown province");
+        }
+        if (delta > cmd::kMaxVitalDelta || delta < -cmd::kMaxVitalDelta) {
+            return reject(Rejection::InvalidArgument, "the change is larger than 100 points");
+        }
+        return accept();
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustProvinceUnrest& c) const {
+        return province_shift(c.province, c.delta, true);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustProvinceControl& c) const {
+        return province_shift(c.province, c.delta);
+    }
+    Result<void, CommandError> operator()(const cmd::AdjustGroupMood& c) const {
+        if (c.group >= economy::kGroupCount) {
+            return reject(Rejection::InvalidArgument, "unknown population group");
+        }
+        return province_shift(c.province, c.delta);
+    }
+    Result<void, CommandError> operator()(const cmd::PostEventMoney& c) const {
+        if (actor.valid()) {
+            return reject(Rejection::NotAuthorized, "only the system may post the money of an event");
+        }
+        if (!world.economy_present()) {
+            return reject(Rejection::InvalidState, "the world has no economy");
+        }
+        const economy::AccountRef house = economy::AccountRef::of(c.dynasty);
+        if (!world.exists(c.dynasty) || !world.resolve_account(house)) {
+            return reject(Rejection::UnknownEntity, "unknown house");
+        }
+        if (c.ledger != economy::LedgerCode::EventExpense && c.ledger != economy::LedgerCode::EventIncome) {
+            return reject(Rejection::InvalidArgument, "not a ledger line of an event payment");
+        }
+        if (c.amount_kop <= 0 || c.amount_kop > economy::kMaxPostingKop) {
+            return reject(Rejection::InvalidArgument, "the amount is out of range");
+        }
+        if (c.ledger == economy::LedgerCode::EventExpense && world.treasury(house) < c.amount_kop) {
+            return reject(Rejection::InvalidState, "the house cannot afford the payment");
+        }
+        return accept();
+    }
+
     Result<void, CommandError> operator()(const cmd::AdjustHonor& c) const {
         if (actor.valid()) {
             return reject(Rejection::NotAuthorized, "only the system may adjust honor directly");
@@ -985,6 +1042,27 @@ struct Applier {
     }
     void operator()(const cmd::AdjustStress& c) const {
         world.set_character_stress(c.character, world.characters().stress[c.character.index()] + c.delta);
+    }
+    void operator()(const cmd::PostEventMoney& c) const {
+        // One transfer of the pair EventExpense -> EventIncome between the house and the crown.
+        const economy::AccountRef house = economy::AccountRef::of(c.dynasty);
+        const bool pays = c.ledger == economy::LedgerCode::EventExpense;
+        (void)world.transfer(pays ? house : economy::AccountRef::crown(),
+                             pays ? economy::AccountRef::crown() : house,
+                             economy::LedgerCode::EventExpense,
+                             economy::LedgerCode::EventIncome,
+                             c.amount_kop);
+    }
+    void operator()(const cmd::AdjustProvinceUnrest& c) const {
+        if (economy != nullptr) {
+            (void)economy::shift_province_unrest(world, *economy, c.province, c.delta);
+        }
+    }
+    void operator()(const cmd::AdjustProvinceControl& c) const {
+        (void)economy::shift_province_control(world, c.province, c.delta);
+    }
+    void operator()(const cmd::AdjustGroupMood& c) const {
+        (void)economy::shift_group_mood(world, c.province, static_cast<economy::Group>(c.group), c.delta);
     }
     void operator()(const cmd::AssignProvinceAdministrator& c) const {
         (void)world.set_province_administrator(c.province, c.administrator);
@@ -1208,6 +1286,22 @@ template <>
 struct CommandTag<cmd::AdjustStress> {
     static constexpr CommandType value = CommandType::AdjustStress;
 };
+template <>
+struct CommandTag<cmd::PostEventMoney> {
+    static constexpr CommandType value = CommandType::PostEventMoney;
+};
+template <>
+struct CommandTag<cmd::AdjustProvinceUnrest> {
+    static constexpr CommandType value = CommandType::AdjustProvinceUnrest;
+};
+template <>
+struct CommandTag<cmd::AdjustProvinceControl> {
+    static constexpr CommandType value = CommandType::AdjustProvinceControl;
+};
+template <>
+struct CommandTag<cmd::AdjustGroupMood> {
+    static constexpr CommandType value = CommandType::AdjustGroupMood;
+};
 
 template <class Variant>
 struct TagTable;
@@ -1326,6 +1420,14 @@ std::string_view to_string(CommandType type) noexcept {
             return "AdjustHealth";
         case CommandType::AdjustStress:
             return "AdjustStress";
+        case CommandType::PostEventMoney:
+            return "PostEventMoney";
+        case CommandType::AdjustProvinceUnrest:
+            return "AdjustProvinceUnrest";
+        case CommandType::AdjustProvinceControl:
+            return "AdjustProvinceControl";
+        case CommandType::AdjustGroupMood:
+            return "AdjustGroupMood";
         case CommandType::AdjustUnity:
             return "AdjustUnity";
         case CommandType::AdjustPrestige:

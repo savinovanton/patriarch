@@ -148,6 +148,12 @@ mul_permille(Kopecks amount, std::int32_t permille, bool* saturated = nullptr) n
     return value.to_int();
 }
 
+/// A number of roubles held in a Fixed64 (an amount of an event file: `pay = 120.5`, a dowry) -> whole
+/// kopecks, truncated toward zero, saturating.
+[[nodiscard]] constexpr Kopecks roubles_to_kopecks(core::Fixed64 roubles) noexcept {
+    return to_kopecks(saturating_mul(roubles, core::Fixed64::from_int(kKopecksPerRouble)));
+}
+
 /// Clamps a balance to +-kMaxTreasuryKop.
 [[nodiscard]] constexpr Kopecks clamp_treasury(Kopecks balance) noexcept {
     return balance < -kMaxTreasuryKop ? -kMaxTreasuryKop
