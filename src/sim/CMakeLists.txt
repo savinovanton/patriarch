@@ -10,6 +10,9 @@ add_library(patriarch_sim STATIC
     include/pat/sim/army/province_graph.hpp
     army/path_finder.cpp
     army/province_graph.cpp
+    include/pat/sim/diplomacy/rules.hpp
+    include/pat/sim/diplomacy/text.hpp
+    diplomacy/rules.cpp
     include/pat/sim/calendar.hpp
     include/pat/sim/command.hpp
     include/pat/sim/command_log.hpp

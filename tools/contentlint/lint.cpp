@@ -6,6 +6,7 @@
 #include "pat/content/credits_content.hpp"
 #include "pat/content/crisis_content.hpp"
 #include "pat/content/demography_content.hpp"
+#include "pat/content/diplomacy_content.hpp"
 #include "pat/content/economy_content.hpp"
 #include "pat/content/graph_content.hpp"
 #include "pat/content/m1_content.hpp"
@@ -16,6 +17,7 @@
 #include "pat/data/army_schemas.hpp"
 #include "pat/data/content_loader.hpp"
 #include "pat/data/content_schemas.hpp"
+#include "pat/data/diplomacy_schemas.hpp"
 #include "pat/loc/localizer.hpp"
 
 #include <algorithm>
@@ -316,6 +318,18 @@ Report lint(std::span<const data::ContentSource* const> roots,
                     if (!military)
                         for (const auto& error : military.error())
                             findings.push_back(from_load_error(error));
+                }
+            }
+            const bool has_diplomacy = std::ranges::any_of(data::kDiplomacyKinds, [&](auto kind) {
+                const auto* table = loaded.registry.table(kind);
+                return table != nullptr && !table->empty();
+            });
+            if (has_diplomacy) {
+                const auto diplomacy = content::build_diplomacy_rules(loaded.registry);
+                if (!diplomacy) {
+                    for (const auto& error : diplomacy.error()) {
+                        findings.push_back(from_load_error(error));
+                    }
                 }
             }
             const content::NamePoolsResult names = content::build_name_pools(loaded.registry);

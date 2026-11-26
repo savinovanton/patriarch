@@ -1,0 +1,101 @@
+format_version = 1
+
+# E15-T04: preliminary values, diplomacy-model.md §15; opt-in until E15-T17.
+diplomacy_balance "main" {
+    opinion = { kin_weight_pm = 700 head_weight_pm = 300 feud_enter = -60 feud_exit = -50 }
+    trust = { default = 50 treaty_ceiling = 80 public_breach = -5 denounced = -10 honoured = 5 }
+    limits = { relations_per_house = 40 mods_per_relation = 6 treaties_per_house = 8 offers_per_pair = 3 player_inbox_cap = 2 favors_owed_max = 3 }
+    offers = { answer_days = 30 refusal_cooldown_days = 180 break_cooldown_days = 730 ai_offer_cooldown_days = 90 counter_margin = 15 ai_may_offer_to_player = yes }
+    accept = { opinion_pm = 500 trust_pm = 400 emperor_pm = 300 grudge_pm = 250 threshold = 20 favor_call = 30 value_cap = 40 forecast_margin = 10 }
+    gift = { min_rub = 10 max_rub = 2000 opinion_per_100rub = 8 cap = 20 months = 12 cooldown_days = 30 }
+    favor = { min_rub = 50 max_rub = 1000 granted_opinion = 5 ingratitude = -10 expiry_months = 120 granted_months = 12 ingratitude_months = 24 }
+    pledge = { min_rub = 100 max_rub = 5000 }
+    archetype_threshold = { schemer = 5 loyalist_with_loyalist = -5 }
+    ai = { min_treaty_age_days = 365 propose_wu = 40 gift_wu = 20 favor_wu = 20 }
+    trait_hints = {
+        cautious = { dipl_threshold = 10 dipl_greed = 0 dipl_arrogance = 0 }
+        proud = { dipl_threshold = 5 dipl_greed = 0 dipl_arrogance = 10 }
+        ambitious = { dipl_threshold = -5 dipl_greed = 0 dipl_arrogance = 0 }
+        generous = { dipl_threshold = -5 dipl_greed = 0 dipl_arrogance = 0 }
+        diplomat = { dipl_threshold = -5 dipl_greed = 0 dipl_arrogance = 0 }
+        greedy = { dipl_threshold = 0 dipl_greed = 500 dipl_arrogance = 0 }
+    }
+    reasons = {
+        offer_refused = { value = -5 months = 12 }
+        denounced = { value = -15 months = 36 }
+        false_denunciation = { value = -10 months = 24 }
+        honoured = { value = 5 months = 24 }
+    }
+}
+
+treaty_kind "alliance" {
+    id = 1
+    min_months = 24
+    months = 60
+    max_months = 120
+    opinion_bonus = 25
+    base_value = 8
+    risk = 0
+    political_gain = 15
+    breach_trust = -40
+    breach_grudge = -40
+    breach_months = 48
+    enabled = yes
+    system_only = no
+    breakable = yes
+    ai_may_offer_to_player = yes
+}
+
+treaty_kind "pledge" {
+    id = 2
+    min_months = 12
+    months = 36
+    max_months = 60
+    opinion_bonus = 10
+    base_value = 5
+    risk = 0
+    political_gain = 0
+    breach_trust = -30
+    breach_grudge = -25
+    breach_months = 36
+    enabled = yes
+    system_only = no
+    breakable = yes
+    ai_may_offer_to_player = yes
+}
+
+treaty_kind "marriage_pact" {
+    id = 3
+    min_months = 0
+    months = 0
+    max_months = 0
+    opinion_bonus = 10
+    base_value = 0
+    risk = 0
+    political_gain = 5
+    breach_trust = -25
+    breach_grudge = -30
+    breach_months = 36
+    enabled = yes
+    system_only = yes
+    breakable = no
+    ai_may_offer_to_player = no
+}
+
+treaty_kind "claim_support" {
+    id = 4
+    min_months = 12
+    months = 36
+    max_months = 60
+    opinion_bonus = 15
+    base_value = 0
+    risk = 10
+    political_gain = 0
+    breach_trust = -40
+    breach_grudge = -40
+    breach_months = 48
+    enabled = no
+    system_only = no
+    breakable = yes
+    ai_may_offer_to_player = no
+}

@@ -14,6 +14,7 @@
 #include "pat/data/court_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
+#include "pat/data/diplomacy_schemas.hpp"
 #include "pat/data/event_schemas.hpp"
 #include "pat/data/graph_schemas.hpp"
 #include "pat/data/m1_schemas.hpp"
@@ -229,6 +230,7 @@ load_m1_scenario(const std::filesystem::path& root, const mapdata::MapData& map,
     for (const std::string_view kind : data::kAiKinds) {
         excluded_kinds.push_back(kind);
     }
+    excluded_kinds.insert(excluded_kinds.end(), data::kDiplomacyKinds.begin(), data::kDiplomacyKinds.end());
     const std::uint64_t content_hash = definitions.registry.content_hash_excluding(excluded_kinds);
     world.set_economy_rules_hash(content_hash);
 

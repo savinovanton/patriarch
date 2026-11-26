@@ -49,7 +49,7 @@
 |---|---|---|
 | `dynasty_relation(a, b)` −100…100 (мнения членов домов, кроме пары глав, + 5 за брак, ≤ 3) | E8-T06, [marriage-succession-model.md](marriage-succession-model.md) §8.4.1 | слагаемое мнения 20001 |
 | `World::get_opinion(from, to)` (`Fixed32` −100…100), `AdjustOpinion` (19) | E7-T17 | мнение главы о главе 20002 |
-| Черты главы, `ai_hint` (карта целых −100…100), `public` | E7, `data/traits/m1.pd` | сдвиги порога, жадность, спесь (§7.3) |
+| Черты главы, `public` | E7, `data/traits/m1.pd` | сдвиги порога, жадность, спесь по таблице `trait_hints` (§7.3, §15) |
 | `MatchContext::political_gain[side]`, коридор `political_gain_cap = 30` (`marriage.pd`) | E8-T05, `marriage_score.hpp` | внешнее слагаемое брака (§19) |
 | Таблицы помолвок и браков, `RespondMarriage`/`Betroth`/`Wed`/`BreakBetrothal`/`Tonsure`/`EndMarriage` | E8 | брачный договор по журналу (§6.4) |
 | `SuspicionTable.value_x100` 0…10 000, `ClaimTable`, `ClaimSupportTable` (одна поддержка на дом), `claim_strength`, `Denounce` (148), `SupportClaim` (151), `WithdrawClaim` (150), `ResolveDenunciation` (162), `StanceTable` | E12 | давление императора, поддержка претензии, доносы, вес союзника |
@@ -217,7 +217,7 @@ opinion(a→b) = clamp( kin + head + faith + Σ mods + Σ treaty_bonus , −100,
 ```
 house_power(h)   = honor(h) / 20 + favor_x100(h) / 500                 // честь E7, милость E10 (0…100 → 0…20)
 fear(r of p)     = clamp(house_power(p) − house_power(r), −20, 20)      // Breakdown 20100
-arrogance(r)     = Σ ai_hint.dipl_arrogance черт главы r                // proud = 10 [предл.]
+arrogance(r)     = Σ trait_hints.dipl_arrogance черт главы r                // proud = 10 [предл.]
 ```
 
 Пример: честь 300 и милость 70 у предлагающего (15 + 14 = 29), честь 200 и милость 50 у ответчика (10 + 10 = 20) → страх **+9**; глава ответчика спесив (`proud`) → слагаемое силы 9 − 10 = **−1**.
@@ -295,7 +295,7 @@ arrogance(r)     = Σ ai_hint.dipl_arrogance черт главы r              
 |---:|---|---|
 | 20201 | мнение | `500‰ · opinion(r→p)` |
 | 20202 | доверие | `400‰ · (trust(r→p) − 50)` |
-| 20203 | выгода условий | `clamp(value × (1000 + greed)/1000, −40, 40)`; `greed` = Σ `ai_hint.dipl_greed` черт главы (`greedy` 500), только для положительной выгоды; `value` — по виду, ниже |
+| 20203 | выгода условий | `clamp(value × (1000 + greed)/1000, −40, 40)`; `greed` = Σ `trait_hints.dipl_greed` черт главы (`greedy` 500), только для положительной выгоды; `value` — по виду, ниже |
 | 20204 | сила и спесь | `fear(r of p) − arrogance(r)` (§5.5) |
 | 20205 | совпадение с целями | E17 `goal_affinity(view, r, kind)` 0…10, если у `r` есть агент; иначе запасное правило: `alliance`/`pledge` +5 при подозрении к `r` ≥ 30 или без договоров; `claim_support` (сторонник) +5 при позиции `Plotter`; иначе 0 |
 | 20206 | давление императора | `−300‰ · suspicion(p)` (0…100 → 0…−30): связь с подозреваемым опасна |
@@ -303,7 +303,7 @@ arrogance(r)     = Σ ai_hint.dipl_arrogance черт главы r              
 
 `value` по виду: `alliance` `8 + (60 − months)/12`; `pledge` для бенефициара `+min(30, amount_rub·4/100)`, для вносителя `5 − min(30, amount_rub·4/100)`, плюс `(36 − months)/12`; `claim_support` для сторонника `claim_strength(claimant)/4 − 10`, для дома претендента +30; `favor` (`credit`) для дарителя `5 − min(30, amount_rub·4/100)`; `dissolve` `−base_value` договора (для бенефициара залога ещё `−min(30, amount_rub·4/100)`); долг: если `r` должен `p` — **+30** (`favor_call_weight`, узел 20224). Обиды намеренно учтены дважды (в мнении и с весом 250‰ в риске): «память» сильнее текущей приязни.
 
-**Порог.** `threshold = accept_threshold (20) + Σ ai_hint.dipl_threshold черт главы + сдвиг архетипа` (`Breakdown` 20250). Черты `[предл.]`: `cautious` +10 («подозрительный»), `proud` +5, `ambitious` −5 («честолюбивый»: рискует), `generous` −5, `diplomat` −5; `greedy` — через `greed` в выгоде («жадный»). Архетип E17 (если есть агент): Интриган +5, Лоялист −5 для союза с родом позиции `Loyalist` («верный»), прочие 0. **Жёсткие отказы без счёта:** вражда (`Feud`); у ответчика 8 договоров (`Limit`); вид выключен в данных.
+**Порог.** `threshold = accept_threshold (20) + Σ trait_hints.dipl_threshold черт главы + сдвиг архетипа` (`Breakdown` 20250). Черты `[предл.]`: `cautious` +10 («подозрительный»), `proud` +5, `ambitious` −5 («честолюбивый»: рискует), `generous` −5, `diplomat` −5; `greedy` — через `greed` в выгоде («жадный»). Архетип E17 (если есть агент): Интриган +5, Лоялист −5 для союза с родом позиции `Loyalist` («верный»), прочие 0. **Жёсткие отказы без счёта:** вражда (`Feud`); у ответчика 8 договоров (`Limit`); вид выключен в данных.
 
 **Согласие** — `accept_score ≥ threshold`; без ГСЧ; **три главных фактора** — три слагаемых с наибольшим `|вклад|`, ничья — меньший код.
 
@@ -477,43 +477,27 @@ arrogance(r)     = Σ ai_hint.dipl_arrogance черт главы r              
 
 | Что | Правило |
 |---|---|
-| Договоры, услуги, расторжение по согласию | ≤ `player_inbox_cap` (2) открытых от ИИ-родов роду игрока, ≤ 1 от каждого; флаг `diplomacy.ai_may_offer_to_player = yes` (данные, `DiplomacyMeta.flags`); срок 30 дней, молчание = отказ без штрафа мнению; повтор того же рода — не раньше 90 дней |
+| Союз и залог мира | ≤ `player_inbox_cap` (2) открытых от ИИ-родов роду игрока, ≤ 1 от каждого. Предложение разрешают флаг `offers.ai_may_offer_to_player` и одноимённый флаг шаблона. Срок до 30 дней, молчание = отказ без штрафа мнению, повтор того же рода — не раньше 90 дней по умолчанию. |
 | Браки | E8: `ai_may_propose_to_player = yes`, `player_inbox_cap = 2`, `RespondMarriage` от рода игрока, «молчание = отказ» (E8-T21, [ai-model.md](ai-model.md) §9.3); лимиты раздельные |
 | Окно «Входящие предложения» | общий список: строки `OfferRow` с `to` = род игрока и брачные переговоры E8 с ответчиком из рода игрока; ответ — `RespondOffer` или `RespondMarriage`; уведомление и автопауза — журнал E11 (E11-T16 [#336](https://github.com/savinovanton/patriarch/issues/336)) по on-action 142 |
 | Автопилот игрока (AI-only, dev) | род игрока под `Autopilot` отвечает как ИИ-род (§7.1) |
 
 ## 15. Данные
 
-`data/balance/diplomacy.pd` (T04, файл = `DiplomacyRules::defaults()`; виды `diplomacy_balance` и `treaty_kind` исключены из `registry.content_hash()` и входят в `DiplomacyRules::hash()` → ключ сводки 26, как кризис и двор):
+[data/balance/diplomacy.pd](../../data/balance/diplomacy.pd) содержит `diplomacy_balance "main"` и четыре `treaty_kind` со стабильными ID из §3. Загруженные правила равны `DiplomacyRules::defaults()`. Шаблон `claim_support` (ID 4) выключен до E12-T08 (#409), когда `SupportClaim` станет доступен из источника `Internal`. Для настройки нужно переопределить объект целиком в более приоритетном корне. `contentlint` проверяет схему, значения и ссылки на черты.
 
-```
-diplomacy_balance "main" {
-    opinion   = { kin_weight_pm = 700  head_weight_pm = 300  feud_enter = -60  feud_exit = -50 }
-    trust     = { default = 50  treaty_ceiling = 80  public_breach = -5  denounced = -10  honoured = 5 }
-    limits    = { relations_per_house = 40  mods_per_relation = 6  treaties_per_house = 8
-                  offers_per_pair = 3  player_inbox_cap = 2  favors_owed_max = 3 }
-    offers    = { answer_days = 30  refusal_cooldown_days = 180  break_cooldown_days = 730
-                  ai_offer_cooldown_days = 90  counter_margin = 15  ai_may_offer_to_player = yes }
-    accept    = { opinion_pm = 500  trust_pm = 400  emperor_pm = 300  grudge_pm = 250
-                  threshold = 20  favor_call = 30  value_cap = 40  forecast_margin = 10 }
-    gift      = { min_rub = 10  max_rub = 2000  opinion_per_100rub = 8  cap = 20  months = 12  cooldown_days = 30 }
-    favor     = { min_rub = 50  max_rub = 1000  granted_opinion = 5  ingratitude = -10  expiry_months = 120 }
-    pledge    = { min_rub = 100  max_rub = 5000 }
-    reasons   = { offer_refused = { value = -5 months = 12 }  denounced = { value = -15 months = 36 }
-                  false_denunciation = { value = -10 months = 24 }  honoured = { value = 5 months = 24 } }
-    archetype_threshold = { schemer = 5  loyalist_with_loyalist = -5 }
-    ai        = { min_treaty_age_days = 365  costs_wu = { propose = 40  gift = 20  favor = 20 } }
-}
-treaty_kind "alliance" { id = 1  months = { min = 24 default = 60 max = 120 }  opinion_bonus = 25
-    base_value = 8  risk = 0  breakable = yes  political_gain = 15
-    breach = { trust = -40  grudge = -40  grudge_months = 48 } }
-treaty_kind "pledge" { id = 2  months = { min = 12 default = 36 max = 60 }  opinion_bonus = 10 ... }
-treaty_kind "marriage_pact" { id = 3  system_only = yes  opinion_bonus = 10  political_gain = 5  breakable = no
-    breach = { trust = -25  grudge = -30  grudge_months = 36 } }
-treaty_kind "claim_support" { id = 4  months = { min = 12 default = 36 max = 60 }  opinion_bonus = 15  risk = 10 ... }
-```
+| Блок | Параметры |
+|---|---|
+| `opinion`, `trust`, `limits` | Веса мнения, границы вражды, доверие, лимиты таблиц. На род приходится до 8 активных договоров всех четырёх публичных видов. |
+| `offers`, `accept`, `archetype_threshold`, `ai` | Правила предложений, оценка и пороги согласия, частота действий, стоимость кандидатов в WU. Лимит входящих от ИИ — до 2, срок ответа — до 30 дней. |
+| `gift`, `favor`, `pledge`, `reasons` | Суммы, эффекты, длительности и причины изменения отношений. |
+| `treaty_kind` | `min_months`, `months`, `max_months`, эффекты, штрафы, `enabled`, `system_only`, `breakable` и `ai_may_offer_to_player`. Последний флаг доступен только союзу и залогу. |
 
-Черты (`data/traits/m1.pd`, правка данных E7 в T04): `ai_hint` получает ключи `dipl_threshold` (`cautious` 10, `proud` 5, `ambitious` −5, `generous` −5, `diplomat` −5), `dipl_greed` (`greedy` 500), `dipl_arrogance` (`proud` 10). Сценарий: `data/scenarios/m1/relations.pd` (E30-T08) — стартовые договоры (`SignTreaty`) и модификаторы (`AdjustRelation{reason = Scenario}`), даты `[проверить]`. Локализация: `dipl.*`, `ui.dipl.*`, `dipl.denial.*`, `dipl.reason.*`, `dipl.term.<код>`, `ai.reason.45x`.
+Подсказки `trait_hints` хранятся в балансе дипломатии под ID существующих черт E7. Ключ `dipl_threshold` задаёт сдвиг порога (`cautious` +10, `proud` +5, `ambitious`, `generous` и `diplomat` по −5). `dipl_greed` даёт черте `greedy` +500‰ выгоды, `dipl_arrogance` даёт черте `proud` +10 спеси. Эти поля входят в `DiplomacyRules::hash()`. Штатный `data/traits/m1.pd` и идентификаторы черт остаются прежними.
+
+До установки подсистемы в E15-T17 правила загружаются по явному вызову `load_diplomacy_content`. Оба вида данных исключены из хеша совместимости обычного M1. В E15-T17 хеш правил подключается к ключу сводки 26 (§17.2). Данные начальных договоров и модификаторов отношений для E30-T08 будут в `data/scenarios/m1/relations.pd`.
+
+Русские ключи для четырёх договоров, причин, отказов, разложений и экранов определены в [data/loc/ru/diplomacy.pd](../../data/loc/ru/diplomacy.pd) и доступны через [diplomacy/text.hpp](../../src/sim/include/pat/sim/diplomacy/text.hpp). Коды разложений и причин ИИ входят в ключи с префиксом сегмента `code_`, например `dipl.term.code_20000` и `ai.reason.code_450`. Слоты разложения 20010…20015 используют ключ фактической причины модификатора из `dipl.reason.*`.
 
 ## 16. Инварианты (`check_invariants`, T02…T11)
 
@@ -569,7 +553,7 @@ T02…T16: **ни одно** закреплённое значение не ме
 
 | Эпик / задача | Что обязан выставить или поменять | Почему |
 |---|---|---|
-| **E7** | ничего в коде; черты `ai_hint` получают ключи `dipl_*` (данные, E15-T04); `feud_pairs` (E7-T25) не трогаются | §7.3 |
+| **E7** | дипломатия читает ID черт E7 и сопоставляет их с `trait_hints` из своего баланса; `feud_pairs` (E7-T25) не трогаются | §7.3 |
 | **E8-T09/T20 или E15-T09** ([#707](https://github.com/savinovanton/patriarch/issues/707)) | точка `MatchContextSource` (указатель на чистую функцию в правилах брака, ставится `install_diplomacy_systems`) в двух местах сборки `MatchContext` (F8); E15 отдаёт `marriage_political_gain(world, view_house, other) = clamp(Σ political_gain договоров пары + opinion(view→other)/5, −30, 30)`; без дипломатии — 0, golden E8 прежние. Хуки в `Tonsure`/`BreakBetrothal` **не нужны** (F2), строка E15 в §10.3 E8 исправлена | §6.4, ADR-0014 D9 |
 | **E8-T21** ([#316](https://github.com/savinovanton/patriarch/issues/316)) | представление входящих брачных предложений игроку — входит в общий `OfferInboxView` (E15-T14) | #695 C |
 | **E9** | коды 206…209 и две пары — вносит E15-T03; `can_afford`/`post_money`/`transfer` без изменений | §11 |
@@ -652,7 +636,7 @@ T02…T16: **ни одно** закреплённое значение не ме
 |---|---|---|
 | T02 | семь таблиц §4, инварианты §16 | 3 → 3 |
 | T03 | разделы 112…118, `ExtPart` 62, ключ 26, коды 206…209 и пары; ждёт E16-T03 | 3 → 3 |
-| T04 | + `treaty_kind "claim_support"`, `ai_hint` `dipl_*` в чертах | 4 → 4,5 |
+| T04 | + `treaty_kind "claim_support"` и подсказки `dipl_*` в `trait_hints` по ID черт | 4 → 4,5 |
 | T05 | §5; `AdjustRelation` 209 | 4,5 → 4,5 |
 | T06 | + выгода/риск `claim_support` (`claim_strength`), встречное, прогноз | 3 → 3,5 |
 | T07 | + `claim_support` (выпуск `SupportClaim`, проверка, конец), `dissolve` | 5,5 → 6,5 |

@@ -6,6 +6,7 @@
 #include "pat/data/credits_schemas.hpp"
 #include "pat/data/crisis_schemas.hpp"
 #include "pat/data/demography_schemas.hpp"
+#include "pat/data/diplomacy_schemas.hpp"
 #include "pat/data/economy_schemas.hpp"
 #include "pat/data/event_schemas.hpp"
 #include "pat/data/graph_schemas.hpp"
@@ -31,6 +32,8 @@ SchemaSet content_schemas() {
     add_crisis_schemas(set);
     // E16-T05: opt-in army rules and synthetic military setup.
     add_army_schemas(set);
+    // E15-T04: diplomacy is installed later with its own rules hash.
+    add_diplomacy_schemas(set);
     // E11-T06: the event kinds (data/events/, data/balance/events.pd); outside the simulation hash.
     add_event_schemas(set);
     // E16-T04: the province graph (data/scenarios/<id>/graph.pd); outside the M1 hash until E16-T20.
