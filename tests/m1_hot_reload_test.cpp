@@ -1,3 +1,4 @@
+#include "pat/content/army_content.hpp"
 #include "pat/content/m1_economy_content.hpp"
 #include "pat/content/m1_hot_reload.hpp"
 #include "pat/content/m1_scenario.hpp"
@@ -71,6 +72,7 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
     REQUIRE(notifications.size() == 1);
     CHECK(notifications.back() == initial);
     CHECK(initial->bindings.size() == 20);
+    CHECK(initial->registry.find("military_setup", "m1") == nullptr);
     CHECK(initial->province_names.at(1) == "Тестовая провинция 1");
 
     const auto unchanged = reload.poll();
@@ -116,6 +118,12 @@ TEST_CASE("M1 hot reload publishes valid edits and keeps the previous snapshot o
           std::string::npos);
     CHECK(mismatch.error().message.find("province definition 'p0021' has no map province") !=
           std::string::npos);
+    // The staged Army references remain strict when explicitly loading Army content.
+    const auto army_mismatch = pat::content::load_army_content(source);
+    REQUIRE_FALSE(army_mismatch.has_value());
+    REQUIRE_FALSE(army_mismatch.error().empty());
+    CHECK(army_mismatch.error().front().file == "scenarios/m1/military.pd");
+    CHECK(army_mismatch.error().front().diagnostic.message.find("p0020") != std::string::npos);
     CHECK(reload.current() == renamed);
     CHECK(notifications.size() == 2);
 
