@@ -718,18 +718,20 @@ struct VmHost {
 | 2010 | `conceive` | character (мать) | `father` | `Conceive` (11); сроки и исход — из правил E7-T12 (`due`, `end`, законность) | ✅ |
 | 2011 | `create_person` | dynasty | `sex`, `age`, `father?`, `mother?` | `CreatePerson` (9); имя и навыки — генератор E7-T09 | ✅ |
 | 2012 | `end_marriage` | character | `reason` | `EndMarriage` (8) | ✅ |
-| 2013 | `change_skill` | character | `skill`, `delta` | **`AdjustSkill` (104)** новая | T09 |
-| 2014 | `change_health` | character | `delta` | **`AdjustHealth` (105)** новая | T09 |
-| 2015 | `change_stress` | character | `delta` | **`AdjustStress` (106)** новая | T09 |
+| 2013 | `change_skill` | character | `skill`, `delta` | **`AdjustSkill` (104)** новая | ✅ |
+| 2014 | `change_health` | character | `delta` | **`AdjustHealth` (105)** новая | ✅ |
+| 2015 | `change_stress` | character | `delta` | **`AdjustStress` (106)** новая | ✅ |
 | 2016 | `record_chronicle` | dynasty | `key`, `a?`, `b?` | `RecordChronicle` (18); `param` = ключ шаблона (T16) | ✅ |
 | 2017 | `betroth` | dynasty | `groom`, `bride`, `dowry`, `dispensation?` | `Betroth` (67) | E8-T10 |
 | 2018 | `tonsure` | character | — | `Tonsure` (69) | E8-T12 |
-| 2019 | `set_heir` | dynasty | `heir` | `SetHeir` (70) | E8-T15 |
-| 2020 | `disown` | character | — | `Disown` (72) | E8-T15 |
+| 2019 | `set_heir` | dynasty | `heir` | `SetHeir` (70) | ✅ |
+| 2020 | `disown` | character | — | `Disown` (72) | ✅ |
 | 2021 | `grant_land` | dynasty | `character`, `province` | `GrantLand` (76) | E8-T18 |
 | 2022 | `assign_regent` | dynasty | `regent`, `kind` | `AssignRegent` (73) | E8-T17 |
 | 2023 | `dismiss_regent` | dynasty | `reason` | `DismissRegent` (74) | E8-T17 |
 | 2024 | `resolve_succession_dispute` | dynasty | `winner` | `ResolveSuccessionDispute` (75) | E8-T16 |
+
+**Реализация T09:** перевод «эффект → команды» — `effect_commands`/`effects_to_commands` (`pat/sim/events/effects.hpp`), один путь для записи буфера `Run` и строки `Preview` (§13.4). Причины: `StandingReason`/`OpinionReason` **500** «событие» (блок E11 500…599; `change_opinion.reason` 0…99 даёт 500 + n); `param` летописи — `0x40000000 | (ключ & 0x3FFFFFFF)`; `tonsure`, `disown`, `set_heir` выдаются с актором = род (команды E8 действуют над актором); `plan_death` — `years` (приоритет) или `date`; `conceive` — без выкидыша, срок `pregnancy_months`, законность — отец = муж; `create_person` — имя и портрет E7-T09 (2 броска потока события), навыки по умолчанию; дельты `change_skill/health/stress` зажимаются в ±100. Эффекты 2021…2024 — заглушки до команд E8 (`EffectStatus::Stub`).
 
 **T10 — провинция, экономика, управление потоком**
 

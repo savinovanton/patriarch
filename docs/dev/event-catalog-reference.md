@@ -74,6 +74,35 @@
 | 1123 | `group_mood` | province | вид: nobility \| clergy \| townsfolk \| peasants \| cossacks \| natives | `tooltip.trigger.group_mood`, `tooltip.trigger.group_mood.fail` | `group_mood.nobility < -20` | — |
 | 1124 | `debt` | dynasty | — | `tooltip.trigger.debt`, `tooltip.trigger.debt.fail` | `debt > 1000` | — |
 
+## Эффекты (24)
+
+| Код | Имя | Области | Аргументы | Ключи тултипа | Пример | Примечание |
+|---:|---|---|---|---|---|---|
+| 2001 | `change_honor` | dynasty | `value`: число | `tooltip.effect.change_honor` | `change_honor = -5` | — |
+| 2002 | `change_unity` | dynasty | `value`: число | `tooltip.effect.change_unity` | `change_unity = 2.5` | — |
+| 2003 | `change_prestige` | dynasty | `value`: число | `tooltip.effect.change_prestige` | `change_prestige = 10` | — |
+| 2004 | `change_opinion` | character | `target`: область character; `value`: число; `reason`: число (необяз.) | `tooltip.effect.change_opinion` | `change_opinion = { target = scope:rival  value = -20 }` | — |
+| 2005 | `add_trait` | character | `trait`: ссылка `trait:` | `tooltip.effect.add_trait` | `add_trait = greedy` | — |
+| 2006 | `remove_trait` | character | `trait`: ссылка `trait:` | `tooltip.effect.remove_trait` | `remove_trait = greedy` | — |
+| 2007 | `die` | character | `cause`: old_age \| illness \| childbirth \| war \| execution \| murder \| accident \| wounds \| grief | `tooltip.effect.die` | `die = illness` | — |
+| 2008 | `plan_death` | character | `date`: дата (необяз.); `years`: число (необяз.) | `tooltip.effect.plan_death` | `plan_death = { years = 2 }` | — |
+| 2009 | `set_education` | character | `focus`: stewardship \| diplomacy \| martial \| intrigue \| learning; `tutor`: область character (необяз.) | `tooltip.effect.set_education` | `set_education = { focus = martial  tutor = scope:tutor }` | — |
+| 2010 | `conceive` | character | `father`: область character | `tooltip.effect.conceive` | `conceive = { father = scope:lover }` | — |
+| 2011 | `create_person` | dynasty | `sex`: male \| female; `age`: число; `father`: область character (необяз.); `mother`: область character (необяз.) | `tooltip.effect.create_person` | `create_person = { sex = female  age = 16 }` | — |
+| 2012 | `end_marriage` | character | `reason`: annulment \| tonsure | `tooltip.effect.end_marriage` | `end_marriage = annulment` | — |
+| 2013 | `change_skill` | character | `skill`: stewardship \| diplomacy \| martial \| intrigue \| learning; `delta`: число | `tooltip.effect.change_skill` | `change_skill = { skill = martial  delta = 2 }` | — |
+| 2014 | `change_health` | character | `delta`: число | `tooltip.effect.change_health` | `change_health = -10` | — |
+| 2015 | `change_stress` | character | `delta`: число | `tooltip.effect.change_stress` | `change_stress = 15` | — |
+| 2016 | `record_chronicle` | dynasty | `key`: имя; `a`: область character (необяз.); `b`: область character (необяз.) | `tooltip.effect.record_chronicle` | `record_chronicle = { key = duel  a = root  b = scope:rival }` | — |
+| 2017 | `betroth` | dynasty | `groom`: область character; `bride`: область character; `dowry`: число (необяз.); `dispensation`: yes/no (необяз.) | `tooltip.effect.betroth` | `betroth = { groom = scope:groom  bride = scope:bride  dowry = 300 }` | — |
+| 2018 | `tonsure` | character | — | `tooltip.effect.tonsure` | `tonsure = yes` | — |
+| 2019 | `set_heir` | dynasty | `heir`: область character | `tooltip.effect.set_heir` | `set_heir = scope:son` | — |
+| 2020 | `disown` | character | — | `tooltip.effect.disown` | `disown = yes` | — |
+| 2021 | `grant_land` | dynasty | `character`: область character; `province`: область province | `tooltip.effect.grant_land` | `grant_land = { character = scope:son  province = scope:estate }` | заглушка до E8: «нет данных» |
+| 2022 | `assign_regent` | dynasty | `regent`: область character; `kind`: mother \| guardian \| uncle \| council \| imperial | `tooltip.effect.assign_regent` | `assign_regent = { regent = scope:uncle  kind = uncle }` | заглушка до E8: «нет данных» |
+| 2023 | `dismiss_regent` | dynasty | `reason`: majority \| dismissed \| regent_died | `tooltip.effect.dismiss_regent` | `dismiss_regent = dismissed` | заглушка до E8: «нет данных» |
+| 2024 | `resolve_succession_dispute` | dynasty | `winner`: область character | `tooltip.effect.resolve_succession_dispute` | `resolve_succession_dispute = { winner = scope:claimant }` | заглушка до E8: «нет данных» |
+
 ## Списки итераторов (6)
 
 Список перебирают `any_<список>`, `all_<список>`, `count_<список>` в условиях и значениях, `every_`, `random_`, `ordered_` в эффектах. **Граница** — лимит fan-out: итератор получает не больше min(граница, 256) элементов в порядке §5.2 (по `id` ↑, дети и братья-сёстры — по дате рождения); длиннее — список усекается, растёт счётчик `truncated`. Перебора всего мира нет (`EV107`).

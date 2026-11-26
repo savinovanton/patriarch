@@ -6,6 +6,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -47,6 +48,22 @@ using Word = std::int64_t;
 /// A Q16.16 column of the World as a word (exact: the word has more fraction bits).
 [[nodiscard]] constexpr Word word_from_fixed32(core::Fixed32 v) noexcept {
     return static_cast<Word>(v.raw()) * (Word{1} << (core::Fixed64::frac_bits - core::Fixed32::frac_bits));
+}
+/// The inverse of word_from_fixed32: a word as a Q16.16 value, truncated toward zero to 1/65536 and
+/// saturated to the range of Fixed32 (what an effect hands to a command over a Q16.16 column).
+[[nodiscard]] constexpr core::Fixed32 fixed32_from_word(Word w) noexcept {
+    const Word raw = w / (Word{1} << (core::Fixed64::frac_bits - core::Fixed32::frac_bits));
+    constexpr Word kLo = std::numeric_limits<std::int32_t>::min();
+    constexpr Word kHi = std::numeric_limits<std::int32_t>::max();
+    return core::Fixed32::from_raw(static_cast<std::int32_t>(raw < kLo ? kLo : (raw > kHi ? kHi : raw)));
+}
+/// A word as a whole number, truncated toward zero and saturated to the range of int32 (an index, a
+/// count, a number of years).
+[[nodiscard]] constexpr std::int32_t int_from_word(Word w) noexcept {
+    const std::int64_t whole = fixed_from_word(w).to_int();
+    constexpr std::int64_t kLo = std::numeric_limits<std::int32_t>::min();
+    constexpr std::int64_t kHi = std::numeric_limits<std::int32_t>::max();
+    return static_cast<std::int32_t>(whole < kLo ? kLo : (whole > kHi ? kHi : whole));
 }
 
 /// Limits of the machine (docs/dev/event-engine.md section 7.4). `[предл.]` values.
