@@ -266,10 +266,14 @@ class RepositoryManifestTest(unittest.TestCase):
         self.assertEqual(by_id["nlr-historical-maps"]["attribution"]["text"], "Российская национальная библиотека")
 
     def test_no_invented_hashes(self):
+        # A hash may only be recorded from a real download (docs/dev/geodata-howto.md section 5, step 4):
+        # then the file also has its URL and size, even while the source is still unverified.
         for source in self.data["sources"]:
             if source["status"] != "ready":
                 for item in source["files"]:
-                    self.assertIsNone(item["sha256"], source["id"])
+                    if item["sha256"] is not None:
+                        self.assertIsNotNone(item["url"], source["id"])
+                        self.assertIsNotNone(item["size"], source["id"])
 
 
 class CliTest(unittest.TestCase):

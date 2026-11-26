@@ -69,20 +69,33 @@ class FileResult:
         return self.outcome in {"refused", "failed"}
 
 
-def default_cache_dir(env: Mapping[str, str] | None = None) -> Path:
+def default_cache_dir(
+    env: Mapping[str, str] | None = None, env_name: str = CACHE_ENV, default_name: str = "geodata-cache"
+) -> Path:
     env = os.environ if env is None else env
-    value = env.get(CACHE_ENV)
+    value = env.get(env_name)
     if value:
         return Path(value).expanduser()
-    return Path.home() / ".patriarch" / "geodata-cache"
+    return Path.home() / ".patriarch" / default_name
 
 
-def resolve_cache(arg: str | None, env: Mapping[str, str] | None = None, repo_root: Path = REPO_ROOT) -> Path:
-    """Pick the cache directory and refuse locations inside the repository."""
-    cache = (Path(arg).expanduser() if arg else default_cache_dir(env)).resolve()
+def resolve_cache(
+    arg: str | None,
+    env: Mapping[str, str] | None = None,
+    repo_root: Path = REPO_ROOT,
+    env_name: str = CACHE_ENV,
+    default_name: str = "geodata-cache",
+    what: str = "cache",
+) -> Path:
+    """Pick a local data directory (`--arg` > env variable > ~/.patriarch/<default_name>).
+
+    Locations inside the repository are refused: raw and intermediate third-party data
+    must never end up in Git. Also used by stage1.py for its work directory.
+    """
+    cache = (Path(arg).expanduser() if arg else default_cache_dir(env, env_name, default_name)).resolve()
     root = repo_root.resolve()
     if cache == root or root in cache.parents:
-        raise ValueError(f"cache directory must be outside the repository ({root}): {cache}")
+        raise ValueError(f"{what} directory must be outside the repository ({root}): {cache}")
     return cache
 
 
